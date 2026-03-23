@@ -315,7 +315,11 @@ let cumPnl = 0;
 const cumData = [];
 for (let d = 1; d <= 22; d++) {
   const p = Math.round((Math.random() - 0.3) * 3000);
-  marchData[d] = { pnl: p, trades: Math.floor(Math.random() * 20 + 5), winRate: Math.floor(Math.random() * 35 + 50) };
+  const totalT = Math.floor(Math.random() * 16 + 5);
+  const wr = Math.floor(Math.random() * 35 + 50);
+  const wins = Math.round(totalT * wr / 100);
+  const losses = totalT - wins;
+  marchData[d] = { pnl: p, trades: totalT, winRate: wr, wins, losses };
   cumPnl += p;
   cumData.push({ day: d, pnl: cumPnl });
 }
@@ -1721,13 +1725,23 @@ const ReportTab = () => {
             const d = marchData[day];
             const clr = d.pnl >= 0 ? C.green : C.red;
             const bg = d.pnl >= 0 ? C.greenBg : C.redBg;
+            const winPct = d.trades > 0 ? Math.round((d.wins / d.trades) * 100) : 0;
             return (
-              <div key={day} style={{ backgroundColor: bg, borderRadius: "6px", padding: "8px", minHeight: "70px", display: "flex", flexDirection: "column", justifyContent: "space-between", border: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: "13px", fontWeight: "700" }}>{day}</div>
-                <div style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>
+              <div key={day} style={{ backgroundColor: bg, borderRadius: "6px", padding: "8px", minHeight: "82px", display: "flex", flexDirection: "column", justifyContent: "space-between", border: `1px solid ${C.border}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "13px", fontWeight: "700" }}>{day}</span>
+                  <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{d.trades} trades</span>
+                </div>
+                <div style={{ fontSize: "13px", fontWeight: "700", color: clr, ...mono }}>
                   {d.pnl >= 0 ? "+" : ""}${d.pnl.toLocaleString()}
                 </div>
-                <div style={{ height: "3px", backgroundColor: clr, borderRadius: "2px", opacity: 0.6 }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <div style={{ flex: 1, display: "flex", height: "4px", borderRadius: "2px", overflow: "hidden", gap: "1px" }}>
+                    <div style={{ flex: d.wins, backgroundColor: C.green, borderRadius: "2px 0 0 2px" }} />
+                    <div style={{ flex: d.losses, backgroundColor: C.red, borderRadius: "0 2px 2px 0" }} />
+                  </div>
+                  <span style={{ fontSize: "8px", color: C.textMuted, ...mono, minWidth: "24px", textAlign: "right" }}>{d.wins}W {d.losses}L</span>
+                </div>
               </div>
             );
           })}
