@@ -419,6 +419,7 @@ const ftgSessions = [
 /* ═══════════════════════ SMC COIN DATA ═══════════════════════ */
 const smcCoins = {
   BTC: {
+    pair: "USDT", category: "Layer 1",
     price: "$68,326", change: "+1.2%", bias: "BULLISH", biasIcon: "up", confluence: 8, risk: "MEDIUM",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
@@ -436,6 +437,7 @@ const smcCoins = {
     chartBase: 67500, chartStep: 35, chartAmp: 400,
   },
   ETH: {
+    pair: "USDT", category: "Layer 1",
     price: "$3,482", change: "+2.8%", bias: "BULLISH", biasIcon: "up", confluence: 9, risk: "LOW",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
@@ -453,6 +455,7 @@ const smcCoins = {
     chartBase: 3400, chartStep: 3.5, chartAmp: 40,
   },
   SOL: {
+    pair: "USDT", category: "Layer 1",
     price: "$148.60", change: "+4.5%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
@@ -470,6 +473,7 @@ const smcCoins = {
     chartBase: 142, chartStep: 0.28, chartAmp: 3.2,
   },
   BNB: {
+    pair: "USDT", category: "Layer 1",
     price: "$618.40", change: "-0.6%", bias: "BEARISH", biasIcon: "down", confluence: 5, risk: "HIGH",
     tfData: [
       { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
@@ -487,6 +491,7 @@ const smcCoins = {
     chartBase: 625, chartStep: -0.25, chartAmp: 5,
   },
   XRP: {
+    pair: "USDT", category: "Layer 1",
     price: "$2.18", change: "+1.8%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
@@ -504,6 +509,7 @@ const smcCoins = {
     chartBase: 2.10, chartStep: 0.004, chartAmp: 0.05,
   },
   DOGE: {
+    pair: "USDT", category: "Meme",
     price: "$0.358", change: "+6.2%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "HIGH",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
@@ -521,6 +527,7 @@ const smcCoins = {
     chartBase: 0.33, chartStep: 0.0012, chartAmp: 0.015,
   },
   AVAX: {
+    pair: "USDT", category: "Layer 1",
     price: "$39.20", change: "+3.1%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
     tfData: [
       { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
@@ -538,6 +545,7 @@ const smcCoins = {
     chartBase: 37, chartStep: 0.1, chartAmp: 1.5,
   },
   ADA: {
+    pair: "USDT", category: "Layer 1",
     price: "$1.24", change: "-1.3%", bias: "BEARISH", biasIcon: "down", confluence: 4, risk: "HIGH",
     tfData: [
       { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
@@ -554,6 +562,492 @@ const smcCoins = {
     ],
     chartBase: 1.30, chartStep: -0.003, chartAmp: 0.03,
   },
+  LINK: {
+    pair: "USDT", category: "DeFi",
+    price: "$32.85", change: "+2.4%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$32.10–$32.50", rr: "1 : 2.9", tp1: "$35.20", tp2: "$37.80", tp3: "$40.00", sl: "$30.50" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.015%" },
+      { name: "Open Interest", status: "pass", detail: "+2.8%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.72" },
+    ],
+    chartBase: 32, chartStep: 0.08, chartAmp: 1,
+  },
+  DOT: {
+    pair: "USDT", category: "Layer 1",
+    price: "$12.48", change: "-2.1%", bias: "BEARISH", biasIcon: "down", confluence: 4, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$12.80–$13.20", rr: "1 : 1.9", tp1: "$11.80", tp2: "$11.00", tp3: "$10.20", sl: "$13.60" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "-0.02%" },
+      { name: "Open Interest", status: "pass", detail: "+1.5%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.68" },
+    ],
+    chartBase: 12.5, chartStep: -0.018, chartAmp: 0.25,
+  },
+  MATIC: {
+    pair: "USDT", category: "Layer 2",
+    price: "$1.42", change: "+3.7%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$1.38–$1.40", rr: "1 : 2.7", tp1: "$1.55", tp2: "$1.70", tp3: "$1.88", sl: "$1.25" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.025%" },
+      { name: "Open Interest", status: "pass", detail: "+6.3%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.75" },
+    ],
+    chartBase: 1.4, chartStep: 0.003, chartAmp: 0.04,
+  },
+  UNI: {
+    pair: "USDT", category: "DeFi",
+    price: "$18.92", change: "+1.5%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$18.50–$18.70", rr: "1 : 3.1", tp1: "$20.50", tp2: "$22.30", tp3: "$24.50", sl: "$17.50" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.012%" },
+      { name: "Open Interest", status: "pass", detail: "+4.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.70" },
+    ],
+    chartBase: 18.5, chartStep: 0.038, chartAmp: 0.6,
+  },
+  AAVE: {
+    pair: "USDT", category: "DeFi",
+    price: "$825.40", change: "-1.8%", bias: "BEARISH", biasIcon: "down", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$850.00–$880.00", rr: "1 : 2.1", tp1: "$780.00", tp2: "$720.00", tp3: "$650.00", sl: "$920.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "-0.025%" },
+      { name: "Open Interest", status: "pass", detail: "+2.1%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.65" },
+    ],
+    chartBase: 850, chartStep: -0.35, chartAmp: 15,
+  },
+  ATOM: {
+    pair: "USDT", category: "Layer 1",
+    price: "$14.62", change: "+2.9%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$14.10–$14.40", rr: "1 : 2.6", tp1: "$16.00", tp2: "$17.50", tp3: "$19.20", sl: "$13.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.018%" },
+      { name: "Open Interest", status: "pass", detail: "+3.8%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.72" },
+    ],
+    chartBase: 14.3, chartStep: 0.044, chartAmp: 0.7,
+  },
+  FTM: {
+    pair: "USDT", category: "Layer 1",
+    price: "$0.92", change: "+4.2%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$0.88–$0.90", rr: "1 : 2.3", tp1: "$1.02", tp2: "$1.15", tp3: "$1.30", sl: "$0.78" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.04%" },
+      { name: "Open Interest", status: "warning", detail: "+9.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.69" },
+    ],
+    chartBase: 0.90, chartStep: 0.0028, chartAmp: 0.025,
+  },
+  NEAR: {
+    pair: "USDT", category: "Layer 1",
+    price: "$8.75", change: "+1.3%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$8.40–$8.60", rr: "1 : 2.8", tp1: "$9.60", tp2: "$10.40", tp3: "$11.50", sl: "$7.80" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.016%" },
+      { name: "Open Interest", status: "pass", detail: "+5.1%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.74" },
+    ],
+    chartBase: 8.5, chartStep: 0.0175, chartAmp: 0.25,
+  },
+  APT: {
+    pair: "USDT", category: "Layer 1",
+    price: "$14.28", change: "+0.8%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$13.80–$14.10", rr: "1 : 2.5", tp1: "$15.80", tp2: "$17.20", tp3: "$18.80", sl: "$12.80" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.012%" },
+      { name: "Open Interest", status: "pass", detail: "+3.5%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.68" },
+    ],
+    chartBase: 14, chartStep: 0.028, chartAmp: 0.5,
+  },
+  ARB: {
+    pair: "USDT", category: "Layer 2",
+    price: "$2.85", change: "+5.3%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$2.70–$2.78", rr: "1 : 3.0", tp1: "$3.15", tp2: "$3.50", tp3: "$3.90", sl: "$2.45" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.022%" },
+      { name: "Open Interest", status: "pass", detail: "+7.8%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.71" },
+    ],
+    chartBase: 2.7, chartStep: 0.0057, chartAmp: 0.08,
+  },
+  OP: {
+    pair: "USDT", category: "Layer 2",
+    price: "$3.42", change: "-0.9%", bias: "BEARISH", biasIcon: "down", confluence: 4, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$3.55–$3.75", rr: "1 : 1.8", tp1: "$3.15", tp2: "$2.85", tp3: "$2.55", sl: "$3.95" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "-0.018%" },
+      { name: "Open Interest", status: "pass", detail: "+1.8%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.66" },
+    ],
+    chartBase: 3.5, chartStep: -0.0068, chartAmp: 0.12,
+  },
+  SUI: {
+    pair: "USDT", category: "Layer 1",
+    price: "$4.28", change: "+2.6%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$4.10–$4.18", rr: "1 : 2.9", tp1: "$4.75", tp2: "$5.20", tp3: "$5.80", sl: "$3.75" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.019%" },
+      { name: "Open Interest", status: "pass", detail: "+4.6%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.73" },
+    ],
+    chartBase: 4.2, chartStep: 0.0086, chartAmp: 0.15,
+  },
+  INJ: {
+    pair: "USDT", category: "Layer 1",
+    price: "$48.92", change: "+3.4%", bias: "BULLISH", biasIcon: "up", confluence: 8, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$47.00–$48.50", rr: "1 : 3.2", tp1: "$54.20", tp2: "$59.80", tp3: "$65.00", sl: "$43.50" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.024%" },
+      { name: "Open Interest", status: "pass", detail: "+6.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.76" },
+    ],
+    chartBase: 48, chartStep: 0.098, chartAmp: 1.5,
+  },
+  TIA: {
+    pair: "USDT", category: "Layer 1",
+    price: "$11.84", change: "+1.7%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$11.40–$11.70", rr: "1 : 2.7", tp1: "$13.20", tp2: "$14.60", tp3: "$16.20", sl: "$10.60" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.017%" },
+      { name: "Open Interest", status: "pass", detail: "+5.3%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.74" },
+    ],
+    chartBase: 11.5, chartStep: 0.028, chartAmp: 0.35,
+  },
+  SEI: {
+    pair: "USDT", category: "Layer 1",
+    price: "$0.684", change: "+4.8%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$0.650–$0.670", rr: "1 : 2.2", tp1: "$0.760", tp2: "$0.850", tp3: "$0.950", sl: "$0.580" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.052%" },
+      { name: "Open Interest", status: "warning", detail: "+10.8%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.70" },
+    ],
+    chartBase: 0.65, chartStep: 0.00137, chartAmp: 0.022,
+  },
+  STX: {
+    pair: "USDT", category: "Layer 1",
+    price: "$2.96", change: "+2.1%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$2.82–$2.90", rr: "1 : 2.4", tp1: "$3.35", tp2: "$3.75", tp3: "$4.20", sl: "$2.55" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.014%" },
+      { name: "Open Interest", status: "pass", detail: "+2.9%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.67" },
+    ],
+    chartBase: 2.9, chartStep: 0.0059, chartAmp: 0.1,
+  },
+  RENDER: {
+    pair: "USDT", category: "AI",
+    price: "$7.42", change: "+1.4%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$7.10–$7.30", rr: "1 : 2.8", tp1: "$8.40", tp2: "$9.30", tp3: "$10.40", sl: "$6.40" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.020%" },
+      { name: "Open Interest", status: "pass", detail: "+4.8%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.72" },
+    ],
+    chartBase: 7.2, chartStep: 0.0148, chartAmp: 0.25,
+  },
+  FET: {
+    pair: "USDT", category: "AI",
+    price: "$2.48", change: "+3.2%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$2.35–$2.42", rr: "1 : 3.0", tp1: "$2.80", tp2: "$3.15", tp3: "$3.55", sl: "$2.10" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.018%" },
+      { name: "Open Interest", status: "pass", detail: "+5.4%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.71" },
+    ],
+    chartBase: 2.4, chartStep: 0.00496, chartAmp: 0.08,
+  },
+  WLD: {
+    pair: "USDT", category: "Meme",
+    price: "$4.68", change: "+2.3%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$4.40–$4.55", rr: "1 : 2.1", tp1: "$5.25", tp2: "$5.95", tp3: "$6.75", sl: "$4.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.035%" },
+      { name: "Open Interest", status: "warning", detail: "+7.5%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.64" },
+    ],
+    chartBase: 4.5, chartStep: 0.0094, chartAmp: 0.18,
+  },
+  JUP: {
+    pair: "USDT", category: "DeFi",
+    price: "$1.34", change: "+2.7%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$1.28–$1.31", rr: "1 : 2.6", tp1: "$1.55", tp2: "$1.78", tp3: "$2.05", sl: "$1.15" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.016%" },
+      { name: "Open Interest", status: "pass", detail: "+3.7%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.69" },
+    ],
+    chartBase: 1.3, chartStep: 0.00268, chartAmp: 0.05,
+  },
+  PENDLE: {
+    pair: "USDT", category: "DeFi",
+    price: "$9.28", change: "+1.9%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$8.85–$9.10", rr: "1 : 2.9", tp1: "$10.60", tp2: "$11.80", tp3: "$13.20", sl: "$8.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.021%" },
+      { name: "Open Interest", status: "pass", detail: "+5.1%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.70" },
+    ],
+    chartBase: 9, chartStep: 0.0186, chartAmp: 0.35,
+  },
+  ONDO: {
+    pair: "USDT", category: "DeFi",
+    price: "$1.68", change: "-0.4%", bias: "BEARISH", biasIcon: "down", confluence: 4, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$1.75–$1.85", rr: "1 : 1.9", tp1: "$1.55", tp2: "$1.38", tp3: "$1.20", sl: "$1.98" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "-0.015%" },
+      { name: "Open Interest", status: "pass", detail: "+1.2%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.63" },
+    ],
+    chartBase: 1.75, chartStep: -0.0033, chartAmp: 0.04,
+  },
+  TON: {
+    pair: "USDT", category: "Layer 1",
+    price: "$7.85", change: "+3.1%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$7.50–$7.70", rr: "1 : 2.7", tp1: "$8.85", tp2: "$9.80", tp3: "$10.90", sl: "$6.90" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.019%" },
+      { name: "Open Interest", status: "pass", detail: "+4.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.73" },
+    ],
+    chartBase: 7.6, chartStep: 0.0157, chartAmp: 0.2,
+  },
+  PEPE: {
+    pair: "USDT", category: "Meme",
+    price: "$0.00000985", change: "+5.8%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$0.00000925–$0.00000960", rr: "1 : 2.0", tp1: "$0.00001150", tp2: "$0.00001380", tp3: "$0.00001650", sl: "$0.00000850" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.070%" },
+      { name: "Open Interest", status: "warning", detail: "+15.2%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.58" },
+    ],
+    chartBase: 0.00000950, chartStep: 0.000000028, chartAmp: 0.00000015,
+  },
+  WIF: {
+    pair: "USDT", category: "Meme",
+    price: "$3.24", change: "+4.6%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$3.05–$3.15", rr: "1 : 2.2", tp1: "$3.65", tp2: "$4.15", tp3: "$4.75", sl: "$2.80" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.055%" },
+      { name: "Open Interest", status: "warning", detail: "+11.8%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.61" },
+    ],
+    chartBase: 3.1, chartStep: 0.0065, chartAmp: 0.12,
+  },
+  BONK: {
+    pair: "USDT", category: "Meme",
+    price: "$0.0000382", change: "+7.1%", bias: "BULLISH", biasIcon: "up", confluence: 4, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$0.0000355–$0.0000370", rr: "1 : 1.9", tp1: "$0.0000440", tp2: "$0.0000510", tp3: "$0.0000600", sl: "$0.0000320" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.082%" },
+      { name: "Open Interest", status: "warning", detail: "+18.5%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.56" },
+    ],
+    chartBase: 0.0000365, chartStep: 0.0000012, chartAmp: 0.0000055,
+  },
+  FLOKI: {
+    pair: "USDT", category: "Meme",
+    price: "$0.000168", change: "+3.4%", bias: "BULLISH", biasIcon: "up", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$0.000160–$0.000165", rr: "1 : 2.3", tp1: "$0.000195", tp2: "$0.000225", tp3: "$0.000260", sl: "$0.000145" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.058%" },
+      { name: "Open Interest", status: "warning", detail: "+13.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.59" },
+    ],
+    chartBase: 0.000162, chartStep: 0.0000048, chartAmp: 0.000020,
+  },
 };
 
 const smcCoinList = Object.keys(smcCoins);
@@ -561,7 +1055,32 @@ const smcCoinList = Object.keys(smcCoins);
 /* ═══════════════════════ TAB 1: SMC ANALYSIS ═══════════════════════ */
 const SMCAnalysis = () => {
   const [selectedCoin, setSelectedCoin] = useState("BTC");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [dateRange, setDateRange] = useState("24h");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const coin = smcCoins[selectedCoin];
+
+  const categories = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI", "Other"];
+
+  const filteredCoins = Object.keys(smcCoins).filter(ticker => {
+    const matchesSearch = ticker.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = categoryFilter === "All" || smcCoins[ticker].category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  }).sort();
+
+  const dateRangeLabel = {
+    "24h": "24h",
+    "7d": "7 days",
+    "1m": "1 month",
+    "3m": "3 months",
+    "6m": "6 months",
+    "1y": "1 year",
+    "YTD": "Year-to-date",
+    "All": "All time",
+  }[dateRange] || "Custom";
 
   const chartData = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
     time: `${String(i).padStart(2, "0")}:00`,
@@ -581,23 +1100,174 @@ const SMCAnalysis = () => {
   const riskColor = coin.risk === "LOW" ? C.green : coin.risk === "MEDIUM" ? C.amber : C.red;
   const biasColor = coin.bias === "BULLISH" ? C.green : C.red;
 
+  const handleDateRangeClick = (range) => {
+    setDateRange(range);
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  const handleCustomDate = () => {
+    if (dateFrom || dateTo) {
+      setDateRange("custom");
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Coin Selector */}
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-        {smcCoinList.map(c => (
-          <button key={c} onClick={() => setSelectedCoin(c)} style={{
-            padding: "8px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer",
-            border: `1px solid ${selectedCoin === c ? C.purple : C.border}`,
-            backgroundColor: selectedCoin === c ? C.purpleBg : "transparent",
-            color: selectedCoin === c ? C.purple : C.textMuted,
-            transition: "all 0.15s",
-            display: "flex", alignItems: "center", gap: "6px"
-          }}>
-            {c}
-            {selectedCoin === c && <span style={{ fontSize: "10px", color: smcCoins[c].change.startsWith("+") ? C.green : C.red, ...mono }}>{smcCoins[c].change}</span>}
-          </button>
-        ))}
+      {/* Coin Selector with Search and Categories */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {/* Search Bar */}
+        <div style={{ position: "relative" }}>
+          <Search size={16} style={{ position: "absolute", left: "12px", top: "11px", color: C.textMuted }} />
+          <input
+            type="text"
+            placeholder="Search coins..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 12px 10px 38px",
+              borderRadius: "8px",
+              border: `1px solid ${C.border}`,
+              backgroundColor: C.card,
+              color: C.text,
+              fontSize: "13px",
+              fontFamily: "inherit",
+              outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Category Filter Pills */}
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+                cursor: "pointer",
+                border: `1px solid ${categoryFilter === cat ? C.purple : C.border}`,
+                backgroundColor: categoryFilter === cat ? C.purpleBg : "transparent",
+                color: categoryFilter === cat ? C.purple : C.textMuted,
+                transition: "all 0.15s",
+              }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Coin Grid with Scroll */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))",
+          gap: "8px",
+          maxHeight: "140px",
+          overflowY: "auto",
+          paddingRight: "4px",
+        }}>
+          {filteredCoins.map(c => (
+            <button
+              key={c}
+              onClick={() => setSelectedCoin(c)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontWeight: "700",
+                cursor: "pointer",
+                border: `1px solid ${selectedCoin === c ? C.purple : C.border}`,
+                backgroundColor: selectedCoin === c ? C.purpleBg : "transparent",
+                color: selectedCoin === c ? C.purple : C.textMuted,
+                transition: "all 0.15s",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "4px",
+                minHeight: "50px",
+                justifyContent: "center",
+              }}
+            >
+              <span>{c}</span>
+              <span style={{ fontSize: "10px", color: C.textMuted }}>{smcCoins[c].pair}</span>
+              {selectedCoin === c && (
+                <span style={{ fontSize: "10px", color: smcCoins[c].change.startsWith("+") ? C.green : C.red, fontWeight: "700", ...mono }}>
+                  {smcCoins[c].change}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Date Range Controls */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+          {["24h", "7d", "1m", "3m", "6m", "1y", "YTD", "All"].map(preset => (
+            <button
+              key={preset}
+              onClick={() => handleDateRangeClick(preset)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                fontSize: "11px",
+                fontWeight: "600",
+                cursor: "pointer",
+                border: `1px solid ${dateRange === preset ? C.purple : C.border}`,
+                backgroundColor: dateRange === preset ? C.purpleBg : "transparent",
+                color: dateRange === preset ? C.purple : C.textMuted,
+                transition: "all 0.15s",
+              }}
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <label style={{ fontSize: "11px", color: C.textMuted, fontWeight: "600" }}>From:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); handleCustomDate(); }}
+              style={{
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: `1px solid ${C.border}`,
+                backgroundColor: C.card,
+                color: C.text,
+                fontSize: "11px",
+                fontFamily: "inherit",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <label style={{ fontSize: "11px", color: C.textMuted, fontWeight: "600" }}>To:</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); handleCustomDate(); }}
+              style={{
+                padding: "6px 8px",
+                borderRadius: "6px",
+                border: `1px solid ${C.border}`,
+                backgroundColor: C.card,
+                color: C.text,
+                fontSize: "11px",
+                fontFamily: "inherit",
+                cursor: "pointer",
+              }}
+            />
+          </div>
+          <span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "auto" }}>
+            {dateRange === "custom" ? (dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "Select dates") : dateRangeLabel}
+          </span>
+        </div>
       </div>
 
       {/* Stats Row */}
@@ -697,7 +1367,9 @@ const SMCAnalysis = () => {
 
       {/* Price Chart */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>{selectedCoin}/USDT — Price Action</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>
+          {selectedCoin}/{smcCoins[selectedCoin].pair} — Price Action ({dateRange === "custom" ? (dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "Custom") : dateRangeLabel})
+        </div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={chartData}>
             <defs>
