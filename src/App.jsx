@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, createContext, useContext } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, createContext, useContext } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -1166,8 +1166,7 @@ const SMCAnalysis = () => {
                 justifyContent: "center",
               }}
             >
-              <span>{c}</span>
-              <span style={{ fontSize: "10px", color: C.textMuted }}>{smcCoins[c].pair}</span>
+              <span>{c}<span style={{ fontSize: "9px", color: C.textFaint, fontWeight: "400" }}>/{smcCoins[c].pair}</span></span>
               {selectedCoin === c && (
                 <span style={{ fontSize: "10px", color: smcCoins[c].change.startsWith("+") ? C.green : C.red, fontWeight: "700", ...mono }}>
                   {smcCoins[c].change}
@@ -1188,7 +1187,7 @@ const SMCAnalysis = () => {
 
       {/* Multi-Timeframe Grid */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/USDT</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/{coin.pair}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
           {coin.tfData.map(tf => (
             <div key={tf.tf} style={cardStyle}>
@@ -3076,6 +3075,18 @@ const App = () => {
     ? (dateFrom && dateTo ? `${dateFrom.slice(5)} → ${dateTo.slice(5)}` : dateFrom ? `From ${dateFrom.slice(5)}` : `To ${dateTo.slice(5)}`)
     : (dateRanges.find(d => d.id === dateRange)?.label || "1m");
 
+  const dateDropdownRef = useRef(null);
+  useEffect(() => {
+    if (!showDateDropdown) return;
+    const handleClickOutside = (e) => {
+      if (dateDropdownRef.current && !dateDropdownRef.current.contains(e.target)) {
+        setShowDateDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDateDropdown]);
+
   const openProfile = (trader) => setProfileTrader(trader);
   const closeProfile = () => setProfileTrader(null);
 
@@ -3169,7 +3180,7 @@ const App = () => {
 
               {/* Right: Unified date range selector + icons */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ position: "relative" }}>
+                <div ref={dateDropdownRef} style={{ position: "relative" }}>
                   <button onClick={() => setShowDateDropdown(!showDateDropdown)} style={{
                     display: "flex", alignItems: "center", gap: "8px", padding: "6px 14px",
                     backgroundColor: C.bg, border: `1px solid ${showDateDropdown ? C.purple : C.border}`, borderRadius: "6px",
