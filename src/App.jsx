@@ -119,9 +119,9 @@ const mockTraders = [
 const traderDeepData = (() => {
   const data = {};
   const pairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
-  const platforms = ["twitter","discord","reddit","tradehub"];
-  const platIcons = { twitter: "𝕏", discord: "💬", reddit: "🔴", tradehub: "🟣" };
-  const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: "#8b5cf6" };
+  const platforms = ["twitter","discord","reddit","tradehub","telegram","whatsapp"];
+  const platIcons = { twitter: "𝕏", discord: "💬", reddit: "🔴", tradehub: "🟣", telegram: "✈️", whatsapp: "📱" };
+  const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: "#8b5cf6", telegram: "#0088cc", whatsapp: "#25D366" };
   mockTraders.forEach((t, ti) => {
     // Trade history (last 20 trades)
     const history = [];
@@ -166,22 +166,59 @@ const traderDeepData = (() => {
     ];
     const predStats = { total: 45 + ti * 8, correct: Math.round((45 + ti * 8) * (t.winRate / 100 * 0.9)), streak: 3 + ti, totalStaked: predictionsList.reduce((a,p) => a+p.stake, 0), totalWon: predictionsList.filter(p=>p.status==="won").reduce((a,p)=>a+(p.pnl||0),0) };
 
-    // ── SOCIAL POSTS (cross-platform: Twitter, Discord, Reddit, Trade League) ──
+    // ── SIGNALS (signals this trader has emitted) ──
+    const signals = [];
+    const sigGroups = ["SMC Masters","Scalp Squad","Liquidity Hunters","OB Masters","Crypto Pioneers"];
+    for (let i = 0; i < 12; i++) {
+      const isWin = Math.random() < (t.winRate / 100 + 0.05);
+      const pair = pairs[(ti + i) % pairs.length];
+      const type = Math.random() > 0.45 ? "LONG" : "SHORT";
+      const basePrice = pair.startsWith("BTC") ? 67000 + Math.random() * 2000 : pair.startsWith("ETH") ? 3400 + Math.random() * 200 : 50 + Math.random() * 100;
+      const entryP = Math.round(basePrice * 100) / 100;
+      const tpP = Math.round((entryP * (type === "LONG" ? 1.02 : 0.98)) * 100) / 100;
+      const slP = Math.round((entryP * (type === "LONG" ? 0.99 : 1.01)) * 100) / 100;
+      const pnlAmt = isWin ? Math.round(400 + Math.random() * 4000) : -Math.round(200 + Math.random() * 2000);
+      const day = Math.max(1, 22 - i);
+      signals.push({
+        id: ti * 200 + i, pair, type, entry: entryP, tp: tpP, sl: slP,
+        leverage: ["2x","3x","4x","5x","10x"][i % 5],
+        status: i < 3 ? "active" : isWin ? "tp_hit" : "sl_hit",
+        date: `Mar ${day}`, pnl: i < 3 ? Math.round(pnlAmt * 0.3) : pnlAmt,
+        group: sigGroups[(ti + i) % sigGroups.length],
+        rr: isWin ? `1:${(2.0 + Math.random() * 2).toFixed(1)}` : `1:${(0.4 + Math.random() * 0.6).toFixed(1)}`,
+        subscribers: Math.round(120 + ti * 30 + Math.random() * 200),
+        analysis: isWin
+          ? ["OB + FVG confluence at key level","Liquidity sweep + displacement entry","BOS confirmed on 1H, momentum strong","Clean break of structure with volume"][i%4]
+          : ["Fakeout above resistance","Choppy PA, no clear setup","Entered against higher TF bias","Missed the killzone window"][i%4]
+      });
+    }
+    const signalStats = {
+      total: 45 + ti * 12, active: signals.filter(s => s.status === "active").length,
+      accuracy: Math.round(t.winRate + 3), avgPnlPerSignal: Math.round(signals.reduce((a, s) => a + s.pnl, 0) / signals.length),
+      bestSignal: Math.max(...signals.map(s => s.pnl)), subscribers: 340 + ti * 80,
+    };
+
+    // ── SOCIAL POSTS (cross-platform: Twitter, Discord, Reddit, Trade League, Telegram, WhatsApp) ──
     const socialPosts = [
       { id: ti*50+1, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `$BTC looking absolutely beautiful on the 4H. SMC structure intact, OB holding strong. My target: $72K. Not financial advice, just vibes and order blocks. 📈🔥`, time: "1h ago", likes: 234 + ti * 40, retweets: 45 + ti * 8, replies: 32 + ti * 5, impressions: 12400 + ti * 2000 },
       { id: ti*50+2, platform: "discord", handle: t.name, text: `Hey everyone, just entered a BTC long at $67,850. My analysis shows strong confluence: OB + FVG + liquidity sweep. TP1 at $69,200. Will update you all on how it goes. 🎯`, time: "3h ago", likes: 67 + ti * 10, retweets: 0, replies: 23 + ti * 3, impressions: 0, channel: "#trading-signals" },
-      { id: ti*50+3, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Thread 🧵 on why most retail traders lose money:\n\n1/ They don't understand market structure\n2/ They chase entries instead of waiting\n3/ They risk too much per trade\n4/ They don't journal\n\nFix these 4 things and you'll already be top 10%.`, time: "5h ago", likes: 892 + ti * 100, retweets: 234 + ti * 40, replies: 78 + ti * 10, impressions: 45600 + ti * 5000 },
-      { id: ti*50+4, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `DD: Why I think SOL is the play for Q2 2026. The ecosystem growth is insane, DeFi TVL up 340% YoY, and the chart shows a massive cup and handle on the weekly. My position: Long from $142 with a $200 target.`, time: "8h ago", likes: 456 + ti * 50, retweets: 0, replies: 123 + ti * 15, impressions: 0, subreddit: "r/CryptoMarkets" },
-      { id: ti*50+5, platform: "tradehub", handle: t.name, text: `Closed my ETH long at TP2. +$${(1200 + ti * 300).toLocaleString()} profit. The FVG at $3,420 held perfectly. Key takeaway: patience on entries saves you from fake breakouts.`, time: "12h ago", likes: 89 + ti * 12, retweets: 0, replies: 34 + ti * 4, impressions: 0 },
-      { id: ti*50+6, platform: "discord", handle: t.name, text: `Quick market update: Funding rates just flipped negative on BTC. This usually means shorts are overcrowded and we might see a squeeze. Stay alert, don't get caught offside. 👀`, time: "1d ago", likes: 45 + ti * 8, retweets: 0, replies: 18 + ti * 2, impressions: 0, channel: "#market-chat" },
-      { id: ti*50+7, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Monthly results for February:\n✅ 34 trades\n✅ ${t.winRate - 2}% win rate\n✅ +$${(t.pnl / 8 / 1000).toFixed(1)}K profit\n✅ Max drawdown: ${t.maxDD + 2}%\n\nConsistency > home runs. Always.`, time: "2d ago", likes: 1245 + ti * 150, retweets: 312 + ti * 50, replies: 89 + ti * 10, impressions: 67800 + ti * 8000 },
-      { id: ti*50+8, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `Anyone else notice the massive hidden divergence on the BTC daily RSI? Last time we saw this pattern was before the move from $54K to $74K. I'm loading up longs at any dip below $67K. Risk: $66K stop. Target: $72K+.`, time: "3d ago", likes: 234 + ti * 30, retweets: 0, replies: 67 + ti * 8, impressions: 0, subreddit: "r/Bitcoin" },
+      { id: ti*50+3, platform: "telegram", handle: t.name, text: `🚨 SIGNAL ALERT 🚨\n\nBTC/USDT LONG\nEntry: $67,850\nTP1: $69,200\nTP2: $70,500\nSL: $67,200\n\nConfluence: OB + FVG + Liq Sweep\nRisk: 2% of capital\n\n⚡ Follow for more signals`, time: "2h ago", likes: 156 + ti * 25, retweets: 0, replies: 45 + ti * 6, impressions: 0, channel: "Trading Signals VIP" },
+      { id: ti*50+4, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Thread 🧵 on why most retail traders lose money:\n\n1/ They don't understand market structure\n2/ They chase entries instead of waiting\n3/ They risk too much per trade\n4/ They don't journal\n\nFix these 4 things and you'll already be top 10%.`, time: "5h ago", likes: 892 + ti * 100, retweets: 234 + ti * 40, replies: 78 + ti * 10, impressions: 45600 + ti * 5000 },
+      { id: ti*50+5, platform: "whatsapp", handle: t.name, text: `Buenos días grupo 🙌\n\nAnálisis rápido del mercado:\n- BTC consolidando en $67K-$68K\n- ETH mostrando fuerza relativa\n- SOL con estructura bullish en 4H\n\nHoy busco entradas en London session. Les aviso cuando entre. 💪`, time: "4h ago", likes: 28 + ti * 5, retweets: 0, replies: 12 + ti * 2, impressions: 0, channel: "Grupo Trading VIP" },
+      { id: ti*50+6, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `DD: Why I think SOL is the play for Q2 2026. The ecosystem growth is insane, DeFi TVL up 340% YoY, and the chart shows a massive cup and handle on the weekly. My position: Long from $142 with a $200 target.`, time: "8h ago", likes: 456 + ti * 50, retweets: 0, replies: 123 + ti * 15, impressions: 0, subreddit: "r/CryptoMarkets" },
+      { id: ti*50+7, platform: "tradehub", handle: t.name, text: `Closed my ETH long at TP2. +$${(1200 + ti * 300).toLocaleString()} profit. The FVG at $3,420 held perfectly. Key takeaway: patience on entries saves you from fake breakouts.`, time: "12h ago", likes: 89 + ti * 12, retweets: 0, replies: 34 + ti * 4, impressions: 0 },
+      { id: ti*50+8, platform: "telegram", handle: t.name, text: `📊 Actualización de posiciones:\n\n✅ BTC LONG — TP1 hit (+$1,350)\n🔄 ETH LONG — en profit, moviendo SL a BE\n❌ SOL SHORT — cerrado en SL (-$420)\n\nBalance del día: +$930\nSeguimos construyendo 💎`, time: "6h ago", likes: 89 + ti * 15, retweets: 0, replies: 34 + ti * 5, impressions: 0, channel: "Trading Updates" },
+      { id: ti*50+9, platform: "discord", handle: t.name, text: `Quick market update: Funding rates just flipped negative on BTC. This usually means shorts are overcrowded and we might see a squeeze. Stay alert, don't get caught offside. 👀`, time: "1d ago", likes: 45 + ti * 8, retweets: 0, replies: 18 + ti * 2, impressions: 0, channel: "#market-chat" },
+      { id: ti*50+10, platform: "whatsapp", handle: t.name, text: `🎯 Resultado del día:\n\n3 trades tomados\n2 wins / 1 loss\nPnL: +$${(1800 + ti * 400).toLocaleString()}\n\nMejor trade: BTC long desde $67,850\nPeor trade: SOL short (SL hit)\n\nMañana viene la decisión de tasas del Fed. Voy a reducir exposición. 🧠`, time: "1d ago", likes: 42 + ti * 8, retweets: 0, replies: 18 + ti * 3, impressions: 0, channel: "Grupo Trading VIP" },
+      { id: ti*50+11, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Monthly results for February:\n✅ 34 trades\n✅ ${t.winRate - 2}% win rate\n✅ +$${(t.pnl / 8 / 1000).toFixed(1)}K profit\n✅ Max drawdown: ${t.maxDD + 2}%\n\nConsistency > home runs. Always.`, time: "2d ago", likes: 1245 + ti * 150, retweets: 312 + ti * 50, replies: 89 + ti * 10, impressions: 67800 + ti * 8000 },
+      { id: ti*50+12, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `Anyone else notice the massive hidden divergence on the BTC daily RSI? Last time we saw this pattern was before the move from $54K to $74K. I'm loading up longs at any dip below $67K. Risk: $66K stop. Target: $72K+.`, time: "3d ago", likes: 234 + ti * 30, retweets: 0, replies: 67 + ti * 8, impressions: 0, subreddit: "r/Bitcoin" },
     ];
     const socialStats = {
       twitterFollowers: 2400 + ti * 800, discordMessages: 1240 + ti * 200, redditKarma: 8900 + ti * 1500,
+      telegramMembers: 890 + ti * 150, whatsappGroups: 2 + (ti % 3),
       totalImpressions: socialPosts.filter(p=>p.platform==="twitter").reduce((a,p)=>a+p.impressions,0),
       avgEngagement: (3.2 + ti * 0.3).toFixed(1),
-      topPlatform: ti % 2 === 0 ? "twitter" : "discord"
+      topPlatform: ["twitter","discord","telegram","twitter","discord","telegram","whatsapp","twitter"][ti]
     };
 
     // ── RISK DNA (behavioral patterns, session analysis, pair analysis) ──
@@ -231,7 +268,7 @@ const traderDeepData = (() => {
       { id: ti*30+5, date: "Mar 18", mood: "Neutral", text: "No trades today. Market is ranging and nothing meets my criteria. Sat on my hands all day. That's okay — the best trade is sometimes no trade.", tags: ["discipline","no-trade"], pnl: 0 },
     ];
 
-    data[t.name] = { history, monthlyPnl, dailyEquity, predStats, predictionsList, socialPosts, socialStats, riskDna, journal, platIcons, platColors };
+    data[t.name] = { history, monthlyPnl, dailyEquity, signals, signalStats, predStats, predictionsList, socialPosts, socialStats, riskDna, journal, platIcons, platColors };
   });
   return data;
 })();
@@ -766,8 +803,8 @@ const TraderProfile = ({ trader, onClose }) => {
   const t = trader;
   const deep = traderDeepData[t.name];
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
-  const profileTabs = ["overview","trades","predictions","social","pnl","risk_dna","journal"];
-  const tabLabels = { overview: "Overview", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
+  const profileTabs = ["overview","signals","trades","predictions","social","pnl","risk_dna","journal"];
+  const tabLabels = { overview: "Overview", signals: "Señales", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
   const moodEmojis = { Confident: "😎", Frustrated: "😤", Focused: "🎯", Excited: "🔥", Neutral: "😐" };
@@ -876,6 +913,80 @@ const TraderProfile = ({ trader, onClose }) => {
         </div>
       )}
 
+      {/* ═══ SEÑALES ═══ */}
+      {profileTab === "signals" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+            <StatCard label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
+            <StatCard label="Accuracy" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} />
+            <StatCard label="Active Now" value={deep.signalStats.active} icon={Activity} color={C.amber} />
+            <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+            <StatCard label="Avg PnL / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
+            <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+          </div>
+          {/* Active Signals */}
+          {deep.signals.filter(s => s.status === "active").length > 0 && (
+            <div style={cardStyle}>
+              <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: C.green, animation: "none" }} /> Señales Activas
+              </div>
+              {deep.signals.filter(s => s.status === "active").map(s => (
+                <div key={s.id} style={{ padding: "12px 0", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "700" }}>{s.pair}</span>
+                      <Tag text={s.type} color={s.type === "LONG" ? C.green : C.red} />
+                      <span style={{ fontSize: "11px", color: C.amber, fontWeight: "600", ...mono }}>{s.leverage}</span>
+                      <span style={{ fontSize: "10px", color: C.textMuted }}>{s.group}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "16px", fontSize: "11px", color: C.textMuted }}>
+                      <span>Entry: <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
+                      <span>TP: <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
+                      <span>SL: <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
+                      <span>R:R <span style={{ color: C.blue, ...mono }}>{s.rr}</span></span>
+                    </div>
+                    <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "4px", fontStyle: "italic" }}>{s.analysis}</div>
+                  </div>
+                  <div style={{ textAlign: "right", minWidth: "100px" }}>
+                    <div style={{ fontSize: "14px", fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</div>
+                    <div style={{ fontSize: "10px", color: C.textMuted }}>{s.subscribers} subs</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Signal History Table */}
+          <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Historial de Señales — Últimas 12</div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
+                <thead><tr>{["Par","Tipo","Entry","TP","SL","Lev","R:R","Grupo","PnL","Status","Subs","Fecha"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {deep.signals.map(s => (
+                    <tr key={s.id} style={{ borderLeft: `3px solid ${s.type === "LONG" ? C.green : C.red}` }}>
+                      <td style={{ ...tdStyle, fontWeight: "600" }}>{s.pair}</td>
+                      <td style={tdStyle}><Tag text={s.type} color={s.type === "LONG" ? C.green : C.red} /></td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${s.entry.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.green }}>${s.tp.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.red }}>${s.sl.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, ...mono, color: C.amber }}>{s.leverage}</td>
+                      <td style={{ ...tdStyle, ...mono }}>{s.rr}</td>
+                      <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.group}</td>
+                      <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</td>
+                      <td style={tdStyle}><Tag text={s.status === "active" ? "Active" : s.status === "tp_hit" ? "TP Hit" : "SL Hit"} color={s.status === "active" ? C.blue : s.status === "tp_hit" ? C.green : C.red} /></td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>{s.subscribers}</td>
+                      <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ TRADES ═══ */}
       {profileTab === "trades" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -968,21 +1079,25 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ SOCIAL ═══ */}
       {profileTab === "social" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
             <StatCard label="𝕏 Followers" value={deep.socialStats.twitterFollowers.toLocaleString()} icon={Users} color={"#1DA1F2"} />
             <StatCard label="Discord Messages" value={deep.socialStats.discordMessages.toLocaleString()} icon={Activity} color={"#5865F2"} />
             <StatCard label="Reddit Karma" value={deep.socialStats.redditKarma.toLocaleString()} icon={Star} color={"#FF4500"} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+            <StatCard label="Telegram Members" value={deep.socialStats.telegramMembers.toLocaleString()} icon={Users} color={"#0088cc"} />
+            <StatCard label="WhatsApp Groups" value={deep.socialStats.whatsappGroups} icon={Users} color={"#25D366"} />
             <StatCard label="Avg Engagement" value={`${deep.socialStats.avgEngagement}%`} sub={`Top: ${deep.socialStats.topPlatform}`} icon={TrendingUp} color={C.green} />
           </div>
           {/* Platform filter */}
-          <div style={{ display: "flex", gap: "6px" }}>
-            {["all","twitter","discord","reddit","tradehub"].map(p => (
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {["all","twitter","discord","telegram","whatsapp","reddit","tradehub"].map(p => (
               <button key={p} onClick={() => setSocialFilter(p)} style={{
                 padding: "6px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
                 border: `1px solid ${socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.border}`,
                 backgroundColor: socialFilter === p ? (p === "all" ? C.purpleBg : deep.platColors[p] + "18") : "transparent",
                 color: socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.textMuted, textTransform: "capitalize"
-              }}>{p === "all" ? "All Platforms" : p === "tradehub" ? "Trade League" : p === "twitter" ? "𝕏 Twitter" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+              }}>{p === "all" ? "All Platforms" : p === "tradehub" ? "Trade League" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "✈️ Telegram" : p === "whatsapp" ? "📱 WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
             ))}
           </div>
           {/* Posts */}
@@ -1188,6 +1303,7 @@ const TraderProfile = ({ trader, onClose }) => {
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
   const [view, setView] = useState("groups");
+  const [compareMetric, setCompareMetric] = useState("equity");
   const { openProfile } = useProfile();
   const [visibleTraders, setVisibleTraders] = useState(() => {
     const m = {};
@@ -1235,8 +1351,27 @@ const TradersTab = () => {
         </div>
       )}
 
-      {view === "compare" && (
+      {view === "compare" && (() => {
+        const activeTraders = mockTraders.filter(t => visibleTraders[t.name]);
+        const compareBarData = activeTraders.map((t, i) => {
+          const deep = traderDeepData[t.name];
+          return {
+            name: t.name, avatar: t.avatar, color: traderColors[mockTraders.indexOf(t)],
+            winRate: t.winRate, pnl: t.pnl, trades: t.trades, streak: t.streak,
+            signalAccuracy: deep.signalStats.accuracy, signalTotal: deep.signalStats.total, signalAvgPnl: deep.signalStats.avgPnlPerSignal,
+            predAccuracy: Math.round((deep.predStats.correct / deep.predStats.total) * 100), predTotal: deep.predStats.total, predStreak: deep.predStats.streak,
+            sharpe: t.sharpe, maxDD: Math.abs(t.maxDD), profitFactor: t.profitFactor || 0,
+          };
+        });
+        const compareMetrics = [
+          { id: "equity", label: "Equity", icon: "📈" },
+          { id: "signals", label: "Señales", icon: "⚡" },
+          { id: "trades", label: "Trades", icon: "💹" },
+          { id: "predictions", label: "Predictions", icon: "🎯" },
+        ];
+        return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Trader selector */}
           <div style={{ ...cardStyle, display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
             <button onClick={toggleAll} style={{
               padding: "6px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
@@ -1261,45 +1396,220 @@ const TradersTab = () => {
               );
             })}
           </div>
-          <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "4px" }}>Equity Curve Comparison</div>
-            <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "16px" }}>Cumulative PnL over 30 days — click traders above to toggle</div>
-            <ResponsiveContainer width="100%" height={380}>
-              <LineChart data={traderEquity}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} label={{ value: "Day", position: "insideBottomRight", offset: -5, fill: C.textMuted, fontSize: 10 }} />
-                <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
-                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} labelFormatter={l => `Day ${l}`} />
-                {mockTraders.map((t, i) => visibleTraders[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />)}
-              </LineChart>
-            </ResponsiveContainer>
+
+          {/* Compare metric tabs */}
+          <div style={{ display: "flex", gap: "6px" }}>
+            {compareMetrics.map(m => (
+              <button key={m.id} onClick={() => setCompareMetric(m.id)} style={{
+                padding: "8px 16px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
+                border: `1px solid ${compareMetric === m.id ? C.purple : C.border}`,
+                backgroundColor: compareMetric === m.id ? C.purpleBg : "transparent",
+                color: compareMetric === m.id ? C.purple : C.textMuted,
+                display: "flex", alignItems: "center", gap: "6px"
+              }}>{m.icon} {m.label}</button>
+            ))}
           </div>
-          <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>
-                {["","Trader","Win Rate","Total PnL","Trades","Day 30 Equity","Streak"].map(h => <th key={h} style={thStyle}>{h}</th>)}
-              </tr></thead>
-              <tbody>
-                {mockTraders.filter(t => visibleTraders[t.name]).map(t => {
-                  const i = mockTraders.indexOf(t);
-                  const lastEquity = traderEquity[traderEquity.length - 1][t.name];
-                  return (
-                    <tr key={t.name} style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
-                      <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
-                      <td style={{ ...tdStyle, fontWeight: "600" }}>{t.avatar} {t.name}</td>
-                      <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</td>
-                      <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
-                      <td style={{ ...tdStyle, ...mono }}>{t.trades}</td>
-                      <td style={{ ...tdStyle, ...mono, color: C.blue, fontWeight: "600" }}>${(lastEquity / 1000).toFixed(1)}K</td>
-                      <td style={{ ...tdStyle, ...mono, color: C.amber }}>{t.streak}W</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+
+          {/* ── EQUITY COMPARISON ── */}
+          {compareMetric === "equity" && (<>
+            <div style={cardStyle}>
+              <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "4px" }}>Equity Curve Comparison</div>
+              <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "16px" }}>Cumulative PnL over 30 days</div>
+              <ResponsiveContainer width="100%" height={380}>
+                <LineChart data={traderEquity}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                  <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
+                  <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
+                  <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} labelFormatter={l => `Day ${l}`} />
+                  {mockTraders.map((t, i) => visibleTraders[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />)}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>{["","Trader","Win Rate","Total PnL","Trades","Day 30 Equity","Streak"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {activeTraders.map(t => {
+                    const i = mockTraders.indexOf(t);
+                    const lastEquity = traderEquity[traderEquity.length - 1][t.name];
+                    return (
+                      <tr key={t.name} style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
+                        <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
+                        <td style={{ ...tdStyle, fontWeight: "600" }}>{t.avatar} {t.name}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
+                        <td style={{ ...tdStyle, ...mono }}>{t.trades}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.blue, fontWeight: "600" }}>${(lastEquity / 1000).toFixed(1)}K</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.amber }}>{t.streak}W</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>)}
+
+          {/* ── SIGNALS COMPARISON ── */}
+          {compareMetric === "signals" && (<>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Signal Accuracy (%)</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis type="number" stroke={C.textMuted} fontSize={10} domain={[0, 100]} />
+                    <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={10} width={90} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`${v}%`, "Accuracy"]} />
+                    <Bar dataKey="signalAccuracy" radius={[0, 4, 4, 0]}>{compareBarData.map((e, i) => <Cell key={i} fill={e.color} />)}</Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Avg PnL per Signal ($)</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis type="number" stroke={C.textMuted} fontSize={10} />
+                    <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={10} width={90} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${v}`, "Avg PnL"]} />
+                    <Bar dataKey="signalAvgPnl" radius={[0, 4, 4, 0]}>{compareBarData.map((e, i) => <Cell key={i} fill={e.signalAvgPnl >= 0 ? C.green : C.red} />)}</Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>{["","Trader","Accuracy","Total Signals","Avg PnL/Signal","Best Signal","Subscribers"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {activeTraders.map(t => {
+                    const i = mockTraders.indexOf(t);
+                    const deep = traderDeepData[t.name];
+                    return (
+                      <tr key={t.name} style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
+                        <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
+                        <td style={{ ...tdStyle, fontWeight: "600" }}>{t.avatar} {t.name}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{deep.signalStats.accuracy}%</td>
+                        <td style={{ ...tdStyle, ...mono }}>{deep.signalStats.total}</td>
+                        <td style={{ ...tdStyle, ...mono, color: deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red, fontWeight: "600" }}>${deep.signalStats.avgPnlPerSignal.toLocaleString()}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green }}>+${deep.signalStats.bestSignal.toLocaleString()}</td>
+                        <td style={{ ...tdStyle, ...mono }}>{deep.signalStats.subscribers}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>)}
+
+          {/* ── TRADES COMPARISON ── */}
+          {compareMetric === "trades" && (<>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Win Rate (%)</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis type="number" stroke={C.textMuted} fontSize={10} domain={[0, 100]} />
+                    <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={10} width={90} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`${v}%`, "Win Rate"]} />
+                    <Bar dataKey="winRate" radius={[0, 4, 4, 0]}>{compareBarData.map((e, i) => <Cell key={i} fill={e.color} />)}</Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Sharpe Ratio vs Max Drawdown</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis dataKey="name" stroke={C.textMuted} fontSize={9} angle={-20} textAnchor="end" height={50} />
+                    <YAxis stroke={C.textMuted} fontSize={10} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
+                    <Bar dataKey="sharpe" name="Sharpe" fill={C.blue} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="profitFactor" name="Profit Factor" fill={C.purple} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>{["","Trader","Win Rate","Total PnL","Trades","Sharpe","Max DD","Profit Factor","Streak"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {activeTraders.map(t => {
+                    const i = mockTraders.indexOf(t);
+                    return (
+                      <tr key={t.name} style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
+                        <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
+                        <td style={{ ...tdStyle, fontWeight: "600" }}>{t.avatar} {t.name}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
+                        <td style={{ ...tdStyle, ...mono }}>{t.trades}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.blue, fontWeight: "600" }}>{t.sharpe.toFixed(1)}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.red }}>{t.maxDD}%</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.amber }}>{t.profitFactor?.toFixed(1) || "—"}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.amber }}>{t.streak}W</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>)}
+
+          {/* ── PREDICTIONS COMPARISON ── */}
+          {compareMetric === "predictions" && (<>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Prediction Accuracy (%)</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis type="number" stroke={C.textMuted} fontSize={10} domain={[0, 100]} />
+                    <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={10} width={90} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`${v}%`, "Accuracy"]} />
+                    <Bar dataKey="predAccuracy" radius={[0, 4, 4, 0]}>{compareBarData.map((e, i) => <Cell key={i} fill={e.color} />)}</Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={cardStyle}>
+                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Total Predictions & Current Streak</div>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={compareBarData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                    <XAxis dataKey="name" stroke={C.textMuted} fontSize={9} angle={-20} textAnchor="end" height={50} />
+                    <YAxis stroke={C.textMuted} fontSize={10} />
+                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
+                    <Bar dataKey="predTotal" name="Total Predictions" fill={C.blue} radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="predStreak" name="Current Streak" fill={C.amber} radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>{["","Trader","Accuracy","Total Predictions","Current Streak","Total Staked","Net Won"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {activeTraders.map(t => {
+                    const i = mockTraders.indexOf(t);
+                    const deep = traderDeepData[t.name];
+                    return (
+                      <tr key={t.name} style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
+                        <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
+                        <td style={{ ...tdStyle, fontWeight: "600" }}>{t.avatar} {t.name}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%</td>
+                        <td style={{ ...tdStyle, ...mono }}>{deep.predStats.total}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.amber }}>{deep.predStats.streak} correct</td>
+                        <td style={{ ...tdStyle, ...mono }}>${deep.predStats.totalStaked.toLocaleString()}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${deep.predStats.totalWon.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>)}
         </div>
-      )}
+        );
+      })()}
 
       {view === "profiles" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
