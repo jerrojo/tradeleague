@@ -375,46 +375,207 @@ const ftgSessions = [
   { name: "NY", start: "13:00", end: "21:00", active: false },
 ];
 
+/* ═══════════════════════ SMC COIN DATA ═══════════════════════ */
+const smcCoins = {
+  BTC: {
+    price: "$68,326", change: "+1.2%", bias: "BULLISH", biasIcon: "up", confluence: 8, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$67,850–$68,100", rr: "1 : 2.8", tp1: "$69,200", tp2: "$70,500", tp3: "$72,000", sl: "$67,200" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.01%" },
+      { name: "Open Interest", status: "pass", detail: "+2.3%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.92" },
+    ],
+    chartBase: 67500, chartStep: 35, chartAmp: 400,
+  },
+  ETH: {
+    price: "$3,482", change: "+2.8%", bias: "BULLISH", biasIcon: "up", confluence: 9, risk: "LOW",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$3,420–$3,460", rr: "1 : 3.2", tp1: "$3,580", tp2: "$3,680", tp3: "$3,800", sl: "$3,350" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.005%" },
+      { name: "Open Interest", status: "pass", detail: "+4.1%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.88" },
+    ],
+    chartBase: 3400, chartStep: 3.5, chartAmp: 40,
+  },
+  SOL: {
+    price: "$148.60", change: "+4.5%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$145.20–$147.00", rr: "1 : 2.5", tp1: "$152.80", tp2: "$158.00", tp3: "$165.00", sl: "$140.50" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.02%" },
+      { name: "Open Interest", status: "warning", detail: "+8.7%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.85" },
+    ],
+    chartBase: 142, chartStep: 0.28, chartAmp: 3.2,
+  },
+  BNB: {
+    price: "$618.40", change: "-0.6%", bias: "BEARISH", biasIcon: "down", confluence: 5, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$625.00–$630.00", rr: "1 : 2.0", tp1: "$600.00", tp2: "$585.00", tp3: "$570.00", sl: "$640.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "-0.03%" },
+      { name: "Open Interest", status: "pass", detail: "+1.2%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.78" },
+    ],
+    chartBase: 625, chartStep: -0.25, chartAmp: 5,
+  },
+  XRP: {
+    price: "$2.18", change: "+1.8%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Ranging", struct: "CHoCH", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+    ],
+    entry: { zone: "$2.12–$2.16", rr: "1 : 2.6", tp1: "$2.35", tp2: "$2.50", tp3: "$2.70", sl: "$2.05" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.01%" },
+      { name: "Open Interest", status: "pass", detail: "+3.5%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "warning", detail: "BTC 0.62" },
+    ],
+    chartBase: 2.10, chartStep: 0.004, chartAmp: 0.05,
+  },
+  DOGE: {
+    price: "$0.358", change: "+6.2%", bias: "BULLISH", biasIcon: "up", confluence: 6, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$0.340–$0.350", rr: "1 : 2.4", tp1: "$0.380", tp2: "$0.420", tp3: "$0.460", sl: "$0.320" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "warning", detail: "+0.06%" },
+      { name: "Open Interest", status: "warning", detail: "+12.3%" },
+      { name: "Volume", status: "pass", detail: "Spiking" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.71" },
+    ],
+    chartBase: 0.33, chartStep: 0.0012, chartAmp: 0.015,
+  },
+  AVAX: {
+    price: "$39.20", change: "+3.1%", bias: "BULLISH", biasIcon: "up", confluence: 7, risk: "MEDIUM",
+    tfData: [
+      { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Sweep Done" },
+      { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
+      { tf: "4H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Lows" },
+    ],
+    entry: { zone: "$38.00–$39.00", rr: "1 : 3.0", tp1: "$42.00", tp2: "$45.50", tp3: "$48.00", sl: "$36.00" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "+0.01%" },
+      { name: "Open Interest", status: "pass", detail: "+5.2%" },
+      { name: "Volume", status: "pass", detail: "Above avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.82" },
+    ],
+    chartBase: 37, chartStep: 0.1, chartAmp: 1.5,
+  },
+  ADA: {
+    price: "$1.24", change: "-1.3%", bias: "BEARISH", biasIcon: "down", confluence: 4, risk: "HIGH",
+    tfData: [
+      { tf: "15m", trend: "Bearish", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "1H", trend: "Bearish", struct: "BOS", ob: "Bearish OB", fvg: "Unfilled", liq: "Equal Lows" },
+      { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Filled", liq: "Sweep Done" },
+    ],
+    entry: { zone: "$1.28–$1.32", rr: "1 : 2.2", tp1: "$1.15", tp2: "$1.08", tp3: "$1.00", sl: "$1.40" },
+    confluenceFactors: ["Order Block", "FVG", "Liquidity"],
+    safety: [
+      { name: "Funding Rate", status: "pass", detail: "-0.01%" },
+      { name: "Open Interest", status: "warning", detail: "-2.1%" },
+      { name: "Volume", status: "warning", detail: "Below avg" },
+      { name: "Correlation", status: "pass", detail: "BTC 0.75" },
+    ],
+    chartBase: 1.30, chartStep: -0.003, chartAmp: 0.03,
+  },
+};
+
+const smcCoinList = Object.keys(smcCoins);
+
 /* ═══════════════════════ TAB 1: SMC ANALYSIS ═══════════════════════ */
 const SMCAnalysis = () => {
-  const tfData = [
-    { tf: "15m", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Unfilled", liq: "Equal Highs" },
-    { tf: "1H", trend: "Bullish", struct: "BOS", ob: "Bullish OB", fvg: "Filled", liq: "Equal Lows" },
-    { tf: "4H", trend: "Ranging", struct: "CHoCH", ob: "Bearish OB", fvg: "Unfilled", liq: "Sweep Done" },
-  ];
-  const confluence = ["Order Block", "FVG", "Liquidity", "Kill Zone", "BOS"];
+  const [selectedCoin, setSelectedCoin] = useState("BTC");
+  const coin = smcCoins[selectedCoin];
+
+  const chartData = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
+    time: `${String(i).padStart(2, "0")}:00`,
+    price: Math.round((coin.chartBase + i * coin.chartStep + Math.sin(i * 0.5) * coin.chartAmp) * 100) / 100,
+    volume: Math.floor(1200 + Math.random() * 800),
+    ma20: Math.round((coin.chartBase - coin.chartAmp * 0.25 + i * coin.chartStep * 1.05) * 100) / 100,
+    ma50: Math.round((coin.chartBase - coin.chartAmp * 0.5 + i * coin.chartStep * 0.85) * 100) / 100,
+  })), [selectedCoin]);
+
   const killZones = [
     { name: "Asia", time: "00:00–08:00 UTC", active: false },
     { name: "London", time: "08:00–16:00 UTC", active: true },
     { name: "NY AM", time: "13:00–17:00 UTC", active: true },
     { name: "NY PM", time: "17:00–21:00 UTC", active: false },
   ];
-  const safety = [
-    { name: "Funding Rate", status: "pass", detail: "+0.01%" },
-    { name: "Open Interest", status: "pass", detail: "+2.3%" },
-    { name: "Volume", status: "warning", detail: "Below avg" },
-    { name: "Correlation", status: "pass", detail: "BTC 0.92" },
-  ];
+
+  const riskColor = coin.risk === "LOW" ? C.green : coin.risk === "MEDIUM" ? C.amber : C.red;
+  const biasColor = coin.bias === "BULLISH" ? C.green : C.red;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      {/* Coin Selector */}
+      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+        {smcCoinList.map(c => (
+          <button key={c} onClick={() => setSelectedCoin(c)} style={{
+            padding: "8px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer",
+            border: `1px solid ${selectedCoin === c ? C.purple : C.border}`,
+            backgroundColor: selectedCoin === c ? C.purpleBg : "transparent",
+            color: selectedCoin === c ? C.purple : C.textMuted,
+            transition: "all 0.15s",
+            display: "flex", alignItems: "center", gap: "6px"
+          }}>
+            {c}
+            {selectedCoin === c && <span style={{ fontSize: "10px", color: smcCoins[c].change.startsWith("+") ? C.green : C.red, ...mono }}>{smcCoins[c].change}</span>}
+          </button>
+        ))}
+      </div>
+
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Current Price" value="$68,326" sub="+1.2%" icon={TrendingUp} color={C.green} />
-        <StatCard label="Bias" value="BULLISH" icon={ArrowUp} color={C.green} />
-        <StatCard label="Confluence" value="8/10" icon={Target} color={C.blue} />
-        <StatCard label="Risk Level" value="MEDIUM" icon={AlertTriangle} color={C.amber} />
+        <StatCard label="Current Price" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
+        <StatCard label="Bias" value={coin.bias} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} />
+        <StatCard label="Confluence" value={`${coin.confluence}/10`} icon={Target} color={C.blue} />
+        <StatCard label="Risk Level" value={coin.risk} icon={AlertTriangle} color={riskColor} />
       </div>
 
       {/* Multi-Timeframe Grid */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/USDT</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-          {tfData.map(tf => (
+          {coin.tfData.map(tf => (
             <div key={tf.tf} style={cardStyle}>
               <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf}</div>
               {[
-                ["Trend", tf.trend, tf.trend === "Bullish" ? C.green : C.amber],
+                ["Trend", tf.trend, tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber],
                 ["Structure", tf.struct, tf.struct === "BOS" ? C.green : C.red],
                 ["Order Block", tf.ob, tf.ob.includes("Bullish") ? C.green : C.red],
                 ["FVG", tf.fvg, tf.fvg === "Filled" ? C.green : C.amber],
@@ -433,15 +594,15 @@ const SMCAnalysis = () => {
       {/* Ideal Entry + Kill Zones side by side */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         <div style={cardStyle}>
-          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Entrada Ideal</div>
+          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Entrada Ideal — {selectedCoin}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
-              ["Entry Zone", "$67,850–$68,100", C.text],
-              ["R:R", "1 : 2.8", C.green],
-              ["TP1", "$69,200", C.blue],
-              ["TP2", "$70,500", C.blue],
-              ["TP3", "$72,000", C.blue],
-              ["Stop Loss", "$67,200", C.red],
+              ["Entry Zone", coin.entry.zone, C.text],
+              ["R:R", coin.entry.rr, C.green],
+              ["TP1", coin.entry.tp1, C.blue],
+              ["TP2", coin.entry.tp2, C.blue],
+              ["TP3", coin.entry.tp3, C.blue],
+              ["Stop Loss", coin.entry.sl, C.red],
             ].map(([l, v, clr]) => (
               <div key={l}>
                 <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "2px" }}>{l}</div>
@@ -452,7 +613,7 @@ const SMCAnalysis = () => {
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: "12px" }}>
             <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "8px", fontWeight: "600" }}>CONFLUENCE FACTORS</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {confluence.map(f => (
+              {coin.confluenceFactors.map(f => (
                 <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green }}>
                   <CheckCircle size={12} /> {f}
                 </span>
@@ -480,9 +641,9 @@ const SMCAnalysis = () => {
 
       {/* Safety Checks */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Safety Checks</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Safety Checks — {selectedCoin}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-          {safety.map(c => (
+          {coin.safety.map(c => (
             <div key={c.name} style={{ ...cardStyle, textAlign: "center" }}>
               {c.status === "pass" ? <CheckCircle size={22} color={C.green} /> : <AlertTriangle size={22} color={C.amber} />}
               <div style={{ fontSize: "12px", fontWeight: "600", marginTop: "8px" }}>{c.name}</div>
@@ -495,9 +656,9 @@ const SMCAnalysis = () => {
 
       {/* Price Chart */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>BTC/USDT — Price Action</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>{selectedCoin}/USDT — Price Action</div>
         <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={mockChartData}>
+          <AreaChart data={chartData}>
             <defs>
               <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={C.blue} stopOpacity={0.3} />
@@ -506,7 +667,7 @@ const SMCAnalysis = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
             <XAxis dataKey="time" stroke={C.textMuted} fontSize={10} />
-            <YAxis stroke={C.textMuted} fontSize={10} domain={["dataMin - 300", "dataMax + 300"]} />
+            <YAxis stroke={C.textMuted} fontSize={10} domain={["dataMin - auto", "dataMax + auto"]} />
             <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
             <Area type="monotone" dataKey="price" stroke={C.blue} fill="url(#priceGrad)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="ma20" stroke={C.amber} dot={false} strokeWidth={1} strokeDasharray="4 4" />
