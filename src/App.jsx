@@ -96,22 +96,32 @@ const mockSignals = [
   { id: 10, group: "OB Masters", coin: "ETH", type: "LONG", entry: 3420, tp: 3550, sl: 3350, status: "tp_hit", date: "Mar 21 19:00", pnl: 5200, leverage: "5x" },
 ];
 
+const titleByLevel = (level) => {
+  if (level >= 50) return "Legend";
+  if (level >= 45) return "Grandmaster";
+  if (level >= 40) return "Master";
+  if (level >= 35) return "Expert";
+  if (level >= 25) return "Journeyman";
+  if (level >= 15) return "Apprentice";
+  return "Novice";
+};
+
 const mockTraders = [
-  { name: "Scalp King", avatar: "👑", winRate: 81, pnl: 156200, trades: 823, streak: 15, rank: 1, tier: "Diamond", badges: ["⚡","🎯","💰"], radarData: [{s:"Timing",v:94},{s:"Risk",v:89},{s:"Entries",v:96},{s:"Exits",v:91},{s:"Consistency",v:93},{s:"Discipline",v:92}],
+  { name: "Scalp King", avatar: "👑", winRate: 81, pnl: 156200, trades: 823, streak: 15, rank: 1, tier: "Diamond", badges: ["⚡","🎯","💰"], level: 48, xp: 8200, xpNext: 10000, radarData: [{s:"Timing",v:94},{s:"Risk",v:89},{s:"Entries",v:96},{s:"Exits",v:91},{s:"Consistency",v:93},{s:"Discipline",v:92}],
     bio: "Full-time crypto trader since 2019. Specializing in BTC/ETH scalps with SMC methodology. Previously quant analyst at a prop firm.", location: "Miami, FL", joined: "Jan 2024", followers: 1842, following: 23, copiers: 567, sharpe: 2.1, maxDD: -8.2, avgRR: "1:2.8", avgHold: "4h", bestMonth: "+$42,300", worstMonth: "-$8,100", profitFactor: 2.4, favPairs: ["BTC/USDT", "ETH/USDT", "SOL/USDT"], style: "Scalping", exchange: "Binance" },
-  { name: "Crypto Ninja", avatar: "🥷", winRate: 78, pnl: 125400, trades: 456, streak: 12, rank: 2, tier: "Diamond", badges: ["🔥","⚡","🎯"], radarData: [{s:"Timing",v:92},{s:"Risk",v:88},{s:"Entries",v:95},{s:"Exits",v:85},{s:"Consistency",v:91},{s:"Discipline",v:89}],
+  { name: "Crypto Ninja", avatar: "🥷", winRate: 78, pnl: 125400, trades: 456, streak: 12, rank: 2, tier: "Diamond", badges: ["🔥","⚡","🎯"], level: 45, xp: 6500, xpNext: 10000, radarData: [{s:"Timing",v:92},{s:"Risk",v:88},{s:"Entries",v:95},{s:"Exits",v:85},{s:"Consistency",v:91},{s:"Discipline",v:89}],
     bio: "Swing trader focused on altcoins. I use order flow analysis and smart money concepts to find high-probability setups.", location: "Tokyo, Japan", joined: "Mar 2024", followers: 1234, following: 45, copiers: 389, sharpe: 1.9, maxDD: -11.5, avgRR: "1:3.2", avgHold: "8h", bestMonth: "+$38,500", worstMonth: "-$12,400", profitFactor: 2.1, favPairs: ["BTC/USDT", "XRP/USDT", "BNB/USDT"], style: "Swing", exchange: "Bybit" },
-  { name: "Smart Money", avatar: "💼", winRate: 76, pnl: 112300, trades: 567, streak: 10, rank: 3, tier: "Platinum", badges: ["💎","🔥"], radarData: [{s:"Timing",v:89},{s:"Risk",v:86},{s:"Entries",v:91},{s:"Exits",v:88},{s:"Consistency",v:87},{s:"Discipline",v:85}],
+  { name: "Smart Money", avatar: "💼", winRate: 76, pnl: 112300, trades: 567, streak: 10, rank: 3, tier: "Platinum", badges: ["💎","🔥"], level: 42, xp: 5100, xpNext: 10000, radarData: [{s:"Timing",v:89},{s:"Risk",v:86},{s:"Entries",v:91},{s:"Exits",v:88},{s:"Consistency",v:87},{s:"Discipline",v:85}],
     bio: "Conservative position trader. Low drawdown, consistent returns. Former hedge fund analyst. Risk management is everything.", location: "London, UK", joined: "Feb 2024", followers: 892, following: 12, copiers: 234, sharpe: 2.4, maxDD: -5.8, avgRR: "1:2.4", avgHold: "1d", bestMonth: "+$28,900", worstMonth: "-$5,200", profitFactor: 2.8, favPairs: ["BTC/USDT", "ETH/USDT", "AVAX/USDT"], style: "Position", exchange: "Binance" },
-  { name: "Phoenix Rise", avatar: "🔥", winRate: 73, pnl: 104200, trades: 523, streak: 11, rank: 4, tier: "Platinum", badges: ["🏆","🔥"], radarData: [{s:"Timing",v:86},{s:"Risk",v:83},{s:"Entries",v:89},{s:"Exits",v:85},{s:"Consistency",v:86},{s:"Discipline",v:84}],
+  { name: "Phoenix Rise", avatar: "🔥", winRate: 73, pnl: 104200, trades: 523, streak: 11, rank: 4, tier: "Platinum", badges: ["🏆","🔥"], level: 39, xp: 4200, xpNext: 10000, radarData: [{s:"Timing",v:86},{s:"Risk",v:83},{s:"Entries",v:89},{s:"Exits",v:85},{s:"Consistency",v:86},{s:"Discipline",v:84}],
     bio: "Aggressive intraday trader. High risk, high reward. Specializing in momentum plays during NY session.", location: "New York, NY", joined: "Apr 2024", followers: 567, following: 34, copiers: 178, sharpe: 1.6, maxDD: -18.4, avgRR: "1:3.8", avgHold: "2h", bestMonth: "+$52,100", worstMonth: "-$19,800", profitFactor: 1.7, favPairs: ["SOL/USDT", "BTC/USDT", "DOGE/USDT"], style: "Day Trading", exchange: "Bitget" },
-  { name: "Bull Master", avatar: "🐂", winRate: 72, pnl: 98500, trades: 342, streak: 8, rank: 5, tier: "Gold", badges: ["💎","🏆"], radarData: [{s:"Timing",v:85},{s:"Risk",v:80},{s:"Entries",v:88},{s:"Exits",v:82},{s:"Consistency",v:84},{s:"Discipline",v:81}],
+  { name: "Bull Master", avatar: "🐂", winRate: 72, pnl: 98500, trades: 342, streak: 8, rank: 5, tier: "Gold", badges: ["💎","🏆"], level: 35, xp: 3800, xpNext: 10000, radarData: [{s:"Timing",v:85},{s:"Risk",v:80},{s:"Entries",v:88},{s:"Exits",v:82},{s:"Consistency",v:84},{s:"Discipline",v:81}],
     bio: "Long-only conviction trader. I find the trend and ride it. Patient entries, wide stops, massive targets.", location: "Dubai, UAE", joined: "May 2024", followers: 456, following: 28, copiers: 145, sharpe: 1.8, maxDD: -12.1, avgRR: "1:4.2", avgHold: "3d", bestMonth: "+$31,200", worstMonth: "-$11,500", profitFactor: 1.9, favPairs: ["BTC/USDT", "ETH/USDT"], style: "Swing", exchange: "Binance" },
-  { name: "Rocket Launch", avatar: "🚀", winRate: 70, pnl: 89600, trades: 445, streak: 9, rank: 6, tier: "Gold", badges: ["⚡","💰"], radarData: [{s:"Timing",v:82},{s:"Risk",v:78},{s:"Entries",v:85},{s:"Exits",v:80},{s:"Consistency",v:81},{s:"Discipline",v:79}],
+  { name: "Rocket Launch", avatar: "🚀", winRate: 70, pnl: 89600, trades: 445, streak: 9, rank: 6, tier: "Gold", badges: ["⚡","💰"], level: 32, xp: 2900, xpNext: 10000, radarData: [{s:"Timing",v:82},{s:"Risk",v:78},{s:"Entries",v:85},{s:"Exits",v:80},{s:"Consistency",v:81},{s:"Discipline",v:79}],
     bio: "Breakout specialist. Scanning for volume surges and structural breaks. Trading crypto full-time since the 2021 bull run.", location: "Berlin, Germany", joined: "Jun 2024", followers: 345, following: 56, copiers: 98, sharpe: 1.5, maxDD: -14.8, avgRR: "1:2.6", avgHold: "6h", bestMonth: "+$24,800", worstMonth: "-$13,200", profitFactor: 1.6, favPairs: ["BTC/USDT", "SOL/USDT", "AVAX/USDT"], style: "Breakout", exchange: "Bybit" },
-  { name: "Iron Fist", avatar: "👊", winRate: 68, pnl: 72400, trades: 389, streak: 7, rank: 7, tier: "Silver", badges: ["💪"], radarData: [{s:"Timing",v:75},{s:"Risk",v:70},{s:"Entries",v:77},{s:"Exits",v:72},{s:"Consistency",v:73},{s:"Discipline",v:71}],
+  { name: "Iron Fist", avatar: "👊", winRate: 68, pnl: 72400, trades: 389, streak: 7, rank: 7, tier: "Silver", badges: ["💪"], level: 28, xp: 1800, xpNext: 10000, radarData: [{s:"Timing",v:75},{s:"Risk",v:70},{s:"Entries",v:77},{s:"Exits",v:72},{s:"Consistency",v:73},{s:"Discipline",v:71}],
     bio: "Grinding every day. Learning from the best. Focused on improving my discipline and risk management.", location: "Bogota, Colombia", joined: "Jul 2024", followers: 189, following: 67, copiers: 42, sharpe: 1.3, maxDD: -16.5, avgRR: "1:2.0", avgHold: "5h", bestMonth: "+$18,400", worstMonth: "-$9,800", profitFactor: 1.4, favPairs: ["BTC/USDT", "ETH/USDT", "XRP/USDT"], style: "Scalping", exchange: "Binance" },
-  { name: "Wave Rider", avatar: "🏄", winRate: 65, pnl: 45800, trades: 234, streak: 5, rank: 8, tier: "Silver", badges: ["🌊"], radarData: [{s:"Timing",v:78},{s:"Risk",v:72},{s:"Entries",v:80},{s:"Exits",v:75},{s:"Consistency",v:76},{s:"Discipline",v:74}],
+  { name: "Wave Rider", avatar: "🏄", winRate: 65, pnl: 45800, trades: 234, streak: 5, rank: 8, tier: "Silver", badges: ["🌊"], level: 18, xp: 4200, xpNext: 10000, radarData: [{s:"Timing",v:78},{s:"Risk",v:72},{s:"Entries",v:80},{s:"Exits",v:75},{s:"Consistency",v:76},{s:"Discipline",v:74}],
     bio: "Part-time trader, full-time surfer. Catching waves in the market like I catch them in the ocean. Chill entries only.", location: "Bali, Indonesia", joined: "Aug 2024", followers: 123, following: 89, copiers: 28, sharpe: 1.1, maxDD: -20.2, avgRR: "1:1.8", avgHold: "12h", bestMonth: "+$14,600", worstMonth: "-$11,200", profitFactor: 1.2, favPairs: ["BTC/USDT", "SOL/USDT"], style: "Swing", exchange: "Bitget" },
 ];
 
@@ -198,7 +208,7 @@ const traderDeepData = (() => {
       bestSignal: Math.max(...signals.map(s => s.pnl)), subscribers: 340 + ti * 80,
     };
 
-    // ── SOCIAL POSTS (cross-platform: Twitter, Discord, Reddit, Trade League, Telegram, WhatsApp) ──
+    // ── SOCIAL POSTS (cross-platform: Twitter, Discord, Reddit, Tradethlon, Telegram, WhatsApp) ──
     const socialPosts = [
       { id: ti*50+1, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `$BTC looking absolutely beautiful on the 4H. SMC structure intact, OB holding strong. My target: $72K. Not financial advice, just vibes and order blocks. 📈🔥`, time: "1h ago", likes: 234 + ti * 40, retweets: 45 + ti * 8, replies: 32 + ti * 5, impressions: 12400 + ti * 2000 },
       { id: ti*50+2, platform: "discord", handle: t.name, text: `Hey everyone, just entered a BTC long at $67,850. My analysis shows strong confluence: OB + FVG + liquidity sweep. TP1 at $69,200. Will update you all on how it goes. 🎯`, time: "3h ago", likes: 67 + ti * 10, retweets: 0, replies: 23 + ti * 3, impressions: 0, channel: "#trading-signals" },
@@ -1680,7 +1690,7 @@ const TraderProfile = ({ trader, onClose }) => {
                 border: `1px solid ${socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.border}`,
                 backgroundColor: socialFilter === p ? (p === "all" ? C.purpleBg : deep.platColors[p] + "18") : "transparent",
                 color: socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.textMuted, textTransform: "capitalize"
-              }}>{p === "all" ? "All Platforms" : p === "tradehub" ? "Trade League" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "✈️ Telegram" : p === "whatsapp" ? "📱 WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+              }}>{p === "all" ? "All Platforms" : p === "tradehub" ? "Tradethlon" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "✈️ Telegram" : p === "whatsapp" ? "📱 WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
             ))}
           </div>
           {/* Posts */}
@@ -1883,6 +1893,52 @@ const TraderProfile = ({ trader, onClose }) => {
   );
 };
 
+/* ═══════════════════════ LIVE PnL TICKER ═══════════════════════ */
+const LivePnLTicker = () => {
+  const [offset, setOffset] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset(prev => (prev - 1) % 100);
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
+
+  const tickerItems = [
+    "🔥 Scalp King +$2,340 (BTC LONG) ⚡",
+    "🥷 Crypto Ninja +$890 (ETH SHORT) ⚡",
+    "🐂 Bull Master -$420 (SOL LONG) 📉",
+    "💼 Smart Money +$1,560 (AVAX LONG) ⚡",
+    "🚀 Rocket Launch +$745 (BTC SHORT) ✅",
+    "🔥 Phoenix Rise +$2,100 (DOGE LONG) 🚀",
+    "👊 Iron Fist -$180 (ETH LONG) 📉",
+    "🏄 Wave Rider +$320 (BTC LONG) ✅",
+  ];
+
+  const repeatedItems = [...tickerItems, ...tickerItems];
+
+  return (
+    <div style={{
+      height: 32, backgroundColor: C.bg, borderBottom: `1px solid ${C.border}`,
+      overflow: "hidden", display: "flex", alignItems: "center", position: "relative"
+    }}>
+      <style>{`
+        @keyframes tickerScroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+      `}</style>
+      <div style={{
+        display: "flex", whiteSpace: "nowrap", animation: "tickerScroll 60s linear infinite",
+        fontSize: "12px", fontWeight: "600", color: C.text, gap: "24px", ...mono
+      }}>
+        {repeatedItems.map((item, i) => (
+          <span key={i}>{item}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
   const [view, setView] = useState("groups");
@@ -1899,8 +1955,45 @@ const TradersTab = () => {
   const allOn = mockTraders.every(t => visibleTraders[t.name]);
   const toggleAll = () => { const next = {}; mockTraders.forEach(t => { next[t.name] = !allOn; }); setVisibleTraders(next); };
 
+  // Season countdown
+  const seasonEnd = new Date(2026, 3, 1);
+  const now = new Date();
+  const daysLeft = Math.max(0, Math.floor((seasonEnd - now) / (1000 * 60 * 60 * 24)));
+  const hoursLeft = Math.max(0, Math.floor(((seasonEnd - now) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* SEASON BANNER */}
+      <div style={{
+        ...cardStyle, border: `2px solid transparent`, backgroundImage: `linear-gradient(${C.card}, ${C.card}), linear-gradient(135deg, ${C.purple}, ${C.blue})`,
+        backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box",
+        padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={{ fontSize: "20px" }}>🏆</span>
+          <div>
+            <div style={{ fontSize: "16px", fontWeight: "800", letterSpacing: "1px" }}>SEASON 1 — MARCH 2026</div>
+            <div style={{ fontSize: "12px", color: C.textMuted, marginTop: "2px" }}>
+              ⏱️ {daysLeft}d {hoursLeft}h remaining
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "14px", color: C.textMuted, marginBottom: "4px" }}>Prize Pool</div>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: C.amber, ...mono }}>$50,000</div>
+          </div>
+          <div style={{ height: 30, width: "1px", backgroundColor: C.border }} />
+          <div style={{ display: "flex", gap: "8px" }}>
+            {[["🥇", "$25K"], ["🥈", "$15K"], ["🥉", "$10K"]].map(([emoji, prize]) => (
+              <div key={emoji} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: "16px", marginBottom: "2px" }}>{emoji}</div>
+                <div style={{ fontSize: "11px", fontWeight: "600", ...mono }}>{prize}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
       <div style={{ display: "flex", gap: "8px" }}>
         {["groups","compare","profiles"].map(v => (
           <button key={v} onClick={() => setView(v)} style={{
@@ -1915,10 +2008,14 @@ const TradersTab = () => {
         <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
-              {["Rank","Group","Members","Win Rate","Monthly PnL","Signals","Accuracy"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+              {["Rank","Group","Members","Win Rate","Monthly PnL","Signals","Accuracy","🔥 Hot"].map(h => <th key={h} style={thStyle}>{h}</th>)}
             </tr></thead>
             <tbody>
-              {mockGroups.map((g, i) => (
+              {mockGroups.map((g, i) => {
+                const topTraders = mockTraders.filter(t => mockGroups[i].name.includes(t.avatar));
+                const highestStreak = Math.max(...topTraders.map(t => t.streak), 0);
+                const streakFlames = highestStreak >= 15 ? "🔥🔥🔥" : highestStreak >= 10 ? "🔥🔥" : highestStreak >= 5 ? "🔥" : "";
+                return (
                 <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
                   <td style={{ ...tdStyle, fontWeight: "700", fontSize: "14px" }}>{i < 3 ? medals[i] : i + 1}</td>
                   <td style={tdStyle}><span style={{ marginRight: "6px" }}>{g.emoji}</span>{g.name}</td>
@@ -1927,8 +2024,9 @@ const TradersTab = () => {
                   <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(g.monthlyPnl / 1000).toFixed(1)}K</td>
                   <td style={{ ...tdStyle, ...mono }}>{g.signals}</td>
                   <td style={{ ...tdStyle, ...mono, color: C.amber, fontWeight: "600" }}>{g.accuracy}%</td>
+                  <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "600" }}>{streakFlames || "—"}</td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
@@ -2196,15 +2294,36 @@ const TradersTab = () => {
 
       {view === "profiles" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-          {mockTraders.map(t => (
-            <div key={t.name} style={{ ...cardStyle, cursor: "pointer", border: `1px solid ${C.border}`, transition: "border-color 0.15s" }} onClick={() => openProfile(t)}>
+          {mockTraders.map((t, ti) => {
+            const title = titleByLevel(t.level);
+            const xpPct = Math.round((t.xp / t.xpNext) * 100);
+            const isTopRanked = t.rank === 1;
+            return (
+            <div key={t.name} style={{ ...cardStyle, cursor: "pointer", border: isTopRanked ? `2px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s", position: "relative" }} onClick={() => openProfile(t)}>
+              {isTopRanked && (
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: `linear-gradient(90deg, ${C.amber}, ${C.amber}80)`, borderRadius: "8px 8px 0 0" }} />
+              )}
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
                 <span style={{ fontSize: "28px" }}>{t.avatar}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: "600" }}>{t.name}</div>
+                  <div style={{ fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+                    {t.name}
+                    <span style={{ fontSize: "12px", fontWeight: "700", color: C.purple, ...mono }}>LVL {t.level}</span>
+                  </div>
+                  <div style={{ fontSize: "10px", color: C.amber, fontWeight: "700", marginBottom: "4px" }}>{title}</div>
                   <div style={{ fontSize: "11px", color: C.textMuted }}>Rank #{t.rank} — {t.style}</div>
                 </div>
                 <Tag text={t.tier} color={tierColor[t.tier]} />
+              </div>
+              {/* XP Progress Bar */}
+              <div style={{ marginBottom: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                  <span style={{ fontSize: "10px", color: C.textMuted }}>XP to Level {t.level + 1}</span>
+                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>{t.xp}/{t.xpNext}</span>
+                </div>
+                <div style={{ width: "100%", height: "6px", backgroundColor: C.border, borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.purple, borderRadius: "3px", transition: "width 0.3s" }} />
+                </div>
               </div>
               <div style={{ fontSize: "11px", color: C.textMuted, lineHeight: "1.5", marginBottom: "10px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{t.bio}</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
@@ -2225,7 +2344,8 @@ const TradersTab = () => {
                 <div style={{ fontSize: "11px", color: C.purple, fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>View Profile <ChevronRight size={12} /></div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -2445,6 +2565,17 @@ const CopyTradingTab = () => {
               <Copy size={16} color={C.purple} /> Copiar a <TraderLink name={port.name}>{port.name}</TraderLink>
             </div>
 
+            {/* Social Proof */}
+            <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: C.greenBg, borderRadius: "6px", border: `1px solid ${C.green}40` }}>
+              <div style={{ fontSize: "12px", fontWeight: "700", color: C.green, display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "16px" }}>🟢</span> {port.copiers} people copying right now
+              </div>
+              <div style={{ fontSize: "10px", color: C.textMuted, marginTop: "4px" }}>Last copied: 2 min ago</div>
+              {port.copiers > 300 && (
+                <div style={{ fontSize: "11px", fontWeight: "700", color: C.amber, marginTop: "4px", display: "inline-block", backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: "4px" }}>🔥 Trending</div>
+              )}
+            </div>
+
             {/* Risk Multiplier */}
             <div style={{ marginBottom: "14px" }}>
               <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", fontWeight: "600" }}>AJUSTAR RIESGO</div>
@@ -2525,10 +2656,12 @@ const CopyTradingTab = () => {
         <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Todos los Portfolios</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>
-            {["Trader", "Return/Mes", "Sharpe", "Win Rate", "Max DD", "Followers", "AUM", "Fee", "Risk", "Status"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+            {["Trader", "Return/Mes", "Sharpe", "Win Rate", "Max DD", "Followers", "AUM", "Fee", "Risk", "Hot", "Status"].map(h => <th key={h} style={thStyle}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {copyPortfolios.map((p, i) => (
+            {copyPortfolios.map((p, i) => {
+              const isHot = p.copiers > 300;
+              return (
               <tr key={p.name} style={{ backgroundColor: i === selected ? C.purpleBg : i % 2 === 0 ? "transparent" : C.cardHover, cursor: "pointer" }} onClick={() => setSelected(i)}>
                 <td style={tdStyle}><span style={{ marginRight: "6px" }}>{p.avatar}</span><TraderLink name={p.name}>{p.name}</TraderLink></td>
                 <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "700" }}>+{p.monthlyReturn}%</td>
@@ -2539,6 +2672,7 @@ const CopyTradingTab = () => {
                 <td style={{ ...tdStyle, ...mono }}>${(p.aum / 1e6).toFixed(1)}M</td>
                 <td style={{ ...tdStyle, ...mono }}>{p.fee}%</td>
                 <td style={tdStyle}><Tag text={p.riskLevel} color={riskColor[p.riskLevel] || C.amber} /></td>
+                <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "700" }}>{isHot ? "🔥" : "—"}</td>
                 <td style={tdStyle}>
                   {copying[p.name]
                     ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, fontWeight: "600" }}><CheckCircle size={12} /> Copying</span>
@@ -2546,7 +2680,8 @@ const CopyTradingTab = () => {
                   }
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -2641,15 +2776,21 @@ const PredictionMarketsTab = () => {
                 </span>
               </div>
 
-              {/* Odds Bar */}
-              <div style={{ marginBottom: "14px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "12px", fontWeight: "700", color: C.green }}>YES {m.yesOdds}%</span>
-                  <span style={{ fontSize: "12px", fontWeight: "700", color: C.red }}>NO {m.noOdds}%</span>
+              {/* Pot Size + Odds Bar */}
+              <div style={{ marginBottom: "14px", padding: "10px", backgroundColor: C.purpleBg, borderRadius: "6px", border: `1px solid ${C.purple}40` }}>
+                <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", fontWeight: "600" }}>POT SIZE</div>
+                <div style={{ fontSize: "18px", fontWeight: "800", color: C.purple, ...mono, marginBottom: "10px" }}>${(m.volume / 1000).toFixed(0)}K</div>
+                <div style={{ display: "flex", height: "20px", borderRadius: "6px", overflow: "hidden", gap: "1px", marginBottom: "6px" }}>
+                  <div style={{ flex: m.yesOdds, backgroundColor: C.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: "#000" }}>
+                    {m.yesOdds > 25 ? `${m.yesOdds}%` : ""}
+                  </div>
+                  <div style={{ flex: m.noOdds, backgroundColor: C.red, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: "#fff" }}>
+                    {m.noOdds > 25 ? `${m.noOdds}%` : ""}
+                  </div>
                 </div>
-                <div style={{ display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", gap: "2px" }}>
-                  <div style={{ flex: m.yesOdds, backgroundColor: C.green, borderRadius: "4px 0 0 4px" }} />
-                  <div style={{ flex: m.noOdds, backgroundColor: C.red, borderRadius: "0 4px 4px 0" }} />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: C.green }}>YES {m.yesOdds}¢</span>
+                  <span style={{ fontSize: "11px", fontWeight: "700", color: C.red }}>NO {m.noOdds}¢</span>
                 </div>
               </div>
 
@@ -2685,29 +2826,31 @@ const PredictionMarketsTab = () => {
                 </div>
               </div>
 
-              {/* Bet Buttons */}
+              {/* Bet Buttons - DRAMATIC */}
               <div style={{ display: "flex", gap: "8px" }}>
                 <button onClick={() => placeBet(m.id, "yes")} style={{
-                  flex: 1, padding: "10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", cursor: "pointer",
-                  border: userBet === "yes" ? `2px solid ${C.green}` : `1px solid ${C.green}40`,
-                  backgroundColor: userBet === "yes" ? C.greenBg : "transparent",
-                  color: C.green, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                  flex: 1, padding: "14px", borderRadius: "8px", fontSize: "13px", fontWeight: "800", cursor: "pointer",
+                  border: userBet === "yes" ? `3px solid ${C.green}` : `2px solid ${C.green}80`,
+                  backgroundColor: userBet === "yes" ? C.green : C.greenBg,
+                  color: userBet === "yes" ? "#000" : C.green, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  textTransform: "uppercase", letterSpacing: "0.5px", transition: "all 0.2s"
                 }}>
-                  <ArrowUp size={14} /> YES — {m.yesOdds}¢
+                  <ArrowUp size={16} /> YES — {m.yesOdds}¢
                 </button>
                 <button onClick={() => placeBet(m.id, "no")} style={{
-                  flex: 1, padding: "10px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", cursor: "pointer",
-                  border: userBet === "no" ? `2px solid ${C.red}` : `1px solid ${C.red}40`,
-                  backgroundColor: userBet === "no" ? C.redBg : "transparent",
-                  color: C.red, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                  flex: 1, padding: "14px", borderRadius: "8px", fontSize: "13px", fontWeight: "800", cursor: "pointer",
+                  border: userBet === "no" ? `3px solid ${C.red}` : `2px solid ${C.red}80`,
+                  backgroundColor: userBet === "no" ? C.red : C.redBg,
+                  color: userBet === "no" ? "#fff" : C.red, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  textTransform: "uppercase", letterSpacing: "0.5px", transition: "all 0.2s"
                 }}>
-                  <ArrowDown size={14} /> NO — {m.noOdds}¢
+                  <ArrowDown size={16} /> NO — {m.noOdds}¢
                 </button>
               </div>
 
               {userBet && (
-                <div style={{ marginTop: "8px", fontSize: "11px", color: userBet === "yes" ? C.green : C.red, fontWeight: "600", textAlign: "center" }}>
-                  Tu apuesta: {userBet.toUpperCase()} a {userBet === "yes" ? m.yesOdds : m.noOdds}¢
+                <div style={{ marginTop: "10px", padding: "8px", fontSize: "12px", color: userBet === "yes" ? C.green : C.red, fontWeight: "700", textAlign: "center", backgroundColor: userBet === "yes" ? C.greenBg : C.redBg, borderRadius: "6px", border: `1px solid ${userBet === "yes" ? C.green : C.red}40` }}>
+                  ✓ Tu apuesta: {userBet.toUpperCase()} @ {userBet === "yes" ? m.yesOdds : m.noOdds}¢
                 </div>
               )}
             </div>
@@ -3121,7 +3264,7 @@ const App = () => {
             <div style={{ height: 56, display: "flex", alignItems: "center", padding: sidebarCollapsed ? "0 12px" : "0 16px", borderBottom: `1px solid ${C.border}`, justifyContent: sidebarCollapsed ? "center" : "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", overflow: "hidden" }}>
                 <div style={{ width: 12, height: 12, backgroundColor: C.purple, borderRadius: "50%", flexShrink: 0 }} />
-                {!sidebarCollapsed && <span style={{ fontWeight: "800", fontSize: "16px", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>Trade League</span>}
+                {!sidebarCollapsed && <span style={{ fontWeight: "800", fontSize: "16px", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>Tradethlon</span>}
               </div>
               <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0 }}>
                 <ChevronRight size={16} style={{ transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }} />
@@ -3272,14 +3415,44 @@ const App = () => {
               </div>
             </header>
 
+            {/* Live PnL Ticker */}
+            <LivePnLTicker />
+
             {/* Content */}
             <main style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%" }}>
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
             </main>
 
-            {/* Footer */}
-            <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.textFaint, fontSize: "11px" }}>
-              Trade League v4.0 — {new Date().toLocaleString("es-ES", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short", year: "numeric" })}
+            {/* Footer - Live Stats Bar */}
+            <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
+              <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>🏆</span>
+                  <span>Season 1 Active</span>
+                </div>
+                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>👥</span>
+                  <span>{mockTraders.length.toLocaleString()} Traders</span>
+                </div>
+                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>📊</span>
+                  <span style={{ color: C.green }}>$2.4M Volume Today</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>🔥</span>
+                  <span>47 Active Signals</span>
+                </div>
+                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>⚡</span>
+                  <span>Last Trade: 12s ago</span>
+                </div>
+              </div>
             </footer>
           </div>
 
