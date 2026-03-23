@@ -1057,10 +1057,7 @@ const SMCAnalysis = () => {
   const [selectedCoin, setSelectedCoin] = useState("BTC");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [dateRange, setDateRange] = useState("24h");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-
+  const { dateLabel: globalDateLabel } = useDate();
   const coin = smcCoins[selectedCoin];
 
   const categories = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI", "Other"];
@@ -1070,17 +1067,6 @@ const SMCAnalysis = () => {
     const matchesCategory = categoryFilter === "All" || smcCoins[ticker].category === categoryFilter;
     return matchesSearch && matchesCategory;
   }).sort();
-
-  const dateRangeLabel = {
-    "24h": "24h",
-    "7d": "7 days",
-    "1m": "1 month",
-    "3m": "3 months",
-    "6m": "6 months",
-    "1y": "1 year",
-    "YTD": "Year-to-date",
-    "All": "All time",
-  }[dateRange] || "Custom";
 
   const chartData = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
     time: `${String(i).padStart(2, "0")}:00`,
@@ -1099,18 +1085,6 @@ const SMCAnalysis = () => {
 
   const riskColor = coin.risk === "LOW" ? C.green : coin.risk === "MEDIUM" ? C.amber : C.red;
   const biasColor = coin.bias === "BULLISH" ? C.green : C.red;
-
-  const handleDateRangeClick = (range) => {
-    setDateRange(range);
-    setDateFrom("");
-    setDateTo("");
-  };
-
-  const handleCustomDate = () => {
-    if (dateFrom || dateTo) {
-      setDateRange("custom");
-    }
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -1201,72 +1175,6 @@ const SMCAnalysis = () => {
               )}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Date Range Controls */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-          {["24h", "7d", "1m", "3m", "6m", "1y", "YTD", "All"].map(preset => (
-            <button
-              key={preset}
-              onClick={() => handleDateRangeClick(preset)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: "6px",
-                fontSize: "11px",
-                fontWeight: "600",
-                cursor: "pointer",
-                border: `1px solid ${dateRange === preset ? C.purple : C.border}`,
-                backgroundColor: dateRange === preset ? C.purpleBg : "transparent",
-                color: dateRange === preset ? C.purple : C.textMuted,
-                transition: "all 0.15s",
-              }}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            <label style={{ fontSize: "11px", color: C.textMuted, fontWeight: "600" }}>From:</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => { setDateFrom(e.target.value); handleCustomDate(); }}
-              style={{
-                padding: "6px 8px",
-                borderRadius: "6px",
-                border: `1px solid ${C.border}`,
-                backgroundColor: C.card,
-                color: C.text,
-                fontSize: "11px",
-                fontFamily: "inherit",
-                cursor: "pointer",
-              }}
-            />
-          </div>
-          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            <label style={{ fontSize: "11px", color: C.textMuted, fontWeight: "600" }}>To:</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => { setDateTo(e.target.value); handleCustomDate(); }}
-              style={{
-                padding: "6px 8px",
-                borderRadius: "6px",
-                border: `1px solid ${C.border}`,
-                backgroundColor: C.card,
-                color: C.text,
-                fontSize: "11px",
-                fontFamily: "inherit",
-                cursor: "pointer",
-              }}
-            />
-          </div>
-          <span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "auto" }}>
-            {dateRange === "custom" ? (dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "Select dates") : dateRangeLabel}
-          </span>
         </div>
       </div>
 
@@ -1368,7 +1276,7 @@ const SMCAnalysis = () => {
       {/* Price Chart */}
       <div style={cardStyle}>
         <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>
-          {selectedCoin}/{smcCoins[selectedCoin].pair} — Price Action ({dateRange === "custom" ? (dateFrom && dateTo ? `${dateFrom} to ${dateTo}` : "Custom") : dateRangeLabel})
+          {selectedCoin}/{smcCoins[selectedCoin].pair} — Price Action ({globalDateLabel})
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={chartData}>
@@ -3134,21 +3042,39 @@ const DateContext = createContext();
 const useDate = () => useContext(DateContext);
 
 const dateRanges = [
-  { id: "today", label: "Hoy" },
-  { id: "7d", label: "7 Días" },
-  { id: "30d", label: "30 Días" },
-  { id: "90d", label: "90 Días" },
+  { id: "24h", label: "24h" },
+  { id: "7d", label: "7d" },
+  { id: "1m", label: "1m" },
+  { id: "3m", label: "3m" },
+  { id: "6m", label: "6m" },
+  { id: "1y", label: "1y" },
   { id: "ytd", label: "YTD" },
-  { id: "all", label: "Todo" },
+  { id: "all", label: "All" },
 ];
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
   const [activeTab, setActiveTab] = useState("smc");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [dateRange, setDateRange] = useState("30d");
+  const [dateRange, setDateRange] = useState("1m");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [profileTrader, setProfileTrader] = useState(null);
+
+  const handlePresetClick = (id) => {
+    setDateRange(id);
+    setDateFrom("");
+    setDateTo("");
+  };
+  const handleCustomDate = (from, to) => {
+    setDateFrom(from);
+    setDateTo(to);
+    if (from || to) setDateRange("custom");
+  };
+  const dateLabel = dateRange === "custom"
+    ? (dateFrom && dateTo ? `${dateFrom.slice(5)} → ${dateTo.slice(5)}` : dateFrom ? `From ${dateFrom.slice(5)}` : `To ${dateTo.slice(5)}`)
+    : (dateRanges.find(d => d.id === dateRange)?.label || "1m");
 
   const openProfile = (trader) => setProfileTrader(trader);
   const closeProfile = () => setProfileTrader(null);
@@ -3167,11 +3093,10 @@ const App = () => {
   const tabContent = { smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab, predictions: PredictionMarketsTab, football: FootballTab };
   const ActiveComponent = tabContent[activeTab];
   const sideW = sidebarCollapsed ? 56 : 200;
-  const currentRange = dateRanges.find(d => d.id === dateRange);
 
   return (
     <ThemeProvider>
-      <DateContext.Provider value={{ dateRange, setDateRange }}>
+      <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex" }}>
 
@@ -3242,34 +3167,89 @@ const App = () => {
                 {profileTrader ? `${profileTrader.avatar} ${profileTrader.name}` : tabs.find(t => t.id === activeTab)?.label}
               </div>
 
-              {/* Right: Date range selector + icons */}
+              {/* Right: Unified date range selector + icons */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                {/* Date Range Dropdown */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => setShowDateDropdown(!showDateDropdown)} style={{
                     display: "flex", alignItems: "center", gap: "8px", padding: "6px 14px",
-                    backgroundColor: C.bg, border: `1px solid ${C.border}`, borderRadius: "6px",
-                    color: C.text, fontSize: "12px", fontWeight: "600", cursor: "pointer"
+                    backgroundColor: C.bg, border: `1px solid ${showDateDropdown ? C.purple : C.border}`, borderRadius: "6px",
+                    color: C.text, fontSize: "12px", fontWeight: "600", cursor: "pointer",
+                    transition: "border-color 0.15s"
                   }}>
                     <Calendar size={14} color={C.purple} />
-                    <span>{currentRange.label}</span>
-                    <ChevronDown size={14} color={C.textMuted} />
+                    <span style={{ ...mono }}>{dateLabel}</span>
+                    <ChevronDown size={14} color={C.textMuted} style={{ transform: showDateDropdown ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
                   </button>
                   {showDateDropdown && (
                     <div style={{
-                      position: "absolute", top: "calc(100% + 4px)", right: 0, backgroundColor: C.card,
-                      border: `1px solid ${C.border}`, borderRadius: "8px", padding: "4px",
-                      minWidth: "140px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
+                      position: "absolute", top: "calc(100% + 6px)", right: 0, backgroundColor: C.card,
+                      border: `1px solid ${C.border}`, borderRadius: "10px", padding: "16px",
+                      minWidth: "340px", zIndex: 300, boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+                      display: "flex", flexDirection: "column", gap: "14px"
                     }}>
-                      {dateRanges.map(dr => (
-                        <button key={dr.id} onClick={() => { setDateRange(dr.id); setShowDateDropdown(false); }} style={{
-                          display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
-                          backgroundColor: dateRange === dr.id ? C.purpleBg : "transparent",
-                          border: "none", borderRadius: "4px", cursor: "pointer",
-                          color: dateRange === dr.id ? C.purple : C.text,
-                          fontSize: "12px", fontWeight: dateRange === dr.id ? "600" : "400"
-                        }}>{dr.label}</button>
-                      ))}
+                      {/* Presets grid */}
+                      <div>
+                        <div style={{ fontSize: "10px", color: C.textMuted, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Quick Select</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
+                          {dateRanges.map(dr => (
+                            <button key={dr.id} onClick={() => { handlePresetClick(dr.id); setShowDateDropdown(false); }} style={{
+                              padding: "8px 0", textAlign: "center",
+                              backgroundColor: dateRange === dr.id ? C.purpleBg : C.bg,
+                              border: `1px solid ${dateRange === dr.id ? C.purple : C.border}`,
+                              borderRadius: "6px", cursor: "pointer",
+                              color: dateRange === dr.id ? C.purple : C.text,
+                              fontSize: "12px", fontWeight: dateRange === dr.id ? "700" : "500",
+                              transition: "all 0.15s", ...mono
+                            }}>{dr.label}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Separator */}
+                      <div style={{ height: "1px", backgroundColor: C.border }} />
+
+                      {/* Custom range */}
+                      <div>
+                        <div style={{ fontSize: "10px", color: C.textMuted, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Custom Range</div>
+                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>From</div>
+                            <input
+                              type="date"
+                              value={dateFrom}
+                              onChange={(e) => handleCustomDate(e.target.value, dateTo)}
+                              style={{
+                                width: "100%", padding: "8px 10px", borderRadius: "6px",
+                                border: `1px solid ${dateRange === "custom" ? C.purple + "60" : C.border}`,
+                                backgroundColor: C.bg, color: C.text, fontSize: "12px",
+                                fontFamily: "inherit", cursor: "pointer", outline: "none",
+                              }}
+                            />
+                          </div>
+                          <div style={{ color: C.textFaint, marginTop: "16px", fontSize: "14px" }}>→</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>To</div>
+                            <input
+                              type="date"
+                              value={dateTo}
+                              onChange={(e) => handleCustomDate(dateFrom, e.target.value)}
+                              style={{
+                                width: "100%", padding: "8px 10px", borderRadius: "6px",
+                                border: `1px solid ${dateRange === "custom" ? C.purple + "60" : C.border}`,
+                                backgroundColor: C.bg, color: C.text, fontSize: "12px",
+                                fontFamily: "inherit", cursor: "pointer", outline: "none",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {dateRange === "custom" && dateFrom && dateTo && (
+                          <button onClick={() => setShowDateDropdown(false)} style={{
+                            width: "100%", marginTop: "10px", padding: "8px", borderRadius: "6px",
+                            backgroundColor: C.purpleBg, border: `1px solid ${C.purple}`,
+                            color: C.purple, fontSize: "12px", fontWeight: "600", cursor: "pointer",
+                          }}>Apply</button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
