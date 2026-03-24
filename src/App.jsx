@@ -74,6 +74,79 @@ const ScoreBar = ({ label, value, max = 100, color = C.blue }) => (
 
 const Tag = ({ text, color = C.purple }) => <span style={pillStyle(color)}>{text}</span>;
 
+/* ── MiniSparkline: inline SVG sparkline for tables & cards ── */
+const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot = true }) => {
+  if (!data || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => [
+    (i / (data.length - 1)) * width,
+    height - ((v - min) / range) * (height - 4) - 2
+  ]);
+  const d = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1];
+  const trend = data[data.length - 1] >= data[0] ? C.green : C.red;
+  return (
+    <svg width={width} height={height} style={{ display: "block" }}>
+      <path d={d} fill="none" stroke={trend} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {showDot && <circle cx={last[0]} cy={last[1]} r="2" fill={trend} />}
+    </svg>
+  );
+};
+
+/* ── Alpha Score: composite "power rating" 0–100 (the metric traders obsess over) ── */
+const calcAlphaScore = (t) => {
+  const wrScore = Math.min(t.winRate / 100, 1) * 30;             // 30% weight: win rate
+  const sharpeScore = Math.min((t.sharpe || 0) / 3, 1) * 25;     // 25% weight: risk-adjusted returns
+  const streakScore = Math.min(t.streak / 20, 1) * 15;           // 15% weight: consistency streak
+  const pfScore = Math.min((t.profitFactor || 0) / 3, 1) * 15;   // 15% weight: profit factor
+  const ddScore = Math.max(0, 1 - Math.abs(t.maxDD || 0) / 25) * 15; // 15% weight: low drawdown
+  return Math.round(wrScore + sharpeScore + streakScore + pfScore + ddScore);
+};
+const alphaColor = (score) => score >= 80 ? C.green : score >= 60 ? C.blue : score >= 40 ? C.amber : C.red;
+const alphaLabel = (score) => score >= 90 ? "S+" : score >= 80 ? "S" : score >= 70 ? "A" : score >= 60 ? "B" : score >= 50 ? "C" : "D";
+
+/* ── Named Achievement Badges (crypto culture) ── */
+const ACHIEVEMENTS = {
+  diamondHands:    { icon: "💎", name: "Diamond Hands",     desc: "Held through 20%+ drawdown" },
+  wagmi:           { icon: "🌅", name: "WAGMI",             desc: "10 consecutive green days" },
+  degenGod:        { icon: "🎰", name: "Degen God",         desc: "Won 5+ prediction bets in a row" },
+  liqHunter:       { icon: "💀", name: "Liquidation Hunter", desc: "Caught 10+ reversal trades" },
+  moonShot:        { icon: "🌙", name: "Moon Shot",         desc: "100%+ monthly return" },
+  alphaLeaker:     { icon: "🧠", name: "Alpha Leaker",      desc: "Signal accuracy > 80%" },
+  whaleSpotter:    { icon: "🐋", name: "Whale Spotter",     desc: "Front-ran 3+ whale moves" },
+  streakMachine:   { icon: "🔥", name: "Streak Machine",    desc: "15+ consecutive wins" },
+  copyKing:        { icon: "👑", name: "Copy King",         desc: "500+ copiers" },
+  sharpShooter:    { icon: "🎯", name: "Sharp Shooter",     desc: "Sharpe ratio > 2.0" },
+  ironNerves:      { icon: "🧊", name: "Iron Nerves",       desc: "Max DD under 10%" },
+  profitPrinter:   { icon: "🖨️", name: "Profit Printer",    desc: "6 profitable months straight" },
+  ctInfluencer:    { icon: "📢", name: "CT Influencer",     desc: "10K+ Twitter impressions/week" },
+  earlyApe:        { icon: "🦍", name: "Early Ape",         desc: "Top 3 in new coin entries" },
+  riskDjinn:       { icon: "🧞", name: "Risk Djinn",        desc: "Profit factor > 2.5" },
+};
+const BadgeChip = ({ id }) => {
+  const a = ACHIEVEMENTS[id];
+  if (!a) return null;
+  return (
+    <span title={`${a.name}: ${a.desc}`} style={{
+      display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontWeight: "600",
+      padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple,
+      border: `1px solid ${C.purple}30`, cursor: "default", whiteSpace: "nowrap"
+    }}>{a.icon} {a.name}</span>
+  );
+};
+
+/* ── Degen Score: how aggressive/degenerate a trader is (0–100, higher = more degen) ── */
+const calcDegenScore = (t) => {
+  const levScore = (t.style === "Scalping" ? 35 : t.style === "Day Trading" ? 25 : t.style === "Breakout" ? 20 : 10);
+  const ddScore = Math.min(Math.abs(t.maxDD || 0) / 25, 1) * 30;
+  const streakScore = Math.min(t.streak / 20, 1) * 15;
+  const tradeFreq = Math.min(t.trades / 1000, 1) * 20;
+  return Math.round(levScore + ddScore + streakScore + tradeFreq);
+};
+const degenLabel = (score) => score >= 80 ? "FULL DEGEN 🎰" : score >= 60 ? "APE MODE 🦍" : score >= 40 ? "CALCULATED 🧮" : "SAFE PLAYER 🛡️";
+
 /* ═══════════════════════ MOCK DATA ═══════════════════════ */
 const mockChartData = Array.from({ length: 24 }, (_, i) => ({
   time: `${String(i).padStart(2, "0")}:00`,
@@ -107,21 +180,45 @@ const titleByLevel = (level) => {
 };
 
 const mockTraders = [
-  { name: "Scalp King", avatar: "👑", winRate: 81, pnl: 156200, trades: 823, streak: 15, rank: 1, tier: "Diamond", badges: ["⚡","🎯","💰"], level: 48, xp: 8200, xpNext: 10000, radarData: [{s:"Timing",v:94},{s:"Risk",v:89},{s:"Entries",v:96},{s:"Exits",v:91},{s:"Consistency",v:93},{s:"Discipline",v:92}],
+  { name: "Scalp King", avatar: "👑", winRate: 81, pnl: 156200, trades: 823, streak: 15, rank: 1, tier: "Diamond",
+    badges: ["streakMachine","copyKing","sharpShooter","alphaLeaker","profitPrinter"], level: 48, xp: 8200, xpNext: 10000,
+    radarData: [{s:"Timing",v:94},{s:"Risk",v:89},{s:"Entries",v:96},{s:"Exits",v:91},{s:"Consistency",v:93},{s:"Discipline",v:92}],
+    sparkData: [12,15,14,18,22,19,25,28,24,31,29,35,33,38,36,42], viewersNow: 47,
     bio: "Full-time crypto trader since 2019. Specializing in BTC/ETH scalps with SMC methodology. Previously quant analyst at a prop firm.", location: "Miami, FL", joined: "Jan 2024", followers: 1842, following: 23, copiers: 567, sharpe: 2.1, maxDD: -8.2, avgRR: "1:2.8", avgHold: "4h", bestMonth: "+$42,300", worstMonth: "-$8,100", profitFactor: 2.4, favPairs: ["BTC/USDT", "ETH/USDT", "SOL/USDT"], style: "Scalping", exchange: "Binance" },
-  { name: "Crypto Ninja", avatar: "🥷", winRate: 78, pnl: 125400, trades: 456, streak: 12, rank: 2, tier: "Diamond", badges: ["🔥","⚡","🎯"], level: 45, xp: 6500, xpNext: 10000, radarData: [{s:"Timing",v:92},{s:"Risk",v:88},{s:"Entries",v:95},{s:"Exits",v:85},{s:"Consistency",v:91},{s:"Discipline",v:89}],
+  { name: "Crypto Ninja", avatar: "🥷", winRate: 78, pnl: 125400, trades: 456, streak: 12, rank: 2, tier: "Diamond",
+    badges: ["diamondHands","wagmi","sharpShooter","liqHunter"], level: 45, xp: 6500, xpNext: 10000,
+    radarData: [{s:"Timing",v:92},{s:"Risk",v:88},{s:"Entries",v:95},{s:"Exits",v:85},{s:"Consistency",v:91},{s:"Discipline",v:89}],
+    sparkData: [10,8,12,15,13,18,16,22,20,26,24,28,27,30,29,33], viewersNow: 32,
     bio: "Swing trader focused on altcoins. I use order flow analysis and smart money concepts to find high-probability setups.", location: "Tokyo, Japan", joined: "Mar 2024", followers: 1234, following: 45, copiers: 389, sharpe: 1.9, maxDD: -11.5, avgRR: "1:3.2", avgHold: "8h", bestMonth: "+$38,500", worstMonth: "-$12,400", profitFactor: 2.1, favPairs: ["BTC/USDT", "XRP/USDT", "BNB/USDT"], style: "Swing", exchange: "Bybit" },
-  { name: "Smart Money", avatar: "💼", winRate: 76, pnl: 112300, trades: 567, streak: 10, rank: 3, tier: "Platinum", badges: ["💎","🔥"], level: 42, xp: 5100, xpNext: 10000, radarData: [{s:"Timing",v:89},{s:"Risk",v:86},{s:"Entries",v:91},{s:"Exits",v:88},{s:"Consistency",v:87},{s:"Discipline",v:85}],
+  { name: "Smart Money", avatar: "💼", winRate: 76, pnl: 112300, trades: 567, streak: 10, rank: 3, tier: "Platinum",
+    badges: ["ironNerves","riskDjinn","profitPrinter","diamondHands"], level: 42, xp: 5100, xpNext: 10000,
+    radarData: [{s:"Timing",v:89},{s:"Risk",v:86},{s:"Entries",v:91},{s:"Exits",v:88},{s:"Consistency",v:87},{s:"Discipline",v:85}],
+    sparkData: [8,10,11,14,16,15,18,20,19,22,24,23,26,28,27,30], viewersNow: 28,
     bio: "Conservative position trader. Low drawdown, consistent returns. Former hedge fund analyst. Risk management is everything.", location: "London, UK", joined: "Feb 2024", followers: 892, following: 12, copiers: 234, sharpe: 2.4, maxDD: -5.8, avgRR: "1:2.4", avgHold: "1d", bestMonth: "+$28,900", worstMonth: "-$5,200", profitFactor: 2.8, favPairs: ["BTC/USDT", "ETH/USDT", "AVAX/USDT"], style: "Position", exchange: "Binance" },
-  { name: "Phoenix Rise", avatar: "🔥", winRate: 73, pnl: 104200, trades: 523, streak: 11, rank: 4, tier: "Platinum", badges: ["🏆","🔥"], level: 39, xp: 4200, xpNext: 10000, radarData: [{s:"Timing",v:86},{s:"Risk",v:83},{s:"Entries",v:89},{s:"Exits",v:85},{s:"Consistency",v:86},{s:"Discipline",v:84}],
+  { name: "Phoenix Rise", avatar: "🔥", winRate: 73, pnl: 104200, trades: 523, streak: 11, rank: 4, tier: "Platinum",
+    badges: ["moonShot","degenGod","earlyApe"], level: 39, xp: 4200, xpNext: 10000,
+    radarData: [{s:"Timing",v:86},{s:"Risk",v:83},{s:"Entries",v:89},{s:"Exits",v:85},{s:"Consistency",v:86},{s:"Discipline",v:84}],
+    sparkData: [5,12,8,20,15,28,22,35,18,40,30,25,38,45,32,48], viewersNow: 19,
     bio: "Aggressive intraday trader. High risk, high reward. Specializing in momentum plays during NY session.", location: "New York, NY", joined: "Apr 2024", followers: 567, following: 34, copiers: 178, sharpe: 1.6, maxDD: -18.4, avgRR: "1:3.8", avgHold: "2h", bestMonth: "+$52,100", worstMonth: "-$19,800", profitFactor: 1.7, favPairs: ["SOL/USDT", "BTC/USDT", "DOGE/USDT"], style: "Day Trading", exchange: "Bitget" },
-  { name: "Bull Master", avatar: "🐂", winRate: 72, pnl: 98500, trades: 342, streak: 8, rank: 5, tier: "Gold", badges: ["💎","🏆"], level: 35, xp: 3800, xpNext: 10000, radarData: [{s:"Timing",v:85},{s:"Risk",v:80},{s:"Entries",v:88},{s:"Exits",v:82},{s:"Consistency",v:84},{s:"Discipline",v:81}],
+  { name: "Bull Master", avatar: "🐂", winRate: 72, pnl: 98500, trades: 342, streak: 8, rank: 5, tier: "Gold",
+    badges: ["diamondHands","wagmi"], level: 35, xp: 3800, xpNext: 10000,
+    radarData: [{s:"Timing",v:85},{s:"Risk",v:80},{s:"Entries",v:88},{s:"Exits",v:82},{s:"Consistency",v:84},{s:"Discipline",v:81}],
+    sparkData: [6,8,7,11,10,14,13,16,15,18,17,20,19,22,21,24], viewersNow: 14,
     bio: "Long-only conviction trader. I find the trend and ride it. Patient entries, wide stops, massive targets.", location: "Dubai, UAE", joined: "May 2024", followers: 456, following: 28, copiers: 145, sharpe: 1.8, maxDD: -12.1, avgRR: "1:4.2", avgHold: "3d", bestMonth: "+$31,200", worstMonth: "-$11,500", profitFactor: 1.9, favPairs: ["BTC/USDT", "ETH/USDT"], style: "Swing", exchange: "Binance" },
-  { name: "Rocket Launch", avatar: "🚀", winRate: 70, pnl: 89600, trades: 445, streak: 9, rank: 6, tier: "Gold", badges: ["⚡","💰"], level: 32, xp: 2900, xpNext: 10000, radarData: [{s:"Timing",v:82},{s:"Risk",v:78},{s:"Entries",v:85},{s:"Exits",v:80},{s:"Consistency",v:81},{s:"Discipline",v:79}],
+  { name: "Rocket Launch", avatar: "🚀", winRate: 70, pnl: 89600, trades: 445, streak: 9, rank: 6, tier: "Gold",
+    badges: ["earlyApe","whaleSpotter"], level: 32, xp: 2900, xpNext: 10000,
+    radarData: [{s:"Timing",v:82},{s:"Risk",v:78},{s:"Entries",v:85},{s:"Exits",v:80},{s:"Consistency",v:81},{s:"Discipline",v:79}],
+    sparkData: [4,7,5,10,8,14,11,18,13,20,16,22,19,24,21,26], viewersNow: 11,
     bio: "Breakout specialist. Scanning for volume surges and structural breaks. Trading crypto full-time since the 2021 bull run.", location: "Berlin, Germany", joined: "Jun 2024", followers: 345, following: 56, copiers: 98, sharpe: 1.5, maxDD: -14.8, avgRR: "1:2.6", avgHold: "6h", bestMonth: "+$24,800", worstMonth: "-$13,200", profitFactor: 1.6, favPairs: ["BTC/USDT", "SOL/USDT", "AVAX/USDT"], style: "Breakout", exchange: "Bybit" },
-  { name: "Iron Fist", avatar: "👊", winRate: 68, pnl: 72400, trades: 389, streak: 7, rank: 7, tier: "Silver", badges: ["💪"], level: 28, xp: 1800, xpNext: 10000, radarData: [{s:"Timing",v:75},{s:"Risk",v:70},{s:"Entries",v:77},{s:"Exits",v:72},{s:"Consistency",v:73},{s:"Discipline",v:71}],
+  { name: "Iron Fist", avatar: "👊", winRate: 68, pnl: 72400, trades: 389, streak: 7, rank: 7, tier: "Silver",
+    badges: ["liqHunter"], level: 28, xp: 1800, xpNext: 10000,
+    radarData: [{s:"Timing",v:75},{s:"Risk",v:70},{s:"Entries",v:77},{s:"Exits",v:72},{s:"Consistency",v:73},{s:"Discipline",v:71}],
+    sparkData: [3,5,4,6,5,8,7,10,8,12,9,11,10,13,11,14], viewersNow: 6,
     bio: "Grinding every day. Learning from the best. Focused on improving my discipline and risk management.", location: "Bogota, Colombia", joined: "Jul 2024", followers: 189, following: 67, copiers: 42, sharpe: 1.3, maxDD: -16.5, avgRR: "1:2.0", avgHold: "5h", bestMonth: "+$18,400", worstMonth: "-$9,800", profitFactor: 1.4, favPairs: ["BTC/USDT", "ETH/USDT", "XRP/USDT"], style: "Scalping", exchange: "Binance" },
-  { name: "Wave Rider", avatar: "🏄", winRate: 65, pnl: 45800, trades: 234, streak: 5, rank: 8, tier: "Silver", badges: ["🌊"], level: 18, xp: 4200, xpNext: 10000, radarData: [{s:"Timing",v:78},{s:"Risk",v:72},{s:"Entries",v:80},{s:"Exits",v:75},{s:"Consistency",v:76},{s:"Discipline",v:74}],
+  { name: "Wave Rider", avatar: "🏄", winRate: 65, pnl: 45800, trades: 234, streak: 5, rank: 8, tier: "Silver",
+    badges: ["ctInfluencer"], level: 18, xp: 4200, xpNext: 10000,
+    radarData: [{s:"Timing",v:78},{s:"Risk",v:72},{s:"Entries",v:80},{s:"Exits",v:75},{s:"Consistency",v:76},{s:"Discipline",v:74}],
+    sparkData: [2,4,3,5,4,3,5,7,6,8,5,7,6,9,7,10], viewersNow: 3,
     bio: "Part-time trader, full-time surfer. Catching waves in the market like I catch them in the ocean. Chill entries only.", location: "Bali, Indonesia", joined: "Aug 2024", followers: 123, following: 89, copiers: 28, sharpe: 1.1, maxDD: -20.2, avgRR: "1:1.8", avgHold: "12h", bestMonth: "+$14,600", worstMonth: "-$11,200", profitFactor: 1.2, favPairs: ["BTC/USDT", "SOL/USDT"], style: "Swing", exchange: "Bitget" },
 ];
 
@@ -1445,11 +1542,30 @@ const TraderProfile = ({ trader, onClose }) => {
 
       {/* Profile Header Card */}
       <div style={{ ...cardStyle, display: "flex", gap: "20px", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "120px" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "130px" }}>
           <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: C.bg, border: `3px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>{t.avatar}</div>
           <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "8px" }}>{t.name}</div>
-          <Tag text={t.tier} color={tierColor[t.tier]} />
-          <div style={{ display: "flex", gap: "4px", marginTop: "8px" }}>{t.badges.map((b, i) => <span key={i} style={{ fontSize: "18px" }}>{b}</span>)}</div>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "4px" }}>
+            <Tag text={t.tier} color={tierColor[t.tier]} />
+            <span style={{ fontSize: "9px", color: C.textFaint }}>{titleByLevel(t.level)}</span>
+          </div>
+          {/* Alpha Score Badge */}
+          {(() => { const alpha = calcAlphaScore(t); const aClr = alphaColor(alpha); return (
+            <div style={{ marginTop: "10px", padding: "8px 16px", borderRadius: "8px", backgroundColor: `${aClr}12`, border: `1px solid ${aClr}30`, textAlign: "center" }}>
+              <div style={{ fontSize: "24px", fontWeight: "900", color: aClr, ...mono, lineHeight: 1 }}>{alpha}</div>
+              <div style={{ fontSize: "9px", fontWeight: "700", color: aClr, marginTop: "2px" }}>ALPHA {alphaLabel(alpha)}</div>
+            </div>
+          ); })()}
+          {/* Named Badges */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "10px", justifyContent: "center", maxWidth: "130px" }}>
+            {t.badges.map(b => { const ach = ACHIEVEMENTS[b]; return ach ? <span key={b} title={`${ach.name}: ${ach.desc}`} style={{ fontSize: "16px", cursor: "default" }}>{ach.icon}</span> : null; })}
+          </div>
+          {/* Degen Score */}
+          {(() => { const degen = calcDegenScore(t); return (
+            <div style={{ marginTop: "8px", fontSize: "9px", fontWeight: "700", color: degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green, padding: "3px 8px", borderRadius: "4px", backgroundColor: degen >= 60 ? C.redBg : degen >= 40 ? C.amberBg : C.greenBg }}>
+              {degenLabel(degen)}
+            </div>
+          ); })()}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: "1.6", marginBottom: "14px" }}>{t.bio}</div>
@@ -1929,13 +2045,21 @@ const TraderProfile = ({ trader, onClose }) => {
 const LivePnLTicker = () => {
   const tickerItems = [
     "🔥 Scalp King +$2,340 (BTC LONG) ⚡",
+    "🐋 WHALE ALERT: $3.2M BTC LONG opened",
     "🥷 Crypto Ninja +$890 (ETH SHORT) ⚡",
-    "🐂 Bull Master -$420 (SOL LONG) 📉",
+    "💀 $1.2M LIQUIDATED — shorts rekt in 15min",
     "💼 Smart Money +$1,560 (AVAX LONG) ⚡",
+    "🎰 Degen God Phoenix Rise won 6th prediction in a row",
     "🚀 Rocket Launch +$745 (BTC SHORT) ✅",
+    "👑 Scalp King hit Alpha Score 87 — new season high",
+    "🐂 Bull Master -$420 (SOL LONG) 📉",
+    "🌙 MOON: DOGE +12.4% in 2h — meme szn is back",
     "🔥 Phoenix Rise +$2,100 (DOGE LONG) 🚀",
-    "👊 Iron Fist -$180 (ETH LONG) 📉",
+    "💎 Diamond Hands: Smart Money held through -5.8% DD",
     "🏄 Wave Rider +$320 (BTC LONG) ✅",
+    "🦍 Early Ape: 3 traders entered PEPE before the pump",
+    "👊 Iron Fist -$180 (ETH LONG) 📉",
+    "📢 567 copiers on Scalp King — WAGMI",
   ];
 
   const repeatedItems = [...tickerItems, ...tickerItems];
@@ -1956,7 +2080,15 @@ const LivePnLTicker = () => {
         fontSize: "12px", fontWeight: "600", color: C.text, gap: "24px", ...mono
       }}>
         {repeatedItems.map((item, i) => (
-          <span key={i} style={{ color: item.includes("+$") ? C.green : item.includes("-$") ? C.red : C.text }}>{item}</span>
+          <span key={i} style={{
+            color: item.includes("WHALE") || item.includes("🐋") ? C.cyan
+              : item.includes("LIQUIDAT") || item.includes("💀") || item.includes("rekt") ? C.red
+              : item.includes("Alpha Score") || item.includes("Diamond") || item.includes("Degen God") ? C.purple
+              : item.includes("MOON") || item.includes("🌙") || item.includes("WAGMI") ? C.amber
+              : item.includes("+$") ? C.green
+              : item.includes("-$") ? C.red
+              : C.text
+          }}>{item}</span>
         ))}
       </div>
     </div>
@@ -1993,26 +2125,65 @@ const TradersTab = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div style={{
-        ...cardStyle, borderLeft: `4px solid ${C.purple}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "18px" }}>🏆</span>
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: "800" }}>SEASON 1</div>
-            <div style={{ fontSize: "11px", color: C.textMuted }}>MARCH 2026</div>
+      {/* ── Season 1 Battle Pass Banner ── */}
+      <div style={{ ...cardStyle, borderLeft: `4px solid ${C.purple}`, background: `linear-gradient(135deg, ${C.card} 0%, ${C.bg} 100%)` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "22px" }}>🏆</span>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "16px", fontWeight: "900", letterSpacing: "1px" }}>SEASON 1</span>
+                <span style={{ fontSize: "10px", fontWeight: "700", color: C.green, padding: "2px 8px", borderRadius: "4px", backgroundColor: C.greenBg, border: `1px solid ${C.green}30` }}>LIVE</span>
+              </div>
+              <div style={{ fontSize: "11px", color: C.textMuted }}>MARCH 2026 · {mockTraders.length} traders competing</div>
+            </div>
           </div>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: C.amber, ...mono }}>$50,000</div>
+          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "18px", fontWeight: "800", color: C.amber, ...mono }}>{daysLeft}d {hoursLeft}h</div>
+              <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase" }}>remaining</div>
+            </div>
+            <div style={{ width: "1px", height: "28px", backgroundColor: C.border }} />
+            <div style={{ fontSize: "20px", fontWeight: "900", color: C.amber, ...mono }}>$50K</div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "12px", fontWeight: "700", ...mono }}>{daysLeft}d {hoursLeft}h remaining</div>
-          </div>
-          <div style={{ display: "flex", gap: "8px", fontSize: "11px", fontWeight: "600", ...mono }}>
-            {[["🥇", "$25K"], ["🥈", "$15K"], ["🥉", "$10K"]].map(([emoji, prize]) => (
-              <span key={emoji}>{emoji} {prize}</span>
-            ))}
-          </div>
+
+        {/* Battle Pass Tiers */}
+        <div style={{ display: "flex", gap: "4px", alignItems: "stretch", marginBottom: "12px" }}>
+          {[
+            { tier: "Silver", range: "Rank 7-8", color: C.textMuted, pct: 100 },
+            { tier: "Gold", range: "Rank 5-6", color: C.amber, pct: 100 },
+            { tier: "Platinum", range: "Rank 3-4", color: C.purple, pct: 100 },
+            { tier: "Diamond", range: "Rank 1-2", color: C.cyan, pct: 100 },
+            { tier: "Champion", range: "Rank 1", color: "#ffd700", pct: 50 },
+          ].map((bp, i) => (
+            <div key={bp.tier} style={{ flex: 1, position: "relative" }}>
+              <div style={{ height: "6px", backgroundColor: `${bp.color}25`, borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ width: `${bp.pct}%`, height: "100%", backgroundColor: bp.color, borderRadius: "3px" }} />
+              </div>
+              <div style={{ textAlign: "center", marginTop: "4px" }}>
+                <div style={{ fontSize: "9px", fontWeight: "700", color: bp.color }}>{bp.tier}</div>
+                <div style={{ fontSize: "8px", color: C.textFaint }}>{bp.range}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Prizes row */}
+        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
+          {[
+            ["🥇", "$25K", "+ Diamond Frame + Lifetime Badge", C.amber],
+            ["🥈", "$15K", "+ Platinum Frame", C.purple],
+            ["🥉", "$10K", "+ Gold Frame", C.amber],
+          ].map(([emoji, prize, extras, clr]) => (
+            <div key={emoji} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px" }}>{emoji}</span>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: "800", color: clr, ...mono }}>{prize}</div>
+                <div style={{ fontSize: "8px", color: C.textFaint }}>{extras}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -2031,42 +2202,72 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {["Rank","Trader","Streak","Win Rate","PnL","Trades","Copiers","Action"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                {["Rank","Trader","Alpha","Trend","Streak","Win Rate","PnL","Copiers","Action"].map(h => <th key={h} style={thStyle}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {mockTraders.map((t, i) => {
                   const isTop1 = i === 0;
+                  const alpha = calcAlphaScore(t);
+                  const aClr = alphaColor(alpha);
+                  const isHotStreak = t.streak >= 10;
                   return (
                   <tr key={t.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
                     <td style={{ ...tdStyle, fontWeight: "700", fontSize: "14px", borderLeft: isTop1 ? `3px solid ${C.amber}` : "none" }}>
                       {i < 3 ? medals[i] : i + 1}
                     </td>
-                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ fontSize: "18px" }}>{t.avatar}</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <TraderLink name={t.name} />
-                        <span style={pillStyle(C.purple)}>LVL {t.level}</span>
-                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: tierColor[t.tier] }} />
+                    <td style={{ ...tdStyle }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "18px" }}>{t.avatar}</span>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <TraderLink name={t.name} />
+                            <span style={pillStyle(tierColor[t.tier])}>{t.tier}</span>
+                            <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>LVL {t.level}</span>
+                          </div>
+                          <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
+                            {t.badges.slice(0, 3).map(b => {
+                              const ach = ACHIEVEMENTS[b];
+                              return ach ? <span key={b} title={ach.name} style={{ fontSize: "11px", cursor: "default" }}>{ach.icon}</span> : null;
+                            })}
+                            {t.badges.length > 3 && <span style={{ fontSize: "9px", color: C.textFaint }}>+{t.badges.length - 3}</span>}
+                          </div>
+                        </div>
+                        {t.viewersNow > 20 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600", marginLeft: "auto" }}>👁 {t.viewersNow}</span>}
                       </div>
                     </td>
-                    <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>
-                      {getFlames(t.streak)}<span style={{ marginLeft: "4px" }}>{t.streak}</span>
+                    <td style={{ ...tdStyle, textAlign: "center" }}>
+                      <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                        <span style={{ fontSize: "16px", fontWeight: "800", color: aClr, ...mono }}>{alpha}</span>
+                        <span style={{ fontSize: "9px", fontWeight: "700", color: aClr, padding: "1px 5px", borderRadius: "3px", backgroundColor: `${aClr}18` }}>{alphaLabel(alpha)}</span>
+                      </div>
                     </td>
-                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</span>
-                      <div style={{ width: "60px", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
-                        <div style={{ width: `${t.winRate}%`, height: "100%", backgroundColor: C.green }} />
+                    <td style={{ ...tdStyle }}>
+                      <MiniSparkline data={t.sparkData} width={56} height={18} />
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>
+                      <span style={isHotStreak ? { textShadow: `0 0 8px ${C.amber}60` } : undefined}>
+                        {getFlames(t.streak)}<span style={{ marginLeft: "4px", color: isHotStreak ? C.amber : C.text }}>{t.streak}</span>
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</span>
+                        <div style={{ width: "48px", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                          <div style={{ width: `${t.winRate}%`, height: "100%", backgroundColor: C.green }} />
+                        </div>
                       </div>
                     </td>
                     <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
-                    <td style={{ ...tdStyle, ...mono }}>{t.trades}</td>
-                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "4px", ...mono }}>
-                      <Users size={12} color={C.textMuted} /> {t.copiers}
+                    <td style={{ ...tdStyle }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", ...mono }}>
+                        <Users size={12} color={C.textMuted} /> {t.copiers}
+                      </div>
                     </td>
                     <td style={{ ...tdStyle }}>
                       <button onClick={() => openProfile(t)} style={{
-                        padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                        backgroundColor: C.green, color: C.bg, border: "none"
+                        padding: "5px 12px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer",
+                        backgroundColor: C.green, color: C.bg, border: "none",
+                        boxShadow: "0 0 8px rgba(63,185,80,0.2)"
                       }}>Copy</button>
                     </td>
                   </tr>
@@ -2362,65 +2563,94 @@ const TradersTab = () => {
             const title = titleByLevel(t.level);
             const xpPct = Math.round((t.xp / t.xpNext) * 100);
             const isTopRanked = t.rank === 1;
+            const alpha = calcAlphaScore(t);
+            const aClr = alphaColor(alpha);
+            const degen = calcDegenScore(t);
             return (
             <div key={t.name} style={{ ...cardStyle, cursor: "pointer", borderLeft: isTopRanked ? `3px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s" }} onClick={() => openProfile(t)}>
+              {/* Header: avatar + name + Alpha Score */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: C.cardHover, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: C.cardHover, border: `2px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
                   {t.avatar}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: "600" }}>{t.name}</div>
-                  <div style={{ fontSize: "10px", color: C.textMuted }}>Rank #{t.rank} — {t.style}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "14px", fontWeight: "700" }}>{t.name}</span>
+                    {t.viewersNow > 15 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600" }}>👁 {t.viewersNow} watching</span>}
+                  </div>
+                  <div style={{ fontSize: "10px", color: C.textMuted }}>#{t.rank} · {t.style} · {t.exchange}</div>
+                </div>
+                {/* Alpha Score Badge */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "48px" }}>
+                  <div style={{ fontSize: "20px", fontWeight: "900", color: aClr, ...mono, lineHeight: 1 }}>{alpha}</div>
+                  <div style={{ fontSize: "8px", fontWeight: "700", color: aClr, textTransform: "uppercase" }}>Alpha {alphaLabel(alpha)}</div>
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-                <span style={pillStyle(C.purple)}>LVL {t.level}</span>
+              {/* Tier + Level + Sparkline */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
                 <Tag text={t.tier} color={tierColor[t.tier]} />
+                <span style={pillStyle(C.purple)}>LVL {t.level}</span>
+                <span style={{ fontSize: "9px", color: C.textFaint }}>{title}</span>
+                <div style={{ marginLeft: "auto" }}><MiniSparkline data={t.sparkData} width={64} height={20} /></div>
               </div>
 
+              {/* XP Progress */}
               <div style={{ marginBottom: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                   <span style={{ fontSize: "10px", color: C.textMuted }}>XP to Level {t.level + 1}</span>
-                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>XP: {t.xp}/{t.xpNext}</span>
+                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>{t.xp}/{t.xpNext}</span>
                 </div>
                 <div style={{ width: "100%", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
                   <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.blue, borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", paddingBottom: "10px", borderBottom: `1px solid ${C.border}`, marginBottom: "10px" }}>
+              {/* Stats Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", paddingBottom: "10px", borderBottom: `1px solid ${C.border}`, marginBottom: "10px" }}>
                 {[
                   ["Win Rate", t.winRate + "%", C.green],
-                  ["PnL", "$" + (t.pnl / 1000).toFixed(1) + "K", C.green],
-                  ["Trades", t.trades, C.blue],
+                  ["PnL", "+$" + (t.pnl / 1000).toFixed(1) + "K", C.green],
                   ["Sharpe", t.sharpe.toFixed(1), C.blue],
+                  ["Max DD", t.maxDD + "%", C.red],
+                  ["Copiers", t.copiers, C.purple],
+                  ["Trades", t.trades, C.textMuted],
                 ].map(([l, v, clr]) => (
                   <div key={l}>
-                    <div style={{ fontSize: "10px", color: C.textMuted }}>{l}</div>
+                    <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase" }}>{l}</div>
                     <div style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>{v}</div>
                   </div>
                 ))}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", fontSize: "13px", fontWeight: "600" }}>
-                <span>{getFlames(t.streak)}</span>
-                <span style={{ color: C.amber }}>{t.streak} Win Streak</span>
+              {/* Streak + Degen Score */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}>
+                  <span>{getFlames(t.streak)}</span>
+                  <span style={{ color: C.amber }}>{t.streak}W Streak</span>
+                </div>
+                <div style={{ fontSize: "9px", fontWeight: "700", color: degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green, padding: "2px 6px", borderRadius: "3px", backgroundColor: degen >= 60 ? C.redBg : degen >= 40 ? C.amberBg : C.greenBg }}>
+                  {degenLabel(degen)}
+                </div>
               </div>
 
-              <div style={{ display: "flex", gap: "4px", marginBottom: "10px" }}>
-                {t.badges.map((b, i) => <span key={i} style={{ fontSize: "16px" }}>{b}</span>)}
+              {/* Named Achievement Badges */}
+              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
+                {t.badges.slice(0, 4).map(b => <BadgeChip key={b} id={b} />)}
+                {t.badges.length > 4 && <span style={{ fontSize: "10px", color: C.textFaint, alignSelf: "center" }}>+{t.badges.length - 4} more</span>}
               </div>
 
+              {/* Action Buttons */}
               <div style={{ display: "flex", gap: "8px" }}>
                 <button onClick={() => openProfile(t)} style={{
-                  flex: 1, padding: "6px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                  flex: 1, padding: "7px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
                   border: `1px solid ${C.purple}`, backgroundColor: "transparent", color: C.purple
                 }}>View Profile</button>
                 <button onClick={() => openProfile(t)} style={{
-                  flex: 1, padding: "6px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                  backgroundColor: C.green, color: C.bg, border: "none"
-                }}>Copy</button>
+                  flex: 1, padding: "7px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", cursor: "pointer",
+                  backgroundColor: C.green, color: C.bg, border: "none",
+                  boxShadow: "0 0 10px rgba(63,185,80,0.25)"
+                }}>Copy Trader</button>
               </div>
             </div>
             );
@@ -3466,6 +3696,17 @@ const App = () => {
                   )}
                 </div>
 
+                {/* Notifications bell with count */}
+                <div style={{ position: "relative" }}>
+                  <button style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center" }}>
+                    <Bell size={17} />
+                  </button>
+                  <div style={{
+                    position: "absolute", top: "2px", right: "2px", width: "14px", height: "14px",
+                    borderRadius: "50%", backgroundColor: C.red, color: "#fff",
+                    fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center"
+                  }}>5</div>
+                </div>
                 {/* Search */}
                 <button style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center" }}>
                   <Search size={17} />
@@ -3480,33 +3721,28 @@ const App = () => {
 
             {/* Footer - Live Stats Bar */}
             <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
-              <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>🏆</span>
-                  <span>Season 1 Active</span>
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} />
+                  <span style={{ color: C.green }}>LIVE</span>
                 </div>
-                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>👥</span>
-                  <span>{mockTraders.length.toLocaleString()} Traders</span>
-                </div>
-                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>📊</span>
-                  <span style={{ color: C.green }}>$2.4M Volume Today</span>
-                </div>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>🏆 Season 1</span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>👥 {mockTraders.length} Traders</span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>📊 <span style={{ color: C.green }}>$2.4M Vol</span></span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>🔥 47 Signals</span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>🎯 78% Avg Win Rate</span>
               </div>
-              <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>🔥</span>
-                  <span>47 Active Signals</span>
-                </div>
-                <div style={{ width: "1px", height: 20, backgroundColor: C.border }} />
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>⚡</span>
-                  <span>Last Trade: 12s ago</span>
-                </div>
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                <span>🐋 3 Whale Alerts Today</span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>💀 $4.2M Liquidated (24h)</span>
+                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
+                <span>⚡ Last: <span style={{ color: C.green }}>12s ago</span></span>
               </div>
             </footer>
           </div>
