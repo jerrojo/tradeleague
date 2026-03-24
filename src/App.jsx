@@ -1895,14 +1895,6 @@ const TraderProfile = ({ trader, onClose }) => {
 
 /* ═══════════════════════ LIVE PnL TICKER ═══════════════════════ */
 const LivePnLTicker = () => {
-  const [offset, setOffset] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setOffset(prev => (prev - 1) % 100);
-    }, 30);
-    return () => clearInterval(interval);
-  }, []);
-
   const tickerItems = [
     "🔥 Scalp King +$2,340 (BTC LONG) ⚡",
     "🥷 Crypto Ninja +$890 (ETH SHORT) ⚡",
@@ -1932,7 +1924,7 @@ const LivePnLTicker = () => {
         fontSize: "12px", fontWeight: "600", color: C.text, gap: "24px", ...mono
       }}>
         {repeatedItems.map((item, i) => (
-          <span key={i}>{item}</span>
+          <span key={i} style={{ color: item.includes("+$") ? C.green : item.includes("-$") ? C.red : C.text }}>{item}</span>
         ))}
       </div>
     </div>
@@ -1941,7 +1933,7 @@ const LivePnLTicker = () => {
 
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
-  const [view, setView] = useState("groups");
+  const [view, setView] = useState("leaderboard");
   const [compareMetric, setCompareMetric] = useState("equity");
   const { openProfile } = useProfile();
   const [visibleTraders, setVisibleTraders] = useState(() => {
@@ -1955,80 +1947,126 @@ const TradersTab = () => {
   const allOn = mockTraders.every(t => visibleTraders[t.name]);
   const toggleAll = () => { const next = {}; mockTraders.forEach(t => { next[t.name] = !allOn; }); setVisibleTraders(next); };
 
-  // Season countdown
   const seasonEnd = new Date(2026, 3, 1);
   const now = new Date();
   const daysLeft = Math.max(0, Math.floor((seasonEnd - now) / (1000 * 60 * 60 * 24)));
   const hoursLeft = Math.max(0, Math.floor(((seasonEnd - now) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
 
+  const getFlames = (streak) => {
+    if (streak >= 15) return "🔥🔥🔥";
+    if (streak >= 10) return "🔥🔥";
+    if (streak >= 5) return "🔥";
+    return "";
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* SEASON BANNER */}
       <div style={{
-        ...cardStyle, border: `2px solid transparent`, backgroundImage: `linear-gradient(${C.card}, ${C.card}), linear-gradient(135deg, ${C.purple}, ${C.blue})`,
-        backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box",
-        padding: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px"
+        ...cardStyle, borderLeft: `4px solid ${C.purple}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "20px" }}>🏆</span>
+          <span style={{ fontSize: "18px" }}>🏆</span>
           <div>
-            <div style={{ fontSize: "16px", fontWeight: "800", letterSpacing: "1px" }}>SEASON 1 — MARCH 2026</div>
-            <div style={{ fontSize: "12px", color: C.textMuted, marginTop: "2px" }}>
-              ⏱️ {daysLeft}d {hoursLeft}h remaining
-            </div>
+            <div style={{ fontSize: "14px", fontWeight: "800" }}>SEASON 1</div>
+            <div style={{ fontSize: "11px", color: C.textMuted }}>MARCH 2026</div>
           </div>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: C.amber, ...mono }}>$50,000</div>
         </div>
-        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "14px", color: C.textMuted, marginBottom: "4px" }}>Prize Pool</div>
-            <div style={{ fontSize: "18px", fontWeight: "800", color: C.amber, ...mono }}>$50,000</div>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "12px", fontWeight: "700", ...mono }}>{daysLeft}d {hoursLeft}h remaining</div>
           </div>
-          <div style={{ height: 30, width: "1px", backgroundColor: C.border }} />
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", fontSize: "11px", fontWeight: "600", ...mono }}>
             {[["🥇", "$25K"], ["🥈", "$15K"], ["🥉", "$10K"]].map(([emoji, prize]) => (
-              <div key={emoji} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "16px", marginBottom: "2px" }}>{emoji}</div>
-                <div style={{ fontSize: "11px", fontWeight: "600", ...mono }}>{prize}</div>
-              </div>
+              <span key={emoji}>{emoji} {prize}</span>
             ))}
           </div>
         </div>
       </div>
+
       <div style={{ display: "flex", gap: "8px" }}>
-        {["groups","compare","profiles"].map(v => (
+        {["leaderboard","compare","profiles"].map(v => (
           <button key={v} onClick={() => setView(v)} style={{
             padding: "8px 20px", borderRadius: "6px", border: `1px solid ${view === v ? C.purple : C.border}`,
             backgroundColor: view === v ? C.purpleBg : "transparent", color: view === v ? C.purple : C.textMuted,
             fontSize: "12px", fontWeight: "600", cursor: "pointer", textTransform: "capitalize"
-          }}>{v === "groups" ? "Groups" : v === "compare" ? "Compare" : "Profiles"}</button>
+          }}>{v === "leaderboard" ? "Leaderboard" : v === "compare" ? "Compare" : "Profiles"}</button>
         ))}
       </div>
 
-      {view === "groups" && (
-        <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr>
-              {["Rank","Group","Members","Win Rate","Monthly PnL","Signals","Accuracy","🔥 Hot"].map(h => <th key={h} style={thStyle}>{h}</th>)}
-            </tr></thead>
-            <tbody>
-              {mockGroups.map((g, i) => {
-                const topTraders = mockTraders.filter(t => mockGroups[i].name.includes(t.avatar));
-                const highestStreak = Math.max(...topTraders.map(t => t.streak), 0);
-                const streakFlames = highestStreak >= 15 ? "🔥🔥🔥" : highestStreak >= 10 ? "🔥🔥" : highestStreak >= 5 ? "🔥" : "";
-                return (
-                <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
-                  <td style={{ ...tdStyle, fontWeight: "700", fontSize: "14px" }}>{i < 3 ? medals[i] : i + 1}</td>
-                  <td style={tdStyle}><span style={{ marginRight: "6px" }}>{g.emoji}</span>{g.name}</td>
-                  <td style={{ ...tdStyle, ...mono }}>{g.members}</td>
-                  <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{g.winRate}%</td>
-                  <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(g.monthlyPnl / 1000).toFixed(1)}K</td>
-                  <td style={{ ...tdStyle, ...mono }}>{g.signals}</td>
-                  <td style={{ ...tdStyle, ...mono, color: C.amber, fontWeight: "600" }}>{g.accuracy}%</td>
-                  <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "600" }}>{streakFlames || "—"}</td>
-                </tr>
-              );})}
-            </tbody>
-          </table>
+      {view === "leaderboard" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr>
+                {["Rank","Trader","Streak","Win Rate","PnL","Trades","Copiers","Action"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {mockTraders.map((t, i) => {
+                  const isTop1 = i === 0;
+                  return (
+                  <tr key={t.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
+                    <td style={{ ...tdStyle, fontWeight: "700", fontSize: "14px", borderLeft: isTop1 ? `3px solid ${C.amber}` : "none" }}>
+                      {i < 3 ? medals[i] : i + 1}
+                    </td>
+                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "18px" }}>{t.avatar}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <TraderLink name={t.name} />
+                        <span style={pillStyle(C.purple)}>LVL {t.level}</span>
+                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: tierColor[t.tier] }} />
+                      </div>
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>
+                      {getFlames(t.streak)}<span style={{ marginLeft: "4px" }}>{t.streak}</span>
+                    </td>
+                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</span>
+                      <div style={{ width: "60px", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                        <div style={{ width: `${t.winRate}%`, height: "100%", backgroundColor: C.green }} />
+                      </div>
+                    </td>
+                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
+                    <td style={{ ...tdStyle, ...mono }}>{t.trades}</td>
+                    <td style={{ ...tdStyle, display: "flex", alignItems: "center", gap: "4px", ...mono }}>
+                      <Users size={12} color={C.textMuted} /> {t.copiers}
+                    </td>
+                    <td style={{ ...tdStyle }}>
+                      <button onClick={() => openProfile(t)} style={{
+                        padding: "4px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                        backgroundColor: C.green, color: C.bg, border: "none"
+                      }}>Copy</button>
+                    </td>
+                  </tr>
+                );})}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ ...cardStyle }}>
+            <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Signal Groups</div>
+            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead><tr>
+                  {["Rank","Group","Members","Win Rate","Monthly PnL","Signals","Accuracy","Hot"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {mockGroups.map((g, i) => (
+                  <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
+                    <td style={{ ...tdStyle, fontWeight: "700", fontSize: "13px" }}>{i < 3 ? medals[i] : i + 1}</td>
+                    <td style={tdStyle}><span style={{ marginRight: "6px" }}>{g.emoji}</span>{g.name}</td>
+                    <td style={{ ...tdStyle, ...mono }}>{g.members}</td>
+                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{g.winRate}%</td>
+                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(g.monthlyPnl / 1000).toFixed(1)}K</td>
+                    <td style={{ ...tdStyle, ...mono }}>{g.signals}</td>
+                    <td style={{ ...tdStyle, ...mono, color: C.amber, fontWeight: "600" }}>{g.accuracy}%</td>
+                    <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>{getFlames(Math.max(...mockTraders.map(t => t.streak))) || "—"}</td>
+                  </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2052,8 +2090,7 @@ const TradersTab = () => {
         ];
         return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Trader selector */}
-          <div style={{ ...cardStyle, display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+          <div style={{ ...cardStyle, display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
             <button onClick={toggleAll} style={{
               padding: "6px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
               border: `1px solid ${allOn ? C.textMuted : C.border}`,
@@ -2065,20 +2102,19 @@ const TradersTab = () => {
               const color = traderColors[i];
               return (
                 <button key={t.name} onClick={() => toggleTrader(t.name)} style={{
-                  display: "flex", alignItems: "center", gap: "6px",
-                  padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "4px",
+                  padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
                   border: `1px solid ${on ? color : C.border}`,
                   backgroundColor: on ? color + "18" : "transparent",
                   color: on ? color : C.textFaint, transition: "all 0.15s"
                 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: on ? color : C.textFaint, transition: "background-color 0.15s" }} />
-                  {t.avatar} {t.name}
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: on ? color : C.textFaint, transition: "background-color 0.15s" }} />
+                  {t.avatar}
                 </button>
               );
             })}
           </div>
 
-          {/* Compare metric tabs */}
           <div style={{ display: "flex", gap: "6px" }}>
             {compareMetrics.map(m => (
               <button key={m.id} onClick={() => setCompareMetric(m.id)} style={{
@@ -2091,7 +2127,6 @@ const TradersTab = () => {
             ))}
           </div>
 
-          {/* ── EQUITY COMPARISON ── */}
           {compareMetric === "equity" && (<>
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "4px" }}>Equity Curve Comparison</div>
@@ -2130,7 +2165,6 @@ const TradersTab = () => {
             </div>
           </>)}
 
-          {/* ── SIGNALS COMPARISON ── */}
           {compareMetric === "signals" && (<>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div style={cardStyle}>
@@ -2182,7 +2216,6 @@ const TradersTab = () => {
             </div>
           </>)}
 
-          {/* ── TRADES COMPARISON ── */}
           {compareMetric === "trades" && (<>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div style={cardStyle}>
@@ -2236,7 +2269,6 @@ const TradersTab = () => {
             </div>
           </>)}
 
-          {/* ── PREDICTIONS COMPARISON ── */}
           {compareMetric === "predictions" && (<>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div style={cardStyle}>
@@ -2299,49 +2331,64 @@ const TradersTab = () => {
             const xpPct = Math.round((t.xp / t.xpNext) * 100);
             const isTopRanked = t.rank === 1;
             return (
-            <div key={t.name} style={{ ...cardStyle, cursor: "pointer", border: isTopRanked ? `2px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s", position: "relative" }} onClick={() => openProfile(t)}>
-              {isTopRanked && (
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", background: `linear-gradient(90deg, ${C.amber}, ${C.amber}80)`, borderRadius: "8px 8px 0 0" }} />
-              )}
+            <div key={t.name} style={{ ...cardStyle, cursor: "pointer", borderLeft: isTopRanked ? `3px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s" }} onClick={() => openProfile(t)}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <span style={{ fontSize: "28px" }}>{t.avatar}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
-                    {t.name}
-                    <span style={{ fontSize: "12px", fontWeight: "700", color: C.purple, ...mono }}>LVL {t.level}</span>
-                  </div>
-                  <div style={{ fontSize: "10px", color: C.amber, fontWeight: "700", marginBottom: "4px" }}>{title}</div>
-                  <div style={{ fontSize: "11px", color: C.textMuted }}>Rank #{t.rank} — {t.style}</div>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: C.cardHover, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                  {t.avatar}
                 </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: "600" }}>{t.name}</div>
+                  <div style={{ fontSize: "10px", color: C.textMuted }}>Rank #{t.rank} — {t.style}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+                <span style={pillStyle(C.purple)}>LVL {t.level}</span>
                 <Tag text={t.tier} color={tierColor[t.tier]} />
               </div>
-              {/* XP Progress Bar */}
+
               <div style={{ marginBottom: "10px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                   <span style={{ fontSize: "10px", color: C.textMuted }}>XP to Level {t.level + 1}</span>
-                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>{t.xp}/{t.xpNext}</span>
+                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>XP: {t.xp}/{t.xpNext}</span>
                 </div>
-                <div style={{ width: "100%", height: "6px", backgroundColor: C.border, borderRadius: "3px", overflow: "hidden" }}>
-                  <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.purple, borderRadius: "3px", transition: "width 0.3s" }} />
+                <div style={{ width: "100%", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.blue, borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
               </div>
-              <div style={{ fontSize: "11px", color: C.textMuted, lineHeight: "1.5", marginBottom: "10px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{t.bio}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", paddingBottom: "10px", borderBottom: `1px solid ${C.border}`, marginBottom: "10px" }}>
                 {[
                   ["Win Rate", t.winRate + "%", C.green],
                   ["PnL", "$" + (t.pnl / 1000).toFixed(1) + "K", C.green],
+                  ["Trades", t.trades, C.blue],
                   ["Sharpe", t.sharpe.toFixed(1), C.blue],
-                  ["Streak", t.streak + "W", C.amber],
                 ].map(([l, v, clr]) => (
                   <div key={l}>
                     <div style={{ fontSize: "10px", color: C.textMuted }}>{l}</div>
-                    <div style={{ fontSize: "13px", fontWeight: "700", color: clr, ...mono }}>{v}</div>
+                    <div style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>{v}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
-                <div style={{ display: "flex", gap: "4px" }}>{t.badges.map((b, i) => <span key={i} style={{ fontSize: "16px" }}>{b}</span>)}</div>
-                <div style={{ fontSize: "11px", color: C.purple, fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>View Profile <ChevronRight size={12} /></div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", fontSize: "13px", fontWeight: "600" }}>
+                <span>{getFlames(t.streak)}</span>
+                <span style={{ color: C.amber }}>{t.streak} Win Streak</span>
+              </div>
+
+              <div style={{ display: "flex", gap: "4px", marginBottom: "10px" }}>
+                {t.badges.map((b, i) => <span key={i} style={{ fontSize: "16px" }}>{b}</span>)}
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={() => openProfile(t)} style={{
+                  flex: 1, padding: "6px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                  border: `1px solid ${C.purple}`, backgroundColor: "transparent", color: C.purple
+                }}>View Profile</button>
+                <button onClick={() => openProfile(t)} style={{
+                  flex: 1, padding: "6px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                  backgroundColor: C.green, color: C.bg, border: "none"
+                }}>Copy</button>
               </div>
             </div>
             );
@@ -2486,20 +2533,29 @@ const CopyTradingTab = () => {
   const port = copyPortfolios[selected];
   const riskColor = { "Low": C.green, "Medium": C.amber, "Medium-High": C.amber, "High": C.red };
 
+  // Find copiers count from mockTraders by matching name
+  const traderData = mockTraders.find(t => t.name === port.name);
+  const copiers = traderData ? traderData.copiers : 0;
+  const isHot = copiers > 300;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
         <div style={{ fontSize: "18px", fontWeight: "700" }}>Copy Trading</div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {copyPortfolios.map((p, i) => (
-            <button key={p.name} onClick={() => setSelected(i)} style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
-              border: `1px solid ${selected === i ? C.purple : C.border}`,
-              backgroundColor: selected === i ? C.purpleBg : "transparent",
-              color: selected === i ? C.purple : C.textMuted
-            }}><span>{p.avatar}</span> {p.name}</button>
-          ))}
+          {copyPortfolios.map((p, i) => {
+            const td = mockTraders.find(t => t.name === p.name);
+            const ret = p.monthlyReturn;
+            return (
+              <button key={p.name} onClick={() => setSelected(i)} style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
+                border: `1px solid ${selected === i ? C.purple : C.border}`,
+                backgroundColor: selected === i ? C.purpleBg : "transparent",
+                color: selected === i ? C.purple : C.textMuted
+              }}><span>{p.avatar}</span> {p.name} {ret >= 0 ? "+" : ""}{ret}%</button>
+            );
+          })}
         </div>
       </div>
 
@@ -2565,14 +2621,14 @@ const CopyTradingTab = () => {
               <Copy size={16} color={C.purple} /> Copiar a <TraderLink name={port.name}>{port.name}</TraderLink>
             </div>
 
-            {/* Social Proof */}
-            <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: C.greenBg, borderRadius: "6px", border: `1px solid ${C.green}40` }}>
-              <div style={{ fontSize: "12px", fontWeight: "700", color: C.green, display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "16px" }}>🟢</span> {port.copiers} people copying right now
+            {/* Social Proof - Green tinted info box */}
+            <div style={{ marginBottom: "12px", padding: "12px", backgroundColor: C.greenBg, borderRadius: "6px", border: `1px solid ${C.green}40` }}>
+              <div style={{ fontSize: "12px", fontWeight: "700", color: C.green, display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                <span style={{ fontSize: "14px" }}>🟢</span> {copiers} people copying right now
               </div>
-              <div style={{ fontSize: "10px", color: C.textMuted, marginTop: "4px" }}>Last copied: 2 min ago</div>
-              {port.copiers > 300 && (
-                <div style={{ fontSize: "11px", fontWeight: "700", color: C.amber, marginTop: "4px", display: "inline-block", backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: "4px" }}>🔥 Trending</div>
+              <div style={{ fontSize: "10px", color: C.textMuted }}>Last copied: 2 min ago</div>
+              {isHot && (
+                <div style={{ fontSize: "11px", fontWeight: "700", color: C.amber, marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "4px", backgroundColor: C.amberBg, padding: "3px 8px", borderRadius: "4px" }}>🔥 Trending</div>
               )}
             </div>
 
@@ -2604,13 +2660,14 @@ const CopyTradingTab = () => {
               </div>
             ))}
 
-            {/* Copy Button */}
+            {/* Copy Button with green glow */}
             <button onClick={() => setCopying(prev => ({ ...prev, [port.name]: !prev[port.name] }))} style={{
               width: "100%", marginTop: "16px", padding: "12px", borderRadius: "8px", border: "none", cursor: "pointer",
               backgroundColor: copying[port.name] ? C.red : C.green,
               color: copying[port.name] ? "#fff" : "#000",
               fontSize: "13px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+              boxShadow: !copying[port.name] ? "0 0 12px rgba(63,185,80,0.3)" : "none"
             }}>
               {copying[port.name] ? <><Pause size={14} /> Stop Copying</> : <><Play size={14} /> Start Copying</>}
             </button>
@@ -2660,7 +2717,9 @@ const CopyTradingTab = () => {
           </tr></thead>
           <tbody>
             {copyPortfolios.map((p, i) => {
-              const isHot = p.copiers > 300;
+              const td = mockTraders.find(t => t.name === p.name);
+              const porCopiers = td ? td.copiers : 0;
+              const portIsHot = porCopiers > 300;
               return (
               <tr key={p.name} style={{ backgroundColor: i === selected ? C.purpleBg : i % 2 === 0 ? "transparent" : C.cardHover, cursor: "pointer" }} onClick={() => setSelected(i)}>
                 <td style={tdStyle}><span style={{ marginRight: "6px" }}>{p.avatar}</span><TraderLink name={p.name}>{p.name}</TraderLink></td>
@@ -2672,7 +2731,7 @@ const CopyTradingTab = () => {
                 <td style={{ ...tdStyle, ...mono }}>${(p.aum / 1e6).toFixed(1)}M</td>
                 <td style={{ ...tdStyle, ...mono }}>{p.fee}%</td>
                 <td style={tdStyle}><Tag text={p.riskLevel} color={riskColor[p.riskLevel] || C.amber} /></td>
-                <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "700" }}>{isHot ? "🔥" : "—"}</td>
+                <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "700" }}>{portIsHot ? "🔥" : "—"}</td>
                 <td style={tdStyle}>
                   {copying[p.name]
                     ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, fontWeight: "600" }}><CheckCircle size={12} /> Copying</span>
@@ -2701,6 +2760,7 @@ const PredictionMarketsTab = () => {
 
   const totalVolume = predictionMarkets.reduce((a, m) => a + m.volume, 0);
   const totalParticipants = predictionMarkets.reduce((a, m) => a + m.participants, 0);
+  const avgYesOdds = Math.round(predictionMarkets.reduce((a, m) => a + m.yesOdds, 0) / predictionMarkets.length);
   const trending = predictionMarkets.filter(m => m.trending).length;
 
   const placeBet = (id, side) => {
@@ -2732,19 +2792,19 @@ const PredictionMarketsTab = () => {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats with trend sub-text */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Total Volume" value={`$${(totalVolume / 1000).toFixed(0)}K`} icon={DollarSign} color={C.green} />
-        <StatCard label="Participants" value={totalParticipants.toLocaleString()} icon={Users} color={C.blue} />
-        <StatCard label="Active Markets" value={predictionMarkets.length} icon={Activity} color={C.purple} />
-        <StatCard label="Trending" value={trending} sub="Hot markets" icon={Flame} color={C.amber} />
+        <StatCard label="Total Volume" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% week" icon={DollarSign} color={C.green} />
+        <StatCard label="Participants" value={totalParticipants.toLocaleString()} sub="+240 active" icon={Users} color={C.blue} />
+        <StatCard label="Active Markets" value={predictionMarkets.length} sub="2 resolved" icon={Activity} color={C.purple} />
+        <StatCard label="Market Bias" value={`${avgYesOdds}% YES`} sub="Bull sentiment" icon={Flame} color={C.amber} />
       </div>
 
       {/* Category filter */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         {predCategories.map(c => (
           <button key={c} onClick={() => setCatFilter(c)} style={{
-            padding: "6px 16px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
+            padding: "7px 18px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", cursor: "pointer",
             border: `1px solid ${catFilter === c ? C.purple : C.border}`,
             backgroundColor: catFilter === c ? C.purpleBg : "transparent",
             color: catFilter === c ? C.purple : C.textMuted
@@ -2752,107 +2812,67 @@ const PredictionMarketsTab = () => {
         ))}
       </div>
 
-      {/* Market Cards */}
+      {/* Market Cards - 2 column grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
         {filtered.map(m => {
           const userBet = userBets[m.id];
           return (
-            <div key={m.id} style={{ ...cardStyle, border: m.trending ? `1px solid ${C.amber}30` : `1px solid ${C.border}`, position: "relative" }}>
+            <div key={m.id} style={{ ...cardStyle, border: m.trending ? `2px solid ${C.amber}` : `1px solid ${C.border}`, position: "relative" }}>
               {m.trending && (
-                <div style={{ position: "absolute", top: "10px", right: "10px", display: "flex", alignItems: "center", gap: "4px" }}>
-                  <Flame size={12} color={C.amber} />
-                  <span style={{ fontSize: "10px", fontWeight: "700", color: C.amber }}>TRENDING</span>
+                <div style={{ position: "absolute", top: "10px", right: "10px", fontSize: "18px" }}>🔥</div>
+              )}
+
+              {/* Question - 16px bold, max 2 lines */}
+              <div style={{ fontSize: "16px", fontWeight: "700", marginBottom: "14px", paddingRight: m.trending ? "30px" : 0, lineHeight: "1.4", maxHeight: "3.2em", overflow: "hidden" }}>{m.question}</div>
+
+              {/* Odds tug-of-war bar - 24px height, visual battle */}
+              <div style={{ display: "flex", height: "24px", borderRadius: "6px", overflow: "hidden", marginBottom: "14px", gap: "0px", border: `1px solid ${C.border}` }}>
+                <div style={{ flex: m.yesOdds, backgroundColor: C.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", color: "#fff" }}>
+                  {m.yesOdds > 30 ? `${m.yesOdds}%` : ""}
+                </div>
+                <div style={{ flex: m.noOdds, backgroundColor: C.red, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", color: "#fff" }}>
+                  {m.noOdds > 30 ? `${m.noOdds}%` : ""}
+                </div>
+              </div>
+
+              {/* YES / NO buttons - side by side, 50% width each */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                <button onClick={() => placeBet(m.id, "yes")} style={{
+                  flex: 1, padding: "12px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer", textTransform: "uppercase",
+                  border: userBet === "yes" ? `2px solid ${C.green}` : `2px solid ${C.green}40`,
+                  backgroundColor: userBet === "yes" ? C.green : "transparent",
+                  color: userBet === "yes" ? "#000" : C.green
+                }}>YES</button>
+                <button onClick={() => placeBet(m.id, "no")} style={{
+                  flex: 1, padding: "12px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer", textTransform: "uppercase",
+                  border: userBet === "no" ? `2px solid ${C.red}` : `2px solid ${C.red}40`,
+                  backgroundColor: userBet === "no" ? C.red : "transparent",
+                  color: userBet === "no" ? "#fff" : C.red
+                }}>NO</button>
+              </div>
+
+              {/* Pot size - centered, purple monospace */}
+              <div style={{ textAlign: "center", marginBottom: "12px", fontSize: "14px", fontWeight: "700", color: C.purple, ...mono }}>
+                💰 Pot: ${(m.volume / 1000).toFixed(0)}K
+              </div>
+
+              {/* Your position indicator */}
+              {userBet && (
+                <div style={{ marginBottom: "12px", fontSize: "12px", fontWeight: "600", color: userBet === "yes" ? C.green : C.red, display: "flex", alignItems: "center", gap: "6px" }}>
+                  {userBet === "yes" ? "✅" : "❌"} Your bet: {userBet.toUpperCase()}
                 </div>
               )}
 
-              {/* Question */}
-              <div style={{ fontSize: "14px", fontWeight: "700", marginBottom: "10px", paddingRight: m.trending ? "80px" : 0, lineHeight: "1.4" }}>{m.question}</div>
-
-              {/* Category + Deadline */}
-              <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
+              {/* Metadata row - category, deadline, participants */}
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", fontSize: "11px", color: C.textMuted }}>
                 <Tag text={m.category} color={C.blue} />
-                <span style={{ fontSize: "11px", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                   <Clock size={11} /> {m.deadline}
                 </span>
+                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <Users size={11} /> {m.participants}
+                </span>
               </div>
-
-              {/* Pot Size + Odds Bar */}
-              <div style={{ marginBottom: "14px", padding: "10px", backgroundColor: C.purpleBg, borderRadius: "6px", border: `1px solid ${C.purple}40` }}>
-                <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", fontWeight: "600" }}>POT SIZE</div>
-                <div style={{ fontSize: "18px", fontWeight: "800", color: C.purple, ...mono, marginBottom: "10px" }}>${(m.volume / 1000).toFixed(0)}K</div>
-                <div style={{ display: "flex", height: "20px", borderRadius: "6px", overflow: "hidden", gap: "1px", marginBottom: "6px" }}>
-                  <div style={{ flex: m.yesOdds, backgroundColor: C.green, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: "#000" }}>
-                    {m.yesOdds > 25 ? `${m.yesOdds}%` : ""}
-                  </div>
-                  <div style={{ flex: m.noOdds, backgroundColor: C.red, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", color: "#fff" }}>
-                    {m.noOdds > 25 ? `${m.noOdds}%` : ""}
-                  </div>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: C.green }}>YES {m.yesOdds}¢</span>
-                  <span style={{ fontSize: "11px", fontWeight: "700", color: C.red }}>NO {m.noOdds}¢</span>
-                </div>
-              </div>
-
-              {/* Mini Sparkline */}
-              <div style={{ marginBottom: "14px" }}>
-                <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>Historial de YES %</div>
-                <ResponsiveContainer width="100%" height={40}>
-                  <AreaChart data={m.priceHistory.map((v, i) => ({ i, v }))}>
-                    <defs>
-                      <linearGradient id={`spark${m.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.green} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={C.green} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="v" stroke={C.green} fill={`url(#spark${m.id})`} strokeWidth={1.5} dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Volume + Participants */}
-              <div style={{ display: "flex", gap: "16px", marginBottom: "14px" }}>
-                <div>
-                  <div style={{ fontSize: "10px", color: C.textMuted }}>Volumen</div>
-                  <div style={{ fontSize: "13px", fontWeight: "700", ...mono }}>${(m.volume / 1000).toFixed(0)}K</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "10px", color: C.textMuted }}>Participantes</div>
-                  <div style={{ fontSize: "13px", fontWeight: "700", ...mono }}>{m.participants.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "10px", color: C.textMuted }}>Apuestas</div>
-                  <div style={{ fontSize: "13px", fontWeight: "700", ...mono }}>{m.yesBets} / {m.noBets}</div>
-                </div>
-              </div>
-
-              {/* Bet Buttons - DRAMATIC */}
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={() => placeBet(m.id, "yes")} style={{
-                  flex: 1, padding: "14px", borderRadius: "8px", fontSize: "13px", fontWeight: "800", cursor: "pointer",
-                  border: userBet === "yes" ? `3px solid ${C.green}` : `2px solid ${C.green}80`,
-                  backgroundColor: userBet === "yes" ? C.green : C.greenBg,
-                  color: userBet === "yes" ? "#000" : C.green, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                  textTransform: "uppercase", letterSpacing: "0.5px", transition: "all 0.2s"
-                }}>
-                  <ArrowUp size={16} /> YES — {m.yesOdds}¢
-                </button>
-                <button onClick={() => placeBet(m.id, "no")} style={{
-                  flex: 1, padding: "14px", borderRadius: "8px", fontSize: "13px", fontWeight: "800", cursor: "pointer",
-                  border: userBet === "no" ? `3px solid ${C.red}` : `2px solid ${C.red}80`,
-                  backgroundColor: userBet === "no" ? C.red : C.redBg,
-                  color: userBet === "no" ? "#fff" : C.red, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                  textTransform: "uppercase", letterSpacing: "0.5px", transition: "all 0.2s"
-                }}>
-                  <ArrowDown size={16} /> NO — {m.noOdds}¢
-                </button>
-              </div>
-
-              {userBet && (
-                <div style={{ marginTop: "10px", padding: "8px", fontSize: "12px", color: userBet === "yes" ? C.green : C.red, fontWeight: "700", textAlign: "center", backgroundColor: userBet === "yes" ? C.greenBg : C.redBg, borderRadius: "6px", border: `1px solid ${userBet === "yes" ? C.green : C.red}40` }}>
-                  ✓ Tu apuesta: {userBet.toUpperCase()} @ {userBet === "yes" ? m.yesOdds : m.noOdds}¢
-                </div>
-              )}
             </div>
           );
         })}
