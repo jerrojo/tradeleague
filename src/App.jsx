@@ -11,7 +11,7 @@ import {
   ChevronDown, ChevronRight, Eye, Lock, Copy, RefreshCw, Crosshair,
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
-  MessageCircle, Share2, ThumbsUp, ThumbsDown, Swords, Radio, Heart
+  MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
@@ -48,27 +48,17 @@ const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, bo
 const thStyle = { padding: "10px 12px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
 const tdStyle = { padding: "10px 12px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
 
-const StatCard = ({ label, value, sub, icon: Icon, color = C.blue }) => (
+const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
   <div style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px" }}>
     <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <Icon size={18} color={color} />
     </div>
     <div>
-      <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>{label}</div>
+      <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>
+        {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
+      </div>
       <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}>{value}</div>
-      {sub && <div style={{ fontSize: "11px", color: sub.startsWith("+") ? C.green : sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
-    </div>
-  </div>
-);
-
-const ScoreBar = ({ label, value, max = 100, color = C.blue }) => (
-  <div style={{ marginBottom: "10px" }}>
-    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-      <span style={{ fontSize: "11px", color: C.textMuted }}>{label}</span>
-      <span style={{ fontSize: "11px", fontWeight: "600", ...mono }}>{value}/{max}</span>
-    </div>
-    <div style={{ width: "100%", height: "5px", backgroundColor: C.border, borderRadius: "3px", overflow: "hidden" }}>
-      <div style={{ width: `${(value / max) * 100}%`, height: "100%", backgroundColor: color, borderRadius: "3px" }} />
+      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
     </div>
   </div>
 );
@@ -107,8 +97,8 @@ const GLOSSARY = {
   degen:          "Nivel de agresividad del trader. Degen = arriesgado y rápido. Safe = conservador y tranquilo",
   // Signals
   signalActive:   "Señal que sigue activa — el trader aún tiene esta operación abierta",
-  tpHit:          "Take Profit alcanzado — la operación cerró en ganancia ✅",
-  slHit:          "Stop Loss alcanzado — la operación cerró en pérdida ❌",
+  tpHit:          "Take Profit alcanzado — la operación cerró en ganancia",
+  slHit:          "Stop Loss alcanzado — la operación cerró en pérdida",
   // Predictions
   odds:           "Probabilidad según el mercado. 38% YES = la mayoría cree que NO va a pasar",
   pot:            "Dinero total apostado en esta predicción. Se reparte entre los ganadores",
@@ -144,21 +134,6 @@ const InfoTip = ({ k, children, inline = false }) => {
   );
 };
 
-/* ── StatCard with optional tooltip ── */
-const StatCardTip = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
-  <div style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px" }}>
-    <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <Icon size={18} color={color} />
-    </div>
-    <div>
-      <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>
-        {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
-      </div>
-      <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}>{value}</div>
-      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
-    </div>
-  </div>
-);
 
 /* ── MiniSparkline: inline SVG sparkline for tables & cards ── */
 const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot = true }) => {
@@ -211,18 +186,6 @@ const ACHIEVEMENTS = {
   earlyApe:        { icon: "🦍", name: "Early Ape",         desc: "Top 3 in new coin entries" },
   riskDjinn:       { icon: "🧞", name: "Risk Djinn",        desc: "Profit factor > 2.5" },
 };
-const BadgeChip = ({ id }) => {
-  const a = ACHIEVEMENTS[id];
-  if (!a) return null;
-  return (
-    <span title={`${a.name}: ${a.desc}`} style={{
-      display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontWeight: "600",
-      padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple,
-      border: `1px solid ${C.purple}30`, cursor: "default", whiteSpace: "nowrap"
-    }}>{a.icon} {a.name}</span>
-  );
-};
-
 /* ── Degen Score: how aggressive/degenerate a trader is (0–100, higher = more degen) ── */
 const calcDegenScore = (t) => {
   const levScore = (t.style === "Scalping" ? 35 : t.style === "Day Trading" ? 25 : t.style === "Breakout" ? 20 : 10);
@@ -231,7 +194,7 @@ const calcDegenScore = (t) => {
   const tradeFreq = Math.min(t.trades / 1000, 1) * 20;
   return Math.round(levScore + ddScore + streakScore + tradeFreq);
 };
-const degenLabel = (score) => score >= 80 ? "FULL DEGEN 🎰" : score >= 60 ? "APE MODE 🦍" : score >= 40 ? "CALCULATED 🧮" : "SAFE PLAYER 🛡️";
+const degenLabel = (score) => score >= 80 ? "FULL DEGEN" : score >= 60 ? "APE MODE" : score >= 40 ? "CALCULATED" : "SAFE PLAYER";
 
 /* ═══════════════════════ MOCK DATA ═══════════════════════ */
 const mockChartData = Array.from({ length: 24 }, (_, i) => ({
@@ -532,13 +495,14 @@ const predictionMarkets = [
 const predCategories = ["All", "Price", "Macro", "Dominance", "Traders"];
 
 /* ── BotTag: visual distinction for bots vs humans ── */
+const tagBase = { display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "3px" };
 const BotTag = ({ isBot }) => isBot ? (
-  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: "700", color: C.cyan, backgroundColor: `${C.cyan}15`, border: `1px solid ${C.cyan}30`, padding: "1px 6px", borderRadius: "3px" }}>
+  <span style={{ ...tagBase, color: C.cyan, backgroundColor: `${C.cyan}15`, border: `1px solid ${C.cyan}30` }}>
     <Bot size={9} /> BOT
   </span>
 ) : (
-  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}30`, padding: "1px 6px", borderRadius: "3px" }}>
-    👤 HUMAN
+  <span style={{ ...tagBase, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}30` }}>
+    <Users size={9} /> HUMAN
   </span>
 );
 
@@ -565,80 +529,40 @@ const TpProgressBar = ({ entry, tp, sl, status }) => {
   );
 };
 
-/* ── Social Reactions: emoji reactions on cards ── */
-const Reactions = ({ itemId, reactionsState, setReactionsState }) => {
-  const emojis = [
-    { key: "fire", emoji: "🔥", label: "Fire" },
-    { key: "diamond", emoji: "💎", label: "Diamond" },
-    { key: "brain", emoji: "🧠", label: "Big Brain" },
-    { key: "eyes", emoji: "👀", label: "Watching" },
-    { key: "rocket", emoji: "🚀", label: "Moon" },
-    { key: "skull", emoji: "💀", label: "Rekt" },
-  ];
-  const counts = reactionsState[itemId] || {};
-  const toggle = (key) => {
-    setReactionsState(prev => {
-      const item = { ...(prev[itemId] || {}) };
-      item[key] = (item[key] || 0) > 0 && item[`${key}_me`] ? item[key] - 1 : (item[key] || 0) + 1;
-      item[`${key}_me`] = !item[`${key}_me`];
-      return { ...prev, [itemId]: item };
-    });
-  };
-  return (
-    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-      {emojis.map(e => {
-        const c = counts[e.key] || 0;
-        const mine = counts[`${e.key}_me`];
-        return (
-          <button key={e.key} onClick={() => toggle(e.key)} title={e.label} style={{
-            display: "flex", alignItems: "center", gap: "3px", padding: "3px 8px", borderRadius: "12px",
-            border: `1px solid ${mine ? C.purple : C.border}`, backgroundColor: mine ? C.purpleBg : "transparent",
-            cursor: "pointer", fontSize: "12px", color: mine ? C.purple : C.textMuted, fontWeight: "600",
-            transition: "all 0.15s"
-          }}>
-            <span>{e.emoji}</span>
-            {c > 0 && <span style={{ fontSize: "10px", ...mono }}>{c}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-/* ── Confidence Vote: community bullish/bearish voting ── */
-const ConfidenceVote = ({ itemId, votesState, setVotesState }) => {
-  const votes = votesState[itemId] || { bull: Math.floor(Math.random() * 40 + 20), bear: Math.floor(Math.random() * 20 + 5), myVote: null };
-  const total = votes.bull + votes.bear;
-  const bullPct = total > 0 ? Math.round((votes.bull / total) * 100) : 50;
+/* ── Community Vote: a favor / en contra on cards ── */
+const CommunityVote = ({ itemId, votesState, setVotesState }) => {
+  const v = votesState[itemId] || { up: Math.floor(Math.random() * 40 + 10), down: Math.floor(Math.random() * 15 + 2), myVote: null };
+  const total = v.up + v.down;
+  const upPct = total > 0 ? Math.round((v.up / total) * 100) : 50;
   const vote = (side) => {
     setVotesState(prev => {
-      const v = { ...(prev[itemId] || votes) };
-      if (v.myVote === side) { v[side]--; v.myVote = null; }
-      else { if (v.myVote) v[v.myVote]--; v[side]++; v.myVote = side; }
-      return { ...prev, [itemId]: v };
+      const cur = { ...(prev[itemId] || v) };
+      if (cur.myVote === side) { cur[side]--; cur.myVote = null; }
+      else { if (cur.myVote) cur[cur.myVote]--; cur[side]++; cur.myVote = side; }
+      return { ...prev, [itemId]: cur };
     });
   };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <button onClick={() => vote("bull")} style={{
-        display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "6px",
-        border: `1px solid ${votes.myVote === "bull" ? C.green : C.border}`,
-        backgroundColor: votes.myVote === "bull" ? C.greenBg : "transparent",
-        color: votes.myVote === "bull" ? C.green : C.textMuted, cursor: "pointer", fontSize: "11px", fontWeight: "600"
+    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+      <button onClick={() => vote("up")} style={{
+        display: "flex", alignItems: "center", gap: "3px", padding: "2px 8px", borderRadius: "4px",
+        border: `1px solid ${v.myVote === "up" ? C.green : C.border}`,
+        backgroundColor: v.myVote === "up" ? C.greenBg : "transparent",
+        color: v.myVote === "up" ? C.green : C.textMuted, cursor: "pointer", fontSize: "10px", fontWeight: "600",
       }}>
-        <ThumbsUp size={12} /> {votes.bull}
+        <ThumbsUp size={10} /> <span style={mono}>{v.up}</span>
       </button>
-      <div style={{ flex: 1, height: "6px", backgroundColor: C.border, borderRadius: "3px", overflow: "hidden", display: "flex", minWidth: "60px" }}>
-        <div style={{ width: `${bullPct}%`, height: "100%", backgroundColor: C.green, transition: "width 0.2s" }} />
-        <div style={{ width: `${100 - bullPct}%`, height: "100%", backgroundColor: C.red, transition: "width 0.2s" }} />
+      <div style={{ flex: 1, height: "3px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden", display: "flex", maxWidth: "80px" }}>
+        <div style={{ width: `${upPct}%`, height: "100%", backgroundColor: C.green, transition: "width 0.2s" }} />
+        <div style={{ width: `${100 - upPct}%`, height: "100%", backgroundColor: C.red, transition: "width 0.2s" }} />
       </div>
-      <button onClick={() => vote("bear")} style={{
-        display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "6px",
-        border: `1px solid ${votes.myVote === "bear" ? C.red : C.border}`,
-        backgroundColor: votes.myVote === "bear" ? C.redBg : "transparent",
-        color: votes.myVote === "bear" ? C.red : C.textMuted, cursor: "pointer", fontSize: "11px", fontWeight: "600"
+      <button onClick={() => vote("down")} style={{
+        display: "flex", alignItems: "center", gap: "3px", padding: "2px 8px", borderRadius: "4px",
+        border: `1px solid ${v.myVote === "down" ? C.red : C.border}`,
+        backgroundColor: v.myVote === "down" ? C.redBg : "transparent",
+        color: v.myVote === "down" ? C.red : C.textMuted, cursor: "pointer", fontSize: "10px", fontWeight: "600",
       }}>
-        {votes.bear} <ThumbsDown size={12} />
+        <ThumbsDown size={10} /> <span style={mono}>{v.down}</span>
       </button>
     </div>
   );
@@ -706,15 +630,50 @@ const feedItems = (() => {
       });
     }
   });
-  // Prediction events
-  mockTraders.slice(0, 4).forEach((t, i) => {
-    items.push({
-      id: id++, kind: "prediction", trader: t.name, avatar: t.avatar, isBot: t.isBot, tier: t.tier,
-      question: ["BTC > $80K antes de Junio?","Fed baja tasas en Mayo?","SOL flippea BNB Q2?","ETH +10% esta semana?"][i],
-      bet: i % 2 === 0 ? "YES" : "NO", stake: 250 + i * 100, odds: [38, 72, 61, 44][i],
-      time: `${30 + i * 20}m`, timestamp: Date.now() - (30 + i * 20) * 60000,
+  // Prediction events — multiple traders predict on same questions, ordered by who called it first
+  const predQuestions = [
+    { q: "BTC > $80K antes de Junio?", participants: [0, 2, 1, 4] },
+    { q: "Fed baja tasas en Mayo?", participants: [1, 3, 0] },
+    { q: "SOL flippea BNB Q2?", participants: [2, 0, 5] },
+    { q: "ETH +10% esta semana?", participants: [3, 1, 6] },
+  ];
+  predQuestions.forEach((pq, qi) => {
+    pq.participants.forEach((ti, order) => {
+      const t = mockTraders[ti];
+      if (!t) return;
+      const minsAgo = 30 + qi * 25 + order * 8 + Math.floor(Math.random() * 5);
+      items.push({
+        id: id++, kind: "prediction", trader: t.name, avatar: t.avatar, isBot: t.isBot, tier: t.tier,
+        question: pq.q,
+        bet: (ti + qi) % 2 === 0 ? "YES" : "NO", stake: 200 + order * 50 + qi * 80, odds: [38, 72, 61, 44][qi],
+        time: minsAgo < 60 ? `${minsAgo}m` : `${Math.floor(minsAgo / 60)}h`,
+        timestamp: Date.now() - minsAgo * 60000,
+        predOrder: order + 1, // 1 = first to predict
+        totalPredictors: pq.participants.length,
+        questionId: qi,
+      });
     });
   });
+  // Signal events — trade ideas shared BEFORE executing (alerts/tips)
+  const signalSetups = [
+    { pair: "BTC/USDT", bias: "LONG", idea: "OB diario en $66.8K con FVG sin mitigar. Espero barrido de liquidez para entrada.", conf: 85, tf: "4H" },
+    { pair: "ETH/USDT", bias: "SHORT", idea: "Divergencia bajista en RSI + rechazo en zona premium. Posible drop a $3.2K.", conf: 72, tf: "1H" },
+    { pair: "SOL/USDT", bias: "LONG", idea: "Acumulación Wyckoff en rango. Spring confirmado, buscando markup.", conf: 78, tf: "1D" },
+    { pair: "BNB/USDT", bias: "SHORT", idea: "Distribución en HTF. BOS bajista en 4H con volumen decreciente.", conf: 65, tf: "4H" },
+    { pair: "XRP/USDT", bias: "LONG", idea: "Zona de demanda institucional + confluencia con MA200. Setup de alta probabilidad.", conf: 90, tf: "1D" },
+    { pair: "BTC/USDT", bias: "SHORT", idea: "Resistencia semanal + sobrecomprado en múltiples TFs. Veo corrección.", conf: 68, tf: "1W" },
+  ];
+  mockTraders.slice(0, 6).forEach((t, i) => {
+    const s = signalSetups[i];
+    const minsAgo = 5 + i * 18 + Math.floor(Math.random() * 10);
+    items.push({
+      id: id++, kind: "signal", trader: t.name, avatar: t.avatar, isBot: t.isBot, tier: t.tier,
+      pair: s.pair, bias: s.bias, idea: s.idea, confidence: s.conf, timeframe: s.tf,
+      time: minsAgo < 60 ? `${minsAgo}m` : `${Math.floor(minsAgo / 60)}h`,
+      timestamp: Date.now() - minsAgo * 60000,
+    });
+  });
+
   // Achievement events
   mockTraders.slice(0, 3).forEach((t, i) => {
     const ach = [ACHIEVEMENTS.streakMachine, ACHIEVEMENTS.sharpShooter, ACHIEVEMENTS.diamondHands][i];
@@ -1604,10 +1563,10 @@ const SMCAnalysis = () => {
 
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCardTip label="Precio Actual" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
-        <StatCardTip label="Dirección" value={coin.bias === "BULLISH" ? "↑ SUBE" : "↓ BAJA"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
-        <StatCardTip label="Fuerza de Señal" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
-        <StatCardTip label="Nivel de Riesgo" value={coin.risk === "LOW" ? "BAJO" : coin.risk === "MEDIUM" ? "MEDIO" : "ALTO"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
+        <StatCard label="Precio Actual" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
+        <StatCard label="Dirección" value={coin.bias === "BULLISH" ? "↑ SUBE" : "↓ BAJA"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
+        <StatCard label="Fuerza de Señal" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
+        <StatCard label="Nivel de Riesgo" value={coin.risk === "LOW" ? "BAJO" : coin.risk === "MEDIUM" ? "MEDIO" : "ALTO"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
 
       {/* Multi-Timeframe Grid */}
@@ -1755,11 +1714,6 @@ const ArenaTab = () => {
     return m;
   });
   const [feedFilter, setFeedFilter] = useState("all");
-  const [reactions, setReactions] = useState(() => {
-    const r = {};
-    feedItems.forEach(f => { r[f.id] = { fire: Math.floor(Math.random()*20), diamond: Math.floor(Math.random()*8), brain: Math.floor(Math.random()*12), eyes: Math.floor(Math.random()*15) }; });
-    return r;
-  });
   const [votes, setVotes] = useState({});
   const [copied, setCopied] = useState({});
   const toast = useToast();
@@ -1777,11 +1731,13 @@ const ArenaTab = () => {
     ? traderFeed
     : feedFilter === "whale"
       ? traderFeed.filter(f => f.kind === "whale" || f.kind === "liquidation")
-      : feedFilter === "long"
-        ? traderFeed.filter(f => f.kind === "trade" && f.type === "LONG")
-        : feedFilter === "short"
-          ? traderFeed.filter(f => f.kind === "trade" && f.type === "SHORT")
-          : traderFeed.filter(f => f.kind === feedFilter);
+      : feedFilter === "trade"
+        ? traderFeed.filter(f => f.kind === "trade")
+        : feedFilter === "signal"
+          ? traderFeed.filter(f => f.kind === "signal")
+          : feedFilter === "prediction"
+            ? traderFeed.filter(f => f.kind === "prediction")
+            : traderFeed.filter(f => f.kind === feedFilter);
 
   const handleCopy = (item) => {
     setCopied(prev => ({ ...prev, [item.id]: true }));
@@ -1903,31 +1859,35 @@ const ArenaTab = () => {
 
       {/* ── Feed filter ── */}
       {(() => {
-        const longCount = traderFeed.filter(f => f.kind === "trade" && f.type === "LONG").length;
-        const shortCount = traderFeed.filter(f => f.kind === "trade" && f.type === "SHORT").length;
+        const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
+        const signalCount = traderFeed.filter(f => f.kind === "signal").length;
         const predCount = traderFeed.filter(f => f.kind === "prediction").length;
         const filterItems = [
-          { id: "all", label: "Todo", color: C.purple, count: traderFeed.length },
-          { id: "long", label: "LONG", color: C.green, count: longCount },
-          { id: "short", label: "SHORT", color: C.red, count: shortCount },
-          { id: "prediction", label: "Predicciones", color: C.amber, count: predCount },
+          { id: "all", label: "Todo", color: C.purple, icon: null, count: traderFeed.length },
+          { id: "trade", label: "Trades", color: C.green, icon: Activity, count: tradeCount },
+          { id: "signal", label: "Señales", color: C.blue, icon: Lightbulb, count: signalCount },
+          { id: "prediction", label: "Predicciones", color: C.amber, icon: Scale, count: predCount },
         ];
         return (
           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
             <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
             <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-            {filterItems.map(f => (
-              <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
-                padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
-                backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
-                color: feedFilter === f.id ? f.color : C.textMuted,
-                display: "flex", alignItems: "center", gap: "6px"
-              }}>
-                {f.label}
-                <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
-              </button>
-            ))}
+            {filterItems.map(f => {
+              const Icon = f.icon;
+              return (
+                <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
+                  padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                  border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
+                  backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
+                  color: feedFilter === f.id ? f.color : C.textMuted,
+                  display: "flex", alignItems: "center", gap: "6px"
+                }}>
+                  {Icon && <Icon size={12} />}
+                  {f.label}
+                  <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
+                </button>
+              );
+            })}
           </div>
         );
       })()}
@@ -1964,21 +1924,101 @@ const ArenaTab = () => {
             );
           }
 
-          if (item.kind === "prediction") {
+          if (item.kind === "signal") {
+            const biasColor = item.bias === "LONG" ? C.green : C.red;
+            const confColor = item.confidence >= 80 ? C.green : item.confidence >= 60 ? C.amber : C.red;
             return (
-              <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${C.amber}`, padding: "12px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <span style={{ fontSize: "14px" }}>{item.avatar}</span>
+              <div key={item.id} style={{
+                background: `linear-gradient(135deg, ${C.card} 0%, ${C.blue}08 100%)`,
+                borderRadius: "10px", border: `1px solid ${C.blue}25`,
+                borderLeft: `3px solid ${C.blue}`,
+                padding: "10px 14px",
+              }}>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                  <Lightbulb size={13} color={C.blue} />
+                  <span style={{ fontSize: "13px" }}>{item.avatar}</span>
                   <TraderLink name={item.trader} />
                   <BotTag isBot={item.isBot} />
+                  <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, backgroundColor: `${C.blue}15`, padding: "1px 6px", borderRadius: "3px", border: `1px solid ${C.blue}30` }}>SEÑAL</span>
                   <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
                 </div>
-                <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "6px" }}>{item.question}</div>
-                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
-                  <Tag text={`Apostó ${item.bet}`} color={item.bet === "YES" ? C.green : C.red} />
-                  <span style={{ fontSize: "11px", color: C.textMuted, ...mono }}>${item.stake} a {item.odds}%</span>
+
+                {/* Pair + Bias + TF + Confidence inline */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                  <span style={{ fontSize: "14px", fontWeight: "800" }}>{item.pair}</span>
+                  <Tag text={item.bias} color={biasColor} />
+                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, backgroundColor: `${C.textFaint}15`, padding: "1px 6px", borderRadius: "3px" }}>{item.timeframe}</span>
+                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <div style={{ width: "40px", height: "3px", borderRadius: "2px", backgroundColor: C.border }}>
+                      <div style={{ width: `${item.confidence}%`, height: "100%", borderRadius: "2px", backgroundColor: confColor }} />
+                    </div>
+                    <span style={{ fontSize: "10px", fontWeight: "700", color: confColor, ...mono }}>{item.confidence}%</span>
+                  </div>
                 </div>
-                <Reactions itemId={item.id} reactionsState={reactions} setReactionsState={setReactions} />
+
+                {/* Idea text */}
+                <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", lineHeight: "1.4" }}>
+                  {item.idea}
+                </div>
+
+                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+              </div>
+            );
+          }
+
+          if (item.kind === "prediction") {
+            const orderLabel = item.predOrder === 1 ? "1ro" : item.predOrder === 2 ? "2do" : item.predOrder === 3 ? "3ro" : `${item.predOrder}to`;
+            const isFirst = item.predOrder === 1;
+            const samePrediction = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId && f.id !== item.id);
+            return (
+              <div key={item.id} style={{
+                background: `linear-gradient(135deg, ${C.card} 0%, ${C.amber}06 100%)`,
+                borderRadius: "10px", border: `1px solid ${C.amber}20`,
+                borderLeft: `3px solid ${isFirst ? C.cyan : C.amber}`,
+                padding: "10px 14px",
+              }}>
+                {/* Header */}
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                  <Scale size={13} color={C.amber} />
+                  <span style={{ fontSize: "13px" }}>{item.avatar}</span>
+                  <TraderLink name={item.trader} />
+                  <BotTag isBot={item.isBot} />
+                  <span style={{
+                    fontSize: "9px", fontWeight: "700",
+                    color: isFirst ? C.cyan : C.textMuted,
+                    backgroundColor: isFirst ? `${C.cyan}15` : `${C.textFaint}15`,
+                    border: `1px solid ${isFirst ? C.cyan : C.textFaint}30`,
+                    padding: "1px 6px", borderRadius: "3px",
+                  }}>
+                    {isFirst ? "1RO EN PREDECIR" : `${orderLabel} de ${item.totalPredictors}`}
+                  </span>
+                  <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
+                </div>
+
+                {/* Question + Bet inline */}
+                <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "6px" }}>{item.question}</div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
+                  <Tag text={`Apostó ${item.bet}`} color={item.bet === "YES" ? C.green : C.red} />
+                  <span style={{ fontSize: "10px", color: C.textMuted, ...mono }}>${item.stake} a {item.odds}%</span>
+                  <div style={{ width: "50px", height: "3px", borderRadius: "2px", backgroundColor: C.border }}>
+                    <div style={{ width: `${item.odds}%`, height: "100%", borderRadius: "2px", backgroundColor: C.amber }} />
+                  </div>
+                </div>
+
+                {/* Others who predicted — compact */}
+                {samePrediction.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px", fontSize: "10px", color: C.textFaint }}>
+                    <span style={{ fontWeight: "600" }}>+{samePrediction.length} más:</span>
+                    {samePrediction.sort((a, b) => a.predOrder - b.predOrder).slice(0, 3).map(sp => (
+                      <span key={sp.id} style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
+                        {sp.avatar} <Tag text={sp.bet} color={sp.bet === "YES" ? C.green : C.red} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
               </div>
             );
           }
@@ -1988,59 +2028,40 @@ const ArenaTab = () => {
           const levRisk = levNum >= 10 ? "Alto" : levNum >= 5 ? "Medio" : "Bajo";
           const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
           const rrRatio = Math.abs(item.tp - item.entry) / Math.max(Math.abs(item.entry - item.sl), 0.01);
+          const tradeAccent = item.type === "LONG" ? C.green : C.red;
           return (
-            <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.type === "LONG" ? C.green : C.red}`, padding: "14px 16px" }}>
-              {/* Row 1: Trader + PnL */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "14px" }}>{item.avatar}</span>
-                  <TraderLink name={item.trader} />
-                  <BotTag isBot={item.isBot} />
-                  <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
-                  {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint }}>{item.copiers} copiando</span>}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "15px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
-                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
-                  </span>
-                  <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
-                </div>
-              </div>
-
-              {/* Row 2: Pair + direction headline */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                <span style={{ fontSize: "16px", fontWeight: "800" }}>{item.pair}</span>
-                <Tag text={item.type} color={item.type === "LONG" ? C.green : C.red} />
-                <span style={{ fontSize: "12px", color: item.type === "LONG" ? C.green : C.red, fontWeight: "600" }}>
-                  {item.type === "LONG" ? "Apuesta a que sube" : "Apuesta a que baja"}
+            <div key={item.id} style={{
+              background: `linear-gradient(135deg, ${C.card} 0%, ${tradeAccent}06 100%)`,
+              borderRadius: "10px", border: `1px solid ${tradeAccent}20`,
+              borderLeft: `3px solid ${tradeAccent}`,
+              padding: "10px 14px",
+            }}>
+              {/* Header: trader + pair + PnL */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+                <Activity size={13} color={tradeAccent} />
+                <span style={{ fontSize: "13px" }}>{item.avatar}</span>
+                <TraderLink name={item.trader} />
+                <BotTag isBot={item.isBot} />
+                <span style={{ fontSize: "14px", fontWeight: "800" }}>{item.pair}</span>
+                <Tag text={item.type} color={tradeAccent} />
+                <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
+                {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint }}>{item.copiers} copiando</span>}
+                <span style={{ marginLeft: "auto", fontSize: "14px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
+                  {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
                 </span>
+                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
               </div>
 
-              {/* Row 3: Key metrics grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "8px", padding: "8px 0", borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-                <div>
-                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Entrada</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", ...mono }}>${item.entry.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Objetivo</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Stop Loss</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Riesgo:Gan.</div>
-                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Apalancam.</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "800", color: levColor, ...mono }}>{item.leverage}</span>
-                    <span style={{ fontSize: "8px", fontWeight: "700", color: levColor, backgroundColor: `${levColor}15`, padding: "1px 5px", borderRadius: "3px" }}>{levRisk}</span>
-                  </div>
-                </div>
+              {/* Compact metrics row */}
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px", fontSize: "10px" }}>
+                <span><span style={{ color: C.textFaint }}>Entrada </span><span style={{ fontWeight: "700", ...mono }}>${item.entry.toLocaleString()}</span></span>
+                <span><span style={{ color: C.textFaint }}>TP </span><span style={{ fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
+                <span><span style={{ color: C.textFaint }}>SL </span><span style={{ fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
+                <span><span style={{ color: C.textFaint }}>R:R </span><span style={{ fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</span></span>
+                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                  <span style={{ fontWeight: "800", color: levColor, ...mono }}>{item.leverage}</span>
+                  <span style={{ fontSize: "8px", fontWeight: "700", color: levColor, backgroundColor: `${levColor}15`, padding: "1px 4px", borderRadius: "2px" }}>{levRisk}</span>
+                </span>
               </div>
 
               {/* Analysis context */}
@@ -2051,32 +2072,19 @@ const ArenaTab = () => {
               {/* TP Progress for active */}
               {item.status === "active" && <TpProgressBar entry={item.entry} tp={item.tp} sl={item.sl} status={item.status} />}
 
-              {/* Confidence + actions for active */}
-              {item.status === "active" && (
-                <div style={{ display: "flex", gap: "16px", alignItems: "center", marginTop: "8px" }}>
-                  <div style={{ flex: 1 }}>
-                    <ConfidenceVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
-                  </div>
+              {/* Vote + Copy row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "6px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
+                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                <div style={{ flex: 1 }} />
+                {item.status === "active" && (
                   <button onClick={() => handleCopy(item)} style={{
-                    display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px",
-                    border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "700",
+                    display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px",
+                    border: "none", cursor: "pointer", fontSize: "10px", fontWeight: "700",
                     backgroundColor: copied[item.id] ? C.green : C.purpleBg, color: copied[item.id] ? "#000" : C.purple,
                   }}>
-                    {copied[item.id] ? <><CheckCircle size={12} /> Copiando</> : <><Copy size={12} /> Copiar</>}
+                    {copied[item.id] ? <><CheckCircle size={10} /> Copiando</> : <><Copy size={10} /> Copiar</>}
                   </button>
-                  <button style={{
-                    display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "6px",
-                    cursor: "pointer", fontSize: "11px", fontWeight: "600",
-                    backgroundColor: C.redBg, color: C.red, border: `1px solid ${C.red}30`
-                  }}>
-                    <Swords size={12} /> Contra
-                  </button>
-                </div>
-              )}
-
-              {/* Reactions for all */}
-              <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
-                <Reactions itemId={item.id} reactionsState={reactions} setReactionsState={setReactions} />
+                )}
               </div>
             </div>
           );
@@ -2128,10 +2136,10 @@ const SignalsTab = () => {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCardTip label="Total Señales" value={filtered.length} icon={Zap} color={C.purple} />
-        <StatCardTip label="% Ganadoras" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} tip="winRate" />
-        <StatCardTip label="Ganancia Promedio" value={"$" + Math.round(filtered.reduce((a, s) => a + s.pnl, 0) / Math.max(filtered.length, 1)).toLocaleString()} icon={TrendingUp} color={C.blue} />
-        <StatCardTip label="Activas Ahora" value={filtered.filter(s => s.status === "active").length} icon={Activity} color={C.amber} tip="signalActive" />
+        <StatCard label="Total Señales" value={filtered.length} icon={Zap} color={C.purple} />
+        <StatCard label="% Ganadoras" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} tip="winRate" />
+        <StatCard label="Ganancia Promedio" value={"$" + Math.round(filtered.reduce((a, s) => a + s.pnl, 0) / Math.max(filtered.length, 1)).toLocaleString()} icon={TrendingUp} color={C.blue} />
+        <StatCard label="Activas Ahora" value={filtered.filter(s => s.status === "active").length} icon={Activity} color={C.amber} tip="signalActive" />
       </div>
 
       {/* Signal Cards (card view for better UX) */}
@@ -2166,24 +2174,16 @@ const SignalsTab = () => {
             {/* TP Progress for active signals */}
             {s.status === "active" && <TpProgressBar entry={s.entry} tp={s.tp} sl={s.sl} status={s.status} />}
 
-            {/* Quick Actions */}
-            <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
-              <button style={{
-                display: "flex", alignItems: "center", gap: "4px", padding: "4px 12px", borderRadius: "5px",
-                cursor: "pointer", fontSize: "10px", fontWeight: "700",
-                backgroundColor: C.greenBg, color: C.green, border: `1px solid ${C.green}30`
-              }}><Copy size={10} /> Copiar</button>
-              <button style={{
-                display: "flex", alignItems: "center", gap: "4px", padding: "4px 12px", borderRadius: "5px",
-                border: `1px solid ${C.red}30`, cursor: "pointer", fontSize: "10px", fontWeight: "700",
-                backgroundColor: C.redBg, color: C.red
-              }}><Swords size={10} /> Contra</button>
-              <button style={{
-                display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "5px",
-                border: `1px solid ${C.border}`, cursor: "pointer", fontSize: "10px", fontWeight: "600",
-                backgroundColor: "transparent", color: C.textMuted
-              }}><Share2 size={10} /></button>
-            </div>
+            {/* Quick Action */}
+            {s.status === "active" && (
+              <div style={{ marginTop: "6px" }}>
+                <button style={{
+                  display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px",
+                  cursor: "pointer", fontSize: "10px", fontWeight: "700",
+                  backgroundColor: C.purpleBg, color: C.purple, border: "none"
+                }}><Copy size={10} /> Copiar</button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -2334,14 +2334,14 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "signals" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCardTip label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
-            <StatCardTip label="Precisión" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
-            <StatCardTip label="Activas Ahora" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
-            <StatCardTip label="Suscriptores" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
+            <StatCard label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
+            <StatCard label="Precisión" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
+            <StatCard label="Activas Ahora" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
+            <StatCard label="Suscriptores" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-            <StatCardTip label="Ganancia Prom. / Señal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
-            <StatCardTip label="Mejor Señal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCard label="Ganancia Prom. / Señal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
+            <StatCard label="Mejor Señal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active Signals */}
           {deep.signals.filter(s => s.status === "active").length > 0 && (
@@ -2445,10 +2445,10 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "predictions" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCardTip label="Precisión" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
-            <StatCardTip label="Racha Actual" value={`${deep.predStats.streak} correctas`} icon={Flame} color={C.amber} tip="streak" />
-            <StatCardTip label="Total Apostado" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
-            <StatCardTip label="Ganancia Neta" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCard label="Precisión" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
+            <StatCard label="Racha Actual" value={`${deep.predStats.streak} correctas`} icon={Flame} color={C.amber} tip="streak" />
+            <StatCard label="Total Apostado" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
+            <StatCard label="Ganancia Neta" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active bets */}
           <div style={cardStyle}>
@@ -3499,10 +3499,10 @@ const CopyTradingTab = () => {
 
       {/* Top Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCardTip label="Retorno Mensual" value={`+${port.monthlyReturn}%`} sub={`Sharpe ${port.sharpe}`} icon={TrendingUp} color={C.green} tip="sharpe" />
-        <StatCardTip label="Seguidores" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M en gestión`} icon={Users} color={C.blue} tip="aum" />
-        <StatCardTip label="Máxima Caída" value={`${port.maxDD}%`} sub={`Riesgo: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} tip="maxDD" />
-        <StatCardTip label="% Ganadoras" value={`${port.winRate}%`} sub={`Duración prom: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
+        <StatCard label="Retorno Mensual" value={`+${port.monthlyReturn}%`} sub={`Sharpe ${port.sharpe}`} icon={TrendingUp} color={C.green} tip="sharpe" />
+        <StatCard label="Seguidores" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M en gestión`} icon={Users} color={C.blue} tip="aum" />
+        <StatCard label="Máxima Caída" value={`${port.maxDD}%`} sub={`Riesgo: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} tip="maxDD" />
+        <StatCard label="% Ganadoras" value={`${port.winRate}%`} sub={`Duración prom: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px" }}>
@@ -3732,10 +3732,10 @@ const PredictionMarketsTab = () => {
 
       {/* Stats with trend sub-text */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCardTip label="Volumen Total" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% semana" icon={DollarSign} color={C.green} tip="pot" />
-        <StatCardTip label="Participantes" value={totalParticipants.toLocaleString()} sub="+240 activos" icon={Users} color={C.blue} />
-        <StatCardTip label="Mercados Activos" value={predictionMarkets.length} sub="2 resueltos" icon={Activity} color={C.purple} />
-        <StatCardTip label="Sentimiento" value={`${avgYesOdds}% YES`} sub="Tendencia alcista" icon={Flame} color={C.amber} tip="odds" />
+        <StatCard label="Volumen Total" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% semana" icon={DollarSign} color={C.green} tip="pot" />
+        <StatCard label="Participantes" value={totalParticipants.toLocaleString()} sub="+240 activos" icon={Users} color={C.blue} />
+        <StatCard label="Mercados Activos" value={predictionMarkets.length} sub="2 resueltos" icon={Activity} color={C.purple} />
+        <StatCard label="Sentimiento" value={`${avgYesOdds}% YES`} sub="Tendencia alcista" icon={Flame} color={C.amber} tip="odds" />
       </div>
 
       {/* Category filter */}
