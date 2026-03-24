@@ -74,6 +74,91 @@ const ScoreBar = ({ label, value, max = 100, color = C.blue }) => (
 
 const Tag = ({ text, color = C.purple }) => <span style={pillStyle(color)}>{text}</span>;
 
+/* ── InfoTip: hover tooltip explaining jargon in plain language ── */
+const GLOSSARY = {
+  // SMC Analysis
+  bias:           "¿Hacia dónde se mueve? BULLISH = sube, BEARISH = baja",
+  confluence:     "Fuerza de la señal: cuántas pruebas coinciden (más = más confiable)",
+  riskLevel:      "Qué tan arriesgado es operar ahora. LOW = seguro, HIGH = peligroso",
+  bos:            "Break of Structure — el precio rompió un nivel clave, señal de que la tendencia sigue",
+  choch:          "Change of Character — el precio cambió de dirección, posible reversión",
+  fvg:            "Fair Value Gap — un hueco en el precio que suele rellenarse. Filled = ya se llenó",
+  ob:             "Order Block — zona donde los grandes jugadores pusieron órdenes. El precio tiende a volver ahí",
+  liquidity:      "Liquidez — zonas donde hay muchas órdenes pendientes que el mercado busca capturar",
+  killZone:       "Horarios donde el mercado se mueve más fuerte. Mejor momento para operar",
+  entryZone:      "Rango de precio ideal para entrar a la operación",
+  rr:             "Risk:Reward — por cada $1 que arriesgas, cuánto puedes ganar. 1:2.8 = ganas $2.80 por cada $1",
+  tp:             "Take Profit — precio al que cierras la operación para asegurar ganancia",
+  sl:             "Stop Loss — precio al que cierras para cortar pérdidas. Tu seguro contra desastres",
+  fundingRate:    "Tasa que pagan los traders apalancados. Si es muy alta, el mercado puede revertir",
+  openInterest:   "Cuánto dinero hay apostado en contratos. Subida fuerte = movimiento grande viene",
+  // Trader metrics
+  alpha:          "Puntuación total de rendimiento (0-100). Combina win rate, consistencia y manejo de riesgo",
+  sharpe:         "Ratio Sharpe — ganancia ajustada por riesgo. Más de 2.0 = excelente, menos de 1.0 = regular",
+  maxDD:          "Máxima Caída — la peor racha de pérdidas en porcentaje. Mientras menos, mejor",
+  profitFactor:   "Por cada $1 perdido, cuánto ganó. 2.0 = ganó el doble de lo que perdió",
+  winRate:        "Porcentaje de operaciones ganadoras. 70%+ = muy bueno",
+  streak:         "Rachas — operaciones ganadoras seguidas. Más largo = más en racha",
+  copiers:        "Personas que copian automáticamente las operaciones de este trader",
+  aum:            "Assets Under Management — dinero total que otros confían a este trader",
+  perfFee:        "Comisión que cobra el trader sobre tus ganancias. 15% = de cada $100 que ganes, paga $15",
+  leverage:       "Apalancamiento — multiplica ganancias Y pérdidas. 5x = 5 veces más potente (y más riesgoso)",
+  degen:          "Nivel de agresividad del trader. Degen = arriesgado y rápido. Safe = conservador y tranquilo",
+  // Signals
+  signalActive:   "Señal que sigue activa — el trader aún tiene esta operación abierta",
+  tpHit:          "Take Profit alcanzado — la operación cerró en ganancia ✅",
+  slHit:          "Stop Loss alcanzado — la operación cerró en pérdida ❌",
+  // Predictions
+  odds:           "Probabilidad según el mercado. 38% YES = la mayoría cree que NO va a pasar",
+  pot:            "Dinero total apostado en esta predicción. Se reparte entre los ganadores",
+};
+
+const InfoTip = ({ k, children, inline = false }) => {
+  const [show, setShow] = useState(false);
+  const text = GLOSSARY[k];
+  if (!text) return children || null;
+  return (
+    <span
+      style={{ position: "relative", display: inline ? "inline-flex" : "inline-flex", alignItems: "center", gap: "3px", cursor: "help" }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      <span style={{
+        width: 14, height: 14, borderRadius: "50%", backgroundColor: C.border, color: C.textMuted,
+        fontSize: "9px", fontWeight: "700", display: "inline-flex", alignItems: "center", justifyContent: "center",
+        flexShrink: 0
+      }}>?</span>
+      {show && (
+        <span style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          backgroundColor: "#1c2129", border: `1px solid ${C.borderLight}`, borderRadius: "8px",
+          padding: "10px 14px", fontSize: "12px", color: C.text, lineHeight: "1.5",
+          width: "260px", zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          pointerEvents: "none", fontWeight: "400", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          textTransform: "none", letterSpacing: "0"
+        }}>{text}</span>
+      )}
+    </span>
+  );
+};
+
+/* ── StatCard with optional tooltip ── */
+const StatCardTip = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
+  <div style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px" }}>
+    <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Icon size={18} color={color} />
+    </div>
+    <div>
+      <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>
+        {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
+      </div>
+      <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}>{value}</div>
+      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
+    </div>
+  </div>
+);
+
 /* ── MiniSparkline: inline SVG sparkline for tables & cards ── */
 const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot = true }) => {
   if (!data || data.length < 2) return null;
@@ -1318,28 +1403,31 @@ const SMCAnalysis = () => {
 
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Current Price" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
-        <StatCard label="Bias" value={coin.bias} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} />
-        <StatCard label="Confluence" value={`${coin.confluence}/10`} icon={Target} color={C.blue} />
-        <StatCard label="Risk Level" value={coin.risk} icon={AlertTriangle} color={riskColor} />
+        <StatCardTip label="Precio Actual" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
+        <StatCardTip label="Dirección" value={coin.bias === "BULLISH" ? "↑ SUBE" : "↓ BAJA"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
+        <StatCardTip label="Fuerza de Señal" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
+        <StatCardTip label="Nivel de Riesgo" value={coin.risk === "LOW" ? "BAJO" : coin.risk === "MEDIUM" ? "MEDIO" : "ALTO"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
 
       {/* Multi-Timeframe Grid */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/{coin.pair}</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/{coin.pair}</div>
+        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Cada timeframe muestra lo que pasa en diferentes escalas de tiempo (minutos → horas)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
           {coin.tfData.map(tf => (
             <div key={tf.tf} style={cardStyle}>
-              <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf}</div>
+              <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf === "15m" ? "15 min" : tf.tf === "1H" ? "1 hora" : "4 horas"}</div>
               {[
-                ["Trend", tf.trend, tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber],
-                ["Structure", tf.struct, tf.struct === "BOS" ? C.green : C.red],
-                ["Order Block", tf.ob, tf.ob.includes("Bullish") ? C.green : C.red],
-                ["FVG", tf.fvg, tf.fvg === "Filled" ? C.green : C.amber],
-                ["Liquidity", tf.liq, C.blue],
-              ].map(([label, val, clr]) => (
+                ["Tendencia", tf.trend === "Bullish" ? "↑ Alcista" : tf.trend === "Bearish" ? "↓ Bajista" : "↔ Lateral", tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber, null],
+                ["Estructura", tf.struct, tf.struct === "BOS" ? C.green : C.red, tf.struct === "BOS" ? "bos" : "choch"],
+                ["Bloque de Órdenes", tf.ob.includes("Bullish") ? "🟢 Compra" : "🔴 Venta", tf.ob.includes("Bullish") ? C.green : C.red, "ob"],
+                ["Gap de Precio", tf.fvg === "Filled" ? "✅ Llenado" : "⚠️ Pendiente", tf.fvg === "Filled" ? C.green : C.amber, "fvg"],
+                ["Liquidez", tf.liq === "Sweep Done" ? "✅ Capturada" : tf.liq, C.blue, "liquidity"],
+              ].map(([label, val, clr, tipKey]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: "11px", color: C.textMuted }}>{label}</span>
+                  <span style={{ fontSize: "11px", color: C.textMuted }}>
+                    {tipKey ? <InfoTip k={tipKey} inline><span>{label}</span></InfoTip> : label}
+                  </span>
                   <span style={{ fontSize: "11px", fontWeight: "600", color: clr }}>{val}</span>
                 </div>
               ))}
@@ -1351,36 +1439,48 @@ const SMCAnalysis = () => {
       {/* Ideal Entry + Kill Zones side by side */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         <div style={cardStyle}>
-          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Entrada Ideal — {selectedCoin}</div>
+          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Entrada Ideal — {selectedCoin}</div>
+          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Dónde entrar, cuánto puedes ganar, y dónde cortar pérdidas</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
-              ["Entry Zone", coin.entry.zone, C.text],
-              ["R:R", coin.entry.rr, C.green],
-              ["TP1", coin.entry.tp1, C.blue],
-              ["TP2", coin.entry.tp2, C.blue],
-              ["TP3", coin.entry.tp3, C.blue],
-              ["Stop Loss", coin.entry.sl, C.red],
-            ].map(([l, v, clr]) => (
+              ["Zona de Entrada", coin.entry.zone, C.text, "entryZone"],
+              ["Riesgo:Ganancia", coin.entry.rr, C.green, "rr"],
+              ["Objetivo 1", coin.entry.tp1, C.blue, "tp"],
+              ["Objetivo 2", coin.entry.tp2, C.blue, "tp"],
+              ["Objetivo 3", coin.entry.tp3, C.blue, "tp"],
+              ["Stop Loss", coin.entry.sl, C.red, "sl"],
+            ].map(([l, v, clr, tipKey]) => (
               <div key={l}>
-                <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "2px" }}>{l}</div>
+                <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "2px" }}>
+                  <InfoTip k={tipKey} inline><span>{l}</span></InfoTip>
+                </div>
                 <div style={{ fontSize: "14px", fontWeight: "700", color: clr, ...mono }}>{v}</div>
               </div>
             ))}
           </div>
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: "12px" }}>
-            <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "8px", fontWeight: "600" }}>CONFLUENCE FACTORS</div>
+            <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "4px", fontWeight: "600" }}>
+              <InfoTip k="confluence" inline><span>FACTORES DE CONFIRMACIÓN</span></InfoTip>
+            </div>
+            <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "8px" }}>Más factores = señal más confiable</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {coin.confluenceFactors.map(f => (
-                <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green }}>
-                  <CheckCircle size={12} /> {f}
-                </span>
-              ))}
+              {coin.confluenceFactors.map(f => {
+                const tipMap = { "Order Block": "ob", "FVG": "fvg", "Liquidity": "liquidity", "Kill Zone": "killZone", "BOS": "bos" };
+                return (
+                  <span key={f} style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, cursor: tipMap[f] ? "help" : "default" }}>
+                    <CheckCircle size={12} />
+                    {tipMap[f] ? <InfoTip k={tipMap[f]} inline><span>{f}</span></InfoTip> : f}
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Kill Zones</div>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <InfoTip k="killZone" inline><span>Horarios Clave</span></InfoTip>
+          </div>
           {killZones.map(z => (
             <div key={z.name} style={{ ...cardStyle, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1398,16 +1498,23 @@ const SMCAnalysis = () => {
 
       {/* Safety Checks */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Safety Checks — {selectedCoin}</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Chequeo de Seguridad — {selectedCoin}</div>
+        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Indicadores que confirman si es seguro operar ahora</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-          {coin.safety.map(c => (
-            <div key={c.name} style={{ ...cardStyle, textAlign: "center" }}>
-              {c.status === "pass" ? <CheckCircle size={22} color={C.green} /> : <AlertTriangle size={22} color={C.amber} />}
-              <div style={{ fontSize: "12px", fontWeight: "600", marginTop: "8px" }}>{c.name}</div>
-              <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px", ...mono }}>{c.detail}</div>
-              <div style={{ fontSize: "10px", color: c.status === "pass" ? C.green : C.amber, marginTop: "4px", textTransform: "uppercase", fontWeight: "600" }}>{c.status}</div>
-            </div>
-          ))}
+          {coin.safety.map(c => {
+            const tipMap = { "Funding Rate": "fundingRate", "Open Interest": "openInterest" };
+            const nameMap = { "Funding Rate": "Tasa de Fondeo", "Open Interest": "Interés Abierto", "Volume": "Volumen", "Correlation": "Correlación" };
+            return (
+              <div key={c.name} style={{ ...cardStyle, textAlign: "center" }}>
+                {c.status === "pass" ? <CheckCircle size={22} color={C.green} /> : <AlertTriangle size={22} color={C.amber} />}
+                <div style={{ fontSize: "12px", fontWeight: "600", marginTop: "8px" }}>
+                  {tipMap[c.name] ? <InfoTip k={tipMap[c.name]} inline><span>{nameMap[c.name] || c.name}</span></InfoTip> : (nameMap[c.name] || c.name)}
+                </div>
+                <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px", ...mono }}>{c.detail}</div>
+                <div style={{ fontSize: "10px", color: c.status === "pass" ? C.green : C.amber, marginTop: "4px", textTransform: "uppercase", fontWeight: "600" }}>{c.status === "pass" ? "✅ OK" : "⚠️ Precaución"}</div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -1480,10 +1587,10 @@ const SignalsTab = () => {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Total Signals" value={filtered.length} icon={Zap} color={C.purple} />
-        <StatCard label="Win Rate" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} />
-        <StatCard label="Avg PnL" value={"$" + Math.round(filtered.reduce((a, s) => a + s.pnl, 0) / Math.max(filtered.length, 1)).toLocaleString()} icon={TrendingUp} color={C.blue} />
-        <StatCard label="Active Now" value={filtered.filter(s => s.status === "active").length} icon={Activity} color={C.amber} />
+        <StatCardTip label="Total Señales" value={filtered.length} icon={Zap} color={C.purple} />
+        <StatCardTip label="% Ganadoras" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} tip="winRate" />
+        <StatCardTip label="Ganancia Promedio" value={"$" + Math.round(filtered.reduce((a, s) => a + s.pnl, 0) / Math.max(filtered.length, 1)).toLocaleString()} icon={TrendingUp} color={C.blue} />
+        <StatCardTip label="Activas Ahora" value={filtered.filter(s => s.status === "active").length} icon={Activity} color={C.amber} tip="signalActive" />
       </div>
 
       <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
@@ -1570,22 +1677,22 @@ const TraderProfile = ({ trader, onClose }) => {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: "1.6", marginBottom: "14px" }}>{t.bio}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "14px" }}>
-            {[["Rank", `#${t.rank}`], ["Location", t.location], ["Joined", t.joined], ["Style", t.style],
-              ["Exchange", t.exchange], ["Fav Pairs", t.favPairs.slice(0, 2).join(", ")], ["Avg Hold", t.avgHold], ["Avg R:R", t.avgRR],
-            ].map(([l, v]) => (
-              <div key={l}><div style={{ fontSize: "10px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>{l}</div><div style={{ fontSize: "12px", fontWeight: "600", marginTop: "2px" }}>{v}</div></div>
+            {[["Ranking", `#${t.rank}`, null], ["Ubicación", t.location, null], ["Desde", t.joined, null], ["Estilo", t.style, null],
+              ["Exchange", t.exchange, null], ["Pares Fav.", t.favPairs.slice(0, 2).join(", "), null], ["Duración Prom.", t.avgHold, null], ["Riesgo:Gan.", t.avgRR, "rr"],
+            ].map(([l, v, tip]) => (
+              <div key={l}><div style={{ fontSize: "10px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</div><div style={{ fontSize: "12px", fontWeight: "600", marginTop: "2px" }}>{v}</div></div>
             ))}
           </div>
           <div style={{ display: "flex", gap: "20px", paddingTop: "12px", borderTop: `1px solid ${C.border}` }}>
-            {[["Followers", t.followers], ["Following", t.following], ["Copiers", t.copiers], ["Trades", t.trades]].map(([l, v]) => (
-              <div key={l}><span style={{ fontSize: "16px", fontWeight: "800", ...mono }}>{v.toLocaleString()}</span><span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "4px" }}>{l}</span></div>
+            {[["Seguidores", t.followers, null], ["Siguiendo", t.following, null], ["Copiadores", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
+              <div key={l}><span style={{ fontSize: "16px", fontWeight: "800", ...mono }}>{v.toLocaleString()}</span><span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span></div>
             ))}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "160px" }}>
-          {[["Total PnL", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green], ["Win Rate", `${t.winRate}%`, C.green], ["Sharpe", t.sharpe.toFixed(1), C.blue], ["Max DD", `${t.maxDD}%`, C.red], ["Profit Factor", t.profitFactor?.toFixed(1) || "—", C.amber], ["Streak", `${t.streak}W`, C.purple]].map(([l, v, clr]) => (
+          {[["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null], ["% Ganadoras", `${t.winRate}%`, C.green, "winRate"], ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe"], ["Máx. Caída", `${t.maxDD}%`, C.red, "maxDD"], ["Factor Ganancia", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor"], ["Racha", `${t.streak}W`, C.purple, "streak"]].map(([l, v, clr, tip]) => (
             <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: "11px", color: C.textMuted }}>{l}</span><span style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>{v}</span>
+              <span style={{ fontSize: "11px", color: C.textMuted }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</span><span style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>{v}</span>
             </div>
           ))}
         </div>
@@ -1658,14 +1765,14 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "signals" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCard label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
-            <StatCard label="Accuracy" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} />
-            <StatCard label="Active Now" value={deep.signalStats.active} icon={Activity} color={C.amber} />
-            <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
+            <StatCardTip label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
+            <StatCardTip label="Precisión" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
+            <StatCardTip label="Activas Ahora" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
+            <StatCardTip label="Suscriptores" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-            <StatCard label="Avg PnL / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
-            <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCardTip label="Ganancia Prom. / Señal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
+            <StatCardTip label="Mejor Señal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active Signals */}
           {deep.signals.filter(s => s.status === "active").length > 0 && (
@@ -1683,10 +1790,10 @@ const TraderProfile = ({ trader, onClose }) => {
                       <span style={{ fontSize: "10px", color: C.textMuted }}>{s.group}</span>
                     </div>
                     <div style={{ display: "flex", gap: "16px", fontSize: "11px", color: C.textMuted }}>
-                      <span>Entry: <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
-                      <span>TP: <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
-                      <span>SL: <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
-                      <span>R:R <span style={{ color: C.blue, ...mono }}>{s.rr}</span></span>
+                      <span><InfoTip k="entryZone" inline><span>Entrada:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
+                      <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
+                      <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
+                      <span><InfoTip k="rr" inline><span>R:R</span></InfoTip> <span style={{ color: C.blue, ...mono }}>{s.rr}</span></span>
                     </div>
                     <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "4px", fontStyle: "italic" }}>{s.analysis}</div>
                   </div>
@@ -1769,14 +1876,14 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "predictions" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCard label="Accuracy" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} />
-            <StatCard label="Current Streak" value={`${deep.predStats.streak} correct`} icon={Flame} color={C.amber} />
-            <StatCard label="Total Staked" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} />
-            <StatCard label="Net Won" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCardTip label="Precisión" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
+            <StatCardTip label="Racha Actual" value={`${deep.predStats.streak} correctas`} icon={Flame} color={C.amber} tip="streak" />
+            <StatCardTip label="Total Apostado" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
+            <StatCardTip label="Ganancia Neta" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active bets */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Active Predictions</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Predicciones Activas</div>
             {deep.predictionsList.filter(p => p.status === "open").map(p => (
               <div key={p.id} style={{ padding: "12px 0", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ flex: 1 }}>
@@ -1796,7 +1903,7 @@ const TraderProfile = ({ trader, onClose }) => {
           </div>
           {/* History */}
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Prediction History</div>
+            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Historial de Predicciones</div>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>{["Market","Bet","Odds","Stake","Result","P&L","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
               <tbody>
@@ -2202,7 +2309,7 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {["Rank","Trader","Alpha","Trend","Streak","Win Rate","PnL","Copiers","Action"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Racha","streak"],["% Ganadoras","winRate"],["PnL",null],["Copiadores","copiers"],["Acción",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
                 {mockTraders.map((t, i) => {
@@ -2823,10 +2930,10 @@ const CopyTradingTab = () => {
 
       {/* Top Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Monthly Return" value={`+${port.monthlyReturn}%`} sub={`Sharpe ${port.sharpe}`} icon={TrendingUp} color={C.green} />
-        <StatCard label="Followers" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M AUM`} icon={Users} color={C.blue} />
-        <StatCard label="Max Drawdown" value={`${port.maxDD}%`} sub={`Risk: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} />
-        <StatCard label="Win Rate" value={`${port.winRate}%`} sub={`Avg hold: ${port.avgTrade}`} icon={Trophy} color={C.amber} />
+        <StatCardTip label="Retorno Mensual" value={`+${port.monthlyReturn}%`} sub={`Sharpe ${port.sharpe}`} icon={TrendingUp} color={C.green} tip="sharpe" />
+        <StatCardTip label="Seguidores" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M en gestión`} icon={Users} color={C.blue} tip="aum" />
+        <StatCardTip label="Máxima Caída" value={`${port.maxDD}%`} sub={`Riesgo: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} tip="maxDD" />
+        <StatCardTip label="% Ganadoras" value={`${port.winRate}%`} sub={`Duración prom: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px" }}>
@@ -2896,7 +3003,7 @@ const CopyTradingTab = () => {
 
             {/* Risk Multiplier */}
             <div style={{ marginBottom: "14px" }}>
-              <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", fontWeight: "600" }}>AJUSTAR RIESGO</div>
+              <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", fontWeight: "600" }}><InfoTip k="leverage"><span>AJUSTAR RIESGO</span></InfoTip></div>
               <div style={{ display: "flex", gap: "6px" }}>
                 {[0.5, 0.75, 1.0, 1.5, 2.0].map(m => (
                   <button key={m} onClick={() => setRiskMult(m)} style={{
@@ -2911,13 +3018,13 @@ const CopyTradingTab = () => {
 
             {/* Info rows */}
             {[
-              ["Performance Fee", `${port.fee}%`],
-              ["Min. Investment", `$${port.minInvest}`],
-              ["Risk Level", port.riskLevel],
-              ["Avg Trade Duration", port.avgTrade],
-            ].map(([l, v]) => (
+              ["Comisión", `${port.fee}%`, "perfFee"],
+              ["Inversión Mín.", `$${port.minInvest}`, null],
+              ["Nivel de Riesgo", port.riskLevel, "riskLevel"],
+              ["Duración Prom.", port.avgTrade, null],
+            ].map(([l, v, tip]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
-                <span style={{ color: C.textMuted }}>{l}</span>
+                <span style={{ color: C.textMuted }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</span>
                 <span style={{ fontWeight: "600", ...mono }}>{v}</span>
               </div>
             ))}
@@ -2955,14 +3062,14 @@ const CopyTradingTab = () => {
           <div style={cardStyle}>
             <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px" }}>Métricas del Trader</div>
             {[
-              ["Sharpe Ratio", port.sharpe.toFixed(1), C.blue],
-              ["Max Drawdown", `${port.maxDD}%`, C.red],
-              ["Win Rate", `${port.winRate}%`, C.green],
-              ["Followers", port.followers.toLocaleString(), C.purple],
-              ["AUM", `$${(port.aum / 1e6).toFixed(1)}M`, C.amber],
-            ].map(([l, v, clr]) => (
+              ["Ratio Sharpe", port.sharpe.toFixed(1), C.blue, "sharpe"],
+              ["Máxima Caída", `${port.maxDD}%`, C.red, "maxDD"],
+              ["% Ganadoras", `${port.winRate}%`, C.green, "winRate"],
+              ["Seguidores", port.followers.toLocaleString(), C.purple, "copiers"],
+              ["En Gestión", `$${(port.aum / 1e6).toFixed(1)}M`, C.amber, "aum"],
+            ].map(([l, v, clr, tip]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
-                <span style={{ color: C.textMuted }}>{l}</span>
+                <span style={{ color: C.textMuted }}><InfoTip k={tip}><span>{l}</span></InfoTip></span>
                 <span style={{ fontWeight: "700", color: clr, ...mono }}>{v}</span>
               </div>
             ))}
@@ -2975,7 +3082,7 @@ const CopyTradingTab = () => {
         <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Todos los Portfolios</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>
-            {["Trader", "Return/Mes", "Sharpe", "Win Rate", "Max DD", "Followers", "AUM", "Fee", "Risk", "Hot", "Status"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+            {[["Trader",null],["Retorno/Mes",null],["Sharpe","sharpe"],["% Ganadoras","winRate"],["Máx. Caída","maxDD"],["Seguidores","copiers"],["En Gestión","aum"],["Comisión","perfFee"],["Riesgo","riskLevel"],["Hot",null],["Estado",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
           </tr></thead>
           <tbody>
             {copyPortfolios.map((p, i) => {
@@ -3040,7 +3147,7 @@ const PredictionMarketsTab = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-        <div style={{ fontSize: "18px", fontWeight: "700" }}>Prediction Markets</div>
+        <div style={{ fontSize: "18px", fontWeight: "700" }}>Predicciones del Mercado</div>
         <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           <span style={{ fontSize: "11px", color: C.textMuted, fontWeight: "600" }}>Sort:</span>
           {[["volume", "Volume"], ["participants", "Popular"], ["yesOdds", "Yes %"]].map(([k, l]) => (
@@ -3056,10 +3163,10 @@ const PredictionMarketsTab = () => {
 
       {/* Stats with trend sub-text */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Total Volume" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% week" icon={DollarSign} color={C.green} />
-        <StatCard label="Participants" value={totalParticipants.toLocaleString()} sub="+240 active" icon={Users} color={C.blue} />
-        <StatCard label="Active Markets" value={predictionMarkets.length} sub="2 resolved" icon={Activity} color={C.purple} />
-        <StatCard label="Market Bias" value={`${avgYesOdds}% YES`} sub="Bull sentiment" icon={Flame} color={C.amber} />
+        <StatCardTip label="Volumen Total" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% semana" icon={DollarSign} color={C.green} tip="pot" />
+        <StatCardTip label="Participantes" value={totalParticipants.toLocaleString()} sub="+240 activos" icon={Users} color={C.blue} />
+        <StatCardTip label="Mercados Activos" value={predictionMarkets.length} sub="2 resueltos" icon={Activity} color={C.purple} />
+        <StatCardTip label="Sentimiento" value={`${avgYesOdds}% YES`} sub="Tendencia alcista" icon={Flame} color={C.amber} tip="odds" />
       </div>
 
       {/* Category filter */}
@@ -3115,7 +3222,7 @@ const PredictionMarketsTab = () => {
 
               {/* Pot size - centered, purple monospace */}
               <div style={{ textAlign: "center", marginBottom: "12px", fontSize: "14px", fontWeight: "700", color: C.purple, ...mono }}>
-                💰 Pot: ${(m.volume / 1000).toFixed(0)}K
+                <InfoTip k="pot"><span>💰 Pozo: ${(m.volume / 1000).toFixed(0)}K</span></InfoTip>
               </div>
 
               {/* Your position indicator */}
