@@ -2100,10 +2100,12 @@ const TraderProfile = ({ trader, onClose }) => {
               <div style={{ fontSize: "9px", fontWeight: "700", color: aClr, marginTop: "2px" }}>ALPHA {alphaLabel(alpha)}</div>
             </div>
           ); })()}
-          {/* Named Badges */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "10px", justifyContent: "center", maxWidth: "130px" }}>
-            {t.badges.map(b => { const ach = ACHIEVEMENTS[b]; return ach ? <span key={b} title={`${ach.name}: ${ach.desc}`} style={{ fontSize: "16px", cursor: "default" }}>{ach.icon}</span> : null; })}
-          </div>
+          {/* Badges summary */}
+          {t.badges.length > 0 && (
+            <div style={{ marginTop: "10px", fontSize: "10px", color: C.amber, fontWeight: "600" }}>
+              {t.badges.length} badges earned
+            </div>
+          )}
           {/* Degen Score */}
           {(() => { const degen = calcDegenScore(t); return (
             <div style={{ marginTop: "8px", fontSize: "9px", fontWeight: "700", color: degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green, padding: "3px 8px", borderRadius: "4px", backgroundColor: degen >= 60 ? C.redBg : degen >= 40 ? C.amberBg : C.greenBg }}>
@@ -2769,15 +2771,13 @@ const TradersTab = () => {
                             <span style={pillStyle(tierColor[t.tier])}>{t.tier}</span>
                             <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>LVL {t.level}</span>
                           </div>
-                          <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
-                            {t.badges.slice(0, 3).map(b => {
-                              const ach = ACHIEVEMENTS[b];
-                              return ach ? <span key={b} title={ach.name} style={{ fontSize: "11px", cursor: "default" }}>{ach.icon}</span> : null;
-                            })}
-                            {t.badges.length > 3 && <span style={{ fontSize: "9px", color: C.textFaint }}>+{t.badges.length - 3}</span>}
-                          </div>
+                          {t.badges.length > 0 && (
+                            <div style={{ marginTop: "3px" }}>
+                              <span style={{ fontSize: "9px", color: C.amber, fontWeight: "600" }}>{t.badges.length} badges</span>
+                            </div>
+                          )}
                         </div>
-                        {t.viewersNow > 20 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600", marginLeft: "auto" }}>👁 {t.viewersNow}</span>}
+                        {t.viewersNow > 20 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600", marginLeft: "auto" }}><Eye size={9} /> {t.viewersNow}</span>}
                       </div>
                     </td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>
@@ -3179,11 +3179,12 @@ const TradersTab = () => {
                 </div>
               </div>
 
-              {/* Named Achievement Badges */}
-              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
-                {t.badges.slice(0, 4).map(b => <BadgeChip key={b} id={b} />)}
-                {t.badges.length > 4 && <span style={{ fontSize: "10px", color: C.textFaint, alignSelf: "center" }}>+{t.badges.length - 4} more</span>}
-              </div>
+              {/* Badges count */}
+              {t.badges.length > 0 && (
+                <div style={{ marginBottom: "10px", fontSize: "10px", color: C.amber, fontWeight: "600" }}>
+                  {t.badges.length} badges
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div style={{ display: "flex", gap: "8px" }}>
