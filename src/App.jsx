@@ -1190,17 +1190,32 @@ const SMCAnalysis = () => {
           )}
         </div>
 
-        {/* Quick-switch: top coins as tiny pills */}
-        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-          {["BTC","ETH","SOL","BNB","XRP","DOGE","AVAX","ADA"].map(c => (
-            <button key={c} onClick={() => setSelectedCoin(c)} style={{
-              padding: "4px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-              border: `1px solid ${selectedCoin === c ? C.purple : C.border}`,
-              backgroundColor: selectedCoin === c ? C.purpleBg : "transparent",
-              color: selectedCoin === c ? C.purple : C.textFaint,
-              ...mono
-            }}>{c}</button>
-          ))}
+        {/* Quick-switch: top coins with performance */}
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          {["BTC","ETH","SOL","BNB","XRP","DOGE","AVAX","ADA"].map(c => {
+            const cd = smcCoins[c];
+            const isUp = cd.change.startsWith("+");
+            const isActive = selectedCoin === c;
+            return (
+              <button key={c} onClick={() => setSelectedCoin(c)} style={{
+                padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "6px",
+                border: `1px solid ${isActive ? C.purple : C.border}`,
+                backgroundColor: isActive ? C.purpleBg : "transparent",
+                color: isActive ? C.purple : C.text,
+                transition: "all 0.15s ease",
+                ...mono
+              }}>
+                <span>{c}</span>
+                <span style={{
+                  fontSize: "9px", fontWeight: "700",
+                  color: isUp ? C.green : C.red,
+                  backgroundColor: isUp ? C.greenBg : C.redBg,
+                  padding: "1px 4px", borderRadius: "3px"
+                }}>{cd.change}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
