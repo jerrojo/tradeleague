@@ -3272,12 +3272,18 @@ const App = () => {
     <ThemeProvider>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
-        <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex" }}>
+        <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+
+          {/* ── Top Ticker (full width, above everything) ── */}
+          <LivePnLTicker />
+
+          {/* ── Main Layout ── */}
+          <div style={{ display: "flex", flex: 1 }}>
 
           {/* ── Left Sidebar ── */}
           <aside style={{
-            width: sideW, minHeight: "100vh", backgroundColor: C.card, borderRight: `1px solid ${C.border}`,
-            display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 200,
+            width: sideW, minHeight: "calc(100vh - 32px)", backgroundColor: C.card, borderRight: `1px solid ${C.border}`,
+            display: "flex", flexDirection: "column", position: "fixed", top: 32, left: 0, zIndex: 200,
             transition: "width 0.2s ease"
           }}>
             {/* Logo + collapse toggle */}
@@ -3332,7 +3338,7 @@ const App = () => {
           </aside>
 
           {/* ── Main Area ── */}
-          <div style={{ flex: 1, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          <div style={{ flex: 1, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 32px)" }}>
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
@@ -3435,9 +3441,6 @@ const App = () => {
               </div>
             </header>
 
-            {/* Live PnL Ticker */}
-            <LivePnLTicker />
-
             {/* Content */}
             <main style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%" }}>
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
@@ -3476,6 +3479,7 @@ const App = () => {
             </footer>
           </div>
 
+          </div>{/* close Main Layout wrapper */}
         </div>
         </ProfileContext.Provider>
       </DateContext.Provider>
