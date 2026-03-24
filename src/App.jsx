@@ -698,7 +698,9 @@ const feedItems = (() => {
         id: id++, kind: "trade", trader: t.name, avatar: t.avatar, isBot: t.isBot, tier: t.tier,
         pair, type, entry: Math.round(entry * 100) / 100, tp, sl, pnl, status,
         leverage: ["3x","5x","10x","2x","4x"][(ti+i)%5],
-        analysis: isWin ? "OB + FVG confluence confirmed" : "Stopped on fakeout",
+        analysis: isWin
+          ? ["OB + FVG confluence en zona clave. Entrada limpia.", "Liquidez barrida + desplazamiento fuerte. Confluencia alta.", "BOS confirmado en 1H con volumen. Momentum a favor.", "Retest de Order Block + estructura intacta. Setup A+."][((ti*3+i)*7)%4]
+          : ["Fakeout sobre resistencia. Mercado lateral.", "PA choppy sin dirección clara. Entré sin confirmación.", "Entré contra el bias de timeframe mayor.", "Perdí la killzone, volumen bajo."][((ti*3+i)*7)%4],
         time: minsAgo < 60 ? `${minsAgo}m` : `${Math.floor(minsAgo/60)}h`,
         timestamp: Date.now() - minsAgo * 60000, copiers: Math.floor(Math.random() * 50 + 5),
       });
@@ -1775,7 +1777,11 @@ const ArenaTab = () => {
     ? traderFeed
     : feedFilter === "whale"
       ? traderFeed.filter(f => f.kind === "whale" || f.kind === "liquidation")
-      : traderFeed.filter(f => f.kind === feedFilter);
+      : feedFilter === "long"
+        ? traderFeed.filter(f => f.kind === "trade" && f.type === "LONG")
+        : feedFilter === "short"
+          ? traderFeed.filter(f => f.kind === "trade" && f.type === "SHORT")
+          : traderFeed.filter(f => f.kind === feedFilter);
 
   const handleCopy = (item) => {
     setCopied(prev => ({ ...prev, [item.id]: true }));
@@ -1896,22 +1902,35 @@ const ArenaTab = () => {
       )}
 
       {/* ── Feed filter ── */}
-      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-        <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-        {[
-          { id: "all", label: "Todo" },
-          { id: "trade", label: "Trades" },
-          { id: "prediction", label: "Predicciones" },
-        ].map(f => (
-          <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
-            padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-            border: `1px solid ${feedFilter === f.id ? C.purple : C.border}`,
-            backgroundColor: feedFilter === f.id ? C.purpleBg : "transparent",
-            color: feedFilter === f.id ? C.purple : C.textMuted
-          }}>{f.label}</button>
-        ))}
-      </div>
+      {(() => {
+        const longCount = traderFeed.filter(f => f.kind === "trade" && f.type === "LONG").length;
+        const shortCount = traderFeed.filter(f => f.kind === "trade" && f.type === "SHORT").length;
+        const predCount = traderFeed.filter(f => f.kind === "prediction").length;
+        const filterItems = [
+          { id: "all", label: "Todo", color: C.purple, count: traderFeed.length },
+          { id: "long", label: "LONG", color: C.green, count: longCount },
+          { id: "short", label: "SHORT", color: C.red, count: shortCount },
+          { id: "prediction", label: "Predicciones", color: C.amber, count: predCount },
+        ];
+        return (
+          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+            {filterItems.map(f => (
+              <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
+                padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
+                backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
+                color: feedFilter === f.id ? f.color : C.textMuted,
+                display: "flex", alignItems: "center", gap: "6px"
+              }}>
+                {f.label}
+                <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* ── Live Feed (filtered to watched traders) ── */}
       {filteredFeed.length === 0 && (
@@ -1965,15 +1984,20 @@ const ArenaTab = () => {
           }
 
           /* ── Trade card ── */
+          const levNum = parseInt(item.leverage);
+          const levRisk = levNum >= 10 ? "Alto" : levNum >= 5 ? "Medio" : "Bajo";
+          const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
+          const rrRatio = Math.abs(item.tp - item.entry) / Math.max(Math.abs(item.entry - item.sl), 0.01);
           return (
-            <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.type === "LONG" ? C.green : C.red}`, padding: "12px 16px" }}>
+            <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.type === "LONG" ? C.green : C.red}`, padding: "14px 16px" }}>
               {/* Row 1: Trader + PnL */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span style={{ fontSize: "14px" }}>{item.avatar}</span>
                   <TraderLink name={item.trader} />
                   <BotTag isBot={item.isBot} />
                   <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
+                  {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint }}>{item.copiers} copiando</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span style={{ fontSize: "15px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
@@ -1983,14 +2007,45 @@ const ArenaTab = () => {
                 </div>
               </div>
 
-              {/* Row 2: Pair + details (compact) */}
-              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px", fontSize: "12px" }}>
-                <span style={{ fontWeight: "800" }}>{item.pair}</span>
+              {/* Row 2: Pair + direction headline */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "16px", fontWeight: "800" }}>{item.pair}</span>
                 <Tag text={item.type} color={item.type === "LONG" ? C.green : C.red} />
-                <span style={{ color: C.amber, fontWeight: "600", ...mono }}>{item.leverage}</span>
-                <span style={{ color: C.textMuted }}>Entrada <span style={{ color: C.text, ...mono }}>${item.entry.toLocaleString()}</span></span>
-                <span style={{ color: C.textMuted }}>TP <span style={{ color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
-                <span style={{ color: C.textMuted }}>SL <span style={{ color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
+                <span style={{ fontSize: "12px", color: item.type === "LONG" ? C.green : C.red, fontWeight: "600" }}>
+                  {item.type === "LONG" ? "Apuesta a que sube" : "Apuesta a que baja"}
+                </span>
+              </div>
+
+              {/* Row 3: Key metrics grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "8px", padding: "8px 0", borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+                <div>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Entrada</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", ...mono }}>${item.entry.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Objetivo</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Stop Loss</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Riesgo:Gan.</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>Apalancam.</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "800", color: levColor, ...mono }}>{item.leverage}</span>
+                    <span style={{ fontSize: "8px", fontWeight: "700", color: levColor, backgroundColor: `${levColor}15`, padding: "1px 5px", borderRadius: "3px" }}>{levRisk}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Analysis context */}
+              <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px" }}>
+                <span style={{ fontWeight: "600", color: C.textFaint }}>Análisis:</span> {item.analysis}
               </div>
 
               {/* TP Progress for active */}
