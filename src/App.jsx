@@ -1744,10 +1744,14 @@ const SMCAnalysis = () => {
   );
 };
 
-/* ═══════════════════════ TAB 2: SIGNALS ═══════════════════════ */
-/* ═══════════════════════ TAB: LIVE FEED (Social Heart) ═══════════════════════ */
-const LiveFeedTab = () => {
+/* ═══════════════════════ TAB: ARENA (Watch traders live) ═══════════════════════ */
+const ArenaTab = () => {
   const { openProfile } = useProfile();
+  const [watching, setWatching] = useState(() => {
+    const m = {};
+    mockTraders.forEach((t, i) => { m[t.name] = i < 4; });
+    return m;
+  });
   const [feedFilter, setFeedFilter] = useState("all");
   const [reactions, setReactions] = useState(() => {
     const r = {};
@@ -1758,195 +1762,266 @@ const LiveFeedTab = () => {
   const [copied, setCopied] = useState({});
   const toast = useToast();
 
-  const filters = [
-    { id: "all", label: "Todo", icon: "📡" },
-    { id: "trade", label: "Trades", icon: "💹" },
-    { id: "prediction", label: "Predicciones", icon: "🎯" },
-    { id: "achievement", label: "Logros", icon: "🏆" },
-    { id: "whale", label: "Ballenas", icon: "🐋" },
-  ];
-
-  const filtered = feedFilter === "all"
-    ? feedItems
-    : feedFilter === "whale"
-      ? feedItems.filter(f => f.kind === "whale" || f.kind === "liquidation")
-      : feedItems.filter(f => f.kind === feedFilter);
-
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+  const toggleWatch = (name) => setWatching(prev => ({ ...prev, [name]: !prev[name] }));
+  const watchedNames = Object.keys(watching).filter(k => watching[k]);
+  const watchedTraders = mockTraders.filter(t => watching[t.name]);
+
+  // Filter feed items to only watched traders (+ whales/liquidations always show)
+  const traderFeed = feedItems.filter(f =>
+    f.kind === "whale" || f.kind === "liquidation" || watchedNames.includes(f.trader)
+  );
+  const filteredFeed = feedFilter === "all"
+    ? traderFeed
+    : feedFilter === "whale"
+      ? traderFeed.filter(f => f.kind === "whale" || f.kind === "liquidation")
+      : traderFeed.filter(f => f.kind === feedFilter);
 
   const handleCopy = (item) => {
     setCopied(prev => ({ ...prev, [item.id]: true }));
     toast.addToast(`Copiando ${item.type} ${item.pair} de ${item.trader}`, "success");
   };
 
-  const tradeCount = feedItems.filter(f => f.kind === "trade").length;
-  const activeCount = feedItems.filter(f => f.kind === "trade" && f.status === "active").length;
-  const totalPnl = feedItems.filter(f => f.kind === "trade").reduce((a, f) => a + (f.pnl || 0), 0);
+  const activeCount = traderFeed.filter(f => f.kind === "trade" && f.status === "active").length;
+  const watchedPnl = watchedTraders.reduce((a, t) => a + t.pnl, 0);
+
+  const statusColors = { active: C.blue, tp_hit: C.green, sl_hit: C.red };
+  const statusLabels = { active: "Activa", tp_hit: "TP Hit", sl_hit: "SL Hit" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+
+      {/* ── Header: title + LIVE badge ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ fontSize: "18px", fontWeight: "700" }}>Live Feed</div>
+          <div style={{ fontSize: "18px", fontWeight: "800" }}>Arena</div>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, padding: "3px 10px", borderRadius: "10px", border: `1px solid ${C.green}30` }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> EN VIVO
           </span>
+          <span style={{ fontSize: "11px", color: C.textMuted }}>Siguiendo {watchedNames.length} traders</span>
         </div>
-        <div style={{ display: "flex", gap: "6px" }}>
-          {filters.map(f => (
-            <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
-              padding: "6px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-              border: `1px solid ${feedFilter === f.id ? C.purple : C.border}`,
-              backgroundColor: feedFilter === f.id ? C.purpleBg : "transparent",
-              color: feedFilter === f.id ? C.purple : C.textMuted,
-              display: "flex", alignItems: "center", gap: "5px"
-            }}>{f.icon} {f.label}</button>
-          ))}
+        <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: C.textMuted, ...mono }}>
+          <span>{activeCount} ops activas</span>
+          <span style={{ color: C.green }}>+${(watchedPnl / 1000).toFixed(0)}K PnL total</span>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCardTip label="Trades en Feed" value={tradeCount} icon={Activity} color={C.purple} />
-        <StatCardTip label="Activos Ahora" value={activeCount} sub="operaciones abiertas" icon={Radio} color={C.green} tip="signalActive" />
-        <StatCardTip label="PnL Comunidad" value={`${totalPnl >= 0 ? "+" : ""}$${(totalPnl/1000).toFixed(1)}K`} icon={TrendingUp} color={totalPnl >= 0 ? C.green : C.red} />
-        <StatCardTip label="Reacciones" value={Object.values(reactions).reduce((a, r) => a + Object.values(r).filter(v => typeof v === "number").reduce((b, n) => b + n, 0), 0)} icon={Heart} color={C.amber} />
+      {/* ── Trader selector: pick who you're watching ── */}
+      <div style={{ ...cardStyle, padding: "12px 16px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginRight: "4px" }}>Watching:</span>
+        {mockTraders.map((t, i) => {
+          const on = watching[t.name];
+          const color = traderColors[i];
+          return (
+            <button key={t.name} onClick={() => toggleWatch(t.name)} style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "5px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+              border: `1px solid ${on ? color : C.border}`,
+              backgroundColor: on ? color + "15" : "transparent",
+              color: on ? C.text : C.textFaint, transition: "all 0.15s"
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
+              <span>{t.avatar}</span>
+              <span>{t.name}</span>
+              {on && <span style={{ fontSize: "9px", color: color, ...mono }}>{t.winRate}%</span>}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Feed Cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {filtered.map(item => {
+      {/* ── Live Equity Curves (only watched) ── */}
+      {watchedTraders.length > 0 && (
+        <div style={cardStyle}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: "700" }}>Performance en vivo</div>
+              <div style={{ fontSize: "10px", color: C.textMuted }}>Equity acumulada — últimos 30 días</div>
+            </div>
+            <div style={{ display: "flex", gap: "12px" }}>
+              {watchedTraders.slice(0, 5).map((t, i) => {
+                const ci = mockTraders.indexOf(t);
+                return (
+                  <div key={t.name} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px" }}>
+                    <div style={{ width: 8, height: 3, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
+                    <span style={{ color: traderColors[ci], fontWeight: "600" }}>{t.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={traderEquity}>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+              <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
+              <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
+              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} labelFormatter={l => `Día ${l}`} />
+              {mockTraders.map((t, i) => watching[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />)}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* ── Watched traders scoreboard ── */}
+      {watchedTraders.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(watchedTraders.length, 4)}, 1fr)`, gap: "10px" }}>
+          {watchedTraders.slice(0, 4).map((t, idx) => {
+            const ci = mockTraders.indexOf(t);
+            const alpha = calcAlphaScore(t);
+            const aClr = alphaColor(alpha);
+            return (
+              <div key={t.name} onClick={() => openProfile(t)} style={{ ...cardStyle, cursor: "pointer", borderTop: `2px solid ${traderColors[ci]}`, padding: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "16px" }}>{t.avatar}</span>
+                    <div>
+                      <div style={{ fontSize: "12px", fontWeight: "700" }}>{t.name}</div>
+                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                        <BotTag isBot={t.isBot} />
+                        <span style={{ fontSize: "9px", color: tierColor[t.tier], fontWeight: "600" }}>{t.tier}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "16px", fontWeight: "900", color: aClr, ...mono }}>{alpha}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", fontSize: "10px" }}>
+                  <div><span style={{ color: C.textFaint }}>Win </span><span style={{ color: C.green, fontWeight: "700", ...mono }}>{t.winRate}%</span></div>
+                  <div><span style={{ color: C.textFaint }}>PnL </span><span style={{ color: C.green, fontWeight: "700", ...mono }}>+${(t.pnl/1000).toFixed(0)}K</span></div>
+                  <div><span style={{ color: C.textFaint }}>Racha </span><span style={{ color: C.amber, fontWeight: "700", ...mono }}>{t.streak}W</span></div>
+                  <div><span style={{ color: C.textFaint }}>Copiers </span><span style={{ fontWeight: "700", ...mono }}>{t.copiers}</span></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Feed filter ── */}
+      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
+        <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+        {[
+          { id: "all", label: "Todo" },
+          { id: "trade", label: "Trades" },
+          { id: "prediction", label: "Predicciones" },
+        ].map(f => (
+          <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
+            padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+            border: `1px solid ${feedFilter === f.id ? C.purple : C.border}`,
+            backgroundColor: feedFilter === f.id ? C.purpleBg : "transparent",
+            color: feedFilter === f.id ? C.purple : C.textMuted
+          }}>{f.label}</button>
+        ))}
+      </div>
+
+      {/* ── Live Feed (filtered to watched traders) ── */}
+      {filteredFeed.length === 0 && (
+        <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
+          <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Selecciona traders para seguir</div>
+          <div style={{ fontSize: "12px" }}>Usa los botones de arriba para elegir a quién quieres ver en vivo</div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {filteredFeed.map(item => {
           if (item.kind === "whale" || item.kind === "liquidation") {
             return (
-              <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "24px" }}>{item.kind === "whale" ? "🐋" : "💀"}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE ALERT" : "LIQUIDACIÓN"}</div>
-                  <div style={{ fontSize: "12px", color: C.text }}>{item.text}</div>
-                </div>
-                <span style={{ fontSize: "11px", color: C.textFaint }}>{item.time}</span>
+              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE" : "LIQUIDACIÓN"}</div>
+                <div style={{ fontSize: "11px", color: C.text, flex: 1 }}>{item.text}</div>
+                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
               </div>
             );
           }
 
           if (item.kind === "achievement") {
             return (
-              <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "28px" }}>{item.achievement.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "700" }}>{item.avatar} {item.trader}</span>
-                    <BotTag isBot={item.isBot} />
-                    <span style={{ fontSize: "11px", color: C.purple, fontWeight: "700" }}>desbloqueó un logro</span>
-                  </div>
-                  <div style={{ fontSize: "14px", fontWeight: "800", color: C.purple }}>{item.achievement.name}</div>
-                  <div style={{ fontSize: "11px", color: C.textMuted }}>{item.achievement.desc}</div>
+              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "14px" }}>{item.avatar}</span>
+                <div style={{ flex: 1, fontSize: "12px" }}>
+                  <TraderLink name={item.trader} /> <span style={{ color: C.purple, fontWeight: "600" }}>desbloqueó {item.achievement.name}</span>
                 </div>
-                <span style={{ fontSize: "11px", color: C.textFaint }}>{item.time}</span>
+                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
               </div>
             );
           }
 
           if (item.kind === "prediction") {
             return (
-              <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${C.amber}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "20px" }}>{item.avatar}</span>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <TraderLink name={item.trader} />
-                        <BotTag isBot={item.isBot} />
-                        <Tag text={item.tier} color={tierColor[item.tier]} />
-                      </div>
-                      <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "2px" }}>{item.time} ago · Predicción</div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: "20px" }}>🎯</span>
+              <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${C.amber}`, padding: "12px 16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <span style={{ fontSize: "14px" }}>{item.avatar}</span>
+                  <TraderLink name={item.trader} />
+                  <BotTag isBot={item.isBot} />
+                  <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
                 </div>
-                <div style={{ fontSize: "14px", fontWeight: "700", marginBottom: "8px" }}>"{item.question}"</div>
-                <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "10px" }}>
+                <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "6px" }}>{item.question}</div>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
                   <Tag text={`Apostó ${item.bet}`} color={item.bet === "YES" ? C.green : C.red} />
-                  <span style={{ fontSize: "12px", color: C.textMuted, ...mono }}>${item.stake} · {item.odds}% odds</span>
+                  <span style={{ fontSize: "11px", color: C.textMuted, ...mono }}>${item.stake} a {item.odds}%</span>
                 </div>
                 <Reactions itemId={item.id} reactionsState={reactions} setReactionsState={setReactions} />
               </div>
             );
           }
 
-          /* ── Trade card (main type) ── */
-          const statusColors = { active: C.blue, tp_hit: C.green, sl_hit: C.red };
-          const statusLabels = { active: "Activa", tp_hit: "TP Hit ✅", sl_hit: "SL Hit ❌" };
+          /* ── Trade card ── */
           return (
-            <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.type === "LONG" ? C.green : C.red}` }}>
-              {/* Header row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+            <div key={item.id} style={{ ...cardStyle, borderLeft: `3px solid ${item.type === "LONG" ? C.green : C.red}`, padding: "12px 16px" }}>
+              {/* Row 1: Trader + PnL */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "20px" }}>{item.avatar}</span>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <TraderLink name={item.trader} />
-                      <BotTag isBot={item.isBot} />
-                      <Tag text={item.tier} color={tierColor[item.tier]} />
-                    </div>
-                    <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "2px" }}>{item.time} ago · {item.copiers} copiando</div>
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: "16px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
-                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
-                  </div>
+                  <span style={{ fontSize: "14px" }}>{item.avatar}</span>
+                  <TraderLink name={item.trader} />
+                  <BotTag isBot={item.isBot} />
                   <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
                 </div>
-              </div>
-
-              {/* Trade details */}
-              <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "8px", flexWrap: "wrap" }}>
-                <span style={{ fontSize: "15px", fontWeight: "800" }}>{item.pair}</span>
-                <Tag text={item.type} color={item.type === "LONG" ? C.green : C.red} />
-                <span style={{ fontSize: "12px", color: C.amber, fontWeight: "600", ...mono }}>{item.leverage}</span>
-                <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: C.textMuted }}>
-                  <span><InfoTip k="entryZone" inline><span>Entrada:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${item.entry.toLocaleString()}</span></span>
-                  <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
-                  <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "15px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
+                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
                 </div>
               </div>
 
-              {/* Analysis */}
-              <div style={{ fontSize: "12px", color: C.textMuted, fontStyle: "italic", marginBottom: "8px" }}>"{item.analysis}"</div>
+              {/* Row 2: Pair + details (compact) */}
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px", fontSize: "12px" }}>
+                <span style={{ fontWeight: "800" }}>{item.pair}</span>
+                <Tag text={item.type} color={item.type === "LONG" ? C.green : C.red} />
+                <span style={{ color: C.amber, fontWeight: "600", ...mono }}>{item.leverage}</span>
+                <span style={{ color: C.textMuted }}>Entrada <span style={{ color: C.text, ...mono }}>${item.entry.toLocaleString()}</span></span>
+                <span style={{ color: C.textMuted }}>TP <span style={{ color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
+                <span style={{ color: C.textMuted }}>SL <span style={{ color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
+              </div>
 
-              {/* TP Progress bar for active trades */}
+              {/* TP Progress for active */}
               {item.status === "active" && <TpProgressBar entry={item.entry} tp={item.tp} sl={item.sl} status={item.status} />}
 
-              {/* Confidence Vote for active trades */}
+              {/* Confidence + actions for active */}
               {item.status === "active" && (
-                <div style={{ marginTop: "10px", marginBottom: "8px" }}>
-                  <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "4px", fontWeight: "600", textTransform: "uppercase" }}>Confianza de la comunidad</div>
-                  <ConfidenceVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
-                </div>
-              )}
-
-              {/* Bottom: Reactions + Quick Actions */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
-                <Reactions itemId={item.id} reactionsState={reactions} setReactionsState={setReactions} />
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{ display: "flex", gap: "16px", alignItems: "center", marginTop: "8px" }}>
+                  <div style={{ flex: 1 }}>
+                    <ConfidenceVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                  </div>
                   <button onClick={() => handleCopy(item)} style={{
-                    display: "flex", alignItems: "center", gap: "4px", padding: "5px 12px", borderRadius: "6px",
+                    display: "flex", alignItems: "center", gap: "4px", padding: "6px 14px", borderRadius: "6px",
                     border: "none", cursor: "pointer", fontSize: "11px", fontWeight: "700",
                     backgroundColor: copied[item.id] ? C.green : C.purpleBg, color: copied[item.id] ? "#000" : C.purple,
-                    boxShadow: !copied[item.id] ? "none" : `0 0 8px ${C.green}40`
                   }}>
                     {copied[item.id] ? <><CheckCircle size={12} /> Copiando</> : <><Copy size={12} /> Copiar</>}
                   </button>
                   <button style={{
-                    display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px",
-                    border: `1px solid ${C.border}`, cursor: "pointer", fontSize: "11px", fontWeight: "600",
-                    backgroundColor: "transparent", color: C.textMuted
+                    display: "flex", alignItems: "center", gap: "4px", padding: "6px 10px", borderRadius: "6px",
+                    cursor: "pointer", fontSize: "11px", fontWeight: "600",
+                    backgroundColor: C.redBg, color: C.red, border: `1px solid ${C.red}30`
                   }}>
-                    <Share2 size={12} />
+                    <Swords size={12} /> Contra
                   </button>
                 </div>
+              )}
+
+              {/* Reactions for all */}
+              <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
+                <Reactions itemId={item.id} reactionsState={reactions} setReactionsState={setReactions} />
               </div>
             </div>
           );
@@ -4024,7 +4099,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("feed");
+  const [activeTab, setActiveTab] = useState("arena");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -4062,7 +4137,7 @@ const App = () => {
   const closeProfile = () => setProfileTrader(null);
 
   const tabs = [
-    { id: "feed", label: "Live Feed", icon: Radio },
+    { id: "arena", label: "Arena", icon: Radio },
     { id: "smc", label: "Análisis SMC", icon: Crosshair },
     { id: "signals", label: "Señales", icon: Zap },
     { id: "traders", label: "Traders", icon: Users },
@@ -4073,7 +4148,7 @@ const App = () => {
     { id: "football", label: "Football", icon: Gamepad2 },
   ];
 
-  const tabContent = { feed: LiveFeedTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab, predictions: PredictionMarketsTab, football: FootballTab };
+  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab, predictions: PredictionMarketsTab, football: FootballTab };
   const ActiveComponent = tabContent[activeTab];
   const sideW = sidebarCollapsed ? 56 : 200;
 
