@@ -573,7 +573,7 @@ const ToastProvider = ({ children }) => {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
   const colors = { success: C.green, error: C.red, info: C.blue, warning: C.amber, achievement: C.purple };
-  const icons = { success: "✅", error: "❌", info: "ℹ️", warning: "⚠️", achievement: "🏆" };
+  const icons = { success: "+", error: "x", info: "i", warning: "!", achievement: "*" };
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
@@ -2229,7 +2229,6 @@ const TraderProfile = ({ trader, onClose }) => {
   const tabLabels = { overview: "Overview", signals: "Señales", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
-  const moodEmojis = { Confident: "😎", Frustrated: "😤", Focused: "🎯", Excited: "🔥", Neutral: "😐" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -2562,7 +2561,7 @@ const TraderProfile = ({ trader, onClose }) => {
                     <span style={{ fontSize: "11px", color: C.textMuted }}>❤️ {post.likes.toLocaleString()}</span>
                     {post.retweets > 0 && <span style={{ fontSize: "11px", color: C.textMuted }}>🔄 {post.retweets}</span>}
                     <span style={{ fontSize: "11px", color: C.textMuted }}>💬 {post.replies}</span>
-                    {post.impressions > 0 && <span style={{ fontSize: "11px", color: C.textMuted }}>👁 {(post.impressions / 1000).toFixed(1)}K</span>}
+                    {post.impressions > 0 && <span style={{ fontSize: "11px", color: C.textMuted }}><Eye size={10} /> {(post.impressions / 1000).toFixed(1)}K</span>}
                   </div>
                 </div>
               </div>
@@ -2720,7 +2719,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div key={entry.id} style={{ ...cardStyle, borderLeft: `3px solid ${moodColors[entry.mood] || C.textMuted}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "20px" }}>{moodEmojis[entry.mood]}</span>
+                  <span style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: `${moodColors[entry.mood] || C.textMuted}20`, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Circle size={10} color={moodColors[entry.mood] || C.textMuted} /></span>
                   <div>
                     <div style={{ fontSize: "13px", fontWeight: "700" }}>{entry.date}, 2026</div>
                     <div style={{ fontSize: "11px", color: moodColors[entry.mood], fontWeight: "600" }}>{entry.mood}</div>
@@ -2813,7 +2812,7 @@ const TradersTab = () => {
     return m;
   });
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
-  const medals = ["🥇","🥈","🥉"];
+  const rankColors = [C.amber, C.textMuted, "#cd7f32"]; // gold, silver, bronze
   const toggleTrader = (name) => setVisibleTraders(prev => ({ ...prev, [name]: !prev[name] }));
   const allOn = mockTraders.every(t => visibleTraders[t.name]);
   const toggleAll = () => { const next = {}; mockTraders.forEach(t => { next[t.name] = !allOn; }); setVisibleTraders(next); };
@@ -2824,10 +2823,9 @@ const TradersTab = () => {
   const hoursLeft = Math.max(0, Math.floor(((seasonEnd - now) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
 
   const getFlames = (streak) => {
-    if (streak >= 15) return "🔥🔥🔥";
-    if (streak >= 10) return "🔥🔥";
-    if (streak >= 5) return "🔥";
-    return "";
+    if (streak >= 10) return <Flame size={12} color={C.amber} />;
+    if (streak >= 5) return <Flame size={10} color={C.textMuted} />;
+    return null;
   };
 
   return (
@@ -2836,7 +2834,7 @@ const TradersTab = () => {
       <div style={{ ...cardStyle, borderLeft: `4px solid ${C.purple}`, background: `linear-gradient(135deg, ${C.card} 0%, ${C.bg} 100%)` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "22px" }}>🏆</span>
+            <Trophy size={22} color={C.amber} />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "16px", fontWeight: "900", letterSpacing: "1px" }}>SEASON 1</span>
@@ -2879,12 +2877,12 @@ const TradersTab = () => {
         {/* Prizes row */}
         <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
           {[
-            ["🥇", "$25K", "+ Diamond Frame + Lifetime Badge", C.amber],
-            ["🥈", "$15K", "+ Platinum Frame", C.purple],
-            ["🥉", "$10K", "+ Gold Frame", C.amber],
-          ].map(([emoji, prize, extras, clr]) => (
-            <div key={emoji} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "16px" }}>{emoji}</span>
+            ["1", "$25K", "+ Diamond Frame + Lifetime Badge", C.amber],
+            ["2", "$15K", "+ Platinum Frame", "#c0c0c0"],
+            ["3", "$10K", "+ Gold Frame", "#cd7f32"],
+          ].map(([rank, prize, extras, clr]) => (
+            <div key={rank} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px", fontWeight: "900", color: clr, ...mono }}>{rank}</span>
               <div>
                 <div style={{ fontSize: "13px", fontWeight: "800", color: clr, ...mono }}>{prize}</div>
                 <div style={{ fontSize: "8px", color: C.textFaint }}>{extras}</div>
@@ -2919,8 +2917,8 @@ const TradersTab = () => {
                   const isHotStreak = t.streak >= 10;
                   return (
                   <tr key={t.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
-                    <td style={{ ...tdStyle, fontWeight: "700", fontSize: "14px", borderLeft: isTop1 ? `3px solid ${C.amber}` : "none" }}>
-                      {i < 3 ? medals[i] : i + 1}
+                    <td style={{ ...tdStyle, fontWeight: "800", fontSize: "14px", borderLeft: isTop1 ? `3px solid ${C.amber}` : "none", color: i < 3 ? rankColors[i] : C.textMuted, ...mono }}>
+                      {i + 1}
                     </td>
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -2992,7 +2990,7 @@ const TradersTab = () => {
                 <tbody>
                   {mockGroups.map((g, i) => (
                   <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
-                    <td style={{ ...tdStyle, fontWeight: "700", fontSize: "13px" }}>{i < 3 ? medals[i] : i + 1}</td>
+                    <td style={{ ...tdStyle, fontWeight: "800", fontSize: "13px", color: i < 3 ? rankColors[i] : C.textMuted, ...mono }}>{i + 1}</td>
                     <td style={tdStyle}><span style={{ marginRight: "6px" }}>{g.emoji}</span>{g.name}</td>
                     <td style={{ ...tdStyle, ...mono }}>{g.members}</td>
                     <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{g.winRate}%</td>
@@ -3022,10 +3020,10 @@ const TradersTab = () => {
           };
         });
         const compareMetrics = [
-          { id: "equity", label: "Equity", icon: "📈" },
-          { id: "signals", label: "Señales", icon: "⚡" },
-          { id: "trades", label: "Trades", icon: "💹" },
-          { id: "predictions", label: "Predictions", icon: "🎯" },
+          { id: "equity", label: "Equity" },
+          { id: "signals", label: "Señales" },
+          { id: "trades", label: "Trades" },
+          { id: "predictions", label: "Predictions" },
         ];
         return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -3062,7 +3060,7 @@ const TradersTab = () => {
                 backgroundColor: compareMetric === m.id ? C.purpleBg : "transparent",
                 color: compareMetric === m.id ? C.purple : C.textMuted,
                 display: "flex", alignItems: "center", gap: "6px"
-              }}>{m.icon} {m.label}</button>
+              }}>{m.label}</button>
             ))}
           </div>
 
@@ -3282,7 +3280,7 @@ const TradersTab = () => {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ fontSize: "14px", fontWeight: "700" }}>{t.name}</span>
-                    {t.viewersNow > 15 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600" }}>👁 {t.viewersNow} watching</span>}
+                    {t.viewersNow > 15 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600" }}><Eye size={9} /> {t.viewersNow} watching</span>}
                   </div>
                   <div style={{ fontSize: "10px", color: C.textMuted }}>#{t.rank} · {t.style} · {t.exchange}</div>
                 </div>
@@ -3597,7 +3595,7 @@ const CopyTradingTab = () => {
               </div>
               <div style={{ fontSize: "10px", color: C.textMuted }}>Last copied: 2 min ago</div>
               {isHot && (
-                <div style={{ fontSize: "11px", fontWeight: "700", color: C.amber, marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "4px", backgroundColor: C.amberBg, padding: "3px 8px", borderRadius: "4px" }}>🔥 Trending</div>
+                <div style={{ fontSize: "11px", fontWeight: "700", color: C.amber, marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "4px", backgroundColor: C.amberBg, padding: "3px 8px", borderRadius: "4px" }}><Flame size={10} /> Trending</div>
               )}
             </div>
 
@@ -3700,7 +3698,7 @@ const CopyTradingTab = () => {
                 <td style={{ ...tdStyle, ...mono }}>${(p.aum / 1e6).toFixed(1)}M</td>
                 <td style={{ ...tdStyle, ...mono }}>{p.fee}%</td>
                 <td style={tdStyle}><Tag text={p.riskLevel} color={riskColor[p.riskLevel] || C.amber} /></td>
-                <td style={{ ...tdStyle, fontSize: "14px", fontWeight: "700" }}>{portIsHot ? "🔥" : "—"}</td>
+                <td style={tdStyle}>{portIsHot ? <Flame size={14} color={C.amber} /> : <span style={{ color: C.textFaint }}>—</span>}</td>
                 <td style={tdStyle}>
                   {copying[p.name]
                     ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, fontWeight: "600" }}><CheckCircle size={12} /> Copying</span>
@@ -3788,7 +3786,7 @@ const PredictionMarketsTab = () => {
           return (
             <div key={m.id} style={{ ...cardStyle, border: m.trending ? `2px solid ${C.amber}` : `1px solid ${C.border}`, position: "relative" }}>
               {m.trending && (
-                <div style={{ position: "absolute", top: "10px", right: "10px", fontSize: "18px" }}>🔥</div>
+                <div style={{ position: "absolute", top: "10px", right: "10px" }}><Flame size={16} color={C.amber} /></div>
               )}
 
               {/* Question - 16px bold, max 2 lines */}
@@ -3828,7 +3826,7 @@ const PredictionMarketsTab = () => {
               {/* Your position indicator */}
               {userBet && (
                 <div style={{ marginBottom: "12px", fontSize: "12px", fontWeight: "600", color: userBet === "yes" ? C.green : C.red, display: "flex", alignItems: "center", gap: "6px" }}>
-                  {userBet === "yes" ? "✅" : "❌"} Your bet: {userBet.toUpperCase()}
+                  <span style={{ color: userBet === "yes" ? C.green : C.red }}>{userBet === "yes" ? <CheckCircle size={10} /> : <AlertTriangle size={10} />}</span> Your bet: {userBet.toUpperCase()}
                 </div>
               )}
 
@@ -4085,7 +4083,7 @@ const FootballTab = () => {
 
           {/* Estadísticas */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>📊 Estadísticas</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><BarChart3 size={12} /> Estadísticas</div>
             {[
               ["Total Jugadores", totalPlayers],
               ["Distribución", `${longCount} LONG / ${shortCount} SHORT`],
@@ -4097,7 +4095,7 @@ const FootballTab = () => {
               </div>
             ))}
             <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>🏆 Mejor Jugador</div>
+              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}><Trophy size={10} color={C.amber} /> Mejor Jugador</div>
               <div style={{ fontSize: "14px", fontWeight: "700" }}><TraderLink name={bestPlayer.name}>{bestPlayer.avatar} {bestPlayer.name}</TraderLink></div>
             </div>
           </div>
@@ -4137,7 +4135,7 @@ const FootballTab = () => {
                   </td>
                   <td style={tdStyle}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: p.status === "Win" ? C.green : C.red }}>
-                      {p.status === "Win" ? "🏆" : "📉"} {p.status}
+                      <span style={{ color: p.status === "Win" ? C.green : C.red }}>{p.status === "Win" ? <CheckCircle size={10} /> : <TrendingDown size={10} />}</span> {p.status}
                     </span>
                   </td>
                   <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{p.time}</td>
