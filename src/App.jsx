@@ -170,21 +170,21 @@ const alphaLabel = (score) => score >= 90 ? "S+" : score >= 80 ? "S" : score >= 
 
 /* ── Named Achievement Badges (crypto culture) ── */
 const ACHIEVEMENTS = {
-  diamondHands:    { icon: "💎", name: "Diamond Hands",     desc: "Held through 20%+ drawdown" },
-  wagmi:           { icon: "🌅", name: "WAGMI",             desc: "10 consecutive green days" },
-  degenGod:        { icon: "🎰", name: "Degen God",         desc: "Won 5+ prediction bets in a row" },
-  liqHunter:       { icon: "💀", name: "Liquidation Hunter", desc: "Caught 10+ reversal trades" },
-  moonShot:        { icon: "🌙", name: "Moon Shot",         desc: "100%+ monthly return" },
-  alphaLeaker:     { icon: "🧠", name: "Alpha Leaker",      desc: "Signal accuracy > 80%" },
-  whaleSpotter:    { icon: "🐋", name: "Whale Spotter",     desc: "Front-ran 3+ whale moves" },
-  streakMachine:   { icon: "🔥", name: "Streak Machine",    desc: "15+ consecutive wins" },
-  copyKing:        { icon: "👑", name: "Copy King",         desc: "500+ copiers" },
-  sharpShooter:    { icon: "🎯", name: "Sharp Shooter",     desc: "Sharpe ratio > 2.0" },
-  ironNerves:      { icon: "🧊", name: "Iron Nerves",       desc: "Max DD under 10%" },
-  profitPrinter:   { icon: "🖨️", name: "Profit Printer",    desc: "6 profitable months straight" },
-  ctInfluencer:    { icon: "📢", name: "CT Influencer",     desc: "10K+ Twitter impressions/week" },
-  earlyApe:        { icon: "🦍", name: "Early Ape",         desc: "Top 3 in new coin entries" },
-  riskDjinn:       { icon: "🧞", name: "Risk Djinn",        desc: "Profit factor > 2.5" },
+  diamondHands:    { icon: Shield,        color: C.cyan,   name: "Diamond Hands",     desc: "Held through 20%+ drawdown" },
+  wagmi:           { icon: TrendingUp,    color: C.green,  name: "WAGMI",             desc: "10 consecutive green days" },
+  degenGod:        { icon: Zap,           color: C.amber,  name: "Degen God",         desc: "Won 5+ prediction bets in a row" },
+  liqHunter:       { icon: Crosshair,     color: C.red,    name: "Liquidation Hunter", desc: "Caught 10+ reversal trades" },
+  moonShot:        { icon: TrendingUp,    color: C.amber,  name: "Moon Shot",         desc: "100%+ monthly return" },
+  alphaLeaker:     { icon: Lightbulb,     color: C.purple, name: "Alpha Leaker",      desc: "Signal accuracy > 80%" },
+  whaleSpotter:    { icon: Eye,           color: C.cyan,   name: "Whale Spotter",     desc: "Front-ran 3+ whale moves" },
+  streakMachine:   { icon: Flame,         color: C.amber,  name: "Streak Machine",    desc: "15+ consecutive wins" },
+  copyKing:        { icon: Trophy,        color: C.amber,  name: "Copy King",         desc: "500+ copiers" },
+  sharpShooter:    { icon: Target,        color: C.green,  name: "Sharp Shooter",     desc: "Sharpe ratio > 2.0" },
+  ironNerves:      { icon: Shield,        color: C.blue,   name: "Iron Nerves",       desc: "Max DD under 10%" },
+  profitPrinter:   { icon: DollarSign,    color: C.green,  name: "Profit Printer",    desc: "6 profitable months straight" },
+  ctInfluencer:    { icon: Radio,         color: C.blue,   name: "CT Influencer",     desc: "10K+ Twitter impressions/week" },
+  earlyApe:        { icon: Zap,           color: C.purple, name: "Early Ape",         desc: "Top 3 in new coin entries" },
+  riskDjinn:       { icon: Star,          color: C.amber,  name: "Risk Djinn",        desc: "Profit factor > 2.5" },
 };
 /* ── Degen Score: how aggressive/degenerate a trader is (0–100, higher = more degen) ── */
 const calcDegenScore = (t) => {
@@ -276,7 +276,7 @@ const traderDeepData = (() => {
   const data = {};
   const pairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
   const platforms = ["twitter","discord","reddit","tradehub","telegram","whatsapp"];
-  const platIcons = { twitter: "𝕏", discord: "💬", reddit: "🔴", tradehub: "🟣", telegram: "✈️", whatsapp: "📱" };
+  const platIcons = { twitter: "𝕏", discord: "DC", reddit: "R", tradehub: "TH", telegram: "TG", whatsapp: "WA" };
   const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: "#8b5cf6", telegram: "#0088cc", whatsapp: "#25D366" };
   mockTraders.forEach((t, ti) => {
     // Trade history (last 20 trades)
@@ -1702,12 +1702,12 @@ const SMCAnalysis = () => {
 /* ═══════════════════════ TAB: ARENA (Watch traders live) ═══════════════════════ */
 const ArenaTab = () => {
   const { openProfile } = useProfile();
+  const { feedFilter, setFeedFilter } = useFeedFilter();
   const [watching, setWatching] = useState(() => {
     const m = {};
     mockTraders.forEach((t, i) => { m[t.name] = i < 4; });
     return m;
   });
-  const [feedFilter, setFeedFilter] = useState("all");
   const [votes, setVotes] = useState({});
   const [copied, setCopied] = useState({});
   const toast = useToast();
@@ -1929,9 +1929,10 @@ const ArenaTab = () => {
 
           if (item.kind === "achievement") {
             return (
-              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
+              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.achievement.color || C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                {item.achievement.icon && (() => { const AchIcon = item.achievement.icon; return <AchIcon size={16} color={item.achievement.color || C.purple} />; })()}
                 <div style={{ flex: 1, fontSize: "12px" }}>
-                  <TraderLink name={item.trader} /> <span style={{ color: C.purple, fontWeight: "600" }}>desbloqueó {item.achievement.name}</span>
+                  <TraderLink name={item.trader} /> <span style={{ color: item.achievement.color || C.purple, fontWeight: "600" }}>desbloqueó</span> <span style={{ fontWeight: "700", color: C.text }}>{item.achievement.name}</span>
                 </div>
                 <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
               </div>
@@ -2532,7 +2533,7 @@ const TraderProfile = ({ trader, onClose }) => {
                 border: `1px solid ${socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.border}`,
                 backgroundColor: socialFilter === p ? (p === "all" ? C.purpleBg : deep.platColors[p] + "18") : "transparent",
                 color: socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.textMuted, textTransform: "capitalize"
-              }}>{p === "all" ? "All Platforms" : p === "tradehub" ? "Tradethlon" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "✈️ Telegram" : p === "whatsapp" ? "📱 WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+              }}>{p === "all" ? "Todas" : p === "tradehub" ? "Tradethlon" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "Telegram" : p === "whatsapp" ? "WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
             ))}
           </div>
           {/* Posts */}
@@ -2550,7 +2551,7 @@ const TraderProfile = ({ trader, onClose }) => {
                   </div>
                   <div style={{ fontSize: "13px", color: C.text, lineHeight: "1.6", marginBottom: "10px", whiteSpace: "pre-wrap" }}>{post.text}</div>
                   <div style={{ display: "flex", gap: "16px", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
-                    <span style={{ fontSize: "11px", color: C.textMuted }}>❤️ {post.likes.toLocaleString()}</span>
+                    <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><Heart size={10} /> {post.likes.toLocaleString()}</span>
                     {post.retweets > 0 && <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><RefreshCw size={10} /> {post.retweets}</span>}
                     <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><MessageCircle size={10} /> {post.replies}</span>
                     {post.impressions > 0 && <span style={{ fontSize: "11px", color: C.textMuted }}><Eye size={10} /> {(post.impressions / 1000).toFixed(1)}K</span>}
@@ -2738,23 +2739,25 @@ const TraderProfile = ({ trader, onClose }) => {
 /* ═══════════════════════ LIVE PnL TICKER ═══════════════════════ */
 const LivePnLTicker = () => {
   const tickerItems = [
-    "🔥 Scalp King +$2,340 (BTC LONG) ⚡",
-    "🐋 WHALE ALERT: $3.2M BTC LONG opened",
-    "🥷 Crypto Ninja +$890 (ETH SHORT) ⚡",
-    "💀 $1.2M LIQUIDATED — shorts rekt in 15min",
-    "💼 Smart Money +$1,560 (AVAX LONG) ⚡",
-    "🎰 Degen God Phoenix Rise won 6th prediction in a row",
-    "🚀 Rocket Launch +$745 (BTC SHORT) ✅",
-    "👑 Scalp King hit Alpha Score 87 — new season high",
-    "🐂 Bull Master -$420 (SOL LONG) 📉",
-    "🌙 MOON: DOGE +12.4% in 2h — meme szn is back",
-    "🔥 Phoenix Rise +$2,100 (DOGE LONG) 🚀",
-    "💎 Diamond Hands: Smart Money held through -5.8% DD",
-    "🏄 Wave Rider +$320 (BTC LONG) ✅",
-    "🦍 Early Ape: 3 traders entered PEPE before the pump",
-    "👊 Iron Fist -$180 (ETH LONG) 📉",
-    "📢 567 copiers on Scalp King — WAGMI",
+    { text: "Scalp King +$2,340 (BTC LONG)", type: "trade" },
+    { text: "WHALE ALERT: $3.2M BTC LONG opened", type: "whale" },
+    { text: "Crypto Ninja +$890 (ETH SHORT)", type: "trade" },
+    { text: "$1.2M LIQUIDATED — shorts rekt in 15min", type: "liquidation" },
+    { text: "Smart Money +$1,560 (AVAX LONG)", type: "trade" },
+    { text: "Phoenix Rise won 6th prediction in a row", type: "achievement" },
+    { text: "Rocket Launch +$745 (BTC SHORT)", type: "trade" },
+    { text: "Scalp King hit Alpha Score 87 — new season high", type: "achievement" },
+    { text: "Bull Master -$420 (SOL LONG)", type: "loss" },
+    { text: "DOGE +12.4% in 2h — meme szn is back", type: "moon" },
+    { text: "Phoenix Rise +$2,100 (DOGE LONG)", type: "trade" },
+    { text: "Diamond Hands: Smart Money held through -5.8% DD", type: "achievement" },
+    { text: "Wave Rider +$320 (BTC LONG)", type: "trade" },
+    { text: "3 traders entered PEPE before the pump", type: "signal" },
+    { text: "Iron Fist -$180 (ETH LONG)", type: "loss" },
+    { text: "567 copiers on Scalp King — WAGMI", type: "social" },
   ];
+  const tickerTypeIcon = { trade: Zap, whale: Eye, liquidation: AlertTriangle, achievement: Award, loss: TrendingDown, moon: TrendingUp, signal: Lightbulb, social: Users };
+  const tickerTypeColor = { trade: C.green, whale: C.cyan, liquidation: C.red, achievement: C.purple, loss: C.red, moon: C.amber, signal: C.blue, social: C.amber };
 
   const repeatedItems = [...tickerItems, ...tickerItems];
 
@@ -2777,17 +2780,15 @@ const LivePnLTicker = () => {
         display: "flex", whiteSpace: "nowrap", animation: "tickerScroll 60s linear infinite",
         fontSize: "12px", fontWeight: "600", color: C.text, gap: "24px", ...mono
       }}>
-        {repeatedItems.map((item, i) => (
-          <span key={i} style={{
-            color: item.includes("WHALE") || item.includes("🐋") ? C.cyan
-              : item.includes("LIQUIDAT") || item.includes("💀") || item.includes("rekt") ? C.red
-              : item.includes("Alpha Score") || item.includes("Diamond") || item.includes("Degen God") ? C.purple
-              : item.includes("MOON") || item.includes("🌙") || item.includes("WAGMI") ? C.amber
-              : item.includes("+$") ? C.green
-              : item.includes("-$") ? C.red
-              : C.text
-          }}>{item}</span>
-        ))}
+        {repeatedItems.map((item, i) => {
+          const TIcon = tickerTypeIcon[item.type];
+          const tColor = tickerTypeColor[item.type] || C.text;
+          return (
+            <span key={i} style={{ color: tColor, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              <TIcon size={10} /> {item.text}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -2982,7 +2983,7 @@ const TradersTab = () => {
                   {mockGroups.map((g, i) => (
                   <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
                     <td style={{ ...tdStyle, fontWeight: "800", fontSize: "13px", color: i < 3 ? rankColors[i] : C.textMuted, ...mono }}>{i + 1}</td>
-                    <td style={tdStyle}><span style={{ marginRight: "6px" }}>{g.emoji}</span>{g.name}</td>
+                    <td style={{ ...tdStyle, fontWeight: "600" }}>{g.name}</td>
                     <td style={{ ...tdStyle, ...mono }}>{g.members}</td>
                     <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{g.winRate}%</td>
                     <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(g.monthlyPnl / 1000).toFixed(1)}K</td>
@@ -4239,6 +4240,10 @@ const TraderLink = ({ name, children }) => {
   );
 };
 
+/* ═══════════════════════ FEED FILTER CONTEXT ═══════════════════════ */
+const FeedFilterContext = createContext();
+const useFeedFilter = () => useContext(FeedFilterContext);
+
 /* ═══════════════════════ DATE CONTEXT ═══════════════════════ */
 const DateContext = createContext();
 const useDate = () => useContext(DateContext);
@@ -4263,6 +4268,65 @@ const App = () => {
   const [dateTo, setDateTo] = useState("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [profileTrader, setProfileTrader] = useState(null);
+  const [feedFilter, setFeedFilter] = useState("all");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const searchRef = useRef(null);
+
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return { traders: [], pairs: [], tabs: [] };
+    const q = searchQuery.toLowerCase();
+    const traders = mockTraders.filter(t => t.name.toLowerCase().includes(q));
+    const allPairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
+    const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
+    const tabList = [
+      { id: "arena", label: "Arena", desc: "Feed en vivo de trades, señales y predicciones" },
+      { id: "smc", label: "Análisis SMC", desc: "Smart Money Concepts — análisis técnico avanzado" },
+      { id: "signals", label: "Señales", desc: "Señales de trading filtradas por coin y tipo" },
+      { id: "traders", label: "Traders", desc: "Leaderboard, perfiles y comparación de traders" },
+      { id: "heatmap", label: "Heatmap", desc: "Rendimiento por asset y trader" },
+      { id: "report", label: "Reporte", desc: "Estadísticas mensuales y leaderboard" },
+      { id: "copy", label: "Copy Trading", desc: "Copiar automáticamente a los mejores traders" },
+      { id: "predictions", label: "Predictions", desc: "Mercados de predicción crypto" },
+      { id: "football", label: "Football", desc: "Juego de predicción tipo fantasy" },
+    ];
+    const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+    return { traders, pairs, tabs };
+  }, [searchQuery]);
+
+  // Close search on Escape
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") { setShowSearch(false); setShowAlerts(false); setShowSettings(false); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setShowSearch(true); }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // Mock alerts — patterns, macro, trades, whales
+  const alertsList = [
+    // Smart pattern alerts
+    { id: 1, type: "pattern", text: "3 traders abrieron BTC LONG en los últimos 30min — posible tendencia alcista", time: "1m", read: false, priority: "high" },
+    { id: 2, type: "pattern", text: "Convergencia bajista: Scalp King + Crypto Ninja + Smart Money abrieron ETH SHORT", time: "5m", read: false, priority: "high" },
+    { id: 3, type: "macro", text: "DXY (Dólar) cayó -0.8% hoy — históricamente bullish para crypto", time: "12m", read: false, priority: "medium" },
+    // Trade alerts
+    { id: 4, type: "trade", text: "Scalp King abrió BTC LONG a $67,850 (5x)", time: "2m", read: false, priority: "normal" },
+    { id: 5, type: "whale", text: "WHALE: $3.2M BTC LONG en Binance", time: "8m", read: false, priority: "high" },
+    // Macro indicators
+    { id: 6, type: "macro", text: "Fed Funds Rate sin cambios (5.25%) — mercado reacciona neutral", time: "45m", read: true, priority: "medium" },
+    { id: 7, type: "macro", text: "Petróleo WTI +2.1% ($78.40) — posible presión inflacionaria", time: "1h", read: true, priority: "low" },
+    { id: 8, type: "pattern", text: "4/8 traders están en LONG en SOL — consenso alcista fuerte", time: "1h", read: true, priority: "medium" },
+    { id: 9, type: "macro", text: "M2 Money Supply +0.3% MoM — liquidez expandiéndose", time: "2h", read: true, priority: "low" },
+    { id: 10, type: "signal", text: "Nueva señal: ETH SHORT por Crypto Ninja (85% confianza)", time: "15m", read: true, priority: "normal" },
+    { id: 11, type: "copy", text: "Copy Trading: Scalp King cerró +$2,340", time: "2h", read: true, priority: "normal" },
+    { id: 12, type: "macro", text: "BTC Dominance 54.2% (+0.5%) — capital fluyendo a BTC", time: "3h", read: true, priority: "low" },
+    { id: 13, type: "achievement", text: "Desbloqueaste: Streak Machine (15W)", time: "3h", read: true, priority: "normal" },
+  ];
+  const unreadCount = alertsList.filter(a => !a.read).length;
 
   const handlePresetClick = (id) => {
     setDateRange(id);
@@ -4320,6 +4384,7 @@ const App = () => {
     <ToastProvider>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
+        <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <style>{`
             @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -4356,20 +4421,51 @@ const App = () => {
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
+                const arenaSubItems = [
+                  { id: "all", label: "Todo", icon: Radio, color: C.purple },
+                  { id: "trade", label: "Trades", icon: Activity, color: C.green },
+                  { id: "signal", label: "Señales", icon: Lightbulb, color: C.blue },
+                  { id: "prediction", label: "Predicciones", icon: Scale, color: C.amber },
+                ];
                 return (
-                  <button key={tab.id} onClick={() => { setActiveTab(tab.id); setProfileTrader(null); }} title={sidebarCollapsed ? tab.label : undefined} style={{
-                    display: "flex", alignItems: "center", gap: "10px",
-                    padding: sidebarCollapsed ? "10px 0" : "10px 12px",
-                    justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                    backgroundColor: isActive ? C.purpleBg : "transparent",
-                    border: "none", borderRadius: "6px", cursor: "pointer",
-                    color: isActive ? C.purple : C.textMuted,
-                    fontSize: "13px", fontWeight: isActive ? "600" : "400",
-                    transition: "all 0.15s", width: "100%"
-                  }}>
-                    <Icon size={18} />
-                    {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</span>}
-                  </button>
+                  <div key={tab.id}>
+                    <button onClick={() => { setActiveTab(tab.id); setProfileTrader(null); if (tab.id === "arena") setFeedFilter("all"); }} title={sidebarCollapsed ? tab.label : undefined} style={{
+                      display: "flex", alignItems: "center", gap: "10px",
+                      padding: sidebarCollapsed ? "10px 0" : "10px 12px",
+                      justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                      backgroundColor: isActive ? C.purpleBg : "transparent",
+                      border: "none", borderRadius: "6px", cursor: "pointer",
+                      color: isActive ? C.purple : C.textMuted,
+                      fontSize: "13px", fontWeight: isActive ? "600" : "400",
+                      transition: "all 0.15s", width: "100%"
+                    }}>
+                      <Icon size={18} />
+                      {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</span>}
+                    </button>
+                    {/* Arena sub-filters */}
+                    {tab.id === "arena" && isActive && !sidebarCollapsed && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1px", paddingLeft: "20px", marginTop: "2px", marginBottom: "4px" }}>
+                        {arenaSubItems.map(sub => {
+                          const SubIcon = sub.icon;
+                          const subActive = feedFilter === sub.id;
+                          return (
+                            <button key={sub.id} onClick={() => setFeedFilter(sub.id)} style={{
+                              display: "flex", alignItems: "center", gap: "8px",
+                              padding: "6px 10px", borderRadius: "5px", border: "none", cursor: "pointer",
+                              backgroundColor: subActive ? `${sub.color}15` : "transparent",
+                              color: subActive ? sub.color : C.textFaint,
+                              fontSize: "11px", fontWeight: subActive ? "700" : "500",
+                              transition: "all 0.15s", width: "100%",
+                              borderLeft: subActive ? `2px solid ${sub.color}` : "2px solid transparent"
+                            }}>
+                              <SubIcon size={13} />
+                              <span>{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </nav>
@@ -4398,13 +4494,14 @@ const App = () => {
 
             {/* Bottom section */}
             <div style={{ padding: "8px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: "2px" }}>
-              {[{ icon: Settings, label: "Settings" }, { icon: Bell, label: "Alerts" }].map(item => (
-                <button key={item.label} title={sidebarCollapsed ? item.label : undefined} style={{
+              {[{ icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alertas", action: () => setShowAlerts(true) }].map(item => (
+                <button key={item.label} onClick={item.action} title={sidebarCollapsed ? item.label : undefined} style={{
                   display: "flex", alignItems: "center", gap: "10px",
                   padding: sidebarCollapsed ? "10px 0" : "10px 12px",
                   justifyContent: sidebarCollapsed ? "center" : "flex-start",
                   backgroundColor: "transparent", border: "none", borderRadius: "6px",
-                  cursor: "pointer", color: C.textMuted, fontSize: "13px", width: "100%"
+                  cursor: "pointer", color: C.textMuted, fontSize: "13px", width: "100%",
+                  transition: "all 0.15s"
                 }}>
                   <item.icon size={18} />
                   {!sidebarCollapsed && item.label}
@@ -4512,21 +4609,249 @@ const App = () => {
 
                 {/* Notifications bell with count */}
                 <div style={{ position: "relative" }}>
-                  <button style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center" }}>
+                  <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
                     <Bell size={17} />
                   </button>
-                  <div style={{
+                  {unreadCount > 0 && <div style={{
                     position: "absolute", top: "2px", right: "2px", width: "14px", height: "14px",
                     borderRadius: "50%", backgroundColor: C.red, color: "#fff",
-                    fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center"
-                  }}>5</div>
+                    fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center",
+                    pointerEvents: "none"
+                  }}>{unreadCount}</div>}
                 </div>
                 {/* Search */}
-                <button style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center" }}>
+                <button onClick={() => setShowSearch(true)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px", gap: "6px" }}>
                   <Search size={17} />
+                  <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>⌘K</span>
                 </button>
               </div>
             </header>
+
+            {/* ── Search Overlay ── */}
+            {showSearch && (
+              <div onClick={() => setShowSearch(false)} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", zIndex: 500, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "120px" }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+                  <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", borderBottom: `1px solid ${C.border}` }}>
+                    <Search size={16} color={C.textMuted} />
+                    <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar traders, pares, secciones..." style={{
+                      flex: 1, backgroundColor: "transparent", border: "none", outline: "none", color: C.text, fontSize: "14px", fontWeight: "500"
+                    }} onKeyDown={e => { if (e.key === "Escape") setShowSearch(false); }} />
+                    <span style={{ fontSize: "10px", color: C.textFaint, padding: "2px 6px", backgroundColor: C.bg, borderRadius: "4px", ...mono }}>ESC</span>
+                  </div>
+                  <div style={{ maxHeight: "360px", overflowY: "auto", padding: "8px" }}>
+                    {!searchQuery.trim() && <div style={{ padding: "16px", textAlign: "center", color: C.textFaint, fontSize: "12px" }}>Escribe para buscar traders, pares o secciones</div>}
+                    {searchResults.traders.length > 0 && (<>
+                      <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Traders</div>
+                      {searchResults.traders.map(t => (
+                        <button key={t.name} onClick={() => { openProfile(t); setShowSearch(false); setSearchQuery(""); }} style={{
+                          display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
+                          border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
+                        }}>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>{t.avatar}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "13px", fontWeight: "600" }}>{t.name}</div>
+                            <div style={{ fontSize: "10px", color: C.textMuted }}>#{t.rank} · {t.style} · WR {t.winRate}%</div>
+                          </div>
+                          <span style={{ fontSize: "12px", fontWeight: "700", color: C.green, ...mono }}>+${(t.pnl/1000).toFixed(0)}K</span>
+                        </button>
+                      ))}
+                    </>)}
+                    {searchResults.pairs.length > 0 && (<>
+                      <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pares</div>
+                      {searchResults.pairs.map(p => (
+                        <button key={p} onClick={() => { setActiveTab("signals"); setShowSearch(false); setSearchQuery(""); }} style={{
+                          display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
+                          border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
+                        }}>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: C.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={14} color={C.amber} /></div>
+                          <span style={{ fontSize: "13px", fontWeight: "600" }}>{p}</span>
+                          <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "auto" }}>Ver señales</span>
+                        </button>
+                      ))}
+                    </>)}
+                    {searchResults.tabs.length > 0 && (<>
+                      <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Secciones</div>
+                      {searchResults.tabs.map(t => (
+                        <button key={t.id} onClick={() => { setActiveTab(t.id); setShowSearch(false); setSearchQuery(""); setProfileTrader(null); }} style={{
+                          display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
+                          border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
+                        }}>
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: C.purpleBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Search size={14} color={C.purple} /></div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: "13px", fontWeight: "600" }}>{t.label}</div>
+                            <div style={{ fontSize: "10px", color: C.textMuted }}>{t.desc}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </>)}
+                    {searchQuery.trim() && searchResults.traders.length === 0 && searchResults.pairs.length === 0 && searchResults.tabs.length === 0 && (
+                      <div style={{ padding: "20px", textAlign: "center", color: C.textFaint, fontSize: "12px" }}>Sin resultados para "{searchQuery}"</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Alerts Drawer ── */}
+            {showAlerts && (
+              <div onClick={() => setShowAlerts(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
+                <div onClick={e => e.stopPropagation()} style={{
+                  position: "fixed", top: 0, right: 0, width: "360px", height: "100vh",
+                  backgroundColor: C.card, borderLeft: `1px solid ${C.border}`, boxShadow: "-8px 0 24px rgba(0,0,0,0.3)",
+                  display: "flex", flexDirection: "column", zIndex: 401
+                }}>
+                  <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "700" }}>Alertas</div>
+                      {unreadCount > 0 && <span style={{ fontSize: "9px", fontWeight: "700", color: C.red, backgroundColor: C.redBg, padding: "2px 6px", borderRadius: "3px" }}>{unreadCount} nuevas</span>}
+                    </div>
+                    <button onClick={() => setShowAlerts(false)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer" }}><ChevronRight size={18} /></button>
+                  </div>
+
+                  {/* Alert type filters */}
+                  <div style={{ padding: "8px 12px", display: "flex", gap: "4px", borderBottom: `1px solid ${C.border}` }}>
+                    {[["all", "Todas"], ["pattern", "Patrones"], ["macro", "Macro"], ["trade", "Trades"], ["whale", "Whales"]].map(([type, label]) => (
+                      <button key={type} style={{
+                        padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                        border: "none", backgroundColor: C.bg, color: C.textMuted
+                      }}>{label}</button>
+                    ))}
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+                    {alertsList.map(a => {
+                      const alertIcons = { trade: Activity, whale: Eye, signal: Lightbulb, prediction: Scale, copy: Copy, achievement: Award, pattern: GitBranch, macro: BarChart3 };
+                      const alertColors = { trade: C.green, whale: C.cyan, signal: C.blue, prediction: C.amber, copy: C.purple, achievement: C.amber, pattern: C.purple, macro: C.blue };
+                      const priorityBorder = a.priority === "high" ? "2px" : "1px";
+                      const AIcon = alertIcons[a.type] || Bell;
+                      const aColor = alertColors[a.type] || C.textMuted;
+                      return (
+                        <div key={a.id} style={{
+                          display: "flex", gap: "12px", padding: "12px", borderRadius: "8px",
+                          backgroundColor: a.read ? "transparent" : `${aColor}08`,
+                          borderLeft: `${a.read ? "3px solid transparent" : `3px solid ${aColor}`}`,
+                          marginBottom: "4px"
+                        }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: `${aColor}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <AIcon size={13} color={aColor} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            {(a.type === "pattern" || a.type === "macro") && (
+                              <div style={{ fontSize: "8px", fontWeight: "800", color: aColor, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>
+                                {a.type === "pattern" ? "PATRÓN DETECTADO" : "INDICADOR MACRO"}
+                                {a.priority === "high" && <span style={{ marginLeft: "6px", color: C.red }}>IMPORTANTE</span>}
+                              </div>
+                            )}
+                            <div style={{ fontSize: "12px", color: a.read ? C.textMuted : C.text, lineHeight: 1.4 }}>{a.text}</div>
+                            <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "4px", ...mono }}>{a.time}</div>
+                          </div>
+                          {!a.read && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: aColor, flexShrink: 0, marginTop: "6px" }} />}
+                        </div>
+                      );
+                    })}
+
+                    {/* Macro Indicators Dashboard */}
+                    <div style={{ marginTop: "12px", padding: "12px", backgroundColor: C.bg, borderRadius: "8px", border: `1px solid ${C.border}` }}>
+                      <div style={{ fontSize: "10px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Indicadores Macro</div>
+                      {[
+                        ["DXY (Dólar)", "104.2", "-0.8%", C.red],
+                        ["BTC Dominance", "54.2%", "+0.5%", C.green],
+                        ["Petróleo WTI", "$78.40", "+2.1%", C.green],
+                        ["Fed Funds Rate", "5.25%", "0%", C.textMuted],
+                        ["M2 Supply", "$21.4T", "+0.3%", C.green],
+                        ["Fear & Greed", "68", "Greed", C.amber],
+                        ["Total Crypto MCap", "$2.8T", "+1.2%", C.green],
+                      ].map(([name, val, change, clr]) => (
+                        <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: "11px" }}>
+                          <span style={{ color: C.textMuted }}>{name}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontWeight: "700", ...mono }}>{val}</span>
+                            <span style={{ fontWeight: "600", color: clr, ...mono, fontSize: "10px" }}>{change}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Settings Panel ── */}
+            {showSettings && (
+              <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
+                <div onClick={e => e.stopPropagation()} style={{
+                  position: "fixed", top: 0, right: 0, width: "360px", height: "100vh",
+                  backgroundColor: C.card, borderLeft: `1px solid ${C.border}`, boxShadow: "-8px 0 24px rgba(0,0,0,0.3)",
+                  display: "flex", flexDirection: "column", zIndex: 401
+                }}>
+                  <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: "14px", fontWeight: "700" }}>Settings</div>
+                    <button onClick={() => setShowSettings(false)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer" }}><ChevronRight size={18} /></button>
+                  </div>
+                  <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+                    {/* Mi Cuenta */}
+                    <div style={{ ...cardStyle, marginBottom: "12px" }}>
+                      <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Mi Cuenta</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: C.purpleBg, border: `2px solid ${C.purple}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Users size={20} color={C.purple} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: "700" }}>Trader Demo</div>
+                          <div style={{ fontSize: "10px", color: C.textMuted }}>{myTitle} · LVL {myLevel}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
+                        <span style={{ color: C.textMuted }}>Balance</span>
+                        <span style={{ fontWeight: "700", color: C.green, ...mono }}>$24,680</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
+                        <span style={{ color: C.textMuted }}>PnL del Mes</span>
+                        <span style={{ fontWeight: "700", color: C.green, ...mono }}>+$3,420</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
+                        <span style={{ color: C.textMuted }}>Copiando a</span>
+                        <span style={{ fontWeight: "600", ...mono }}>2 traders</span>
+                      </div>
+                    </div>
+
+                    {/* Notifications */}
+                    <div style={{ ...cardStyle, marginBottom: "12px" }}>
+                      <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Notificaciones</div>
+                      {[
+                        ["Trades en vivo", true],
+                        ["Whale alerts", true],
+                        ["Señales nuevas", true],
+                        ["Predicciones resueltas", false],
+                        ["Logros desbloqueados", true],
+                      ].map(([label, on]) => (
+                        <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+                          <span style={{ fontSize: "12px" }}>{label}</span>
+                          <span style={{ color: on ? C.green : C.textFaint }}>{on ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Display */}
+                    <div style={{ ...cardStyle }}>
+                      <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Display</div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
+                        <span>Ticker en vivo</span>
+                        <span style={{ color: C.green }}><ToggleRight size={20} /></span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
+                        <span>Sidebar compacto</span>
+                        <span style={{ color: sidebarCollapsed ? C.green : C.textFaint }} onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>{sidebarCollapsed ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", fontSize: "12px" }}>
+                        <span>Tema</span>
+                        <span style={{ fontSize: "11px", fontWeight: "600", color: C.textMuted }}>Dark</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Content */}
             <main style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%" }}>
@@ -4563,6 +4888,7 @@ const App = () => {
 
           </div>{/* close Main Layout wrapper */}
         </div>
+        </FeedFilterContext.Provider>
         </ProfileContext.Provider>
       </DateContext.Provider>
     </ToastProvider>
