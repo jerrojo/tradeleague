@@ -4492,8 +4492,6 @@ const App = () => {
       { id: "heatmap", label: "Heatmap", desc: "Rendimiento por asset y trader" },
       { id: "report", label: "Reporte", desc: "Estadísticas mensuales y leaderboard" },
       { id: "copy", label: "Copy Trading", desc: "Copiar automáticamente a los mejores traders" },
-      { id: "predictions", label: "Predictions", desc: "Mercados de predicción crypto" },
-      { id: "football", label: "Football", desc: "Juego de predicción tipo fantasy" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
     return { traders, pairs, tabs };
@@ -4561,19 +4559,18 @@ const App = () => {
 
   const tabs = [
     { id: "arena", label: "Arena", icon: Radio },
-    { id: "arena:trade", label: "Trades", icon: Activity, filter: "trade" },
-    { id: "arena:signal", label: "Señales", icon: Lightbulb, filter: "signal" },
-    { id: "arena:prediction", label: "Predicciones", icon: Scale, filter: "prediction" },
+    { id: "arena:trade", label: "Trades", icon: Activity, filter: "trade", accent: C.green },
+    { id: "arena:signal", label: "Señales", icon: Lightbulb, filter: "signal", accent: C.blue },
+    { id: "arena:prediction", label: "Predicciones", icon: Scale, filter: "prediction", accent: C.amber },
+    { id: "sep1", sep: true },
     { id: "smc", label: "Análisis SMC", icon: Crosshair },
     { id: "traders", label: "Traders", icon: Users },
     { id: "heatmap", label: "Heatmap", icon: Layers },
     { id: "report", label: "Reporte", icon: Calendar },
     { id: "copy", label: "Copy Trading", icon: Copy },
-    { id: "predictions", label: "Predictions", icon: Scale },
-    { id: "football", label: "Football", icon: Gamepad2 },
   ];
 
-  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab, predictions: PredictionMarketsTab, football: FootballTab };
+  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab };
   // Arena sub-filter tabs resolve to "arena" for content
   const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
   const ActiveComponent = tabContent[resolveTab(activeTab)];
@@ -4627,10 +4624,10 @@ const App = () => {
             {/* Nav items */}
             <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto" }}>
               {tabs.map(tab => {
+                if (tab.sep) return <div key={tab.id} style={{ height: "1px", backgroundColor: C.border, margin: "6px 8px" }} />;
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                const isArenaChild = !!tab.filter;
-                const arenaChildColor = tab.filter === "trade" ? C.green : tab.filter === "signal" ? C.blue : tab.filter === "prediction" ? C.amber : C.purple;
+                const activeColor = tab.accent || C.purple;
                 return (
                   <button key={tab.id} onClick={() => {
                     if (tab.filter) { setActiveTab(tab.id); setFeedFilter(tab.filter); }
@@ -4638,16 +4635,16 @@ const App = () => {
                     setProfileTrader(null);
                   }} title={sidebarCollapsed ? tab.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: "10px",
-                    padding: sidebarCollapsed ? "10px 0" : isArenaChild ? "7px 12px 7px 28px" : "10px 12px",
+                    padding: sidebarCollapsed ? "10px 0" : "10px 12px",
                     justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                    backgroundColor: isActive ? (isArenaChild ? `${arenaChildColor}12` : C.purpleBg) : "transparent",
+                    backgroundColor: isActive ? `${activeColor}12` : "transparent",
                     border: "none", borderRadius: "6px", cursor: "pointer",
-                    color: isActive ? (isArenaChild ? arenaChildColor : C.purple) : C.textMuted,
-                    fontSize: isArenaChild ? "12px" : "13px",
+                    color: isActive ? activeColor : C.textMuted,
+                    fontSize: "13px",
                     fontWeight: isActive ? "600" : "400",
                     transition: "all 0.15s", width: "100%"
                   }}>
-                    <Icon size={isArenaChild ? 15 : 18} />
+                    <Icon size={18} />
                     {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</span>}
                   </button>
                 );
