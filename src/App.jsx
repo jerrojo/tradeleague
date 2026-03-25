@@ -11,7 +11,8 @@ import {
   ChevronDown, ChevronRight, Eye, Lock, Copy, RefreshCw, Crosshair,
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
-  MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb
+  MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb,
+  X, ExternalLink, Hash, ChevronLeft, Bookmark, BellRing, Send, Globe
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
@@ -270,6 +271,18 @@ const mockTraders = [
     sparkData: [2,4,3,5,4,3,5,7,6,8,5,7,6,9,7,10], viewersNow: 3,
     bio: "Part-time trader, full-time surfer. Catching waves in the market like I catch them in the ocean. Chill entries only.", location: "Bali, Indonesia", joined: "Aug 2024", followers: 123, following: 89, copiers: 28, sharpe: 1.1, maxDD: -20.2, avgRR: "1:1.8", avgHold: "12h", bestMonth: "+$14,600", worstMonth: "-$11,200", profitFactor: 1.2, favPairs: ["BTC/USDT", "SOL/USDT"], style: "Swing", exchange: "Bitget" },
 ];
+
+/* Trader social links */
+const traderSocials = {
+  "Scalp King": { twitter: "@ScalpKing", discord: "ScalpKing#1234", telegram: "t.me/scalpking", youtube: "ScalpKingTV" },
+  "Crypto Ninja": { twitter: "@CryptoNinja_", discord: "CryptoNinja#5678", telegram: "t.me/cryptoninja" },
+  "Smart Money": { twitter: "@SmartMoneyBot", discord: "SmartMoney#9012", website: "smartmoney.trade" },
+  "Phoenix Rise": { twitter: "@PhoenixRise", discord: "PhoenixRise#3456", telegram: "t.me/phoenixrise", youtube: "PhoenixRiseTrader" },
+  "Bull Master": { twitter: "@BullMasterBot", discord: "BullMaster#7890" },
+  "Rocket Launch": { twitter: "@RocketLaunch_", discord: "RocketLaunch#2345", telegram: "t.me/rocketlaunch" },
+  "Iron Fist": { discord: "IronFist#6789", telegram: "t.me/ironfist" },
+  "Wave Rider": { twitter: "@WaveRider_Bali", discord: "WaveRider#0123", youtube: "WaveRiderCrypto" },
+};
 
 /* Per-trader deep data */
 const traderDeepData = (() => {
@@ -1765,7 +1778,8 @@ const ArenaTab = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-      {/* ── Header: title + LIVE badge ── */}
+      {/* ── Header: title + LIVE badge (only in full Arena view) ── */}
+      {feedFilter === "all" && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ fontSize: "18px", fontWeight: "800" }}>Arena</div>
@@ -1779,8 +1793,10 @@ const ArenaTab = () => {
           <span style={{ color: C.green }}>+${(watchedPnl / 1000).toFixed(0)}K PnL total</span>
         </div>
       </div>
+      )}
 
-      {/* ── Trader selector: pick who you're watching ── */}
+      {/* ── Trader selector: pick who you're watching (only in full Arena view) ── */}
+      {feedFilter === "all" && (
       <div style={{ ...cardStyle, padding: "12px 16px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
         <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginRight: "4px" }}>Watching:</span>
         {mockTraders.map((t, i) => {
@@ -1801,9 +1817,10 @@ const ArenaTab = () => {
           );
         })}
       </div>
+      )}
 
-      {/* ── Live Equity Curves (only watched) ── */}
-      {watchedTraders.length > 0 && (
+      {/* ── Live Equity Curves (only watched, only in full Arena view) ── */}
+      {feedFilter === "all" && watchedTraders.length > 0 && (
         <div style={cardStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
@@ -1834,8 +1851,8 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ── Watched traders scoreboard (compact table) ── */}
-      {watchedTraders.length > 0 && (
+      {/* ── Watched traders scoreboard (compact table, only in full Arena view) ── */}
+      {feedFilter === "all" && watchedTraders.length > 0 && (
         <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
             <thead>
@@ -1872,11 +1889,25 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ── Feed filter ── */}
+      {/* ── Feed header ── */}
       {(() => {
         const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
         const signalCount = traderFeed.filter(f => f.kind === "signal").length;
         const predCount = traderFeed.filter(f => f.kind === "prediction").length;
+        const filterMeta = { all: { label: "Actividad", color: C.purple, count: traderFeed.length }, trade: { label: "Trades", color: C.green, count: tradeCount }, signal: { label: "Señales", color: C.blue, count: signalCount }, prediction: { label: "Predicciones", color: C.amber, count: predCount } };
+        const current = filterMeta[feedFilter] || filterMeta.all;
+        if (feedFilter !== "all") {
+          return (
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span style={{ fontSize: "14px", fontWeight: "700", color: current.color }}>{current.label}</span>
+              <span style={{ fontSize: "11px", fontWeight: "600", color: current.color, ...mono, backgroundColor: current.color + "18", padding: "2px 8px", borderRadius: "4px" }}>{current.count}</span>
+              <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+              <button onClick={() => setFeedFilter("all")} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
+                <Radio size={10} /> Ver todo
+              </button>
+            </div>
+          );
+        }
         const filterItems = [
           { id: "all", label: "Todo", color: C.purple, icon: null, count: traderFeed.length },
           { id: "trade", label: "Trades", color: C.green, icon: Activity, count: tradeCount },
@@ -1941,7 +1972,11 @@ const ArenaTab = () => {
 
           if (item.kind === "signal") {
             const biasColor = item.bias === "LONG" ? C.green : C.red;
-            const confColor = item.confidence >= 80 ? C.green : item.confidence >= 60 ? C.amber : C.red;
+            const confColor = item.confidence >= 80 ? C.green : item.confidence >= 65 ? C.amber : C.red;
+            const confLabel = item.confidence >= 85 ? "Strong" : item.confidence >= 70 ? "Medium" : "Weak";
+            const BiasIcon = item.bias === "LONG" ? ArrowUp : ArrowDown;
+            const sigTrader = mockTraders.find(tt => tt.name === item.trader);
+            const sigSpk = sigTrader ? sigTrader.sparkData : [];
             return (
               <div key={item.id} style={{
                 background: `linear-gradient(135deg, ${C.card} 0%, ${C.blue}08 100%)`,
@@ -1958,25 +1993,57 @@ const ArenaTab = () => {
                   <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
                 </div>
 
-                {/* Pair + Bias + TF + Confidence inline */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: "800" }}>{item.pair}</span>
-                  <Tag text={item.bias} color={biasColor} />
-                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, backgroundColor: `${C.textFaint}15`, padding: "1px 6px", borderRadius: "3px" }}>{item.timeframe}</span>
-                  <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <div style={{ width: "36px", height: "2px", borderRadius: "1px", backgroundColor: C.border }}>
-                      <div style={{ width: `${item.confidence}%`, height: "100%", borderRadius: "1px", backgroundColor: confColor }} />
+                {/* Row 2: Direction + Pair + Timeframe + Conviction badge */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: biasColor + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${biasColor}30` }}>
+                    <BiasIcon size={16} color={biasColor} />
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "15px", fontWeight: "800" }}>{item.pair}</span>
+                      <span style={{ fontSize: "10px", fontWeight: "800", color: biasColor }}>{item.bias}</span>
                     </div>
-                    <span style={{ fontSize: "10px", fontWeight: "700", color: confColor, ...mono }}>{item.confidence}%</span>
+                    <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{item.timeframe} timeframe</span>
+                  </div>
+                  {/* Conviction badge */}
+                  <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span style={{ fontSize: "9px", fontWeight: "700", color: confColor }}>{confLabel}</span>
+                      <div style={{ display: "flex", gap: "2px" }}>
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <div key={i} style={{ width: 4, height: 12, borderRadius: "1px", backgroundColor: i <= Math.ceil(item.confidence / 20) ? confColor : C.border }} />
+                        ))}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: "11px", fontWeight: "800", color: confColor, ...mono }}>{item.confidence}%</span>
                   </div>
                 </div>
+
+                {/* Mini chart thumbnail */}
+                {sigSpk.length > 0 && (
+                  <div style={{ height: "40px", marginBottom: "8px", borderRadius: "6px", overflow: "hidden", backgroundColor: `${C.bg}80` }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={sigSpk.map((v, i) => ({ v, i }))}>
+                        <defs><linearGradient id={`sspk${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={biasColor} stopOpacity={0.2} /><stop offset="100%" stopColor={biasColor} stopOpacity={0} /></linearGradient></defs>
+                        <Area type="monotone" dataKey="v" stroke={biasColor} strokeWidth={1.5} fill={`url(#sspk${item.id})`} dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
 
                 {/* Idea text */}
                 <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", lineHeight: "1.4" }}>
                   {item.idea}
                 </div>
 
-                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                {/* Actions row */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
+                  <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                  <div style={{ flex: 1 }} />
+                  <button style={{ display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px", border: `1px solid ${C.blue}30`, cursor: "pointer", fontSize: "10px", fontWeight: "700", backgroundColor: `${C.blue}10`, color: C.blue }}>
+                    <BellRing size={10} /> Alerta
+                  </button>
+                </div>
               </div>
             );
           }
@@ -1988,6 +2055,9 @@ const ArenaTab = () => {
               .sort((a, b) => a.predOrder - b.predOrder);
             const yesCount = allOnQuestion.filter(p => p.bet === "YES").length;
             const noCount = allOnQuestion.filter(p => p.bet === "NO").length;
+            const yesPct = allOnQuestion.length > 0 ? Math.round((yesCount / allOnQuestion.length) * 100) : 50;
+            const noPct = 100 - yesPct;
+            const totalStake = allOnQuestion.reduce((s, p) => s + p.stake, 0);
             return (
               <div key={item.id} style={{
                 background: `linear-gradient(135deg, ${C.card} 0%, ${C.amber}06 100%)`,
@@ -1996,60 +2066,71 @@ const ArenaTab = () => {
                 padding: "10px 14px",
               }}>
                 {/* Question header */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                  <Scale size={13} color={C.amber} />
-                  <span style={{ fontSize: "13px", fontWeight: "700", flex: 1 }}>{item.question}</span>
-                  {isNew(item.timestamp) && <NewBadge />}
-                  <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.odds}%</span>
-                  <div style={{ width: "40px", height: "2px", borderRadius: "1px", backgroundColor: C.border }}>
-                    <div style={{ width: `${item.odds}%`, height: "100%", borderRadius: "1px", backgroundColor: C.amber }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: C.amber + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.amber}30`, flexShrink: 0 }}>
+                    <Scale size={14} color={C.amber} />
                   </div>
+                  <span style={{ fontSize: "13px", fontWeight: "700", flex: 1, lineHeight: 1.3 }}>{item.question}</span>
+                  {isNew(item.timestamp) && <NewBadge />}
                 </div>
 
-                {/* Consensus bar: YES vs NO */}
-                {allOnQuestion.length > 1 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px", fontSize: "10px" }}>
-                    <span style={{ color: C.green, fontWeight: "700", ...mono }}>{yesCount} YES</span>
-                    <div style={{ flex: 1, height: "2px", borderRadius: "1px", overflow: "hidden", display: "flex" }}>
-                      <div style={{ width: `${(yesCount / allOnQuestion.length) * 100}%`, height: "100%", backgroundColor: C.green }} />
-                      <div style={{ width: `${(noCount / allOnQuestion.length) * 100}%`, height: "100%", backgroundColor: C.red }} />
-                    </div>
-                    <span style={{ color: C.red, fontWeight: "700", ...mono }}>{noCount} NO</span>
+                {/* Probability bar (Polymarket-style) */}
+                <div style={{ marginBottom: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "800", color: C.green, ...mono }}>YES {yesPct}%</span>
+                    <span style={{ fontSize: "12px", fontWeight: "800", color: C.red, ...mono }}>{noPct}% NO</span>
                   </div>
-                )}
+                  <div style={{ height: "8px", borderRadius: "4px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
+                    <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green, borderRadius: yesPct === 100 ? "4px" : "4px 0 0 4px", transition: "width 0.3s" }} />
+                    <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red, borderRadius: noPct === 100 ? "4px" : "0 4px 4px 0", transition: "width 0.3s" }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "9px", color: C.textFaint, ...mono }}>
+                    <span>Odds: {item.odds}%</span>
+                    <span>Vol: ${totalStake.toLocaleString()}</span>
+                    <span>{allOnQuestion.length} traders</span>
+                  </div>
+                </div>
 
                 {/* Thread: each predictor as a compact row */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                   {allOnQuestion.map((p, pi) => (
                     <div key={p.id} style={{
-                      display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px",
-                      borderRadius: "6px", backgroundColor: pi === 0 ? `${C.cyan}08` : "transparent",
-                      border: pi === 0 ? `1px solid ${C.cyan}15` : `1px solid transparent`,
+                      display: "flex", alignItems: "center", gap: "6px", padding: "5px 8px",
+                      borderRadius: "6px", backgroundColor: pi === 0 ? `${C.cyan}08` : `${C.bg}60`,
+                      border: pi === 0 ? `1px solid ${C.cyan}15` : `1px solid ${C.border}40`,
                     }}>
                       <TraderLink name={p.trader} />
                       <BotTag isBot={p.isBot} />
                       {pi === 0 && <span style={{ fontSize: "8px", fontWeight: "700", color: C.cyan, backgroundColor: `${C.cyan}15`, padding: "1px 4px", borderRadius: "2px" }}>1RO</span>}
-                      <Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} />
-                      <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>${p.stake}</span>
-                      <span style={{ fontSize: "9px", color: C.textFaint, marginLeft: "auto", ...mono }}>{p.time}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto" }}>
+                        <Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} />
+                        <span style={{ fontSize: "10px", fontWeight: "700", color: C.text, ...mono }}>${p.stake}</span>
+                        <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{p.time}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Vote */}
-                <div style={{ marginTop: "6px" }}>
+                <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
                   <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
                 </div>
               </div>
             );
           }
 
-          /* ── Trade card ── */
+          /* ── Trade card (redesigned) ── */
           const levNum = parseInt(item.leverage);
           const levRisk = levNum >= 10 ? "Alto" : levNum >= 5 ? "Medio" : "Bajo";
           const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
           const rrRatio = Math.abs(item.tp - item.entry) / Math.max(Math.abs(item.entry - item.sl), 0.01);
           const tradeAccent = item.type === "LONG" ? C.green : C.red;
+          const DirIcon = item.type === "LONG" ? ArrowUp : ArrowDown;
+          const rrTotal = rrRatio + 1;
+          const riskPct = (1 / rrTotal) * 100;
+          const rewardPct = (rrRatio / rrTotal) * 100;
+          const trader = mockTraders.find(tt => tt.name === item.trader);
+          const sparkD = trader ? trader.sparkData : [];
           return (
             <div key={item.id} style={{
               background: `linear-gradient(135deg, ${C.card} 0%, ${tradeAccent}06 100%)`,
@@ -2057,31 +2138,70 @@ const ArenaTab = () => {
               borderLeft: `3px solid ${tradeAccent}`,
               padding: "10px 14px",
             }}>
-              {/* Header: trader + pair + PnL */}
+              {/* Row 1: Trader + time */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                 <TraderLink name={item.trader} />
                 <BotTag isBot={item.isBot} />
                 {isNew(item.timestamp) && <NewBadge />}
-                <span style={{ fontSize: "14px", fontWeight: "800" }}>{item.pair}</span>
-                <Tag text={item.type} color={tradeAccent} />
                 <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
-                {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint }}>{item.copiers} copiando</span>}
-                <span style={{ marginLeft: "auto", fontSize: "14px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
-                  {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
-                </span>
-                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
+                {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint, display: "flex", alignItems: "center", gap: "3px" }}><Users size={9} /> {item.copiers}</span>}
+                <span style={{ marginLeft: "auto", fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
               </div>
 
-              {/* Compact metrics row */}
-              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "6px", fontSize: "10px" }}>
-                <span><span style={{ color: C.textFaint }}>Entrada </span><span style={{ fontWeight: "700", ...mono }}>${item.entry.toLocaleString()}</span></span>
-                <span><InfoTip k="tp"><span style={{ color: C.textFaint }}>TP</span></InfoTip> <span style={{ fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
-                <span><InfoTip k="sl"><span style={{ color: C.textFaint }}>SL</span></InfoTip> <span style={{ fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
-                <span><InfoTip k="rr"><span style={{ color: C.textFaint }}>R:R</span></InfoTip> <span style={{ fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</span></span>
-                <InfoTip k="leverage"><span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                  <span style={{ fontWeight: "800", color: levColor, ...mono }}>{item.leverage}</span>
-                  <span style={{ fontSize: "8px", fontWeight: "700", color: levColor, backgroundColor: `${levColor}15`, padding: "1px 4px", borderRadius: "2px" }}>{levRisk}</span>
-                </span></InfoTip>
+              {/* Row 2: Direction arrow + Pair + Leverage pill + PnL hero */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: tradeAccent + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${tradeAccent}30` }}>
+                  <DirIcon size={16} color={tradeAccent} />
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "15px", fontWeight: "800" }}>{item.pair}</span>
+                    <span style={{ fontSize: "10px", fontWeight: "800", color: tradeAccent }}>{item.type}</span>
+                  </div>
+                  <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>Entrada ${item.entry.toLocaleString()}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "4px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: "800", color: levColor, backgroundColor: `${levColor}15`, padding: "2px 7px", borderRadius: "4px", border: `1px solid ${levColor}30`, ...mono }}>{item.leverage}</span>
+                </div>
+                {/* PnL hero */}
+                <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                  <div style={{ fontSize: "18px", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono, lineHeight: 1 }}>
+                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: "9px", color: item.pnl >= 0 ? C.green : C.red, ...mono, opacity: 0.7 }}>
+                    {item.pnl >= 0 ? "+" : ""}{((item.pnl / item.entry) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: TP/SL/RR metrics + R:R visual bar + mini sparkline */}
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "6px" }}>
+                {/* Metrics */}
+                <div style={{ display: "flex", gap: "10px", fontSize: "10px", alignItems: "center" }}>
+                  <span><InfoTip k="tp"><span style={{ color: C.textFaint }}>TP</span></InfoTip> <span style={{ fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
+                  <span><InfoTip k="sl"><span style={{ color: C.textFaint }}>SL</span></InfoTip> <span style={{ fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
+                </div>
+                {/* R:R visual bar */}
+                <InfoTip k="rr">
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <div style={{ width: "60px", height: "6px", borderRadius: "3px", overflow: "hidden", display: "flex" }}>
+                      <div style={{ width: `${riskPct}%`, height: "100%", backgroundColor: C.red + "80" }} />
+                      <div style={{ width: `${rewardPct}%`, height: "100%", backgroundColor: C.green + "80" }} />
+                    </div>
+                    <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</span>
+                  </div>
+                </InfoTip>
+                {/* Mini sparkline */}
+                {sparkD.length > 0 && (
+                  <div style={{ marginLeft: "auto", width: "60px", height: "24px" }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={sparkD.map((v, i) => ({ v, i }))}>
+                        <defs><linearGradient id={`tspk${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={tradeAccent} stopOpacity={0.3} /><stop offset="100%" stopColor={tradeAccent} stopOpacity={0} /></linearGradient></defs>
+                        <Area type="monotone" dataKey="v" stroke={tradeAccent} strokeWidth={1.5} fill={`url(#tspk${item.id})`} dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
 
               {/* Analysis context */}
@@ -2098,7 +2218,7 @@ const ArenaTab = () => {
                 <div style={{ flex: 1 }} />
                 {item.status === "active" && (
                   <button onClick={() => handleCopy(item)} style={{
-                    display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px",
+                    display: "flex", alignItems: "center", gap: "3px", padding: "4px 12px", borderRadius: "4px",
                     border: "none", cursor: "pointer", fontSize: "10px", fontWeight: "700",
                     backgroundColor: copied[item.id] ? C.green : C.purpleBg, color: copied[item.id] ? "#000" : C.purple,
                   }}>
@@ -2276,6 +2396,31 @@ const TraderProfile = ({ trader, onClose }) => {
               <div key={l}><span style={{ fontSize: "16px", fontWeight: "800", ...mono }}>{v.toLocaleString()}</span><span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span></div>
             ))}
           </div>
+          {/* Social quick links */}
+          {(() => {
+            const socials = traderSocials[t.name] || {};
+            const socialMeta = { twitter: { label: "X / Twitter", color: "#1DA1F2", icon: "𝕏" }, discord: { label: "Discord", color: "#5865F2", icon: "DC" }, telegram: { label: "Telegram", color: "#0088cc", icon: "TG" }, youtube: { label: "YouTube", color: "#FF0000", icon: "YT" }, website: { label: "Website", color: C.textMuted, icon: "WEB" } };
+            const keys = Object.keys(socials);
+            if (keys.length === 0) return null;
+            return (
+              <div style={{ display: "flex", gap: "6px", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, flexWrap: "wrap" }}>
+                {keys.map(platform => {
+                  const sm = socialMeta[platform];
+                  if (!sm) return null;
+                  return (
+                    <button key={platform} title={`${sm.label}: ${socials[platform]}`} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${sm.color}30`, cursor: "pointer", backgroundColor: `${sm.color}10`, color: sm.color, fontSize: "10px", fontWeight: "700" }}>
+                      <ExternalLink size={10} />
+                      <span>{sm.icon}</span>
+                      <span style={{ color: C.textMuted, fontWeight: "500" }}>{socials[platform]}</span>
+                    </button>
+                  );
+                })}
+                <button style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${C.purple}30`, cursor: "pointer", backgroundColor: C.purpleBg, color: C.purple, fontSize: "10px", fontWeight: "700" }}>
+                  <MessageCircle size={10} /> Chat
+                </button>
+              </div>
+            );
+          })()}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "160px" }}>
           {[["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null], ["% Ganadoras", `${t.winRate}%`, C.green, "winRate"], ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe"], ["Máx. Caída", `${t.maxDD}%`, C.red, "maxDD"], ["Factor Ganancia", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor"], ["Racha", `${t.streak}W`, C.purple, "streak"]].map(([l, v, clr, tip]) => (
@@ -2798,7 +2943,10 @@ const LivePnLTicker = () => {
 const TradersTab = () => {
   const [view, setView] = useState("leaderboard");
   const [compareMetric, setCompareMetric] = useState("equity");
+  const [traderFilter, setTraderFilter] = useState("all");
+  const [sortField, setSortField] = useState("pnl");
   const { openProfile } = useProfile();
+  const { followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts } = useWatchlist();
   const [visibleTraders, setVisibleTraders] = useState(() => {
     const m = {};
     mockTraders.forEach((t, i) => { m[t.name] = i < 3; });
@@ -2885,7 +3033,7 @@ const TradersTab = () => {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         {["leaderboard","compare","profiles"].map(v => (
           <button key={v} onClick={() => setView(v)} style={{
             padding: "8px 20px", borderRadius: "6px", border: `1px solid ${view === v ? C.purple : C.border}`,
@@ -2893,6 +3041,29 @@ const TradersTab = () => {
             fontSize: "12px", fontWeight: "600", cursor: "pointer", textTransform: "capitalize"
           }}>{v === "leaderboard" ? "Leaderboard" : v === "compare" ? "Compare" : "Profiles"}</button>
         ))}
+        <div style={{ flex: 1 }} />
+        {/* Toolbar: filter by type, sort, add */}
+        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+          {[
+            { id: "all", label: "Todos", icon: Users },
+            { id: "human", label: "Traders", icon: Activity },
+            { id: "bot", label: "Bots", icon: Bot },
+            { id: "followed", label: "Siguiendo", icon: Star },
+          ].map(cat => (
+            <button key={cat.id} onClick={() => setTraderFilter(cat.id)} style={{
+              display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+              border: `1px solid ${traderFilter === cat.id ? C.purple : C.border}`,
+              backgroundColor: traderFilter === cat.id ? C.purpleBg : "transparent",
+              color: traderFilter === cat.id ? C.purple : C.textMuted
+            }}>
+              <cat.icon size={11} /> {cat.label}
+            </button>
+          ))}
+          <div style={{ width: "1px", height: 20, backgroundColor: C.border, margin: "0 4px" }} />
+          <button onClick={() => setSortField(prev => prev === "pnl" ? "winRate" : prev === "winRate" ? "alpha" : "pnl")} title={`Ordenar por ${sortField}`} style={{ display: "flex", alignItems: "center", gap: "3px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted }}>
+            <ArrowDown size={11} /> {sortField === "pnl" ? "PnL" : sortField === "winRate" ? "Win%" : "Alpha"}
+          </button>
+        </div>
       </div>
 
       {view === "leaderboard" && (
@@ -2903,7 +3074,18 @@ const TradersTab = () => {
                 {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Racha","streak"],["% Ganadoras","winRate"],["PnL",null],["Copiadores","copiers"],["Acción",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
-                {mockTraders.map((t, i) => {
+                {(() => {
+                  let filtered = [...mockTraders];
+                  if (traderFilter === "human") filtered = filtered.filter(t => !t.isBot);
+                  else if (traderFilter === "bot") filtered = filtered.filter(t => t.isBot);
+                  else if (traderFilter === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
+                  filtered.sort((a, b) => {
+                    if (sortField === "pnl") return b.pnl - a.pnl;
+                    if (sortField === "winRate") return b.winRate - a.winRate;
+                    return calcAlphaScore(b) - calcAlphaScore(a);
+                  });
+                  return filtered;
+                })().map((t, i) => {
                   const isTop1 = i === 0;
                   const alpha = calcAlphaScore(t);
                   const aClr = alphaColor(alpha);
@@ -2960,11 +3142,18 @@ const TradersTab = () => {
                       </div>
                     </td>
                     <td style={{ ...tdStyle }}>
-                      <button onClick={() => openProfile(t)} style={{
-                        padding: "5px 12px", borderRadius: "4px", fontSize: "11px", fontWeight: "700", cursor: "pointer",
-                        backgroundColor: C.green, color: C.bg, border: "none",
-                        boxShadow: "0 0 8px rgba(63,185,80,0.2)"
-                      }}>Copy</button>
+                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                        <button title="Seguir" onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.amber + "20" : "transparent", color: followedTraders[t.name] ? C.amber : C.textFaint }}>
+                          <Star size={13} fill={followedTraders[t.name] ? C.amber : "none"} />
+                        </button>
+                        <button title="Alertas" onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: traderAlerts[t.name] ? C.blue + "20" : "transparent", color: traderAlerts[t.name] ? C.blue : C.textFaint }}>
+                          <BellRing size={13} />
+                        </button>
+                        <button onClick={() => openProfile(t)} style={{
+                          padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
+                          backgroundColor: C.green, color: C.bg, border: "none", display: "flex", alignItems: "center", gap: "3px"
+                        }}><Copy size={10} /> Copy</button>
+                      </div>
                     </td>
                   </tr>
                 );})}
@@ -4244,6 +4433,10 @@ const TraderLink = ({ name, children }) => {
 const FeedFilterContext = createContext();
 const useFeedFilter = () => useContext(FeedFilterContext);
 
+/* ═══════════════════════ WATCHLIST CONTEXT ═══════════════════════ */
+const WatchlistContext = createContext();
+const useWatchlist = () => useContext(WatchlistContext);
+
 /* ═══════════════════════ DATE CONTEXT ═══════════════════════ */
 const DateContext = createContext();
 const useDate = () => useContext(DateContext);
@@ -4273,6 +4466,15 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWatchlist, setShowWatchlist] = useState(false);
+  const [watchlistSearch, setWatchlistSearch] = useState("");
+  const [watchlistCategory, setWatchlistCategory] = useState("all");
+  const [followedTraders, setFollowedTraders] = useState(() => {
+    const initial = {};
+    mockTraders.slice(0, 4).forEach(t => { initial[t.name] = true; });
+    return initial;
+  });
+  const [traderAlerts, setTraderAlerts] = useState({});
   const searchRef = useRef(null);
 
   // Search results
@@ -4359,8 +4561,10 @@ const App = () => {
 
   const tabs = [
     { id: "arena", label: "Arena", icon: Radio },
+    { id: "arena:trade", label: "Trades", icon: Activity, filter: "trade" },
+    { id: "arena:signal", label: "Señales", icon: Lightbulb, filter: "signal" },
+    { id: "arena:prediction", label: "Predicciones", icon: Scale, filter: "prediction" },
     { id: "smc", label: "Análisis SMC", icon: Crosshair },
-    { id: "signals", label: "Señales", icon: Zap },
     { id: "traders", label: "Traders", icon: Users },
     { id: "heatmap", label: "Heatmap", icon: Layers },
     { id: "report", label: "Reporte", icon: Calendar },
@@ -4370,7 +4574,9 @@ const App = () => {
   ];
 
   const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab, predictions: PredictionMarketsTab, football: FootballTab };
-  const ActiveComponent = tabContent[activeTab];
+  // Arena sub-filter tabs resolve to "arena" for content
+  const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
+  const ActiveComponent = tabContent[resolveTab(activeTab)];
   const sideW = sidebarCollapsed ? 56 : 200;
 
   // XP state for demo (user's own progress)
@@ -4384,6 +4590,7 @@ const App = () => {
     <ToastProvider>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
+        <WatchlistContext.Provider value={{ followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts }}>
         <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <style>{`
@@ -4421,51 +4628,27 @@ const App = () => {
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                const arenaSubItems = [
-                  { id: "all", label: "Todo", icon: Radio, color: C.purple },
-                  { id: "trade", label: "Trades", icon: Activity, color: C.green },
-                  { id: "signal", label: "Señales", icon: Lightbulb, color: C.blue },
-                  { id: "prediction", label: "Predicciones", icon: Scale, color: C.amber },
-                ];
+                const isArenaChild = !!tab.filter;
+                const arenaChildColor = tab.filter === "trade" ? C.green : tab.filter === "signal" ? C.blue : tab.filter === "prediction" ? C.amber : C.purple;
                 return (
-                  <div key={tab.id}>
-                    <button onClick={() => { setActiveTab(tab.id); setProfileTrader(null); if (tab.id === "arena") setFeedFilter("all"); }} title={sidebarCollapsed ? tab.label : undefined} style={{
-                      display: "flex", alignItems: "center", gap: "10px",
-                      padding: sidebarCollapsed ? "10px 0" : "10px 12px",
-                      justifyContent: sidebarCollapsed ? "center" : "flex-start",
-                      backgroundColor: isActive ? C.purpleBg : "transparent",
-                      border: "none", borderRadius: "6px", cursor: "pointer",
-                      color: isActive ? C.purple : C.textMuted,
-                      fontSize: "13px", fontWeight: isActive ? "600" : "400",
-                      transition: "all 0.15s", width: "100%"
-                    }}>
-                      <Icon size={18} />
-                      {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</span>}
-                    </button>
-                    {/* Arena sub-filters */}
-                    {tab.id === "arena" && isActive && !sidebarCollapsed && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1px", paddingLeft: "20px", marginTop: "2px", marginBottom: "4px" }}>
-                        {arenaSubItems.map(sub => {
-                          const SubIcon = sub.icon;
-                          const subActive = feedFilter === sub.id;
-                          return (
-                            <button key={sub.id} onClick={() => setFeedFilter(sub.id)} style={{
-                              display: "flex", alignItems: "center", gap: "8px",
-                              padding: "6px 10px", borderRadius: "5px", border: "none", cursor: "pointer",
-                              backgroundColor: subActive ? `${sub.color}15` : "transparent",
-                              color: subActive ? sub.color : C.textFaint,
-                              fontSize: "11px", fontWeight: subActive ? "700" : "500",
-                              transition: "all 0.15s", width: "100%",
-                              borderLeft: subActive ? `2px solid ${sub.color}` : "2px solid transparent"
-                            }}>
-                              <SubIcon size={13} />
-                              <span>{sub.label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  <button key={tab.id} onClick={() => {
+                    if (tab.filter) { setActiveTab(tab.id); setFeedFilter(tab.filter); }
+                    else { setActiveTab(tab.id); if (tab.id === "arena") setFeedFilter("all"); }
+                    setProfileTrader(null);
+                  }} title={sidebarCollapsed ? tab.label : undefined} style={{
+                    display: "flex", alignItems: "center", gap: "10px",
+                    padding: sidebarCollapsed ? "10px 0" : isArenaChild ? "7px 12px 7px 28px" : "10px 12px",
+                    justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                    backgroundColor: isActive ? (isArenaChild ? `${arenaChildColor}12` : C.purpleBg) : "transparent",
+                    border: "none", borderRadius: "6px", cursor: "pointer",
+                    color: isActive ? (isArenaChild ? arenaChildColor : C.purple) : C.textMuted,
+                    fontSize: isArenaChild ? "12px" : "13px",
+                    fontWeight: isActive ? "600" : "400",
+                    transition: "all 0.15s", width: "100%"
+                  }}>
+                    <Icon size={isArenaChild ? 15 : 18} />
+                    {!sidebarCollapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tab.label}</span>}
+                  </button>
                 );
               })}
             </nav>
@@ -4494,7 +4677,7 @@ const App = () => {
 
             {/* Bottom section */}
             <div style={{ padding: "8px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: "2px" }}>
-              {[{ icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alertas", action: () => setShowAlerts(true) }].map(item => (
+              {[{ icon: Bookmark, label: "Watchlist", action: () => setShowWatchlist(true) }, { icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alertas", action: () => setShowAlerts(true) }].map(item => (
                 <button key={item.label} onClick={item.action} title={sidebarCollapsed ? item.label : undefined} style={{
                   display: "flex", alignItems: "center", gap: "10px",
                   padding: sidebarCollapsed ? "10px 0" : "10px 12px",
@@ -4517,7 +4700,7 @@ const App = () => {
             <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
               {/* Left: Tab title */}
               <div style={{ fontSize: "16px", fontWeight: "700" }}>
-                {profileTrader ? profileTrader.name : tabs.find(t => t.id === activeTab)?.label}
+                {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
               </div>
 
               {/* Right: Unified date range selector + icons */}
@@ -4776,6 +4959,128 @@ const App = () => {
               </div>
             )}
 
+            {/* ── Trader Watchlist Panel (TradingView-style) ── */}
+            {showWatchlist && (
+              <div onClick={() => setShowWatchlist(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "380px", backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", boxShadow: "-8px 0 30px rgba(0,0,0,0.4)" }}>
+                  {/* Header */}
+                  <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                    <Users size={16} color={C.purple} />
+                    <span style={{ fontSize: "14px", fontWeight: "800", flex: 1 }}>Watchlist</span>
+                    <span style={{ fontSize: "10px", color: C.textMuted, ...mono }}>{Object.values(followedTraders).filter(Boolean).length} siguiendo</span>
+                    <button onClick={() => setShowWatchlist(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px" }}><X size={16} /></button>
+                  </div>
+                  {/* Search */}
+                  <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", backgroundColor: C.card, borderRadius: "8px", padding: "8px 12px", border: `1px solid ${C.border}` }}>
+                      <Search size={14} color={C.textFaint} />
+                      <input autoFocus value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "12px", width: "100%", fontFamily: "inherit" }} />
+                      {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={12} /></button>}
+                    </div>
+                  </div>
+                  {/* Category tabs */}
+                  <div style={{ display: "flex", gap: "4px", padding: "8px 16px", borderBottom: `1px solid ${C.border}` }}>
+                    {[{ id: "all", label: "Todos", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Siguiendo", icon: Star }].map(cat => (
+                      <button key={cat.id} onClick={() => setWatchlistCategory(cat.id)} style={{
+                        display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                        border: `1px solid ${watchlistCategory === cat.id ? C.purple : C.border}`,
+                        backgroundColor: watchlistCategory === cat.id ? C.purpleBg : "transparent",
+                        color: watchlistCategory === cat.id ? C.purple : C.textMuted
+                      }}>
+                        <cat.icon size={11} />
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Trader list */}
+                  <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
+                    {(() => {
+                      let filtered = [...mockTraders];
+                      if (watchlistCategory === "human") filtered = filtered.filter(t => !t.isBot);
+                      else if (watchlistCategory === "bot") filtered = filtered.filter(t => t.isBot);
+                      else if (watchlistCategory === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
+                      if (watchlistSearch.trim()) {
+                        const q = watchlistSearch.toLowerCase();
+                        filtered = filtered.filter(t => t.name.toLowerCase().includes(q) || t.style.toLowerCase().includes(q) || t.favPairs.some(p => p.toLowerCase().includes(q)));
+                      }
+                      if (filtered.length === 0) return (
+                        <div style={{ textAlign: "center", padding: "40px 20px", color: C.textMuted }}>
+                          <Users size={24} style={{ marginBottom: "8px", opacity: 0.4 }} />
+                          <div style={{ fontSize: "12px", fontWeight: "600" }}>No se encontraron traders</div>
+                        </div>
+                      );
+                      return filtered.map(t => {
+                        const isFollowed = followedTraders[t.name];
+                        const hasAlert = traderAlerts[t.name];
+                        const tierColor = t.tier === "Diamond" ? C.cyan : t.tier === "Platinum" ? "#a78bfa" : t.tier === "Gold" ? C.amber : C.textMuted;
+                        return (
+                          <div key={t.name} className="card-hover" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${isFollowed ? C.purple + "30" : C.border}`, backgroundColor: isFollowed ? C.purpleBg + "40" : C.card, marginBottom: "4px", cursor: "pointer", transition: "all 0.15s" }}>
+                            {/* Rank + color bar */}
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", minWidth: "20px" }}>
+                              <span style={{ fontSize: "11px", fontWeight: "800", color: t.rank <= 3 ? C.amber : C.textMuted, ...mono }}>#{t.rank}</span>
+                              <div style={{ width: 3, height: 12, borderRadius: "1px", backgroundColor: tierColor }} />
+                            </div>
+                            {/* Info + actions */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }} onClick={() => { openProfile(t); setShowWatchlist(false); }}>
+                                <span style={{ fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>{t.name}</span>
+                                <BotTag isBot={t.isBot} />
+                                <span style={{ fontSize: "8px", fontWeight: "700", color: tierColor, backgroundColor: `${tierColor}15`, padding: "1px 5px", borderRadius: "3px", border: `1px solid ${tierColor}30` }}>{t.tier}</span>
+                              </div>
+                              <div style={{ display: "flex", gap: "8px", fontSize: "9px", color: C.textMuted, ...mono, marginBottom: "4px" }}>
+                                <span style={{ color: C.green }}>{t.winRate}% WR</span>
+                                <span style={{ color: C.green }}>+${(t.pnl / 1000).toFixed(0)}K</span>
+                                <span>{t.style}</span>
+                                <span>{t.favPairs[0]}</span>
+                              </div>
+                              {/* Social + action row */}
+                              <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
+                                {/* Quick actions */}
+                                <button title={isFollowed ? "Dejar de seguir" : "Seguir"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
+                                  <Star size={11} fill={isFollowed ? C.amber : "none"} />
+                                </button>
+                                <button title={hasAlert ? "Quitar alertas" : "Activar alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
+                                  <BellRing size={11} />
+                                </button>
+                                <button title="Copiar trades" onClick={e => { e.stopPropagation(); setActiveTab("copy"); setShowWatchlist(false); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                                  <Copy size={11} />
+                                </button>
+                                <button title="Chat" onClick={e => { e.stopPropagation(); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                                  <MessageCircle size={11} />
+                                </button>
+                                {/* Social quick links */}
+                                <div style={{ width: "1px", height: 14, backgroundColor: C.border, margin: "0 2px" }} />
+                                {(() => {
+                                  const socials = traderSocials[t.name] || {};
+                                  const socialIcons = { twitter: { label: "X", color: "#1DA1F2" }, discord: { label: "DC", color: "#5865F2" }, telegram: { label: "TG", color: "#0088cc" }, youtube: { label: "YT", color: "#FF0000" }, website: { label: "WEB", color: C.textMuted } };
+                                  return Object.keys(socials).map(platform => {
+                                    const si = socialIcons[platform];
+                                    if (!si) return null;
+                                    return (
+                                      <button key={platform} title={`${si.label}: ${socials[platform]}`} onClick={e => e.stopPropagation()} style={{ height: 20, padding: "0 5px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "3px", border: "none", cursor: "pointer", backgroundColor: `${si.color}15`, color: si.color, fontSize: "8px", fontWeight: "700" }}>
+                                        {si.label}
+                                      </button>
+                                    );
+                                  });
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  {/* Footer: social links legend */}
+                  <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, fontSize: "9px", color: C.textFaint, display: "flex", gap: "12px", alignItems: "center" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Star size={9} fill={C.amber} color={C.amber} /> Seguir</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><BellRing size={9} color={C.blue} /> Alertas</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Eye size={9} /> Perfil</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Copy size={9} /> Copy Trade</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── Settings Panel ── */}
             {showSettings && (
               <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
@@ -4889,6 +5194,7 @@ const App = () => {
           </div>{/* close Main Layout wrapper */}
         </div>
         </FeedFilterContext.Provider>
+        </WatchlistContext.Provider>
         </ProfileContext.Provider>
       </DateContext.Provider>
     </ToastProvider>
