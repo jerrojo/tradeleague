@@ -4599,9 +4599,11 @@ const App = () => {
     { id: "smc", label: "Análisis SMC", icon: Crosshair },
     { id: "traders", label: "Traders", icon: Users },
     { id: "report", label: "Reporte", icon: Calendar },
+    { id: "sep2", sep: true },
+    { id: "football", label: "Football", icon: Gamepad2 },
   ];
 
-  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab };
+  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab, football: FootballTab };
   // Arena sub-filter tabs resolve to "arena" for content
   const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
   const ActiveComponent = tabContent[resolveTab(activeTab)];
