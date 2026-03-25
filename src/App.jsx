@@ -12,7 +12,7 @@ import {
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
   MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb,
-  X, ExternalLink, Hash, ChevronLeft, Bookmark, BellRing, Send, Globe
+  X, ExternalLink, Bookmark, BellRing
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
