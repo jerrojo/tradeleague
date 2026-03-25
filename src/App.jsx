@@ -2938,7 +2938,7 @@ const LivePnLTicker = () => {
   return (
     <div style={{
       height: 32, backgroundColor: C.bg, borderBottom: `1px solid ${C.border}`,
-      overflow: "hidden", display: "flex", alignItems: "center", position: "relative"
+      overflow: "hidden", display: "flex", alignItems: "center", position: "fixed", top: 0, left: 0, right: 0, zIndex: 400
     }}>
       <style>{`
         @keyframes tickerScroll {
@@ -4631,8 +4631,9 @@ const App = () => {
             button.btn-hover:hover { filter: brightness(1.15); }
           `}</style>
 
-          {/* ── Top Ticker (full width, above everything) ── */}
+          {/* ── Top Ticker (fixed, full width, above everything) ── */}
           <LivePnLTicker />
+          <div style={{ height: 32, flexShrink: 0 }} /> {/* spacer for fixed ticker */}
 
           {/* ── Main Layout ── */}
           <div style={{ display: "flex", flex: 1 }}>
@@ -4728,7 +4729,7 @@ const App = () => {
           <div style={{ flex: 1, marginLeft: sideW, marginRight: rightW, transition: "margin-left 0.2s ease, margin-right 0.2s ease", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 32px)" }}>
 
             {/* Top Bar */}
-            <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
+            <header style={{ height: 56, position: "sticky", top: 32, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
               {/* Left: Tab title */}
               <div style={{ fontSize: "16px", fontWeight: "700" }}>
                 {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
