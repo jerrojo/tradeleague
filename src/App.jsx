@@ -4578,6 +4578,7 @@ const App = () => {
   const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
   const ActiveComponent = tabContent[resolveTab(activeTab)];
   const sideW = sidebarCollapsed ? 56 : 200;
+  const rightW = showWatchlist ? 340 : 0;
 
   // XP state for demo (user's own progress)
   const myXp = 3420;
@@ -4694,7 +4695,7 @@ const App = () => {
           </aside>
 
           {/* ── Main Area ── */}
-          <div style={{ flex: 1, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 32px)" }}>
+          <div style={{ flex: 1, marginLeft: sideW, marginRight: rightW, transition: "margin-left 0.2s ease, margin-right 0.2s ease", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 32px)" }}>
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
@@ -4959,127 +4960,122 @@ const App = () => {
               </div>
             )}
 
-            {/* ── Trader Watchlist Panel (TradingView-style) ── */}
-            {showWatchlist && (
-              <div onClick={() => setShowWatchlist(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
-                <div onClick={e => e.stopPropagation()} style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "380px", backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", boxShadow: "-8px 0 30px rgba(0,0,0,0.4)" }}>
-                  {/* Header */}
-                  <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                    <Users size={16} color={C.purple} />
-                    <span style={{ fontSize: "14px", fontWeight: "800", flex: 1 }}>Watchlist</span>
-                    <span style={{ fontSize: "10px", color: C.textMuted, ...mono }}>{Object.values(followedTraders).filter(Boolean).length} siguiendo</span>
-                    <button onClick={() => setShowWatchlist(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px" }}><X size={16} /></button>
-                  </div>
-                  {/* Search */}
-                  <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", backgroundColor: C.card, borderRadius: "8px", padding: "8px 12px", border: `1px solid ${C.border}` }}>
-                      <Search size={14} color={C.textFaint} />
-                      <input autoFocus value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "12px", width: "100%", fontFamily: "inherit" }} />
-                      {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={12} /></button>}
-                    </div>
-                  </div>
-                  {/* Category tabs */}
-                  <div style={{ display: "flex", gap: "4px", padding: "8px 16px", borderBottom: `1px solid ${C.border}` }}>
-                    {[{ id: "all", label: "Todos", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Siguiendo", icon: Star }].map(cat => (
-                      <button key={cat.id} onClick={() => setWatchlistCategory(cat.id)} style={{
-                        display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                        border: `1px solid ${watchlistCategory === cat.id ? C.purple : C.border}`,
-                        backgroundColor: watchlistCategory === cat.id ? C.purpleBg : "transparent",
-                        color: watchlistCategory === cat.id ? C.purple : C.textMuted
-                      }}>
-                        <cat.icon size={11} />
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Trader list */}
-                  <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
-                    {(() => {
-                      let filtered = [...mockTraders];
-                      if (watchlistCategory === "human") filtered = filtered.filter(t => !t.isBot);
-                      else if (watchlistCategory === "bot") filtered = filtered.filter(t => t.isBot);
-                      else if (watchlistCategory === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
-                      if (watchlistSearch.trim()) {
-                        const q = watchlistSearch.toLowerCase();
-                        filtered = filtered.filter(t => t.name.toLowerCase().includes(q) || t.style.toLowerCase().includes(q) || t.favPairs.some(p => p.toLowerCase().includes(q)));
-                      }
-                      if (filtered.length === 0) return (
-                        <div style={{ textAlign: "center", padding: "40px 20px", color: C.textMuted }}>
-                          <Users size={24} style={{ marginBottom: "8px", opacity: 0.4 }} />
-                          <div style={{ fontSize: "12px", fontWeight: "600" }}>No se encontraron traders</div>
-                        </div>
-                      );
-                      return filtered.map(t => {
-                        const isFollowed = followedTraders[t.name];
-                        const hasAlert = traderAlerts[t.name];
-                        const tierColor = t.tier === "Diamond" ? C.cyan : t.tier === "Platinum" ? "#a78bfa" : t.tier === "Gold" ? C.amber : C.textMuted;
-                        return (
-                          <div key={t.name} className="card-hover" style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "8px", border: `1px solid ${isFollowed ? C.purple + "30" : C.border}`, backgroundColor: isFollowed ? C.purpleBg + "40" : C.card, marginBottom: "4px", cursor: "pointer", transition: "all 0.15s" }}>
-                            {/* Rank + color bar */}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", minWidth: "20px" }}>
-                              <span style={{ fontSize: "11px", fontWeight: "800", color: t.rank <= 3 ? C.amber : C.textMuted, ...mono }}>#{t.rank}</span>
-                              <div style={{ width: 3, height: 12, borderRadius: "1px", backgroundColor: tierColor }} />
-                            </div>
-                            {/* Info + actions */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }} onClick={() => { openProfile(t); setShowWatchlist(false); }}>
-                                <span style={{ fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>{t.name}</span>
-                                <BotTag isBot={t.isBot} />
-                                <span style={{ fontSize: "8px", fontWeight: "700", color: tierColor, backgroundColor: `${tierColor}15`, padding: "1px 5px", borderRadius: "3px", border: `1px solid ${tierColor}30` }}>{t.tier}</span>
-                              </div>
-                              <div style={{ display: "flex", gap: "8px", fontSize: "9px", color: C.textMuted, ...mono, marginBottom: "4px" }}>
-                                <span style={{ color: C.green }}>{t.winRate}% WR</span>
-                                <span style={{ color: C.green }}>+${(t.pnl / 1000).toFixed(0)}K</span>
-                                <span>{t.style}</span>
-                                <span>{t.favPairs[0]}</span>
-                              </div>
-                              {/* Social + action row */}
-                              <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
-                                {/* Quick actions */}
-                                <button title={isFollowed ? "Dejar de seguir" : "Seguir"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
-                                  <Star size={11} fill={isFollowed ? C.amber : "none"} />
-                                </button>
-                                <button title={hasAlert ? "Quitar alertas" : "Activar alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
-                                  <BellRing size={11} />
-                                </button>
-                                <button title="Copiar trades" onClick={e => { e.stopPropagation(); setActiveTab("copy"); setShowWatchlist(false); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
-                                  <Copy size={11} />
-                                </button>
-                                <button title="Chat" onClick={e => { e.stopPropagation(); }} style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
-                                  <MessageCircle size={11} />
-                                </button>
-                                {/* Social quick links */}
-                                <div style={{ width: "1px", height: 14, backgroundColor: C.border, margin: "0 2px" }} />
-                                {(() => {
-                                  const socials = traderSocials[t.name] || {};
-                                  const socialIcons = { twitter: { label: "X", color: "#1DA1F2" }, discord: { label: "DC", color: "#5865F2" }, telegram: { label: "TG", color: "#0088cc" }, youtube: { label: "YT", color: "#FF0000" }, website: { label: "WEB", color: C.textMuted } };
-                                  return Object.keys(socials).map(platform => {
-                                    const si = socialIcons[platform];
-                                    if (!si) return null;
-                                    return (
-                                      <button key={platform} title={`${si.label}: ${socials[platform]}`} onClick={e => e.stopPropagation()} style={{ height: 20, padding: "0 5px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "3px", border: "none", cursor: "pointer", backgroundColor: `${si.color}15`, color: si.color, fontSize: "8px", fontWeight: "700" }}>
-                                        {si.label}
-                                      </button>
-                                    );
-                                  });
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                  {/* Footer: social links legend */}
-                  <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, fontSize: "9px", color: C.textFaint, display: "flex", gap: "12px", alignItems: "center" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Star size={9} fill={C.amber} color={C.amber} /> Seguir</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><BellRing size={9} color={C.blue} /> Alertas</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Eye size={9} /> Perfil</span>
-                    <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Copy size={9} /> Copy Trade</span>
-                  </div>
+            {/* ── Right Sidebar: Trader Watchlist (persistent, TradingView-style) ── */}
+            <aside style={{
+              width: 340, position: "fixed", top: 32, right: 0, bottom: 0, zIndex: 200,
+              backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`,
+              display: "flex", flexDirection: "column",
+              transform: showWatchlist ? "translateX(0)" : "translateX(100%)",
+              transition: "transform 0.2s ease"
+            }}>
+              {/* Header */}
+              <div style={{ height: 56, padding: "0 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
+                <Users size={15} color={C.purple} />
+                <span style={{ fontSize: "13px", fontWeight: "800", flex: 1 }}>Watchlist</span>
+                <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{Object.values(followedTraders).filter(Boolean).length} siguiendo</span>
+                <button onClick={() => setShowWatchlist(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px" }}><X size={14} /></button>
+              </div>
+              {/* Search */}
+              <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: C.card, borderRadius: "6px", padding: "6px 10px", border: `1px solid ${C.border}` }}>
+                  <Search size={12} color={C.textFaint} />
+                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
+                  {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={10} /></button>}
                 </div>
               </div>
-            )}
+              {/* Category tabs */}
+              <div style={{ display: "flex", gap: "3px", padding: "6px 10px", borderBottom: `1px solid ${C.border}` }}>
+                {[{ id: "all", label: "Todos", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Siguiendo", icon: Star }].map(cat => (
+                  <button key={cat.id} onClick={() => setWatchlistCategory(cat.id)} style={{
+                    display: "flex", alignItems: "center", gap: "3px", padding: "4px 8px", borderRadius: "5px", fontSize: "9px", fontWeight: "600", cursor: "pointer",
+                    border: `1px solid ${watchlistCategory === cat.id ? C.purple : C.border}`,
+                    backgroundColor: watchlistCategory === cat.id ? C.purpleBg : "transparent",
+                    color: watchlistCategory === cat.id ? C.purple : C.textMuted
+                  }}>
+                    <cat.icon size={10} />
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+              {/* Trader list */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "6px" }}>
+                {(() => {
+                  let filtered = [...mockTraders];
+                  if (watchlistCategory === "human") filtered = filtered.filter(t => !t.isBot);
+                  else if (watchlistCategory === "bot") filtered = filtered.filter(t => t.isBot);
+                  else if (watchlistCategory === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
+                  if (watchlistSearch.trim()) {
+                    const q = watchlistSearch.toLowerCase();
+                    filtered = filtered.filter(t => t.name.toLowerCase().includes(q) || t.style.toLowerCase().includes(q) || t.favPairs.some(p => p.toLowerCase().includes(q)));
+                  }
+                  if (filtered.length === 0) return (
+                    <div style={{ textAlign: "center", padding: "30px 16px", color: C.textMuted }}>
+                      <Users size={20} style={{ marginBottom: "6px", opacity: 0.4 }} />
+                      <div style={{ fontSize: "11px", fontWeight: "600" }}>No se encontraron traders</div>
+                    </div>
+                  );
+                  return filtered.map(t => {
+                    const isFollowed = followedTraders[t.name];
+                    const hasAlert = traderAlerts[t.name];
+                    const tierColor = t.tier === "Diamond" ? C.cyan : t.tier === "Platinum" ? "#a78bfa" : t.tier === "Gold" ? C.amber : C.textMuted;
+                    return (
+                      <div key={t.name} className="card-hover" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${isFollowed ? C.purple + "30" : C.border}`, backgroundColor: isFollowed ? C.purpleBg + "40" : C.card, marginBottom: "3px", cursor: "pointer", transition: "all 0.15s" }}>
+                        {/* Rank */}
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", minWidth: "18px", paddingTop: "2px" }}>
+                          <span style={{ fontSize: "10px", fontWeight: "800", color: t.rank <= 3 ? C.amber : C.textMuted, ...mono }}>#{t.rank}</span>
+                          <div style={{ width: 3, height: 10, borderRadius: "1px", backgroundColor: tierColor }} />
+                        </div>
+                        {/* Info + actions */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "2px" }} onClick={() => openProfile(t)}>
+                            <span style={{ fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>{t.name}</span>
+                            <BotTag isBot={t.isBot} />
+                            <span style={{ fontSize: "7px", fontWeight: "700", color: tierColor, backgroundColor: `${tierColor}15`, padding: "1px 4px", borderRadius: "2px", border: `1px solid ${tierColor}30` }}>{t.tier}</span>
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", fontSize: "8px", color: C.textMuted, ...mono, marginBottom: "3px" }}>
+                            <span style={{ color: C.green }}>{t.winRate}%</span>
+                            <span style={{ color: C.green }}>+${(t.pnl / 1000).toFixed(0)}K</span>
+                            <span>{t.style}</span>
+                          </div>
+                          {/* Actions row */}
+                          <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
+                            <button title={isFollowed ? "Dejar de seguir" : "Seguir"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
+                              <Star size={10} fill={isFollowed ? C.amber : "none"} />
+                            </button>
+                            <button title={hasAlert ? "Quitar alertas" : "Alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
+                              <BellRing size={10} />
+                            </button>
+                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("copy"); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                              <Copy size={10} />
+                            </button>
+                            <button title="Chat" onClick={e => e.stopPropagation()} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                              <MessageCircle size={10} />
+                            </button>
+                            <div style={{ width: "1px", height: 12, backgroundColor: C.border, margin: "0 1px" }} />
+                            {(() => {
+                              const socials = traderSocials[t.name] || {};
+                              const si = { twitter: { l: "X", c: "#1DA1F2" }, discord: { l: "DC", c: "#5865F2" }, telegram: { l: "TG", c: "#0088cc" }, youtube: { l: "YT", c: "#FF0000" } };
+                              return Object.keys(socials).filter(p => si[p]).map(p => (
+                                <button key={p} title={`${si[p].l}: ${socials[p]}`} onClick={e => e.stopPropagation()} style={{ height: 18, padding: "0 4px", display: "flex", alignItems: "center", borderRadius: "2px", border: "none", cursor: "pointer", backgroundColor: `${si[p].c}15`, color: si[p].c, fontSize: "7px", fontWeight: "700" }}>
+                                  {si[p].l}
+                                </button>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              {/* Footer legend */}
+              <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}`, fontSize: "8px", color: C.textFaint, display: "flex", gap: "10px", alignItems: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><Star size={8} fill={C.amber} color={C.amber} /> Seguir</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><BellRing size={8} color={C.blue} /> Alertas</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><Copy size={8} /> Copy</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><MessageCircle size={8} /> Chat</span>
+              </div>
+            </aside>
 
             {/* ── Settings Panel ── */}
             {showSettings && (
