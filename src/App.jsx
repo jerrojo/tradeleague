@@ -1932,7 +1932,6 @@ const ArenaTab = () => {
           if (item.kind === "achievement") {
             return (
               <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "14px" }}>{item.avatar}</span>
                 <div style={{ flex: 1, fontSize: "12px" }}>
                   <TraderLink name={item.trader} /> <span style={{ color: C.purple, fontWeight: "600" }}>desbloqueó {item.achievement.name}</span>
                 </div>
@@ -1953,8 +1952,6 @@ const ArenaTab = () => {
               }}>
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                  <Lightbulb size={13} color={C.blue} />
-                  <span style={{ fontSize: "13px" }}>{item.avatar}</span>
                   <TraderLink name={item.trader} />
                   <BotTag isBot={item.isBot} />
                   <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, backgroundColor: `${C.blue}15`, padding: "1px 6px", borderRadius: "3px", border: `1px solid ${C.blue}30` }}>SEÑAL</span>
@@ -2030,7 +2027,6 @@ const ArenaTab = () => {
                       borderRadius: "6px", backgroundColor: pi === 0 ? `${C.cyan}08` : "transparent",
                       border: pi === 0 ? `1px solid ${C.cyan}15` : `1px solid transparent`,
                     }}>
-                      <span style={{ fontSize: "12px" }}>{p.avatar}</span>
                       <TraderLink name={p.trader} />
                       <BotTag isBot={p.isBot} />
                       {pi === 0 && <span style={{ fontSize: "8px", fontWeight: "700", color: C.cyan, backgroundColor: `${C.cyan}15`, padding: "1px 4px", borderRadius: "2px" }}>1RO</span>}
@@ -2064,8 +2060,6 @@ const ArenaTab = () => {
             }}>
               {/* Header: trader + pair + PnL */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                <Activity size={13} color={tradeAccent} />
-                <span style={{ fontSize: "13px" }}>{item.avatar}</span>
                 <TraderLink name={item.trader} />
                 <BotTag isBot={item.isBot} />
                 {isNew(item.timestamp) && <NewBadge />}
