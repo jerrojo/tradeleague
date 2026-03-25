@@ -506,25 +506,19 @@ const BotTag = ({ isBot }) => isBot ? (
   </span>
 );
 
-/* ── TP Progress Bar: shows how close price is to TP or SL ── */
+/* ── TP Progress Bar: thin inline bar ── */
 const TpProgressBar = ({ entry, tp, sl, status }) => {
   if (status !== "active") return null;
-  const range = Math.abs(tp - entry) + Math.abs(entry - sl);
   const isLong = tp > entry;
   const currentPrice = isLong ? entry + (tp - entry) * (0.3 + Math.random() * 0.5) : entry - (entry - tp) * (0.3 + Math.random() * 0.5);
-  const progressToTp = Math.min(1, Math.max(0, Math.abs(currentPrice - entry) / Math.abs(tp - entry)));
-  const pct = Math.round(progressToTp * 100);
+  const pct = Math.round(Math.min(1, Math.max(0, Math.abs(currentPrice - entry) / Math.abs(tp - entry))) * 100);
   const barColor = pct > 70 ? C.green : pct > 40 ? C.amber : C.blue;
   return (
-    <div style={{ marginTop: "6px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "9px", color: C.textMuted, marginBottom: "3px" }}>
-        <span>SL ${sl.toLocaleString()}</span>
-        <span style={{ color: barColor, fontWeight: "700" }}>{pct}% al TP</span>
-        <span>TP ${tp.toLocaleString()}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+      <div style={{ flex: 1, height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", backgroundColor: barColor, borderRadius: "1px" }} />
       </div>
-      <div style={{ height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden", position: "relative" }}>
-        <div style={{ width: `${pct}%`, height: "100%", backgroundColor: barColor, borderRadius: "2px", transition: "width 0.3s" }} />
-      </div>
+      <span style={{ fontSize: "9px", fontWeight: "700", color: barColor, ...mono, whiteSpace: "nowrap" }}>{pct}% TP</span>
     </div>
   );
 };
@@ -552,9 +546,9 @@ const CommunityVote = ({ itemId, votesState, setVotesState }) => {
       }}>
         <ThumbsUp size={10} /> <span style={mono}>{v.up}</span>
       </button>
-      <div style={{ flex: 1, height: "3px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden", display: "flex", maxWidth: "80px" }}>
-        <div style={{ width: `${upPct}%`, height: "100%", backgroundColor: C.green, transition: "width 0.2s" }} />
-        <div style={{ width: `${100 - upPct}%`, height: "100%", backgroundColor: C.red, transition: "width 0.2s" }} />
+      <div style={{ flex: 1, height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden", display: "flex", maxWidth: "60px" }}>
+        <div style={{ width: `${upPct}%`, height: "100%", backgroundColor: C.green }} />
+        <div style={{ width: `${100 - upPct}%`, height: "100%", backgroundColor: C.red }} />
       </div>
       <button onClick={() => vote("down")} style={{
         display: "flex", alignItems: "center", gap: "3px", padding: "2px 8px", borderRadius: "4px",
@@ -1749,9 +1743,27 @@ const ArenaTab = () => {
 
   const statusColors = { active: C.blue, tp_hit: C.green, sl_hit: C.red };
   const statusLabels = { active: "Activa", tp_hit: "TP Hit", sl_hit: "SL Hit" };
+  const isNew = (ts) => (Date.now() - ts) < 600000; // < 10 min
+  const NewBadge = () => (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "8px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, padding: "1px 5px", borderRadius: "3px", border: `1px solid ${C.green}30`, animation: "livePulse 2s ease-in-out infinite" }}>
+      NEW
+    </span>
+  );
+
+  // Group predictions by question — only show the first predictor's card, embed others inside
+  const dedupedFeed = useMemo(() => {
+    const seen = new Set();
+    return filteredFeed.filter(item => {
+      if (item.kind === "prediction") {
+        if (seen.has(item.questionId)) return false;
+        seen.add(item.questionId);
+      }
+      return true;
+    });
+  }, [filteredFeed]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
       {/* ── Header: title + LIVE badge ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1811,7 +1823,7 @@ const ArenaTab = () => {
               })}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={200}>
             <LineChart data={traderEquity}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
               <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
@@ -1823,37 +1835,42 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ── Watched traders scoreboard ── */}
+      {/* ── Watched traders scoreboard (compact table) ── */}
       {watchedTraders.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(watchedTraders.length, 4)}, 1fr)`, gap: "10px" }}>
-          {watchedTraders.slice(0, 4).map((t, idx) => {
-            const ci = mockTraders.indexOf(t);
-            const alpha = calcAlphaScore(t);
-            const aClr = alphaColor(alpha);
-            return (
-              <div key={t.name} onClick={() => openProfile(t)} style={{ ...cardStyle, cursor: "pointer", borderTop: `2px solid ${traderColors[ci]}`, padding: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "16px" }}>{t.avatar}</span>
-                    <div>
-                      <div style={{ fontSize: "12px", fontWeight: "700" }}>{t.name}</div>
-                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {["Trader","Alpha","Win","PnL","Racha","Copiers"].map(h => (
+                  <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: C.textFaint, fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {watchedTraders.slice(0, 6).map((t) => {
+                const ci = mockTraders.indexOf(t);
+                const alpha = calcAlphaScore(t);
+                const aClr = alphaColor(alpha);
+                return (
+                  <tr key={t.name} onClick={() => openProfile(t)} style={{ cursor: "pointer", borderBottom: `1px solid ${C.border}` }}>
+                    <td style={{ padding: "6px 10px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div style={{ width: 3, height: 20, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
+                        <span style={{ fontSize: "13px" }}>{t.avatar}</span>
+                        <span style={{ fontWeight: "700", fontSize: "12px" }}>{t.name}</span>
                         <BotTag isBot={t.isBot} />
-                        <span style={{ fontSize: "9px", color: tierColor[t.tier], fontWeight: "600" }}>{t.tier}</span>
                       </div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: "16px", fontWeight: "900", color: aClr, ...mono }}>{alpha}</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", fontSize: "10px" }}>
-                  <div><span style={{ color: C.textFaint }}>Win </span><span style={{ color: C.green, fontWeight: "700", ...mono }}>{t.winRate}%</span></div>
-                  <div><span style={{ color: C.textFaint }}>PnL </span><span style={{ color: C.green, fontWeight: "700", ...mono }}>+${(t.pnl/1000).toFixed(0)}K</span></div>
-                  <div><span style={{ color: C.textFaint }}>Racha </span><span style={{ color: C.amber, fontWeight: "700", ...mono }}>{t.streak}W</span></div>
-                  <div><span style={{ color: C.textFaint }}>Copiers </span><span style={{ fontWeight: "700", ...mono }}>{t.copiers}</span></div>
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                    <td style={{ padding: "6px 10px", fontWeight: "800", color: aClr, ...mono }}>{alpha}</td>
+                    <td style={{ padding: "6px 10px", fontWeight: "700", color: C.green, ...mono }}>{t.winRate}%</td>
+                    <td style={{ padding: "6px 10px", fontWeight: "700", color: C.green, ...mono }}>+${(t.pnl/1000).toFixed(0)}K</td>
+                    <td style={{ padding: "6px 10px", fontWeight: "700", color: C.amber, ...mono }}>{t.streak}W</td>
+                    <td style={{ padding: "6px 10px", fontWeight: "700", ...mono }}>{t.copiers}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -1900,8 +1917,8 @@ const ArenaTab = () => {
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {filteredFeed.map(item => {
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {dedupedFeed.map(item => {
           if (item.kind === "whale" || item.kind === "liquidation") {
             return (
               <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1941,6 +1958,7 @@ const ArenaTab = () => {
                   <TraderLink name={item.trader} />
                   <BotTag isBot={item.isBot} />
                   <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, backgroundColor: `${C.blue}15`, padding: "1px 6px", borderRadius: "3px", border: `1px solid ${C.blue}30` }}>SEÑAL</span>
+                  {isNew(item.timestamp) && <NewBadge />}
                   <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
                 </div>
 
@@ -1950,8 +1968,8 @@ const ArenaTab = () => {
                   <Tag text={item.bias} color={biasColor} />
                   <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, backgroundColor: `${C.textFaint}15`, padding: "1px 6px", borderRadius: "3px" }}>{item.timeframe}</span>
                   <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <div style={{ width: "40px", height: "3px", borderRadius: "2px", backgroundColor: C.border }}>
-                      <div style={{ width: `${item.confidence}%`, height: "100%", borderRadius: "2px", backgroundColor: confColor }} />
+                    <div style={{ width: "36px", height: "2px", borderRadius: "1px", backgroundColor: C.border }}>
+                      <div style={{ width: `${item.confidence}%`, height: "100%", borderRadius: "1px", backgroundColor: confColor }} />
                     </div>
                     <span style={{ fontSize: "10px", fontWeight: "700", color: confColor, ...mono }}>{item.confidence}%</span>
                   </div>
@@ -1968,57 +1986,65 @@ const ArenaTab = () => {
           }
 
           if (item.kind === "prediction") {
-            const orderLabel = item.predOrder === 1 ? "1ro" : item.predOrder === 2 ? "2do" : item.predOrder === 3 ? "3ro" : `${item.predOrder}to`;
-            const isFirst = item.predOrder === 1;
-            const samePrediction = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId && f.id !== item.id);
+            // Grouped thread: show all predictors on this question
+            const allOnQuestion = traderFeed
+              .filter(f => f.kind === "prediction" && f.questionId === item.questionId)
+              .sort((a, b) => a.predOrder - b.predOrder);
+            const yesCount = allOnQuestion.filter(p => p.bet === "YES").length;
+            const noCount = allOnQuestion.filter(p => p.bet === "NO").length;
             return (
               <div key={item.id} style={{
                 background: `linear-gradient(135deg, ${C.card} 0%, ${C.amber}06 100%)`,
                 borderRadius: "10px", border: `1px solid ${C.amber}20`,
-                borderLeft: `3px solid ${isFirst ? C.cyan : C.amber}`,
+                borderLeft: `3px solid ${C.amber}`,
                 padding: "10px 14px",
               }}>
-                {/* Header */}
+                {/* Question header */}
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
                   <Scale size={13} color={C.amber} />
-                  <span style={{ fontSize: "13px" }}>{item.avatar}</span>
-                  <TraderLink name={item.trader} />
-                  <BotTag isBot={item.isBot} />
-                  <span style={{
-                    fontSize: "9px", fontWeight: "700",
-                    color: isFirst ? C.cyan : C.textMuted,
-                    backgroundColor: isFirst ? `${C.cyan}15` : `${C.textFaint}15`,
-                    border: `1px solid ${isFirst ? C.cyan : C.textFaint}30`,
-                    padding: "1px 6px", borderRadius: "3px",
-                  }}>
-                    {isFirst ? "1RO EN PREDECIR" : `${orderLabel} de ${item.totalPredictors}`}
-                  </span>
-                  <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
-                </div>
-
-                {/* Question + Bet inline */}
-                <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "6px" }}>{item.question}</div>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
-                  <Tag text={`Apostó ${item.bet}`} color={item.bet === "YES" ? C.green : C.red} />
-                  <span style={{ fontSize: "10px", color: C.textMuted, ...mono }}>${item.stake} a {item.odds}%</span>
-                  <div style={{ width: "50px", height: "3px", borderRadius: "2px", backgroundColor: C.border }}>
-                    <div style={{ width: `${item.odds}%`, height: "100%", borderRadius: "2px", backgroundColor: C.amber }} />
+                  <span style={{ fontSize: "13px", fontWeight: "700", flex: 1 }}>{item.question}</span>
+                  {isNew(item.timestamp) && <NewBadge />}
+                  <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.odds}%</span>
+                  <div style={{ width: "40px", height: "2px", borderRadius: "1px", backgroundColor: C.border }}>
+                    <div style={{ width: `${item.odds}%`, height: "100%", borderRadius: "1px", backgroundColor: C.amber }} />
                   </div>
                 </div>
 
-                {/* Others who predicted — compact */}
-                {samePrediction.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "6px", fontSize: "10px", color: C.textFaint }}>
-                    <span style={{ fontWeight: "600" }}>+{samePrediction.length} más:</span>
-                    {samePrediction.sort((a, b) => a.predOrder - b.predOrder).slice(0, 3).map(sp => (
-                      <span key={sp.id} style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
-                        {sp.avatar} <Tag text={sp.bet} color={sp.bet === "YES" ? C.green : C.red} />
-                      </span>
-                    ))}
+                {/* Consensus bar: YES vs NO */}
+                {allOnQuestion.length > 1 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px", fontSize: "10px" }}>
+                    <span style={{ color: C.green, fontWeight: "700", ...mono }}>{yesCount} YES</span>
+                    <div style={{ flex: 1, height: "2px", borderRadius: "1px", overflow: "hidden", display: "flex" }}>
+                      <div style={{ width: `${(yesCount / allOnQuestion.length) * 100}%`, height: "100%", backgroundColor: C.green }} />
+                      <div style={{ width: `${(noCount / allOnQuestion.length) * 100}%`, height: "100%", backgroundColor: C.red }} />
+                    </div>
+                    <span style={{ color: C.red, fontWeight: "700", ...mono }}>{noCount} NO</span>
                   </div>
                 )}
 
-                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                {/* Thread: each predictor as a compact row */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {allOnQuestion.map((p, pi) => (
+                    <div key={p.id} style={{
+                      display: "flex", alignItems: "center", gap: "6px", padding: "4px 8px",
+                      borderRadius: "6px", backgroundColor: pi === 0 ? `${C.cyan}08` : "transparent",
+                      border: pi === 0 ? `1px solid ${C.cyan}15` : `1px solid transparent`,
+                    }}>
+                      <span style={{ fontSize: "12px" }}>{p.avatar}</span>
+                      <TraderLink name={p.trader} />
+                      <BotTag isBot={p.isBot} />
+                      {pi === 0 && <span style={{ fontSize: "8px", fontWeight: "700", color: C.cyan, backgroundColor: `${C.cyan}15`, padding: "1px 4px", borderRadius: "2px" }}>1RO</span>}
+                      <Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} />
+                      <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>${p.stake}</span>
+                      <span style={{ fontSize: "9px", color: C.textFaint, marginLeft: "auto", ...mono }}>{p.time}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Vote */}
+                <div style={{ marginTop: "6px" }}>
+                  <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
+                </div>
               </div>
             );
           }
@@ -2042,6 +2068,7 @@ const ArenaTab = () => {
                 <span style={{ fontSize: "13px" }}>{item.avatar}</span>
                 <TraderLink name={item.trader} />
                 <BotTag isBot={item.isBot} />
+                {isNew(item.timestamp) && <NewBadge />}
                 <span style={{ fontSize: "14px", fontWeight: "800" }}>{item.pair}</span>
                 <Tag text={item.type} color={tradeAccent} />
                 <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
@@ -2750,6 +2777,10 @@ const LivePnLTicker = () => {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
       `}</style>
       <div style={{
         display: "flex", whiteSpace: "nowrap", animation: "tickerScroll 60s linear infinite",
@@ -2927,7 +2958,7 @@ const TradersTab = () => {
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span style={{ ...mono, color: C.green, fontWeight: "600" }}>{t.winRate}%</span>
-                        <div style={{ width: "48px", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                        <div style={{ width: "48px", height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
                           <div style={{ width: `${t.winRate}%`, height: "100%", backgroundColor: C.green }} />
                         </div>
                       </div>
@@ -3276,7 +3307,7 @@ const TradersTab = () => {
                   <span style={{ fontSize: "10px", color: C.textMuted }}>XP to Level {t.level + 1}</span>
                   <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>{t.xp}/{t.xpNext}</span>
                 </div>
-                <div style={{ width: "100%", height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                <div style={{ width: "100%", height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
                   <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.blue, borderRadius: "2px", transition: "width 0.3s" }} />
                 </div>
               </div>
@@ -3420,7 +3451,7 @@ const ReportTab = () => {
                   {d.pnl >= 0 ? "+" : ""}${d.pnl.toLocaleString()}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <div style={{ flex: 1, display: "flex", height: "4px", borderRadius: "2px", overflow: "hidden", gap: "1px" }}>
+                  <div style={{ flex: 1, display: "flex", height: "2px", borderRadius: "1px", overflow: "hidden", gap: "1px" }}>
                     <div style={{ flex: d.wins, backgroundColor: C.green, borderRadius: "2px 0 0 2px" }} />
                     <div style={{ flex: d.losses, backgroundColor: C.red, borderRadius: "0 2px 2px 0" }} />
                   </div>
@@ -4044,7 +4075,7 @@ const FootballTab = () => {
                     <span style={{ fontSize: "10px", color: C.textMuted }}>{g.label}</span>
                     <span style={{ fontSize: "10px", fontWeight: "700", ...mono }}>{g.val}/{g.max}</span>
                   </div>
-                  <div style={{ height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
                     <div style={{ width: `${pct}%`, height: "100%", backgroundColor: clr, borderRadius: "2px" }} />
                   </div>
                 </div>
@@ -4274,7 +4305,7 @@ const App = () => {
                   <span style={{ fontSize: "10px", fontWeight: "700", color: C.purple }}>LVL {myLevel}</span>
                   <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{myXp}/{myXpNext} XP</span>
                 </div>
-                <div style={{ height: "4px", backgroundColor: C.border, borderRadius: "2px", overflow: "hidden", marginBottom: "4px" }}>
+                <div style={{ height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden", marginBottom: "4px" }}>
                   <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "2px" }} />
                 </div>
                 <div style={{ fontSize: "9px", color: C.textFaint, textAlign: "center" }}>{myTitle} · {myXpNext - myXp} XP para LVL {myLevel + 1}</div>
@@ -4283,8 +4314,8 @@ const App = () => {
             {sidebarCollapsed && (
               <div style={{ padding: "8px 4px", borderTop: `1px solid ${C.border}`, textAlign: "center" }}>
                 <div style={{ fontSize: "10px", fontWeight: "700", color: C.purple, ...mono }}>{myLevel}</div>
-                <div style={{ width: "100%", height: "3px", backgroundColor: C.border, borderRadius: "2px", marginTop: "4px", overflow: "hidden" }}>
-                  <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "2px" }} />
+                <div style={{ width: "100%", height: "2px", backgroundColor: C.border, borderRadius: "1px", marginTop: "4px", overflow: "hidden" }}>
+                  <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "1px" }} />
                 </div>
               </div>
             )}
