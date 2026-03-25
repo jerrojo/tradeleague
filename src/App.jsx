@@ -1723,6 +1723,8 @@ const ArenaTab = () => {
   });
   const [votes, setVotes] = useState({});
   const [copied, setCopied] = useState({});
+  const [signalCoin, setSignalCoin] = useState("ALL");
+  const [signalType, setSignalType] = useState("ALL");
   const toast = useToast();
 
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
@@ -1734,17 +1736,20 @@ const ArenaTab = () => {
   const traderFeed = feedItems.filter(f =>
     f.kind === "whale" || f.kind === "liquidation" || watchedNames.includes(f.trader)
   );
-  const filteredFeed = feedFilter === "all"
-    ? traderFeed
-    : feedFilter === "whale"
-      ? traderFeed.filter(f => f.kind === "whale" || f.kind === "liquidation")
-      : feedFilter === "trade"
-        ? traderFeed.filter(f => f.kind === "trade")
-        : feedFilter === "signal"
-          ? traderFeed.filter(f => f.kind === "signal")
-          : feedFilter === "prediction"
-            ? traderFeed.filter(f => f.kind === "prediction")
-            : traderFeed.filter(f => f.kind === feedFilter);
+  const filteredFeed = (() => {
+    let feed = traderFeed;
+    if (feedFilter === "all") return feed;
+    if (feedFilter === "whale") return feed.filter(f => f.kind === "whale" || f.kind === "liquidation");
+    if (feedFilter === "trade") return feed.filter(f => f.kind === "trade");
+    if (feedFilter === "signal") {
+      feed = feed.filter(f => f.kind === "signal");
+      if (signalCoin !== "ALL") feed = feed.filter(f => f.pair && f.pair.startsWith(signalCoin));
+      if (signalType !== "ALL") feed = feed.filter(f => f.bias === signalType);
+      return feed;
+    }
+    if (feedFilter === "prediction") return feed.filter(f => f.kind === "prediction");
+    return feed.filter(f => f.kind === feedFilter);
+  })();
 
   const handleCopy = (item) => {
     setCopied(prev => ({ ...prev, [item.id]: true }));
@@ -1898,13 +1903,37 @@ const ArenaTab = () => {
         const current = filterMeta[feedFilter] || filterMeta.all;
         if (feedFilter !== "all") {
           return (
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              <span style={{ fontSize: "14px", fontWeight: "700", color: current.color }}>{current.label}</span>
-              <span style={{ fontSize: "11px", fontWeight: "600", color: current.color, ...mono, backgroundColor: current.color + "18", padding: "2px 8px", borderRadius: "4px" }}>{current.count}</span>
-              <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-              <button onClick={() => setFeedFilter("all")} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
-                <Radio size={10} /> Ver todo
-              </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <span style={{ fontSize: "14px", fontWeight: "700", color: current.color }}>{current.label}</span>
+                <span style={{ fontSize: "11px", fontWeight: "600", color: current.color, ...mono, backgroundColor: current.color + "18", padding: "2px 8px", borderRadius: "4px" }}>{current.count}</span>
+                <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+                <button onClick={() => setFeedFilter("all")} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
+                  <Radio size={10} /> Ver todo
+                </button>
+              </div>
+              {/* Signal sub-filters: coin + type */}
+              {feedFilter === "signal" && (
+                <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                  {["ALL","BTC","ETH","SOL","BNB","XRP"].map(coin => (
+                    <button key={coin} onClick={() => setSignalCoin(coin)} style={{
+                      padding: "4px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                      border: `1px solid ${signalCoin === coin ? C.blue : C.border}`,
+                      backgroundColor: signalCoin === coin ? `${C.blue}15` : "transparent",
+                      color: signalCoin === coin ? C.blue : C.textMuted
+                    }}>{coin}</button>
+                  ))}
+                  <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                  {["ALL","LONG","SHORT"].map(typ => (
+                    <button key={typ} onClick={() => setSignalType(typ)} style={{
+                      padding: "4px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                      border: `1px solid ${signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : C.blue) : C.border}`,
+                      backgroundColor: signalType === typ ? (typ === "LONG" ? C.greenBg : typ === "SHORT" ? C.redBg : `${C.blue}15`) : "transparent",
+                      color: signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : C.blue) : C.textMuted
+                    }}>{typ}</button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         }
@@ -3034,12 +3063,12 @@ const TradersTab = () => {
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {["leaderboard","compare","profiles"].map(v => (
-          <button key={v} onClick={() => setView(v)} style={{
-            padding: "8px 20px", borderRadius: "6px", border: `1px solid ${view === v ? C.purple : C.border}`,
-            backgroundColor: view === v ? C.purpleBg : "transparent", color: view === v ? C.purple : C.textMuted,
-            fontSize: "12px", fontWeight: "600", cursor: "pointer", textTransform: "capitalize"
-          }}>{v === "leaderboard" ? "Leaderboard" : v === "compare" ? "Compare" : "Profiles"}</button>
+        {[{id:"leaderboard",label:"Leaderboard"},{id:"compare",label:"Compare"},{id:"profiles",label:"Profiles"},{id:"heatmap",label:"Heatmap"},{id:"copy",label:"Copy Trading"}].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{
+            padding: "8px 16px", borderRadius: "6px", border: `1px solid ${view === v.id ? C.purple : C.border}`,
+            backgroundColor: view === v.id ? C.purpleBg : "transparent", color: view === v.id ? C.purple : C.textMuted,
+            fontSize: "11px", fontWeight: "600", cursor: "pointer"
+          }}>{v.label}</button>
         ))}
         <div style={{ flex: 1 }} />
         {/* Toolbar: filter by type, sort, add */}
@@ -3543,12 +3572,16 @@ const TradersTab = () => {
           })}
         </div>
       )}
+
+      {view === "heatmap" && <HeatmapView />}
+
+      {view === "copy" && <CopyTradingView />}
     </div>
   );
 };
 
 /* ═══════════════════════ TAB 4: HEATMAP ═══════════════════════ */
-const HeatmapTab = () => {
+const HeatmapView = () => {
   const maxVal = 12300;
   const cellColor = (v) => {
     const intensity = Math.min(Math.abs(v) / maxVal, 1);
@@ -3674,7 +3707,7 @@ const ReportTab = () => {
 };
 
 /* ═══════════════════════ TAB 6: COPY TRADING ═══════════════════════ */
-const CopyTradingTab = () => {
+const CopyTradingView = () => {
   const [selected, setSelected] = useState(0);
   const [riskMult, setRiskMult] = useState(1.0);
   const [copying, setCopying] = useState({});
@@ -4565,12 +4598,10 @@ const App = () => {
     { id: "sep1", sep: true },
     { id: "smc", label: "Análisis SMC", icon: Crosshair },
     { id: "traders", label: "Traders", icon: Users },
-    { id: "heatmap", label: "Heatmap", icon: Layers },
     { id: "report", label: "Reporte", icon: Calendar },
-    { id: "copy", label: "Copy Trading", icon: Copy },
   ];
 
-  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, heatmap: HeatmapTab, report: ReportTab, copy: CopyTradingTab };
+  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab };
   // Arena sub-filter tabs resolve to "arena" for content
   const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
   const ActiveComponent = tabContent[resolveTab(activeTab)];
