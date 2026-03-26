@@ -12,7 +12,7 @@ import {
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
   MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb,
-  X, ExternalLink, Bookmark, BellRing
+  X, ExternalLink, Bookmark, BellRing, Home
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
@@ -1715,6 +1715,297 @@ const SMCAnalysis = () => {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════ TAB: HOME (Live Chart) ═══════════════════════ */
+const HomeTab = () => {
+  const { openProfile } = useProfile();
+  const { setFeedFilter, setActiveTab } = useFeedFilter();
+  const [selectedTrader, setSelectedTrader] = useState(mockTraders[0].name);
+  const [selectedPair, setSelectedPair] = useState("BTC/USDT");
+  const [showTraderDD, setShowTraderDD] = useState(false);
+  const [showPairDD, setShowPairDD] = useState(false);
+  const [chartRange, setChartRange] = useState("1D");
+  const traderDDRef = useRef(null);
+  const pairDDRef = useRef(null);
+
+  const allPairs = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "AVAX/USDT"];
+  const ranges = ["1H", "4H", "1D", "1W", "1M"];
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (traderDDRef.current && !traderDDRef.current.contains(e.target)) setShowTraderDD(false);
+      if (pairDDRef.current && !pairDDRef.current.contains(e.target)) setShowPairDD(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Generate candlestick-like OHLC data for the chart
+  const chartData = useMemo(() => {
+    const trader = mockTraders.find(t => t.name === selectedTrader) || mockTraders[0];
+    const basePrice = selectedPair.startsWith("BTC") ? 67500 : selectedPair.startsWith("ETH") ? 3450 : selectedPair.startsWith("SOL") ? 145 : selectedPair.startsWith("BNB") ? 580 : selectedPair.startsWith("XRP") ? 0.62 : selectedPair.startsWith("DOGE") ? 0.15 : 35;
+    const volatility = basePrice * 0.008;
+    const traderSeed = trader.winRate + trader.pnl * 0.0001;
+    const points = chartRange === "1H" ? 12 : chartRange === "4H" ? 16 : chartRange === "1D" ? 24 : chartRange === "1W" ? 28 : 30;
+
+    const data = [];
+    let price = basePrice;
+    for (let i = 0; i < points; i++) {
+      const trend = (trader.winRate - 70) * 0.0003 * volatility;
+      const noise = (Math.sin(i * 2.3 + traderSeed) * 0.6 + Math.cos(i * 1.1 + traderSeed * 0.5) * 0.4) * volatility;
+      price = price + trend + noise;
+      const high = price + Math.abs(Math.sin(i * 1.7)) * volatility * 0.5;
+      const low = price - Math.abs(Math.cos(i * 2.1)) * volatility * 0.5;
+      const open = price - noise * 0.3;
+      const close = price;
+
+      // Format label based on range
+      const label = chartRange === "1H" ? `${i * 5}m` : chartRange === "4H" ? `${i}:00` : chartRange === "1D" ? `${i}:00` : `Día ${i + 1}`;
+
+      data.push({ label, open: +open.toFixed(2), close: +close.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), price: +close.toFixed(2), vol: Math.round(500 + Math.random() * 3000) });
+    }
+    return data;
+  }, [selectedTrader, selectedPair, chartRange]);
+
+  // Get trades + signals for this trader + pair
+  const relevantFeed = useMemo(() => {
+    return feedItems.filter(f =>
+      (f.kind === "trade" || f.kind === "signal") &&
+      f.trader === selectedTrader &&
+      f.pair === selectedPair
+    );
+  }, [selectedTrader, selectedPair]);
+
+  const allTraderFeed = useMemo(() => {
+    return feedItems.filter(f => (f.kind === "trade" || f.kind === "signal") && f.trader === selectedTrader).slice(0, 8);
+  }, [selectedTrader]);
+
+  const currentTrader = mockTraders.find(t => t.name === selectedTrader) || mockTraders[0];
+  const traderIdx = mockTraders.indexOf(currentTrader);
+  const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
+  const startPrice = chartData.length > 0 ? chartData[0].price : 0;
+  const priceChange = currentPrice - startPrice;
+  const priceChangePct = startPrice > 0 ? ((priceChange / startPrice) * 100).toFixed(2) : "0.00";
+  const isUp = priceChange >= 0;
+  const trendColor = isUp ? C.green : C.red;
+
+  const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
+      {/* ── Selectors row: Trader dropdown + Pair dropdown ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+
+        {/* Trader dropdown */}
+        <div ref={traderDDRef} style={{ position: "relative" }}>
+          <button onClick={() => { setShowTraderDD(!showTraderDD); setShowPairDD(false); }} style={{
+            display: "flex", alignItems: "center", gap: "8px", padding: "7px 14px",
+            backgroundColor: C.card, border: `1px solid ${showTraderDD ? C.purple : C.border}`, borderRadius: "8px",
+            color: C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", transition: "border-color 0.15s", minWidth: 160
+          }}>
+            <span style={{ fontSize: "16px" }}>{currentTrader.avatar}</span>
+            <span>{currentTrader.name}</span>
+            <Tag text={currentTrader.tier} color={tierColor[currentTrader.tier]} />
+            <ChevronDown size={14} color={C.textMuted} style={{ marginLeft: "auto", transform: showTraderDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
+          </button>
+          {showTraderDD && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 220, maxHeight: 300, overflowY: "auto" }}>
+              {mockTraders.map((t, i) => (
+                <button key={t.name} onClick={() => { setSelectedTrader(t.name); setShowTraderDD(false); }} style={{
+                  display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "8px 12px",
+                  backgroundColor: t.name === selectedTrader ? C.purpleBg : "transparent", border: "none",
+                  borderBottom: i < mockTraders.length - 1 ? `1px solid ${C.border}` : "none",
+                  color: C.text, fontSize: "11px", fontWeight: "600", cursor: "pointer", textAlign: "left"
+                }}>
+                  <span style={{ fontSize: "14px" }}>{t.avatar}</span>
+                  <span style={{ flex: 1 }}>{t.name}</span>
+                  <BotTag isBot={t.isBot} />
+                  <span style={{ fontSize: "10px", color: C.green, fontWeight: "700", ...mono }}>{t.winRate}%</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pair dropdown */}
+        <div ref={pairDDRef} style={{ position: "relative" }}>
+          <button onClick={() => { setShowPairDD(!showPairDD); setShowTraderDD(false); }} style={{
+            display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px",
+            backgroundColor: C.card, border: `1px solid ${showPairDD ? C.blue : C.border}`, borderRadius: "8px",
+            color: C.text, fontSize: "13px", fontWeight: "800", cursor: "pointer", ...mono, transition: "border-color 0.15s"
+          }}>
+            {selectedPair}
+            <ChevronDown size={14} color={C.textMuted} style={{ transform: showPairDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
+          </button>
+          {showPairDD && (
+            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 140 }}>
+              {allPairs.map((pair, i) => (
+                <button key={pair} onClick={() => { setSelectedPair(pair); setShowPairDD(false); }} style={{
+                  display: "block", width: "100%", padding: "8px 14px",
+                  backgroundColor: pair === selectedPair ? C.blueBg : "transparent", border: "none",
+                  borderBottom: i < allPairs.length - 1 ? `1px solid ${C.border}` : "none",
+                  color: pair === selectedPair ? C.blue : C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", textAlign: "left", ...mono
+                }}>{pair}</button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Price display */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <span style={{ fontSize: "22px", fontWeight: "900", ...mono }}>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span style={{ fontSize: "12px", fontWeight: "700", color: trendColor, ...mono }}>
+            {isUp ? "+" : ""}{priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct}%)
+          </span>
+        </div>
+      </div>
+
+      {/* ── Chart range selector ── */}
+      <div style={{ display: "flex", gap: "4px" }}>
+        {ranges.map(r => (
+          <button key={r} onClick={() => setChartRange(r)} style={{
+            padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
+            border: `1px solid ${chartRange === r ? C.purple : C.border}`,
+            backgroundColor: chartRange === r ? C.purpleBg : "transparent",
+            color: chartRange === r ? C.purple : C.textMuted, ...mono
+          }}>{r}</button>
+        ))}
+      </div>
+
+      {/* ── Main Chart ── */}
+      <div style={{ ...cardStyle, padding: "16px" }}>
+        <ResponsiveContainer width="100%" height={320}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={trendColor} stopOpacity={0.15} />
+                <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+            <XAxis dataKey="label" stroke={C.textMuted} fontSize={9} tickLine={false} />
+            <YAxis stroke={C.textMuted} fontSize={9} tickLine={false} domain={["auto", "auto"]} tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : `$${v}`} />
+            <Tooltip
+              contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "11px" }}
+              formatter={(value, name) => {
+                if (name === "price") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Precio"];
+                if (name === "vol") return [value.toLocaleString(), "Volumen"];
+                return [value, name];
+              }}
+            />
+            <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={2} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: trendColor }} />
+          </AreaChart>
+        </ResponsiveContainer>
+
+        {/* Volume bar underneath */}
+        <div style={{ marginTop: "-8px" }}>
+          <ResponsiveContainer width="100%" height={40}>
+            <BarChart data={chartData}>
+              <Bar dataKey="vol" fill={C.textFaint + "30"} radius={[1, 1, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Trader summary strip ── */}
+      <div style={{ display: "flex", gap: "8px" }}>
+        {[
+          { label: "Win Rate", value: `${currentTrader.winRate}%`, color: C.green, icon: Target },
+          { label: "PnL Total", value: `+$${(currentTrader.pnl / 1000).toFixed(0)}K`, color: C.green, icon: DollarSign },
+          { label: "Alpha Score", value: String(calcAlphaScore(currentTrader)), color: alphaColor(calcAlphaScore(currentTrader)), icon: Zap },
+          { label: "Racha", value: `${currentTrader.streak}W`, color: C.amber, icon: Flame },
+          { label: "Copiers", value: String(currentTrader.copiers), color: C.purple, icon: Users },
+        ].map(s => (
+          <div key={s.label} style={{ ...cardStyle, flex: 1, padding: "8px 12px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <s.icon size={13} color={s.color} />
+            <div>
+              <div style={{ fontSize: "8px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>{s.label}</div>
+              <div style={{ fontSize: "14px", fontWeight: "900", color: s.color, ...mono }}>{s.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Active signals & trades for this trader on this pair ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "12px", fontWeight: "700" }}>Actividad de {selectedTrader}</span>
+        <span style={{ fontSize: "10px", color: C.textFaint }}>{selectedPair}</span>
+        <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+        {relevantFeed.length === 0 && <span style={{ fontSize: "10px", color: C.textFaint }}>Sin actividad en este par</span>}
+      </div>
+
+      {/* Relevant feed for selected pair */}
+      {relevantFeed.length > 0 && (
+        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          {relevantFeed.map((item, idx) => {
+            const accent = item.kind === "signal" ? C.blue : (item.type === "LONG" ? C.green : C.red);
+            const DirIcon = (item.type === "LONG" || item.bias === "LONG") ? ArrowUp : ArrowDown;
+            return (
+              <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: idx < relevantFeed.length - 1 ? `1px solid ${C.border}` : "none", gap: "8px", fontSize: "11px" }}>
+                <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: accent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <DirIcon size={12} color={accent} />
+                </div>
+                <span style={{ fontSize: "9px", fontWeight: "700", color: accent, backgroundColor: accent + "15", padding: "1px 5px", borderRadius: "3px" }}>{item.kind === "signal" ? "SEÑAL" : "TRADE"}</span>
+                <span style={{ fontWeight: "700" }}>{item.pair}</span>
+                <span style={{ fontSize: "9px", fontWeight: "800", color: accent }}>{item.type || item.bias}</span>
+                {item.kind === "trade" && <span style={{ marginLeft: "auto", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</span>}
+                {item.kind === "signal" && <span style={{ marginLeft: "auto", fontSize: "10px", fontWeight: "700", color: item.confidence >= 80 ? C.green : C.amber, ...mono }}>{item.confidence}%</span>}
+                <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* All recent activity for this trader (any pair) */}
+      {allTraderFeed.length > 0 && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "12px", fontWeight: "700" }}>Toda la actividad</span>
+            <span style={{ fontSize: "10px", color: C.textFaint }}>todos los pares</span>
+            <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+          </div>
+          <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+            {allTraderFeed.map((item, idx) => {
+              const accent = item.kind === "signal" ? C.blue : (item.type === "LONG" ? C.green : C.red);
+              const DirIcon = (item.type === "LONG" || item.bias === "LONG") ? ArrowUp : ArrowDown;
+              return (
+                <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: idx < allTraderFeed.length - 1 ? `1px solid ${C.border}` : "none", gap: "8px", fontSize: "11px" }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: accent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <DirIcon size={12} color={accent} />
+                  </div>
+                  <span style={{ fontSize: "9px", fontWeight: "700", color: accent, backgroundColor: accent + "15", padding: "1px 5px", borderRadius: "3px" }}>{item.kind === "signal" ? "SEÑAL" : "TRADE"}</span>
+                  <span style={{ fontWeight: "700" }}>{item.pair}</span>
+                  <span style={{ fontSize: "9px", fontWeight: "800", color: accent }}>{item.type || item.bias}</span>
+                  {item.kind === "trade" && (
+                    <>
+                      <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, ...mono }}>{item.leverage}</span>
+                      <span style={{ marginLeft: "auto", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</span>
+                    </>
+                  )}
+                  {item.kind === "signal" && <span style={{ marginLeft: "auto", fontSize: "10px", fontWeight: "700", color: item.confidence >= 80 ? C.green : C.amber, ...mono }}>{item.confidence}%</span>}
+                  <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Quick link to full profile */}
+      <button onClick={() => openProfile(currentTrader)} style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+        padding: "10px", backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px",
+        color: C.purple, fontSize: "12px", fontWeight: "600", cursor: "pointer"
+      }}>
+        <Eye size={14} /> Ver perfil completo de {selectedTrader}
+        <ChevronRight size={14} />
+      </button>
     </div>
   );
 };
@@ -4682,7 +4973,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("arena");
+  const [activeTab, setActiveTab] = useState("home");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -4786,6 +5077,8 @@ const App = () => {
   const closeProfile = () => setProfileTrader(null);
 
   const tabs = [
+    { id: "home", label: "Home", icon: Home },
+    { id: "sep0", sep: true },
     { id: "arena", label: "Arena", icon: Radio },
     { id: "arena:trade", label: "Trades", icon: Activity, filter: "trade", accent: C.green },
     { id: "arena:signal", label: "Señales", icon: Lightbulb, filter: "signal", accent: C.blue },
@@ -4798,7 +5091,7 @@ const App = () => {
     { id: "football", label: "Football", icon: Gamepad2 },
   ];
 
-  const tabContent = { arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab, football: FootballTab };
+  const tabContent = { home: HomeTab, arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab, football: FootballTab };
   // Arena sub-filter tabs resolve to "arena" for content
   const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
   const ActiveComponent = tabContent[resolveTab(activeTab)];
