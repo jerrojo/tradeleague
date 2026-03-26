@@ -455,14 +455,21 @@ const traderColors = ["#58a6ff","#3fb950","#f85149","#d29922","#8b5cf6","#39d0d8
 const traderEquity = (() => {
   const names = ["Scalp King","Crypto Ninja","Smart Money","Phoenix Rise","Bull Master","Rocket Launch","Iron Fist","Wave Rider"];
   const seeds = [156200, 125400, 112300, 104200, 98500, 89600, 72400, 45800];
+  // Staggered start days — not all traders have full 30-day history
+  const startDay = [1, 1, 3, 1, 5, 8, 1, 12];
   const data = [];
   for (let d = 1; d <= 30; d++) {
     const point = { day: d };
     names.forEach((name, i) => {
+      if (d < startDay[i]) { point[name] = null; return; }
       const base = seeds[i];
-      const growth = (d / 30) * base;
+      const activeDays = d - startDay[i] + 1;
+      const totalActive = 30 - startDay[i] + 1;
+      const growth = (activeDays / totalActive) * base;
       const noise = Math.sin(d * (i + 1) * 0.7) * base * 0.08 + Math.cos(d * 0.3 * (i + 1)) * base * 0.05;
-      point[name] = Math.round(growth + noise);
+      // Some traders have drawdown periods
+      const drawdown = (i === 4 && d >= 14 && d <= 18) ? -base * 0.15 : (i === 7 && d >= 20 && d <= 24) ? -base * 0.2 : 0;
+      point[name] = Math.round(growth + noise + drawdown);
     });
     data.push(point);
   }
@@ -1715,7 +1722,7 @@ const SMCAnalysis = () => {
 /* ═══════════════════════ TAB: ARENA (Watch traders live) ═══════════════════════ */
 const ArenaTab = () => {
   const { openProfile } = useProfile();
-  const { feedFilter, setFeedFilter } = useFeedFilter();
+  const { feedFilter, setFeedFilter, setActiveTab } = useFeedFilter();
   const [watching, setWatching] = useState(() => {
     const m = {};
     mockTraders.forEach((t, i) => { m[t.name] = i < 4; });
@@ -1726,6 +1733,7 @@ const ArenaTab = () => {
   const [signalCoin, setSignalCoin] = useState("ALL");
   const [signalType, setSignalType] = useState("ALL");
   const toast = useToast();
+  const TOTAL_TRADERS = 300;
 
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
   const toggleWatch = (name) => setWatching(prev => ({ ...prev, [name]: !prev[name] }));
@@ -1783,7 +1791,7 @@ const ArenaTab = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-      {/* ── Header: title + LIVE badge (only in full Arena view) ── */}
+      {/* ── Header: title + LIVE badge + total traders (only in full Arena view) ── */}
       {feedFilter === "all" && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1791,7 +1799,9 @@ const ArenaTab = () => {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, padding: "3px 10px", borderRadius: "10px", border: `1px solid ${C.green}30` }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> EN VIVO
           </span>
-          <span style={{ fontSize: "11px", color: C.textMuted }}>Siguiendo {watchedNames.length} traders</span>
+          <span style={{ fontSize: "11px", color: C.textMuted }}>300 traders</span>
+          <span style={{ fontSize: "11px", color: C.textFaint }}>·</span>
+          <span style={{ fontSize: "11px", color: C.purple, fontWeight: "600" }}>Siguiendo {watchedNames.length}</span>
         </div>
         <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: C.textMuted, ...mono }}>
           <span>{activeCount} ops activas</span>
@@ -1800,10 +1810,10 @@ const ArenaTab = () => {
       </div>
       )}
 
-      {/* ── Trader selector: pick who you're watching (only in full Arena view) ── */}
+      {/* ── Top 10 Trader selector: pick who you're watching (only in full Arena view) ── */}
       {feedFilter === "all" && (
       <div style={{ ...cardStyle, padding: "12px 16px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginRight: "4px" }}>Watching:</span>
+        <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginRight: "4px" }}>Top 10:</span>
         {mockTraders.map((t, i) => {
           const on = watching[t.name];
           const color = traderColors[i];
@@ -1821,6 +1831,7 @@ const ArenaTab = () => {
             </button>
           );
         })}
+        <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "4px" }}>+292 más</span>
       </div>
       )}
 
@@ -1833,7 +1844,7 @@ const ArenaTab = () => {
               <div style={{ fontSize: "10px", color: C.textMuted }}>Equity acumulada — últimos 30 días</div>
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
-              {watchedTraders.slice(0, 5).map((t, i) => {
+              {watchedTraders.slice(0, 5).map((t) => {
                 const ci = mockTraders.indexOf(t);
                 return (
                   <div key={t.name} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px" }}>
@@ -1849,36 +1860,47 @@ const ArenaTab = () => {
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
               <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
               <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
-              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [`$${Number(value).toLocaleString()}`, name]} labelFormatter={l => `Día ${l}`} />
-              {mockTraders.map((t, i) => watching[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} />)}
+              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]} labelFormatter={l => `Día ${l}`} />
+              {mockTraders.map((t, i) => watching[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} connectNulls={false} />)}
             </LineChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* ── Watched traders scoreboard (compact table, only in full Arena view) ── */}
-      {feedFilter === "all" && watchedTraders.length > 0 && (
+      {/* ── Top 10 Leaderboard + Ver todos (compact table, only in full Arena view) ── */}
+      {feedFilter === "all" && (
         <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Trophy size={14} color={C.amber} />
+              <span style={{ fontSize: "12px", fontWeight: "700" }}>Top 10 Leaderboard</span>
+              <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>de 300</span>
+            </div>
+          </div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                <th style={{ padding: "8px 10px", textAlign: "left", color: C.textFaint, fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", width: "30px" }}>#</th>
                 {[["Trader",null],["Alpha","alpha"],["Win","winRate"],["PnL",null],["Racha","streak"],["Copiers","copiers"]].map(([h,tip]) => (
                   <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: C.textFaint, fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {watchedTraders.slice(0, 6).map((t) => {
+              {mockTraders.map((t) => {
                 const ci = mockTraders.indexOf(t);
                 const alpha = calcAlphaScore(t);
                 const aClr = alphaColor(alpha);
+                const isWatched = watching[t.name];
                 return (
                   <tr key={t.name} className="hoverable" onClick={() => openProfile(t)} style={{ cursor: "pointer", borderBottom: `1px solid ${C.border}` }}>
+                    <td style={{ padding: "6px 10px", fontWeight: "700", color: t.rank <= 3 ? C.amber : C.textFaint, ...mono, fontSize: "12px" }}>{t.rank}</td>
                     <td style={{ padding: "6px 10px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <div style={{ width: 3, height: 20, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
                         <span style={{ fontWeight: "700", fontSize: "12px" }}>{t.name}</span>
                         <BotTag isBot={t.isBot} />
+                        {isWatched && <Eye size={10} color={C.purple} />}
                       </div>
                     </td>
                     <td style={{ padding: "6px 10px", fontWeight: "800", color: aClr, ...mono }}>{alpha}</td>
@@ -1891,6 +1913,16 @@ const ArenaTab = () => {
               })}
             </tbody>
           </table>
+          <button onClick={() => { setActiveTab("traders"); setFeedFilter("all"); }} style={{
+            width: "100%", padding: "10px", backgroundColor: "transparent", border: "none",
+            borderTop: `1px solid ${C.border}`, color: C.purple, fontSize: "12px", fontWeight: "600",
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+            transition: "background-color 0.15s"
+          }}>
+            <Users size={14} />
+            Ver los 300 traders
+            <ChevronRight size={14} />
+          </button>
         </div>
       )}
 
@@ -4622,7 +4654,7 @@ const App = () => {
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
         <WatchlistContext.Provider value={{ followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts }}>
-        <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter }}>
+        <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter, setActiveTab }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <style>{`
             @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
