@@ -3171,82 +3171,148 @@ const TraderProfile = ({ trader, onClose }) => {
         })}
       </div>
 
-      {/* Profile Header Card */}
-      <div style={{ ...cardStyle, display: "flex", gap: "20px", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "130px" }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", backgroundColor: C.bg, border: `3px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>{t.avatar}</div>
-          <div style={{ fontSize: "18px", fontWeight: "800", marginTop: "8px" }}>{t.name}</div>
-          <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "4px" }}>
-            <Tag text={t.tier} color={tierColor[t.tier]} />
-            <BotTag isBot={t.isBot} />
-            <span style={{ fontSize: "9px", color: C.textFaint }}>{titleByLevel(t.level)}</span>
-          </div>
-          {/* Alpha Score Badge */}
-          {(() => { const alpha = calcAlphaScore(t); const aClr = alphaColor(alpha); return (
-            <div style={{ marginTop: "10px", padding: "8px 16px", borderRadius: "8px", backgroundColor: `${aClr}12`, border: `1px solid ${aClr}30`, textAlign: "center" }}>
-              <div style={{ fontSize: "24px", fontWeight: "900", color: aClr, ...mono, lineHeight: 1 }}>{alpha}</div>
-              <div style={{ fontSize: "9px", fontWeight: "700", color: aClr, marginTop: "2px" }}>ALPHA {alphaLabel(alpha)}</div>
+      {/* Profile Header Card — redesigned */}
+      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+        {/* ── Top banner strip with tier accent ── */}
+        <div style={{ height: 4, background: `linear-gradient(90deg, ${tierColor[t.tier]}, ${tierColor[t.tier]}60, transparent)` }} />
+
+        <div style={{ padding: "16px 20px", display: "flex", gap: "20px", alignItems: "flex-start" }}>
+          {/* ── LEFT: Avatar + Identity + Alpha ── */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "140px" }}>
+            {/* Avatar with tier ring + level indicator */}
+            <div style={{ position: "relative" }}>
+              <div style={{ width: 88, height: 88, borderRadius: "50%", backgroundColor: C.bg, border: `3px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "44px", boxShadow: `0 0 20px ${tierColor[t.tier]}25` }}>{t.avatar}</div>
+              {/* Level badge on avatar */}
+              <div style={{ position: "absolute", bottom: -2, right: -2, backgroundColor: C.purple, color: "#fff", fontSize: "9px", fontWeight: "800", padding: "2px 6px", borderRadius: "10px", border: `2px solid ${C.card}`, ...mono }}>Lv.{t.level}</div>
             </div>
-          ); })()}
-          {/* Badges summary */}
-          {t.badges.length > 0 && (
-            <div style={{ marginTop: "10px", fontSize: "10px", color: C.amber, fontWeight: "600" }}>
-              {t.badges.length} badges earned
+            <div style={{ fontSize: "18px", fontWeight: "900", marginTop: "10px", letterSpacing: "-0.3px" }}>{t.name}</div>
+            <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "4px", flexWrap: "wrap", justifyContent: "center" }}>
+              <Tag text={t.tier} color={tierColor[t.tier]} />
+              <BotTag isBot={t.isBot} />
+              <span style={{ fontSize: "9px", color: C.textFaint, fontStyle: "italic" }}>{titleByLevel(t.level)}</span>
             </div>
-          )}
-          {/* Degen Score */}
-          {(() => { const degen = calcDegenScore(t); return (
-            <div style={{ marginTop: "8px", fontSize: "9px", fontWeight: "700", color: degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green, padding: "3px 8px", borderRadius: "4px", backgroundColor: degen >= 60 ? C.redBg : degen >= 40 ? C.amberBg : C.greenBg }}>
-              {degenLabel(degen)}
+
+            {/* Alpha Score — prominent badge */}
+            {(() => { const alpha = calcAlphaScore(t); const aClr = alphaColor(alpha); return (
+              <div style={{ marginTop: "12px", padding: "10px 20px", borderRadius: "10px", backgroundColor: `${aClr}10`, border: `1.5px solid ${aClr}35`, textAlign: "center", width: "100%" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: "4px" }}>
+                  <span style={{ fontSize: "28px", fontWeight: "900", color: aClr, ...mono, lineHeight: 1 }}>{alpha}</span>
+                  <span style={{ fontSize: "11px", fontWeight: "800", color: aClr, opacity: 0.7 }}>/100</span>
+                </div>
+                <div style={{ fontSize: "9px", fontWeight: "700", color: aClr, marginTop: "3px", letterSpacing: "1px" }}>ALPHA {alphaLabel(alpha)}</div>
+              </div>
+            ); })()}
+
+            {/* Degen Score pill */}
+            {(() => { const degen = calcDegenScore(t); const dClr = degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green; return (
+              <div style={{ marginTop: "8px", fontSize: "9px", fontWeight: "800", color: dClr, padding: "3px 10px", borderRadius: "4px", backgroundColor: `${dClr}15`, border: `1px solid ${dClr}25`, letterSpacing: "0.5px" }}>
+                {degenLabel(degen)}
+              </div>
+            ); })()}
+
+            {/* XP Progress bar */}
+            <div style={{ marginTop: "8px", width: "100%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: C.textFaint, marginBottom: "3px" }}>
+                <span>XP {(t.xp || 0).toLocaleString()}</span>
+                <span>{(t.xpNext || 10000).toLocaleString()}</span>
+              </div>
+              <div style={{ height: 3, backgroundColor: C.border, borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${((t.xp || 0) / (t.xpNext || 10000)) * 100}%`, backgroundColor: C.purple, borderRadius: 2 }} />
+              </div>
             </div>
-          ); })()}
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: "1.6", marginBottom: "14px" }}>{t.bio}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "14px" }}>
-            {[["Ranking", `#${t.rank}`, null], ["Ubicación", t.location, null], ["Desde", t.joined, null], ["Estilo", t.style, null],
-              ["Exchange", t.exchange, null], ["Pares Fav.", t.favPairs.slice(0, 2).join(", "), null], ["Duración Prom.", t.avgHold, null], ["Riesgo:Gan.", t.avgRR, "rr"],
-            ].map(([l, v, tip]) => (
-              <div key={l}><div style={{ fontSize: "10px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600" }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</div><div style={{ fontSize: "12px", fontWeight: "600", marginTop: "2px" }}>{v}</div></div>
-            ))}
           </div>
-          <div style={{ display: "flex", gap: "20px", paddingTop: "12px", borderTop: `1px solid ${C.border}` }}>
-            {[["Seguidores", t.followers, null], ["Siguiendo", t.following, null], ["Copiadores", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
-              <div key={l}><span style={{ fontSize: "16px", fontWeight: "800", ...mono }}>{v.toLocaleString()}</span><span style={{ fontSize: "11px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span></div>
-            ))}
-          </div>
-          {/* Social quick links */}
-          {(() => {
-            const socials = traderSocials[t.name] || {};
-            const socialMeta = { twitter: { label: "X / Twitter", color: "#1DA1F2", icon: "𝕏" }, discord: { label: "Discord", color: "#5865F2", icon: "DC" }, telegram: { label: "Telegram", color: "#0088cc", icon: "TG" }, youtube: { label: "YouTube", color: "#FF0000", icon: "YT" }, website: { label: "Website", color: C.textMuted, icon: "WEB" } };
-            const keys = Object.keys(socials);
-            if (keys.length === 0) return null;
-            return (
-              <div style={{ display: "flex", gap: "6px", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, flexWrap: "wrap" }}>
-                {keys.map(platform => {
+
+          {/* ── CENTER: Bio + Info Grid + Stats + Badges ── */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: "1.6", marginBottom: "12px" }}>{t.bio}</div>
+
+            {/* Info grid — 2 rows of 4 */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+              {[["Ranking", `#${t.rank}`, null], ["Ubicación", t.location, null], ["Desde", t.joined, null], ["Estilo", t.style, null],
+                ["Exchange", t.exchange, null], ["Pares Fav.", t.favPairs.slice(0, 2).join(", "), null], ["Duración Prom.", t.avgHold, null], ["Riesgo:Gan.", t.avgRR, "rr"],
+              ].map(([l, v, tip]) => (
+                <div key={l}>
+                  <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600", letterSpacing: "0.3px" }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</div>
+                  <div style={{ fontSize: "12px", fontWeight: "700", marginTop: "2px" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Follower stats row */}
+            <div style={{ display: "flex", gap: "16px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, marginBottom: "12px" }}>
+              {[["Seguidores", t.followers, null], ["Siguiendo", t.following, null], ["Copiadores", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
+                <div key={l}>
+                  <span style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{v.toLocaleString()}</span>
+                  <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* ── Badges row — actual icons, not just a count ── */}
+            {t.badges.length > 0 && (
+              <div style={{ paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.5px" }}>Badges ({t.badges.length})</div>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  {t.badges.map(bKey => {
+                    const ach = ACHIEVEMENTS[bKey];
+                    if (!ach) return null;
+                    const AchIcon = ach.icon;
+                    return (
+                      <div key={bKey} title={`${ach.name}: ${ach.desc}`} style={{
+                        display: "flex", alignItems: "center", gap: "5px", padding: "4px 8px",
+                        borderRadius: "6px", backgroundColor: `${ach.color}12`, border: `1px solid ${ach.color}25`,
+                        cursor: "default"
+                      }}>
+                        <AchIcon size={12} color={ach.color} />
+                        <span style={{ fontSize: "9px", fontWeight: "700", color: ach.color }}>{ach.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Social links — compact row with handles ── */}
+            {Object.keys(socials).length > 0 && (
+              <div style={{ display: "flex", gap: "5px", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, flexWrap: "wrap", alignItems: "center" }}>
+                {Object.keys(socials).map(platform => {
                   const sm = socialMeta[platform];
                   if (!sm) return null;
                   return (
-                    <button key={platform} title={`${sm.label}: ${socials[platform]}`} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${sm.color}30`, cursor: "pointer", backgroundColor: `${sm.color}10`, color: sm.color, fontSize: "10px", fontWeight: "700" }}>
-                      <ExternalLink size={10} />
-                      <span>{sm.icon}</span>
-                      <span style={{ color: C.textMuted, fontWeight: "500" }}>{socials[platform]}</span>
+                    <button key={platform} title={`${sm.label}: ${socials[platform]}`} onClick={() => addToast(`Abriendo ${sm.label}`, "info")} style={{
+                      display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px",
+                      borderRadius: "5px", border: `1px solid ${sm.color}25`, cursor: "pointer",
+                      backgroundColor: `${sm.color}08`, color: sm.color, fontSize: "9px", fontWeight: "700"
+                    }}>
+                      <span style={{ fontWeight: "900" }}>{sm.icon}</span>
+                      <span style={{ color: C.textMuted, fontWeight: "500", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{socials[platform]}</span>
                     </button>
                   );
                 })}
-                <button style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "6px", border: `1px solid ${C.purple}30`, cursor: "pointer", backgroundColor: C.purpleBg, color: C.purple, fontSize: "10px", fontWeight: "700" }}>
-                  <MessageCircle size={10} /> Chat
-                </button>
               </div>
-            );
-          })()}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "160px" }}>
-          {[["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null], ["% Ganadoras", `${t.winRate}%`, C.green, "winRate"], ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe"], ["Máx. Caída", `${t.maxDD}%`, C.red, "maxDD"], ["Factor Ganancia", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor"], ["Racha", `${t.streak}W`, C.purple, "streak"]].map(([l, v, clr, tip]) => (
-            <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ fontSize: "11px", color: C.textMuted }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</span><span style={{ fontSize: "12px", fontWeight: "700", color: clr, ...mono }}>{v}</span>
-            </div>
-          ))}
+            )}
+          </div>
+
+          {/* ── RIGHT: KPI Stats column with colored accents ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
+            {[
+              ["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null, DollarSign],
+              ["% Ganadoras", `${t.winRate}%`, C.green, "winRate", Target],
+              ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe", Activity],
+              ["Máx. Caída", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],
+              ["Factor Ganancia", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor", BarChart3],
+              ["Racha", `${t.streak}W`, C.purple, "streak", Flame],
+            ].map(([l, v, clr, tip, Icon]) => (
+              <div key={l} style={{
+                display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px",
+                borderRadius: "6px", backgroundColor: `${clr}06`, borderLeft: `2px solid ${clr}50`
+              }}>
+                <Icon size={12} color={clr} style={{ opacity: 0.6, flexShrink: 0 }} />
+                <span style={{ fontSize: "10px", color: C.textMuted, flex: 1 }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</span>
+                <span style={{ fontSize: "13px", fontWeight: "800", color: clr, ...mono }}>{v}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
