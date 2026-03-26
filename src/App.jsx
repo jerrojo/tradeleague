@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect, createContext, useCo
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, BarChart, Bar, Cell, PieChart, Pie
+  AreaChart, Area, BarChart, Bar, Cell, PieChart, Pie, Customized
 } from "recharts";
 import {
   Settings, Bell, TrendingUp, TrendingDown, Target,
@@ -1744,13 +1744,18 @@ const HomeTab = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Generate candlestick-like OHLC data for the chart
+  // Generate candlestick OHLC data + embed signal/trade markers
   const chartData = useMemo(() => {
     const trader = mockTraders.find(t => t.name === selectedTrader) || mockTraders[0];
     const basePrice = selectedPair.startsWith("BTC") ? 67500 : selectedPair.startsWith("ETH") ? 3450 : selectedPair.startsWith("SOL") ? 145 : selectedPair.startsWith("BNB") ? 580 : selectedPair.startsWith("XRP") ? 0.62 : selectedPair.startsWith("DOGE") ? 0.15 : 35;
     const volatility = basePrice * 0.008;
     const traderSeed = trader.winRate + trader.pnl * 0.0001;
     const points = chartRange === "1H" ? 12 : chartRange === "4H" ? 16 : chartRange === "1D" ? 24 : chartRange === "1W" ? 28 : 30;
+
+    // Collect feed events to place on chart
+    const traderEvents = feedItems.filter(f =>
+      (f.kind === "trade" || f.kind === "signal") && f.trader === selectedTrader && f.pair === selectedPair
+    );
 
     const data = [];
     let price = basePrice;
@@ -1762,16 +1767,135 @@ const HomeTab = () => {
       const low = price - Math.abs(Math.cos(i * 2.1)) * volatility * 0.5;
       const open = price - noise * 0.3;
       const close = price;
-
-      // Format label based on range
       const label = chartRange === "1H" ? `${i * 5}m` : chartRange === "4H" ? `${i}:00` : chartRange === "1D" ? `${i}:00` : `Día ${i + 1}`;
+      const bullish = close >= open;
 
-      data.push({ label, open: +open.toFixed(2), close: +close.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), price: +close.toFixed(2), vol: Math.round(500 + Math.random() * 3000) });
+      // Candlestick body: store as [bodyLow, bodyHigh] for stacked rendering
+      const bodyLow = Math.min(open, close);
+      const bodyHigh = Math.max(open, close);
+
+      const point = {
+        label, open: +open.toFixed(2), close: +close.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2),
+        price: +close.toFixed(2), bodyLow: +bodyLow.toFixed(2), bodyHigh: +bodyHigh.toFixed(2), bullish,
+        vol: Math.round(500 + Math.random() * 3000),
+        marker: null, markerKind: null, markerDir: null, markerPnl: null
+      };
+
+      // Place events at specific candle positions (spread across chart)
+      const evtIdx = Math.floor(i / (points / Math.max(traderEvents.length, 1)));
+      if (traderEvents[evtIdx] && i === Math.floor(evtIdx * (points / traderEvents.length)) + 2) {
+        const evt = traderEvents[evtIdx];
+        point.marker = evt.kind;
+        point.markerKind = evt.kind;
+        point.markerDir = evt.type || evt.bias;
+        point.markerPnl = evt.pnl || null;
+        point.markerLev = evt.leverage || null;
+        point.markerConf = evt.confidence || null;
+        traderEvents[evtIdx] = { ...traderEvents[evtIdx], _placed: true };
+      }
+
+      data.push(point);
     }
     return data;
   }, [selectedTrader, selectedPair, chartRange]);
 
-  // Get trades + signals for this trader + pair
+  // Custom candlestick bar shape
+  const CandlestickBar = useCallback((props) => {
+    const { x, y, width, height, payload } = props;
+    if (!payload) return null;
+    const { open, close, high, low, bullish } = payload;
+    const color = bullish ? C.green : C.red;
+    const yScale = (val) => {
+      // Approximate y position from bar props
+      const bodyLow = Math.min(open, close);
+      const bodyHigh = Math.max(open, close);
+      const bodyRange = bodyHigh - bodyLow || 0.01;
+      return y + height - ((val - bodyLow) / bodyRange) * height;
+    };
+    const candleX = x + width / 2;
+    const wickWidth = 1;
+    // We render wick + body in SVG
+    const bodyH = Math.max(height, 1);
+    return (
+      <g>
+        {/* Wick */}
+        <line x1={candleX} y1={yScale(high)} x2={candleX} y2={yScale(low)} stroke={color} strokeWidth={wickWidth} />
+        {/* Body */}
+        <rect x={x + 1} y={y} width={Math.max(width - 2, 2)} height={bodyH} fill={bullish ? color : color} rx={1} opacity={bullish ? 0.9 : 0.7} />
+      </g>
+    );
+  }, []);
+
+  // Custom chart marker renderer for signals/trades
+  const ChartMarkers = useCallback((props) => {
+    const { formattedGraphicalItems } = props;
+    if (!formattedGraphicalItems || !formattedGraphicalItems[0]) return null;
+    const areaPoints = formattedGraphicalItems[0].props.points || [];
+    return (
+      <g>
+        {chartData.map((d, i) => {
+          if (!d.marker || !areaPoints[i]) return null;
+          const pt = areaPoints[i];
+          const isLong = d.markerDir === "LONG";
+          const color = isLong ? C.green : C.red;
+          const arrowY = isLong ? -1 : 1;
+
+          if (d.markerKind === "signal") {
+            // Signal: speech bubble pin with arrow
+            const bx = pt.x;
+            const by = pt.y - 28;
+            return (
+              <g key={`marker-${i}`}>
+                {/* Pin line */}
+                <line x1={bx} y1={pt.y} x2={bx} y2={by + 12} stroke={color} strokeWidth={1.5} strokeDasharray="2 2" />
+                {/* Bubble */}
+                <ellipse cx={bx} cy={by} rx={14} ry={11} fill={color} />
+                {/* Arrow inside */}
+                <path d={isLong ? `M${bx} ${by+4} L${bx} ${by-4} M${bx-3} ${by-1} L${bx} ${by-4} L${bx+3} ${by-1}` : `M${bx} ${by-4} L${bx} ${by+4} M${bx-3} ${by+1} L${bx} ${by+4} L${bx+3} ${by+1}`} stroke="#fff" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                {/* Label */}
+                <text x={bx} y={by + 20} textAnchor="middle" fontSize={7} fontWeight="700" fill={color}>SEÑAL</text>
+              </g>
+            );
+          }
+
+          if (d.markerKind === "trade") {
+            // Trade: flag/pennant on pole
+            const px = pt.x;
+            const poleTop = pt.y - 40;
+            const poleBot = pt.y;
+            const flagW = 48;
+            const flagH = 22;
+            return (
+              <g key={`marker-${i}`}>
+                {/* Pole */}
+                <line x1={px} y1={poleBot} x2={px} y2={poleTop} stroke={color} strokeWidth={1.5} />
+                {/* Pole dot */}
+                <circle cx={px} cy={poleTop} r={2.5} fill={color} />
+                {/* Flag body (pennant shape) */}
+                <polygon points={`${px},${poleTop} ${px + flagW},${poleTop + flagH / 2} ${px},${poleTop + flagH}`} fill={color} opacity={0.9} />
+                {/* Arrow inside flag */}
+                <path d={isLong ? `M${px+8} ${poleTop+flagH/2+2} L${px+8} ${poleTop+flagH/2-3} M${px+6} ${poleTop+flagH/2-1} L${px+8} ${poleTop+flagH/2-3} L${px+10} ${poleTop+flagH/2-1}` : `M${px+8} ${poleTop+flagH/2-2} L${px+8} ${poleTop+flagH/2+3} M${px+6} ${poleTop+flagH/2+1} L${px+8} ${poleTop+flagH/2+3} L${px+10} ${poleTop+flagH/2+1}`} stroke="#fff" strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                {/* Pair text in flag */}
+                <text x={px + 18} y={poleTop + flagH / 2 - 2} fontSize={6} fontWeight="800" fill="#fff" dominantBaseline="middle">{selectedPair.split("/")[0]}</text>
+                {/* PnL / Price below flag */}
+                {d.markerPnl != null && (
+                  <text x={px + 18} y={poleTop + flagH / 2 + 6} fontSize={6} fontWeight="700" fill="#fff" dominantBaseline="middle" opacity={0.9}>
+                    {d.markerPnl >= 0 ? "+" : ""}${d.markerPnl.toLocaleString()}
+                  </text>
+                )}
+                {d.markerLev && (
+                  <text x={px + flagW - 4} y={poleTop + flagH / 2 + 1} fontSize={5.5} fontWeight="700" fill="#fff" dominantBaseline="middle" textAnchor="end" opacity={0.7}>{d.markerLev}</text>
+                )}
+              </g>
+            );
+          }
+          return null;
+        })}
+      </g>
+    );
+  }, [chartData, selectedPair]);
+
+  // Get trades + signals for this trader + pair (for the feed below)
   const relevantFeed = useMemo(() => {
     return feedItems.filter(f =>
       (f.kind === "trade" || f.kind === "signal") &&
@@ -1877,13 +2001,33 @@ const HomeTab = () => {
         ))}
       </div>
 
-      {/* ── Main Chart ── */}
+      {/* ── Main Chart with Candlesticks + Signal/Trade Markers ── */}
       <div style={{ ...cardStyle, padding: "16px" }}>
-        <ResponsiveContainer width="100%" height={320}>
-          <AreaChart data={chartData}>
+        {/* Chart legend for markers */}
+        <div style={{ display: "flex", gap: "16px", marginBottom: "8px", fontSize: "9px", color: C.textMuted }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="12" height="12"><ellipse cx="6" cy="6" rx="5" ry="4" fill={C.green} /><path d="M6 8 L6 4 M4 5.5 L6 4 L8 5.5" stroke="#fff" strokeWidth="1" fill="none" /></svg>
+            <span>Señal LONG</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="12" height="12"><ellipse cx="6" cy="6" rx="5" ry="4" fill={C.red} /><path d="M6 4 L6 8 M4 6.5 L6 8 L8 6.5" stroke="#fff" strokeWidth="1" fill="none" /></svg>
+            <span>Señal SHORT</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="16" height="12"><line x1="2" y1="10" x2="2" y2="1" stroke={C.green} strokeWidth="1" /><polygon points="2,1 14,6 2,11" fill={C.green} opacity="0.8" /></svg>
+            <span>Trade LONG</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="16" height="12"><line x1="2" y1="10" x2="2" y2="1" stroke={C.red} strokeWidth="1" /><polygon points="2,1 14,6 2,11" fill={C.red} opacity="0.8" /></svg>
+            <span>Trade SHORT</span>
+          </div>
+        </div>
+
+        <ResponsiveContainer width="100%" height={340}>
+          <AreaChart data={chartData} margin={{ top: 50, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={trendColor} stopOpacity={0.15} />
+                <stop offset="0%" stopColor={trendColor} stopOpacity={0.08} />
                 <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
               </linearGradient>
             </defs>
@@ -1894,19 +2038,31 @@ const HomeTab = () => {
               contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "11px" }}
               formatter={(value, name) => {
                 if (name === "price") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Precio"];
-                if (name === "vol") return [value.toLocaleString(), "Volumen"];
+                if (name === "open") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Open"];
+                if (name === "high") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "High"];
+                if (name === "low") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Low"];
                 return [value, name];
               }}
             />
-            <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={2} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: trendColor }} />
+            {/* Price line + fill */}
+            <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={1.5} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: trendColor }} />
+            {/* High/Low as invisible references for scale */}
+            <Area type="monotone" dataKey="high" stroke="transparent" fill="transparent" dot={false} />
+            <Area type="monotone" dataKey="low" stroke="transparent" fill="transparent" dot={false} />
+            {/* Signal + Trade markers overlay */}
+            <Customized component={ChartMarkers} />
           </AreaChart>
         </ResponsiveContainer>
 
-        {/* Volume bar underneath */}
-        <div style={{ marginTop: "-8px" }}>
-          <ResponsiveContainer width="100%" height={40}>
+        {/* Volume bars underneath */}
+        <div style={{ marginTop: "-4px" }}>
+          <ResponsiveContainer width="100%" height={36}>
             <BarChart data={chartData}>
-              <Bar dataKey="vol" fill={C.textFaint + "30"} radius={[1, 1, 0, 0]} />
+              <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
+                {chartData.map((d, i) => (
+                  <Cell key={i} fill={d.bullish ? C.green + "25" : C.red + "25"} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
