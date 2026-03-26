@@ -12,7 +12,7 @@ import {
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
   MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb,
-  X, ExternalLink, Bookmark, BellRing, Home
+  X, ExternalLink, Bookmark, BellRing, Home, Send, Link2
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
@@ -3093,6 +3093,9 @@ const SignalsTab = () => {
 const TraderProfile = ({ trader, onClose }) => {
   const [profileTab, setProfileTab] = useState("overview");
   const [socialFilter, setSocialFilter] = useState("all");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [alertsOn, setAlertsOn] = useState(false);
+  const { addToast } = useContext(ToastContext);
   const t = trader;
   const deep = traderDeepData[t.name];
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
@@ -3100,14 +3103,72 @@ const TraderProfile = ({ trader, onClose }) => {
   const tabLabels = { overview: "Overview", signals: "Señales", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
+  const socials = traderSocials[t.name] || {};
+  const socialMeta = { twitter: { label: "X / Twitter", color: "#1DA1F2", icon: "𝕏", url: "https://x.com/" }, discord: { label: "Discord", color: "#5865F2", icon: "DC", url: "https://discord.gg/" }, telegram: { label: "Telegram", color: "#0088cc", icon: "TG", url: "https://t.me/" }, youtube: { label: "YouTube", color: "#FF0000", icon: "YT", url: "https://youtube.com/@" }, website: { label: "Website", color: C.textMuted, icon: "WEB", url: "" } };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* Back button */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      {/* Back button + Quick Actions bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         <button onClick={onClose} style={{ padding: "6px 14px", borderRadius: "6px", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, fontSize: "12px", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
           <ChevronRight size={14} style={{ transform: "rotate(180deg)" }} /> Back
         </button>
+
+        <div style={{ flex: 1 }} />
+
+        {/* ★ Follow */}
+        <button onClick={() => { setIsFollowing(!isFollowing); addToast(isFollowing ? `Dejaste de seguir a ${t.name}` : `Siguiendo a ${t.name}`, isFollowing ? "info" : "success"); }} style={{
+          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
+          border: `1px solid ${isFollowing ? C.amber : C.border}`,
+          backgroundColor: isFollowing ? C.amberBg : "transparent",
+          color: isFollowing ? C.amber : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
+        }}>
+          <Star size={13} fill={isFollowing ? C.amber : "none"} /> {isFollowing ? "Siguiendo" : "Seguir"}
+        </button>
+
+        {/* 🔔 Alerts */}
+        <button onClick={() => { setAlertsOn(!alertsOn); addToast(alertsOn ? `Alertas desactivadas para ${t.name}` : `Alertas activadas para ${t.name}`, alertsOn ? "info" : "success"); }} style={{
+          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
+          border: `1px solid ${alertsOn ? C.blue : C.border}`,
+          backgroundColor: alertsOn ? C.blueBg : "transparent",
+          color: alertsOn ? C.blue : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
+        }}>
+          {alertsOn ? <BellRing size={13} /> : <Bell size={13} />} {alertsOn ? "Alertas ON" : "Alertas"}
+        </button>
+
+        {/* ✉ DM / Message */}
+        <button onClick={() => addToast(`Mensaje enviado a ${t.name}`, "info")} style={{
+          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
+          border: `1px solid ${C.purple}40`, backgroundColor: C.purpleBg,
+          color: C.purple, fontSize: "11px", fontWeight: "700", cursor: "pointer"
+        }}>
+          <Send size={13} /> Mensaje
+        </button>
+
+        {/* 🔗 Chat Room */}
+        <button onClick={() => addToast(`Entraste al chat room de ${t.name}`, "info")} style={{
+          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
+          border: `1px solid ${C.cyan}40`, backgroundColor: `${C.cyan}10`,
+          color: C.cyan, fontSize: "11px", fontWeight: "700", cursor: "pointer"
+        }}>
+          <Link2 size={13} /> Chat Room
+        </button>
+
+        {/* Social media quick links */}
+        {Object.keys(socials).map(platform => {
+          const sm = socialMeta[platform];
+          if (!sm) return null;
+          return (
+            <button key={platform} title={`${sm.label}: ${socials[platform]}`} onClick={() => addToast(`Abriendo ${sm.label} de ${t.name}`, "info")} style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: "6px",
+              border: `1px solid ${sm.color}30`, backgroundColor: `${sm.color}10`,
+              color: sm.color, fontSize: "10px", fontWeight: "800", cursor: "pointer"
+            }}>
+              {sm.icon}
+            </button>
+          );
+        })}
       </div>
 
       {/* Profile Header Card */}
