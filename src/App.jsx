@@ -1732,6 +1732,14 @@ const ArenaTab = () => {
   const [copied, setCopied] = useState({});
   const [signalCoin, setSignalCoin] = useState("ALL");
   const [signalType, setSignalType] = useState("ALL");
+  // Sub-view trader selector: ordered + visibility
+  const [subViewOrder, setSubViewOrder] = useState(() => mockTraders.slice(0, 5).map(t => t.name));
+  const [subViewVisible, setSubViewVisible] = useState(() => {
+    const m = {};
+    mockTraders.slice(0, 4).forEach(t => { m[t.name] = true; });
+    return m;
+  });
+  const [dragIdx, setDragIdx] = useState(null);
   const toast = useToast();
   const TOTAL_TRADERS = 300;
 
@@ -1748,7 +1756,12 @@ const ArenaTab = () => {
     let feed = traderFeed;
     if (feedFilter === "all") return feed;
     if (feedFilter === "whale") return feed.filter(f => f.kind === "whale" || f.kind === "liquidation");
-    if (feedFilter === "trade") return feed.filter(f => f.kind === "trade");
+    if (feedFilter === "trade") {
+      feed = feed.filter(f => f.kind === "trade");
+      if (signalCoin !== "ALL") feed = feed.filter(f => f.pair && f.pair.startsWith(signalCoin));
+      if (signalType !== "ALL") feed = feed.filter(f => f.type === signalType);
+      return feed;
+    }
     if (feedFilter === "signal") {
       feed = feed.filter(f => f.kind === "signal");
       if (signalCoin !== "ALL") feed = feed.filter(f => f.pair && f.pair.startsWith(signalCoin));
@@ -1926,49 +1939,377 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ── Feed header ── */}
-      {(() => {
+      {/* ═══ SUB-VIEW: Trades / Señales / Predicciones ═══ */}
+      {feedFilter !== "all" && (() => {
         const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
         const signalCount = traderFeed.filter(f => f.kind === "signal").length;
         const predCount = traderFeed.filter(f => f.kind === "prediction").length;
-        const filterMeta = { all: { label: "Actividad", color: C.purple, count: traderFeed.length }, trade: { label: "Trades", color: C.green, count: tradeCount }, signal: { label: "Señales", color: C.blue, count: signalCount }, prediction: { label: "Predicciones", color: C.amber, count: predCount } };
-        const current = filterMeta[feedFilter] || filterMeta.all;
-        if (feedFilter !== "all") {
-          return (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <span style={{ fontSize: "14px", fontWeight: "700", color: current.color }}>{current.label}</span>
-                <span style={{ fontSize: "11px", fontWeight: "600", color: current.color, ...mono, backgroundColor: current.color + "18", padding: "2px 8px", borderRadius: "4px" }}>{current.count}</span>
-                <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-                <button onClick={() => setFeedFilter("all")} style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
-                  <Radio size={10} /> Ver todo
+        const filterMeta = { trade: { label: "Trades", color: C.green, icon: Activity, count: tradeCount }, signal: { label: "Señales", color: C.blue, icon: Lightbulb, count: signalCount }, prediction: { label: "Predicciones", color: C.amber, icon: Scale, count: predCount } };
+        const current = filterMeta[feedFilter] || filterMeta.trade;
+        const CurrentIcon = current.icon;
+
+        // Summary stats per section
+        const sectionItems = filteredFeed.filter(f => f.kind === feedFilter);
+        const totalPnl = feedFilter === "trade" ? sectionItems.reduce((s, f) => s + (f.pnl || 0), 0) : 0;
+        const avgWin = feedFilter === "trade" && sectionItems.length > 0 ? Math.round(sectionItems.filter(f => f.pnl > 0).length / sectionItems.length * 100) : 0;
+        const avgConf = feedFilter === "signal" && sectionItems.length > 0 ? Math.round(sectionItems.reduce((s, f) => s + (f.confidence || 0), 0) / sectionItems.length) : 0;
+        const totalVol = feedFilter === "prediction" ? sectionItems.reduce((s, f) => s + (f.stake || 0), 0) : 0;
+
+        return (
+          <>
+            {/* Section header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <CurrentIcon size={16} color={current.color} />
+              <span style={{ fontSize: "16px", fontWeight: "800", color: current.color }}>{current.label}</span>
+              <span style={{ fontSize: "11px", fontWeight: "700", color: current.color, ...mono, backgroundColor: current.color + "18", padding: "2px 10px", borderRadius: "10px" }}>{current.count}</span>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => { setFeedFilter("all"); setActiveTab("arena"); }} style={{ padding: "5px 12px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, display: "flex", alignItems: "center", gap: "4px" }}>
+                <Radio size={10} /> Arena
+              </button>
+            </div>
+
+            {/* Draggable trader selector */}
+            <div style={{ ...cardStyle, padding: "10px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Comparar Traders</span>
+                <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>· arrastra para reordenar</span>
+              </div>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                {subViewOrder.map((name, idx) => {
+                  const t = mockTraders.find(tt => tt.name === name);
+                  if (!t) return null;
+                  const on = subViewVisible[name];
+                  const ci = mockTraders.indexOf(t);
+                  const color = traderColors[ci];
+                  return (
+                    <button key={name} draggable onDragStart={e => { e.dataTransfer.setData("text/plain", String(idx)); setDragIdx(idx); }}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData("text/plain")); if (from === idx) return; setSubViewOrder(prev => { const n = [...prev]; const item = n.splice(from, 1)[0]; n.splice(idx, 0, item); return n; }); setDragIdx(null); }}
+                      onDragEnd={() => setDragIdx(null)}
+                      onClick={() => setSubViewVisible(prev => ({ ...prev, [name]: !prev[name] }))}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "5px",
+                        padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "grab",
+                        border: `1px solid ${on ? color : C.border}`,
+                        backgroundColor: on ? color + "15" : "transparent",
+                        color: on ? C.text : C.textFaint, transition: "all 0.15s",
+                        opacity: dragIdx === idx ? 0.5 : 1,
+                      }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
+                      {name}
+                      {on && <span style={{ fontSize: "8px", color, ...mono }}>{t.winRate}%</span>}
+                    </button>
+                  );
+                })}
+                {/* Add trader button */}
+                <button onClick={() => {
+                  const notInList = mockTraders.filter(t => !subViewOrder.includes(t.name));
+                  if (notInList.length > 0) {
+                    const next = notInList[0].name;
+                    setSubViewOrder(prev => [...prev, next]);
+                    setSubViewVisible(prev => ({ ...prev, [next]: true }));
+                  }
+                }} style={{
+                  display: "flex", alignItems: "center", gap: "3px",
+                  padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                  border: `1px dashed ${C.border}`, backgroundColor: "transparent", color: C.textFaint
+                }}>
+                  <span style={{ fontSize: "14px", lineHeight: 1 }}>+</span> Agregar
                 </button>
               </div>
-              {/* Signal sub-filters: coin + type */}
-              {feedFilter === "signal" && (
-                <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
-                  {["ALL","BTC","ETH","SOL","BNB","XRP"].map(coin => (
-                    <button key={coin} onClick={() => setSignalCoin(coin)} style={{
-                      padding: "4px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                      border: `1px solid ${signalCoin === coin ? C.blue : C.border}`,
-                      backgroundColor: signalCoin === coin ? `${C.blue}15` : "transparent",
-                      color: signalCoin === coin ? C.blue : C.textMuted
-                    }}>{coin}</button>
-                  ))}
-                  <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                  {["ALL","LONG","SHORT"].map(typ => (
-                    <button key={typ} onClick={() => setSignalType(typ)} style={{
-                      padding: "4px 10px", borderRadius: "5px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                      border: `1px solid ${signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : C.blue) : C.border}`,
-                      backgroundColor: signalType === typ ? (typ === "LONG" ? C.greenBg : typ === "SHORT" ? C.redBg : `${C.blue}15`) : "transparent",
-                      color: signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : C.blue) : C.textMuted
-                    }}>{typ}</button>
-                  ))}
+            </div>
+
+            {/* Filters: coin + direction (all sub-views) */}
+            {(feedFilter === "trade" || feedFilter === "signal") && (
+              <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+                {["ALL","BTC","ETH","SOL","BNB","XRP"].map(coin => (
+                  <button key={coin} onClick={() => setSignalCoin(coin)} style={{
+                    padding: "3px 9px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
+                    border: `1px solid ${signalCoin === coin ? current.color : C.border}`,
+                    backgroundColor: signalCoin === coin ? `${current.color}15` : "transparent",
+                    color: signalCoin === coin ? current.color : C.textMuted, ...mono
+                  }}>{coin}</button>
+                ))}
+                <div style={{ width: "1px", height: 14, backgroundColor: C.border }} />
+                {["ALL","LONG","SHORT"].map(typ => (
+                  <button key={typ} onClick={() => setSignalType(typ)} style={{
+                    padding: "3px 9px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
+                    border: `1px solid ${signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : current.color) : C.border}`,
+                    backgroundColor: signalType === typ ? (typ === "LONG" ? C.greenBg : typ === "SHORT" ? C.redBg : `${current.color}15`) : "transparent",
+                    color: signalType === typ ? (typ === "LONG" ? C.green : typ === "SHORT" ? C.red : current.color) : C.textMuted, ...mono
+                  }}>{typ}</button>
+                ))}
+              </div>
+            )}
+
+            {/* Comparison chart */}
+            {(() => {
+              const visibleNames = subViewOrder.filter(n => subViewVisible[n]);
+              return visibleNames.length > 0 && (
+                <div style={cardStyle}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "12px", fontWeight: "700" }}>Performance comparada</span>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      {visibleNames.slice(0, 6).map(name => {
+                        const ci = mockTraders.findIndex(t => t.name === name);
+                        return (
+                          <div key={name} style={{ display: "flex", alignItems: "center", gap: "3px", fontSize: "9px" }}>
+                            <div style={{ width: 6, height: 2, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
+                            <span style={{ color: traderColors[ci], fontWeight: "600" }}>{name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <LineChart data={traderEquity}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                      <XAxis dataKey="day" stroke={C.textMuted} fontSize={9} />
+                      <YAxis stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
+                      <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "10px" }} formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]} />
+                      {visibleNames.map(name => {
+                        const ci = mockTraders.findIndex(t => t.name === name);
+                        return <Line key={name} type="monotone" dataKey={name} stroke={traderColors[ci]} strokeWidth={1.5} dot={false} connectNulls={false} />;
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
+              );
+            })()}
+
+            {/* P&L / Performance summary bar */}
+            <div style={{ display: "flex", gap: "8px" }}>
+              {feedFilter === "trade" && (
+                <>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DollarSign size={14} color={totalPnl >= 0 ? C.green : C.red} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>PnL Total</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", color: totalPnl >= 0 ? C.green : C.red, ...mono }}>{totalPnl >= 0 ? "+" : ""}${totalPnl.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Target size={14} color={C.green} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Win Rate</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", color: C.green, ...mono }}>{avgWin}%</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Activity size={14} color={current.color} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Trades</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{sectionItems.length}</div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {feedFilter === "signal" && (
+                <>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Zap size={14} color={C.blue} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Avg Conviction</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", color: C.blue, ...mono }}>{avgConf}%</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Lightbulb size={14} color={current.color} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Señales</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{sectionItems.length}</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <TrendingUp size={14} color={C.green} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Bullish</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", color: C.green, ...mono }}>{sectionItems.filter(f => f.bias === "LONG").length}</div>
+                    </div>
+                  </div>
+                </>
+              )}
+              {feedFilter === "prediction" && (
+                <>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <DollarSign size={14} color={C.amber} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Vol Total</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", color: C.amber, ...mono }}>${totalVol.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Scale size={14} color={current.color} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Predicciones</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{sectionItems.length}</div>
+                    </div>
+                  </div>
+                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Users size={14} color={C.purple} />
+                    <div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Traders</div>
+                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{new Set(sectionItems.map(f => f.trader)).size}</div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          );
-        }
+
+            {/* Compact Feed — table-like rows for max scanning speed */}
+            <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+              {/* Table header */}
+              <div style={{ display: "flex", alignItems: "center", padding: "8px 12px", borderBottom: `1px solid ${C.border}`, fontSize: "9px", fontWeight: "600", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                {feedFilter === "trade" && (
+                  <>
+                    <span style={{ width: 24 }} />
+                    <span style={{ flex: 2, minWidth: 80 }}>Trader</span>
+                    <span style={{ flex: 2, minWidth: 80 }}>Par</span>
+                    <span style={{ width: 40, textAlign: "center" }}>Lev</span>
+                    <span style={{ width: 55, textAlign: "right" }}>Entry</span>
+                    <span style={{ width: 50, textAlign: "right" }}>TP</span>
+                    <span style={{ width: 50, textAlign: "right" }}>SL</span>
+                    <span style={{ flex: 1, minWidth: 70, textAlign: "right" }}>PnL</span>
+                    <span style={{ width: 44, textAlign: "center" }}>Status</span>
+                    <span style={{ width: 40, textAlign: "right" }}>Hora</span>
+                    <span style={{ width: 36 }} />
+                  </>
+                )}
+                {feedFilter === "signal" && (
+                  <>
+                    <span style={{ width: 24 }} />
+                    <span style={{ flex: 2, minWidth: 80 }}>Trader</span>
+                    <span style={{ flex: 2, minWidth: 80 }}>Par</span>
+                    <span style={{ width: 46, textAlign: "center" }}>TF</span>
+                    <span style={{ flex: 1, textAlign: "center" }}>Convicción</span>
+                    <span style={{ width: 40, textAlign: "right" }}>Hora</span>
+                    <span style={{ width: 36 }} />
+                  </>
+                )}
+                {feedFilter === "prediction" && (
+                  <>
+                    <span style={{ flex: 3 }}>Pregunta</span>
+                    <span style={{ width: 80, textAlign: "center" }}>Consenso</span>
+                    <span style={{ width: 50, textAlign: "right" }}>Odds</span>
+                    <span style={{ width: 50, textAlign: "right" }}>Vol</span>
+                    <span style={{ width: 40, textAlign: "right" }}>Hora</span>
+                  </>
+                )}
+              </div>
+
+              {/* Rows */}
+              {filteredFeed.length === 0 && (
+                <div style={{ padding: "32px", textAlign: "center", color: C.textMuted, fontSize: "12px" }}>Sin resultados para los filtros seleccionados</div>
+              )}
+              {dedupedFeed.filter(f => f.kind === feedFilter).map(item => {
+                if (feedFilter === "trade") {
+                  const tradeAccent = item.type === "LONG" ? C.green : C.red;
+                  const DirIcon = item.type === "LONG" ? ArrowUp : ArrowDown;
+                  const levNum = parseInt(item.leverage);
+                  const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
+                  return (
+                    <div key={item.id} className="hoverable" onClick={() => openProfile(mockTraders.find(tt => tt.name === item.trader))} style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", fontSize: "11px", minHeight: "36px" }}>
+                      <div style={{ width: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: tradeAccent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <DirIcon size={12} color={tradeAccent} />
+                        </div>
+                      </div>
+                      <div style={{ flex: 2, minWidth: 80, fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</div>
+                      <div style={{ flex: 2, minWidth: 80, display: "flex", alignItems: "center", gap: "4px" }}>
+                        <span style={{ fontWeight: "700" }}>{item.pair}</span>
+                        <span style={{ fontSize: "9px", fontWeight: "800", color: tradeAccent }}>{item.type}</span>
+                      </div>
+                      <div style={{ width: 40, textAlign: "center" }}>
+                        <span style={{ fontSize: "9px", fontWeight: "800", color: levColor, backgroundColor: `${levColor}15`, padding: "1px 4px", borderRadius: "3px", ...mono }}>{item.leverage}</span>
+                      </div>
+                      <div style={{ width: 55, textAlign: "right", ...mono, color: C.textMuted, fontSize: "10px" }}>${item.entry.toLocaleString()}</div>
+                      <div style={{ width: 50, textAlign: "right", ...mono, color: C.green, fontSize: "10px" }}>${item.tp.toLocaleString()}</div>
+                      <div style={{ width: 50, textAlign: "right", ...mono, color: C.red, fontSize: "10px" }}>${item.sl.toLocaleString()}</div>
+                      <div style={{ flex: 1, minWidth: 70, textAlign: "right", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>
+                        {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
+                      </div>
+                      <div style={{ width: 44, textAlign: "center" }}>
+                        <span style={{ fontSize: "8px", fontWeight: "700", color: statusColors[item.status], backgroundColor: statusColors[item.status] + "18", padding: "2px 5px", borderRadius: "3px" }}>{statusLabels[item.status]}</span>
+                      </div>
+                      <div style={{ width: 40, textAlign: "right", fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</div>
+                      <div style={{ width: 36, display: "flex", justifyContent: "center" }}>
+                        {item.status === "active" && (
+                          <button onClick={e => { e.stopPropagation(); handleCopy(item); }} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", color: copied[item.id] ? C.green : C.textFaint, padding: "2px", display: "flex" }}>
+                            {copied[item.id] ? <CheckCircle size={12} /> : <Copy size={12} />}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                if (feedFilter === "signal") {
+                  const biasColor = item.bias === "LONG" ? C.green : C.red;
+                  const BiasIcon = item.bias === "LONG" ? ArrowUp : ArrowDown;
+                  const confColor = item.confidence >= 80 ? C.green : item.confidence >= 65 ? C.amber : C.red;
+                  return (
+                    <div key={item.id} className="hoverable" style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", fontSize: "11px", minHeight: "36px" }}>
+                      <div style={{ width: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: biasColor + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <BiasIcon size={12} color={biasColor} />
+                        </div>
+                      </div>
+                      <div style={{ flex: 2, minWidth: 80, fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</div>
+                      <div style={{ flex: 2, minWidth: 80, display: "flex", alignItems: "center", gap: "4px" }}>
+                        <span style={{ fontWeight: "700" }}>{item.pair}</span>
+                        <span style={{ fontSize: "9px", fontWeight: "800", color: biasColor }}>{item.bias}</span>
+                      </div>
+                      <div style={{ width: 46, textAlign: "center", fontSize: "9px", color: C.textMuted, ...mono }}>{item.timeframe}</div>
+                      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                        <div style={{ display: "flex", gap: "1px" }}>
+                          {[1,2,3,4,5].map(i => (
+                            <div key={i} style={{ width: 3, height: 10, borderRadius: "1px", backgroundColor: i <= Math.ceil(item.confidence / 20) ? confColor : C.border }} />
+                          ))}
+                        </div>
+                        <span style={{ fontSize: "10px", fontWeight: "800", color: confColor, ...mono }}>{item.confidence}%</span>
+                      </div>
+                      <div style={{ width: 40, textAlign: "right", fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</div>
+                      <div style={{ width: 36, display: "flex", justifyContent: "center" }}>
+                        <button onClick={e => e.stopPropagation()} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", color: C.blue, padding: "2px", display: "flex" }}>
+                          <BellRing size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+                if (feedFilter === "prediction") {
+                  const allOnQ = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId);
+                  const yesC = allOnQ.filter(p => p.bet === "YES").length;
+                  const yesPct = allOnQ.length > 0 ? Math.round((yesC / allOnQ.length) * 100) : 50;
+                  const noPct = 100 - yesPct;
+                  const tStake = allOnQ.reduce((s, p) => s + p.stake, 0);
+                  return (
+                    <div key={item.id} className="hoverable" style={{ display: "flex", alignItems: "center", padding: "7px 12px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", fontSize: "11px", minHeight: "38px" }}>
+                      <div style={{ flex: 3, fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: "8px" }}>{item.question}</div>
+                      <div style={{ width: 80, display: "flex", alignItems: "center", gap: "3px" }}>
+                        <div style={{ flex: 1, height: "6px", borderRadius: "3px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
+                          <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green }} />
+                          <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red }} />
+                        </div>
+                        <span style={{ fontSize: "8px", fontWeight: "700", color: C.green, ...mono, minWidth: 20 }}>{yesPct}%</span>
+                      </div>
+                      <div style={{ width: 50, textAlign: "right", fontSize: "10px", color: C.textMuted, ...mono }}>{item.odds}%</div>
+                      <div style={{ width: 50, textAlign: "right", fontSize: "10px", fontWeight: "700", color: C.amber, ...mono }}>${tStake.toLocaleString()}</div>
+                      <div style={{ width: 40, textAlign: "right", fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</div>
+                    </div>
+                  );
+                }
+                return null;
+              })}
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ═══ ARENA FULL VIEW (feedFilter === "all") — Feed section ═══ */}
+      {feedFilter === "all" && (() => {
+        const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
+        const signalCount = traderFeed.filter(f => f.kind === "signal").length;
+        const predCount = traderFeed.filter(f => f.kind === "prediction").length;
         const filterItems = [
           { id: "all", label: "Todo", color: C.purple, icon: null, count: traderFeed.length },
           { id: "trade", label: "Trades", color: C.green, icon: Activity, count: tradeCount },
@@ -1976,321 +2317,143 @@ const ArenaTab = () => {
           { id: "prediction", label: "Predicciones", color: C.amber, icon: Scale, count: predCount },
         ];
         return (
-          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-            {filterItems.map(f => {
-              const Icon = f.icon;
-              return (
-                <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
-                  padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                  border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
-                  backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
-                  color: feedFilter === f.id ? f.color : C.textMuted,
-                  display: "flex", alignItems: "center", gap: "6px"
-                }}>
-                  {Icon && <Icon size={12} />}
-                  {f.label}
-                  <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
-                </button>
-              );
-            })}
-          </div>
+          <>
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
+              <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
+              {filterItems.map(f => {
+                const Icon = f.icon;
+                return (
+                  <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
+                    padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
+                    border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
+                    backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
+                    color: feedFilter === f.id ? f.color : C.textMuted,
+                    display: "flex", alignItems: "center", gap: "6px"
+                  }}>
+                    {Icon && <Icon size={12} />}
+                    {f.label}
+                    <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {filteredFeed.length === 0 && (
+              <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
+                <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Selecciona traders para seguir</div>
+                <div style={{ fontSize: "12px" }}>Usa los botones de arriba para elegir a quién quieres ver en vivo</div>
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {dedupedFeed.map(item => {
+                if (item.kind === "whale" || item.kind === "liquidation") {
+                  return (
+                    <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ fontSize: "11px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE" : "LIQUIDACIÓN"}</div>
+                      <div style={{ fontSize: "11px", color: C.text, flex: 1 }}>{item.text}</div>
+                      <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
+                    </div>
+                  );
+                }
+                if (item.kind === "achievement") {
+                  return (
+                    <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.achievement.color || C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
+                      {item.achievement.icon && (() => { const AchIcon = item.achievement.icon; return <AchIcon size={16} color={item.achievement.color || C.purple} />; })()}
+                      <div style={{ flex: 1, fontSize: "12px" }}>
+                        <TraderLink name={item.trader} /> <span style={{ color: item.achievement.color || C.purple, fontWeight: "600" }}>desbloqueó</span> <span style={{ fontWeight: "700", color: C.text }}>{item.achievement.name}</span>
+                      </div>
+                      <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
+                    </div>
+                  );
+                }
+                if (item.kind === "signal") {
+                  const biasColor = item.bias === "LONG" ? C.green : C.red;
+                  const BiasIcon = item.bias === "LONG" ? ArrowUp : ArrowDown;
+                  const confColor = item.confidence >= 80 ? C.green : item.confidence >= 65 ? C.amber : C.red;
+                  return (
+                    <div key={item.id} style={{ ...cardStyle, padding: "8px 14px", borderLeft: `3px solid ${C.blue}`, display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "4px", backgroundColor: biasColor + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <BiasIcon size={12} color={biasColor} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <TraderLink name={item.trader} />
+                          <span style={{ fontWeight: "700", fontSize: "12px" }}>{item.pair}</span>
+                          <span style={{ fontSize: "9px", fontWeight: "800", color: biasColor }}>{item.bias}</span>
+                          <div style={{ display: "flex", gap: "1px", marginLeft: "4px" }}>
+                            {[1,2,3,4,5].map(i => <div key={i} style={{ width: 3, height: 8, borderRadius: "1px", backgroundColor: i <= Math.ceil(item.confidence / 20) ? confColor : C.border }} />)}
+                          </div>
+                          <span style={{ fontSize: "9px", fontWeight: "700", color: confColor, ...mono }}>{item.confidence}%</span>
+                        </div>
+                        <div style={{ fontSize: "10px", color: C.textMuted, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.idea}</div>
+                      </div>
+                      <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+                    </div>
+                  );
+                }
+                if (item.kind === "prediction") {
+                  const allOnQ = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId);
+                  const yesC = allOnQ.filter(p => p.bet === "YES").length;
+                  const yesPct = allOnQ.length > 0 ? Math.round((yesC / allOnQ.length) * 100) : 50;
+                  const noPct = 100 - yesPct;
+                  return (
+                    <div key={item.id} style={{ ...cardStyle, padding: "8px 14px", borderLeft: `3px solid ${C.amber}`, display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Scale size={14} color={C.amber} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "12px", fontWeight: "600" }}>{item.question}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
+                          <div style={{ width: 60, height: "5px", borderRadius: "3px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
+                            <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green }} />
+                            <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red }} />
+                          </div>
+                          <span style={{ fontSize: "9px", fontWeight: "700", color: C.green, ...mono }}>YES {yesPct}%</span>
+                          <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{allOnQ.length} traders</span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+                    </div>
+                  );
+                }
+                /* Trade card (compact for arena feed) */
+                const tradeAccent = item.type === "LONG" ? C.green : C.red;
+                const DirIcon = item.type === "LONG" ? ArrowUp : ArrowDown;
+                const levNum = parseInt(item.leverage);
+                const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
+                return (
+                  <div key={item.id} style={{ ...cardStyle, padding: "8px 14px", borderLeft: `3px solid ${tradeAccent}`, display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ width: 22, height: 22, borderRadius: "4px", backgroundColor: tradeAccent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <DirIcon size={12} color={tradeAccent} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                        <TraderLink name={item.trader} />
+                        <span style={{ fontWeight: "700", fontSize: "12px" }}>{item.pair}</span>
+                        <span style={{ fontSize: "9px", fontWeight: "800", color: tradeAccent }}>{item.type}</span>
+                        <span style={{ fontSize: "9px", fontWeight: "800", color: levColor, ...mono }}>{item.leverage}</span>
+                        <span style={{ fontSize: "8px", fontWeight: "700", color: statusColors[item.status], backgroundColor: statusColors[item.status] + "18", padding: "1px 4px", borderRadius: "2px" }}>{statusLabels[item.status]}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "8px", fontSize: "9px", color: C.textMuted, marginTop: "2px", ...mono }}>
+                        <span>E ${item.entry.toLocaleString()}</span>
+                        <span style={{ color: C.green }}>TP ${item.tp.toLocaleString()}</span>
+                        <span style={{ color: C.red }}>SL ${item.sl.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</div>
+                    </div>
+                    <span style={{ fontSize: "9px", color: C.textFaint, ...mono, minWidth: 30, textAlign: "right" }}>{item.time}</span>
+                    {item.status === "active" && (
+                      <button onClick={e => { e.stopPropagation(); handleCopy(item); }} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", color: copied[item.id] ? C.green : C.textFaint, padding: "2px", display: "flex" }}>
+                        {copied[item.id] ? <CheckCircle size={12} /> : <Copy size={12} />}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         );
       })()}
-
-      {/* ── Live Feed (filtered to watched traders) ── */}
-      {filteredFeed.length === 0 && (
-        <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
-          <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Selecciona traders para seguir</div>
-          <div style={{ fontSize: "12px" }}>Usa los botones de arriba para elegir a quién quieres ver en vivo</div>
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {dedupedFeed.map(item => {
-          if (item.kind === "whale" || item.kind === "liquidation") {
-            return (
-              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ fontSize: "11px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE" : "LIQUIDACIÓN"}</div>
-                <div style={{ fontSize: "11px", color: C.text, flex: 1 }}>{item.text}</div>
-                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
-              </div>
-            );
-          }
-
-          if (item.kind === "achievement") {
-            return (
-              <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.achievement.color || C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                {item.achievement.icon && (() => { const AchIcon = item.achievement.icon; return <AchIcon size={16} color={item.achievement.color || C.purple} />; })()}
-                <div style={{ flex: 1, fontSize: "12px" }}>
-                  <TraderLink name={item.trader} /> <span style={{ color: item.achievement.color || C.purple, fontWeight: "600" }}>desbloqueó</span> <span style={{ fontWeight: "700", color: C.text }}>{item.achievement.name}</span>
-                </div>
-                <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
-              </div>
-            );
-          }
-
-          if (item.kind === "signal") {
-            const biasColor = item.bias === "LONG" ? C.green : C.red;
-            const confColor = item.confidence >= 80 ? C.green : item.confidence >= 65 ? C.amber : C.red;
-            const confLabel = item.confidence >= 85 ? "Strong" : item.confidence >= 70 ? "Medium" : "Weak";
-            const BiasIcon = item.bias === "LONG" ? ArrowUp : ArrowDown;
-            const sigTrader = mockTraders.find(tt => tt.name === item.trader);
-            const sigSpk = sigTrader ? sigTrader.sparkData : [];
-            return (
-              <div key={item.id} style={{
-                background: `linear-gradient(135deg, ${C.card} 0%, ${C.blue}08 100%)`,
-                borderRadius: "10px", border: `1px solid ${C.blue}25`,
-                borderLeft: `3px solid ${C.blue}`,
-                padding: "10px 14px",
-              }}>
-                {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                  <TraderLink name={item.trader} />
-                  <BotTag isBot={item.isBot} />
-                  <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, backgroundColor: `${C.blue}15`, padding: "1px 6px", borderRadius: "3px", border: `1px solid ${C.blue}30` }}>SEÑAL</span>
-                  {isNew(item.timestamp) && <NewBadge />}
-                  <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto", ...mono }}>{item.time}</span>
-                </div>
-
-                {/* Row 2: Direction + Pair + Timeframe + Conviction badge */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: biasColor + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${biasColor}30` }}>
-                    <BiasIcon size={16} color={biasColor} />
-                  </div>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ fontSize: "15px", fontWeight: "800" }}>{item.pair}</span>
-                      <span style={{ fontSize: "10px", fontWeight: "800", color: biasColor }}>{item.bias}</span>
-                    </div>
-                    <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{item.timeframe} timeframe</span>
-                  </div>
-                  {/* Conviction badge */}
-                  <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "3px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                      <span style={{ fontSize: "9px", fontWeight: "700", color: confColor }}>{confLabel}</span>
-                      <div style={{ display: "flex", gap: "2px" }}>
-                        {[1, 2, 3, 4, 5].map(i => (
-                          <div key={i} style={{ width: 4, height: 12, borderRadius: "1px", backgroundColor: i <= Math.ceil(item.confidence / 20) ? confColor : C.border }} />
-                        ))}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: "11px", fontWeight: "800", color: confColor, ...mono }}>{item.confidence}%</span>
-                  </div>
-                </div>
-
-                {/* Mini chart thumbnail */}
-                {sigSpk.length > 0 && (
-                  <div style={{ height: "40px", marginBottom: "8px", borderRadius: "6px", overflow: "hidden", backgroundColor: `${C.bg}80` }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={sigSpk.map((v, i) => ({ v, i }))}>
-                        <defs><linearGradient id={`sspk${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={biasColor} stopOpacity={0.2} /><stop offset="100%" stopColor={biasColor} stopOpacity={0} /></linearGradient></defs>
-                        <Area type="monotone" dataKey="v" stroke={biasColor} strokeWidth={1.5} fill={`url(#sspk${item.id})`} dot={false} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {/* Idea text */}
-                <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px", lineHeight: "1.4" }}>
-                  {item.idea}
-                </div>
-
-                {/* Actions row */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
-                  <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
-                  <div style={{ flex: 1 }} />
-                  <button style={{ display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px", border: `1px solid ${C.blue}30`, cursor: "pointer", fontSize: "10px", fontWeight: "700", backgroundColor: `${C.blue}10`, color: C.blue }}>
-                    <BellRing size={10} /> Alerta
-                  </button>
-                </div>
-              </div>
-            );
-          }
-
-          if (item.kind === "prediction") {
-            // Grouped thread: show all predictors on this question
-            const allOnQuestion = traderFeed
-              .filter(f => f.kind === "prediction" && f.questionId === item.questionId)
-              .sort((a, b) => a.predOrder - b.predOrder);
-            const yesCount = allOnQuestion.filter(p => p.bet === "YES").length;
-            const noCount = allOnQuestion.filter(p => p.bet === "NO").length;
-            const yesPct = allOnQuestion.length > 0 ? Math.round((yesCount / allOnQuestion.length) * 100) : 50;
-            const noPct = 100 - yesPct;
-            const totalStake = allOnQuestion.reduce((s, p) => s + p.stake, 0);
-            return (
-              <div key={item.id} style={{
-                background: `linear-gradient(135deg, ${C.card} 0%, ${C.amber}06 100%)`,
-                borderRadius: "10px", border: `1px solid ${C.amber}20`,
-                borderLeft: `3px solid ${C.amber}`,
-                padding: "10px 14px",
-              }}>
-                {/* Question header */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: C.amber + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${C.amber}30`, flexShrink: 0 }}>
-                    <Scale size={14} color={C.amber} />
-                  </div>
-                  <span style={{ fontSize: "13px", fontWeight: "700", flex: 1, lineHeight: 1.3 }}>{item.question}</span>
-                  {isNew(item.timestamp) && <NewBadge />}
-                </div>
-
-                {/* Probability bar (Polymarket-style) */}
-                <div style={{ marginBottom: "10px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "12px", fontWeight: "800", color: C.green, ...mono }}>YES {yesPct}%</span>
-                    <span style={{ fontSize: "12px", fontWeight: "800", color: C.red, ...mono }}>{noPct}% NO</span>
-                  </div>
-                  <div style={{ height: "8px", borderRadius: "4px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
-                    <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green, borderRadius: yesPct === 100 ? "4px" : "4px 0 0 4px", transition: "width 0.3s" }} />
-                    <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red, borderRadius: noPct === 100 ? "4px" : "0 4px 4px 0", transition: "width 0.3s" }} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "9px", color: C.textFaint, ...mono }}>
-                    <span>Odds: {item.odds}%</span>
-                    <span>Vol: ${totalStake.toLocaleString()}</span>
-                    <span>{allOnQuestion.length} traders</span>
-                  </div>
-                </div>
-
-                {/* Thread: each predictor as a compact row */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  {allOnQuestion.map((p, pi) => (
-                    <div key={p.id} style={{
-                      display: "flex", alignItems: "center", gap: "6px", padding: "5px 8px",
-                      borderRadius: "6px", backgroundColor: pi === 0 ? `${C.cyan}08` : `${C.bg}60`,
-                      border: pi === 0 ? `1px solid ${C.cyan}15` : `1px solid ${C.border}40`,
-                    }}>
-                      <TraderLink name={p.trader} />
-                      <BotTag isBot={p.isBot} />
-                      {pi === 0 && <span style={{ fontSize: "8px", fontWeight: "700", color: C.cyan, backgroundColor: `${C.cyan}15`, padding: "1px 4px", borderRadius: "2px" }}>1RO</span>}
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "auto" }}>
-                        <Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} />
-                        <span style={{ fontSize: "10px", fontWeight: "700", color: C.text, ...mono }}>${p.stake}</span>
-                        <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{p.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Vote */}
-                <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
-                  <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
-                </div>
-              </div>
-            );
-          }
-
-          /* ── Trade card (redesigned) ── */
-          const levNum = parseInt(item.leverage);
-          const levRisk = levNum >= 10 ? "Alto" : levNum >= 5 ? "Medio" : "Bajo";
-          const levColor = levNum >= 10 ? C.red : levNum >= 5 ? C.amber : C.green;
-          const rrRatio = Math.abs(item.tp - item.entry) / Math.max(Math.abs(item.entry - item.sl), 0.01);
-          const tradeAccent = item.type === "LONG" ? C.green : C.red;
-          const DirIcon = item.type === "LONG" ? ArrowUp : ArrowDown;
-          const rrTotal = rrRatio + 1;
-          const riskPct = (1 / rrTotal) * 100;
-          const rewardPct = (rrRatio / rrTotal) * 100;
-          const trader = mockTraders.find(tt => tt.name === item.trader);
-          const sparkD = trader ? trader.sparkData : [];
-          return (
-            <div key={item.id} style={{
-              background: `linear-gradient(135deg, ${C.card} 0%, ${tradeAccent}06 100%)`,
-              borderRadius: "10px", border: `1px solid ${tradeAccent}20`,
-              borderLeft: `3px solid ${tradeAccent}`,
-              padding: "10px 14px",
-            }}>
-              {/* Row 1: Trader + time */}
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-                <TraderLink name={item.trader} />
-                <BotTag isBot={item.isBot} />
-                {isNew(item.timestamp) && <NewBadge />}
-                <Tag text={statusLabels[item.status]} color={statusColors[item.status]} />
-                {item.copiers > 20 && <span style={{ fontSize: "9px", color: C.textFaint, display: "flex", alignItems: "center", gap: "3px" }}><Users size={9} /> {item.copiers}</span>}
-                <span style={{ marginLeft: "auto", fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
-              </div>
-
-              {/* Row 2: Direction arrow + Pair + Leverage pill + PnL hero */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <div style={{ width: 28, height: 28, borderRadius: "6px", backgroundColor: tradeAccent + "18", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${tradeAccent}30` }}>
-                  <DirIcon size={16} color={tradeAccent} />
-                </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "15px", fontWeight: "800" }}>{item.pair}</span>
-                    <span style={{ fontSize: "10px", fontWeight: "800", color: tradeAccent }}>{item.type}</span>
-                  </div>
-                  <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>Entrada ${item.entry.toLocaleString()}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px", marginLeft: "4px" }}>
-                  <span style={{ fontSize: "11px", fontWeight: "800", color: levColor, backgroundColor: `${levColor}15`, padding: "2px 7px", borderRadius: "4px", border: `1px solid ${levColor}30`, ...mono }}>{item.leverage}</span>
-                </div>
-                {/* PnL hero */}
-                <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                  <div style={{ fontSize: "18px", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono, lineHeight: 1 }}>
-                    {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
-                  </div>
-                  <div style={{ fontSize: "9px", color: item.pnl >= 0 ? C.green : C.red, ...mono, opacity: 0.7 }}>
-                    {item.pnl >= 0 ? "+" : ""}{((item.pnl / item.entry) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 3: TP/SL/RR metrics + R:R visual bar + mini sparkline */}
-              <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "6px" }}>
-                {/* Metrics */}
-                <div style={{ display: "flex", gap: "10px", fontSize: "10px", alignItems: "center" }}>
-                  <span><InfoTip k="tp"><span style={{ color: C.textFaint }}>TP</span></InfoTip> <span style={{ fontWeight: "700", color: C.green, ...mono }}>${item.tp.toLocaleString()}</span></span>
-                  <span><InfoTip k="sl"><span style={{ color: C.textFaint }}>SL</span></InfoTip> <span style={{ fontWeight: "700", color: C.red, ...mono }}>${item.sl.toLocaleString()}</span></span>
-                </div>
-                {/* R:R visual bar */}
-                <InfoTip k="rr">
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                    <div style={{ width: "60px", height: "6px", borderRadius: "3px", overflow: "hidden", display: "flex" }}>
-                      <div style={{ width: `${riskPct}%`, height: "100%", backgroundColor: C.red + "80" }} />
-                      <div style={{ width: `${rewardPct}%`, height: "100%", backgroundColor: C.green + "80" }} />
-                    </div>
-                    <span style={{ fontSize: "9px", fontWeight: "700", color: C.blue, ...mono }}>1:{rrRatio.toFixed(1)}</span>
-                  </div>
-                </InfoTip>
-                {/* Mini sparkline */}
-                {sparkD.length > 0 && (
-                  <div style={{ marginLeft: "auto", width: "60px", height: "24px" }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={sparkD.map((v, i) => ({ v, i }))}>
-                        <defs><linearGradient id={`tspk${item.id}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={tradeAccent} stopOpacity={0.3} /><stop offset="100%" stopColor={tradeAccent} stopOpacity={0} /></linearGradient></defs>
-                        <Area type="monotone" dataKey="v" stroke={tradeAccent} strokeWidth={1.5} fill={`url(#tspk${item.id})`} dot={false} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-
-              {/* Analysis context */}
-              <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "6px" }}>
-                <span style={{ fontWeight: "600", color: C.textFaint }}>Análisis:</span> {item.analysis}
-              </div>
-
-              {/* TP Progress for active */}
-              {item.status === "active" && <TpProgressBar entry={item.entry} tp={item.tp} sl={item.sl} status={item.status} />}
-
-              {/* Vote + Copy row */}
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "6px", paddingTop: "6px", borderTop: `1px solid ${C.border}` }}>
-                <CommunityVote itemId={item.id} votesState={votes} setVotesState={setVotes} />
-                <div style={{ flex: 1 }} />
-                {item.status === "active" && (
-                  <button onClick={() => handleCopy(item)} style={{
-                    display: "flex", alignItems: "center", gap: "3px", padding: "4px 12px", borderRadius: "4px",
-                    border: "none", cursor: "pointer", fontSize: "10px", fontWeight: "700",
-                    backgroundColor: copied[item.id] ? C.green : C.purpleBg, color: copied[item.id] ? "#000" : C.purple,
-                  }}>
-                    {copied[item.id] ? <><CheckCircle size={10} /> Copiando</> : <><Copy size={10} /> Copiar</>}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 };
