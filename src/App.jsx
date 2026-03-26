@@ -159,12 +159,14 @@ const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot
 
 /* ── Alpha Score: composite "power rating" 0–100 (the metric traders obsess over) ── */
 const calcAlphaScore = (t) => {
-  const wrScore = Math.min(t.winRate / 100, 1) * 30;             // 30% weight: win rate
-  const sharpeScore = Math.min((t.sharpe || 0) / 3, 1) * 25;     // 25% weight: risk-adjusted returns
-  const streakScore = Math.min(t.streak / 20, 1) * 15;           // 15% weight: consistency streak
-  const pfScore = Math.min((t.profitFactor || 0) / 3, 1) * 15;   // 15% weight: profit factor
-  const ddScore = Math.max(0, 1 - Math.abs(t.maxDD || 0) / 25) * 15; // 15% weight: low drawdown
-  return Math.round(wrScore + sharpeScore + streakScore + pfScore + ddScore);
+  // Calibrated: top traders reach 85-92, mid 60-75, low 40-55
+  const wrScore = Math.min(t.winRate / 100, 1) * 25;              // 25pts: win rate
+  const sharpeScore = Math.min((t.sharpe || 0) / 2.5, 1) * 25;   // 25pts: risk-adj returns (cap 2.5)
+  const pfScore = Math.min((t.profitFactor || 0) / 4, 1) * 20;    // 20pts: profit factor (cap 4.0)
+  const ddScore = Math.max(0, 1 - Math.abs(t.maxDD || 0) / 20) * 10; // 10pts: low drawdown
+  const streakScore = Math.min(t.streak / 15, 1) * 10;            // 10pts: consistency streak
+  const copierScore = Math.min((t.copiers || 0) / 500, 1) * 10;   // 10pts: social proof
+  return Math.round(wrScore + sharpeScore + pfScore + ddScore + streakScore + copierScore);
 };
 const alphaColor = (score) => score >= 80 ? C.green : score >= 60 ? C.blue : score >= 40 ? C.amber : C.red;
 const alphaLabel = (score) => score >= 90 ? "S+" : score >= 80 ? "S" : score >= 70 ? "A" : score >= 60 ? "B" : score >= 50 ? "C" : "D";
@@ -234,42 +236,42 @@ const mockTraders = [
     badges: ["streakMachine","copyKing","sharpShooter","alphaLeaker","profitPrinter"], level: 48, xp: 8200, xpNext: 10000,
     radarData: [{s:"Timing",v:94},{s:"Risk",v:89},{s:"Entries",v:96},{s:"Exits",v:91},{s:"Consistency",v:93},{s:"Discipline",v:92}],
     sparkData: [12,15,14,18,22,19,25,28,24,31,29,35,33,38,36,42], viewersNow: 47,
-    bio: "Full-time crypto trader since 2019. Specializing in BTC/ETH scalps with SMC methodology. Previously quant analyst at a prop firm.", location: "Miami, FL", joined: "Jan 2024", followers: 1842, following: 23, copiers: 567, sharpe: 2.1, maxDD: -8.2, avgRR: "1:2.8", avgHold: "4h", bestMonth: "+$42,300", worstMonth: "-$8,100", profitFactor: 2.4, favPairs: ["BTC/USDT", "ETH/USDT", "SOL/USDT"], style: "Scalping", exchange: "Binance" },
+    bio: "Full-time crypto trader since 2019. Specializing in BTC/ETH scalps with SMC methodology. Previously quant analyst at a prop firm.", location: "Miami, FL", joined: "Jan 2024", followers: 1842, following: 23, copiers: 567, sharpe: 2.1, maxDD: -8.2, avgRR: "1:1.5", avgHold: "4h", bestMonth: "+$42,300", worstMonth: "-$8,100", profitFactor: 3.8, favPairs: ["BTC/USDT", "ETH/USDT", "SOL/USDT"], style: "Scalping", exchange: "Binance" },
   { name: "Crypto Ninja", avatar: "🥷", winRate: 78, pnl: 125400, trades: 456, streak: 12, rank: 2, tier: "Diamond", isBot: false,
     badges: ["diamondHands","wagmi","sharpShooter","liqHunter"], level: 45, xp: 6500, xpNext: 10000,
     radarData: [{s:"Timing",v:92},{s:"Risk",v:88},{s:"Entries",v:95},{s:"Exits",v:85},{s:"Consistency",v:91},{s:"Discipline",v:89}],
     sparkData: [10,8,12,15,13,18,16,22,20,26,24,28,27,30,29,33], viewersNow: 32,
-    bio: "Swing trader focused on altcoins. I use order flow analysis and smart money concepts to find high-probability setups.", location: "Tokyo, Japan", joined: "Mar 2024", followers: 1234, following: 45, copiers: 389, sharpe: 1.9, maxDD: -11.5, avgRR: "1:3.2", avgHold: "8h", bestMonth: "+$38,500", worstMonth: "-$12,400", profitFactor: 2.1, favPairs: ["BTC/USDT", "XRP/USDT", "BNB/USDT"], style: "Swing", exchange: "Bybit" },
+    bio: "Swing trader focused on altcoins. I use order flow analysis and smart money concepts to find high-probability setups.", location: "Tokyo, Japan", joined: "Mar 2024", followers: 1234, following: 45, copiers: 389, sharpe: 1.9, maxDD: -11.5, avgRR: "1:2.0", avgHold: "8h", bestMonth: "+$38,500", worstMonth: "-$12,400", profitFactor: 3.2, favPairs: ["BTC/USDT", "XRP/USDT", "BNB/USDT"], style: "Swing", exchange: "Bybit" },
   { name: "Smart Money", avatar: "💼", winRate: 76, pnl: 112300, trades: 567, streak: 10, rank: 3, tier: "Platinum", isBot: true,
     badges: ["ironNerves","riskDjinn","profitPrinter","diamondHands"], level: 42, xp: 5100, xpNext: 10000,
     radarData: [{s:"Timing",v:89},{s:"Risk",v:86},{s:"Entries",v:91},{s:"Exits",v:88},{s:"Consistency",v:87},{s:"Discipline",v:85}],
     sparkData: [8,10,11,14,16,15,18,20,19,22,24,23,26,28,27,30], viewersNow: 28,
-    bio: "Conservative position trader. Low drawdown, consistent returns. Former hedge fund analyst. Risk management is everything.", location: "London, UK", joined: "Feb 2024", followers: 892, following: 12, copiers: 234, sharpe: 2.4, maxDD: -5.8, avgRR: "1:2.4", avgHold: "1d", bestMonth: "+$28,900", worstMonth: "-$5,200", profitFactor: 2.8, favPairs: ["BTC/USDT", "ETH/USDT", "AVAX/USDT"], style: "Position", exchange: "Binance" },
+    bio: "Conservative position trader. Low drawdown, consistent returns. Former hedge fund analyst. Risk management is everything.", location: "London, UK", joined: "Feb 2024", followers: 892, following: 12, copiers: 234, sharpe: 2.4, maxDD: -5.8, avgRR: "1:1.8", avgHold: "1d", bestMonth: "+$28,900", worstMonth: "-$5,200", profitFactor: 3.4, favPairs: ["BTC/USDT", "ETH/USDT", "AVAX/USDT"], style: "Position", exchange: "Binance" },
   { name: "Phoenix Rise", avatar: "🔥", winRate: 73, pnl: 104200, trades: 523, streak: 11, rank: 4, tier: "Platinum", isBot: false,
     badges: ["moonShot","degenGod","earlyApe"], level: 39, xp: 4200, xpNext: 10000,
     radarData: [{s:"Timing",v:86},{s:"Risk",v:83},{s:"Entries",v:89},{s:"Exits",v:85},{s:"Consistency",v:86},{s:"Discipline",v:84}],
     sparkData: [5,12,8,20,15,28,22,35,18,40,30,25,38,45,32,48], viewersNow: 19,
-    bio: "Aggressive intraday trader. High risk, high reward. Specializing in momentum plays during NY session.", location: "New York, NY", joined: "Apr 2024", followers: 567, following: 34, copiers: 178, sharpe: 1.6, maxDD: -18.4, avgRR: "1:3.8", avgHold: "2h", bestMonth: "+$52,100", worstMonth: "-$19,800", profitFactor: 1.7, favPairs: ["SOL/USDT", "BTC/USDT", "DOGE/USDT"], style: "Day Trading", exchange: "Bitget" },
+    bio: "Aggressive intraday trader. High risk, high reward. Specializing in momentum plays during NY session.", location: "New York, NY", joined: "Apr 2024", followers: 567, following: 34, copiers: 178, sharpe: 1.6, maxDD: -18.4, avgRR: "1:2.4", avgHold: "2h", bestMonth: "+$52,100", worstMonth: "-$19,800", profitFactor: 2.6, favPairs: ["SOL/USDT", "BTC/USDT", "DOGE/USDT"], style: "Day Trading", exchange: "Bitget" },
   { name: "Bull Master", avatar: "🐂", winRate: 72, pnl: 98500, trades: 342, streak: 8, rank: 5, tier: "Gold", isBot: true,
     badges: ["diamondHands","wagmi"], level: 35, xp: 3800, xpNext: 10000,
     radarData: [{s:"Timing",v:85},{s:"Risk",v:80},{s:"Entries",v:88},{s:"Exits",v:82},{s:"Consistency",v:84},{s:"Discipline",v:81}],
     sparkData: [6,8,7,11,10,14,13,16,15,18,17,20,19,22,21,24], viewersNow: 14,
-    bio: "Long-only conviction trader. I find the trend and ride it. Patient entries, wide stops, massive targets.", location: "Dubai, UAE", joined: "May 2024", followers: 456, following: 28, copiers: 145, sharpe: 1.8, maxDD: -12.1, avgRR: "1:4.2", avgHold: "3d", bestMonth: "+$31,200", worstMonth: "-$11,500", profitFactor: 1.9, favPairs: ["BTC/USDT", "ETH/USDT"], style: "Swing", exchange: "Binance" },
+    bio: "Long-only conviction trader. I find the trend and ride it. Patient entries, wide stops, massive targets.", location: "Dubai, UAE", joined: "May 2024", followers: 456, following: 28, copiers: 145, sharpe: 1.8, maxDD: -12.1, avgRR: "1:2.2", avgHold: "3d", bestMonth: "+$31,200", worstMonth: "-$11,500", profitFactor: 2.5, favPairs: ["BTC/USDT", "ETH/USDT"], style: "Swing", exchange: "Binance" },
   { name: "Rocket Launch", avatar: "🚀", winRate: 70, pnl: 89600, trades: 445, streak: 9, rank: 6, tier: "Gold", isBot: false,
     badges: ["earlyApe","whaleSpotter"], level: 32, xp: 2900, xpNext: 10000,
     radarData: [{s:"Timing",v:82},{s:"Risk",v:78},{s:"Entries",v:85},{s:"Exits",v:80},{s:"Consistency",v:81},{s:"Discipline",v:79}],
     sparkData: [4,7,5,10,8,14,11,18,13,20,16,22,19,24,21,26], viewersNow: 11,
-    bio: "Breakout specialist. Scanning for volume surges and structural breaks. Trading crypto full-time since the 2021 bull run.", location: "Berlin, Germany", joined: "Jun 2024", followers: 345, following: 56, copiers: 98, sharpe: 1.5, maxDD: -14.8, avgRR: "1:2.6", avgHold: "6h", bestMonth: "+$24,800", worstMonth: "-$13,200", profitFactor: 1.6, favPairs: ["BTC/USDT", "SOL/USDT", "AVAX/USDT"], style: "Breakout", exchange: "Bybit" },
+    bio: "Breakout specialist. Scanning for volume surges and structural breaks. Trading crypto full-time since the 2021 bull run.", location: "Berlin, Germany", joined: "Jun 2024", followers: 345, following: 56, copiers: 98, sharpe: 1.5, maxDD: -14.8, avgRR: "1:1.8", avgHold: "6h", bestMonth: "+$24,800", worstMonth: "-$13,200", profitFactor: 2.1, favPairs: ["BTC/USDT", "SOL/USDT", "AVAX/USDT"], style: "Breakout", exchange: "Bybit" },
   { name: "Iron Fist", avatar: "👊", winRate: 68, pnl: 72400, trades: 389, streak: 7, rank: 7, tier: "Silver", isBot: true,
     badges: ["liqHunter"], level: 28, xp: 1800, xpNext: 10000,
     radarData: [{s:"Timing",v:75},{s:"Risk",v:70},{s:"Entries",v:77},{s:"Exits",v:72},{s:"Consistency",v:73},{s:"Discipline",v:71}],
     sparkData: [3,5,4,6,5,8,7,10,8,12,9,11,10,13,11,14], viewersNow: 6,
-    bio: "Grinding every day. Learning from the best. Focused on improving my discipline and risk management.", location: "Bogota, Colombia", joined: "Jul 2024", followers: 189, following: 67, copiers: 42, sharpe: 1.3, maxDD: -16.5, avgRR: "1:2.0", avgHold: "5h", bestMonth: "+$18,400", worstMonth: "-$9,800", profitFactor: 1.4, favPairs: ["BTC/USDT", "ETH/USDT", "XRP/USDT"], style: "Scalping", exchange: "Binance" },
+    bio: "Grinding every day. Learning from the best. Focused on improving my discipline and risk management.", location: "Bogota, Colombia", joined: "Jul 2024", followers: 189, following: 67, copiers: 42, sharpe: 1.3, maxDD: -16.5, avgRR: "1:1.5", avgHold: "5h", bestMonth: "+$18,400", worstMonth: "-$9,800", profitFactor: 1.6, favPairs: ["BTC/USDT", "ETH/USDT", "XRP/USDT"], style: "Scalping", exchange: "Binance" },
   { name: "Wave Rider", avatar: "🏄", winRate: 65, pnl: 45800, trades: 234, streak: 5, rank: 8, tier: "Silver", isBot: false,
     badges: ["ctInfluencer"], level: 18, xp: 4200, xpNext: 10000,
     radarData: [{s:"Timing",v:78},{s:"Risk",v:72},{s:"Entries",v:80},{s:"Exits",v:75},{s:"Consistency",v:76},{s:"Discipline",v:74}],
     sparkData: [2,4,3,5,4,3,5,7,6,8,5,7,6,9,7,10], viewersNow: 3,
-    bio: "Part-time trader, full-time surfer. Catching waves in the market like I catch them in the ocean. Chill entries only.", location: "Bali, Indonesia", joined: "Aug 2024", followers: 123, following: 89, copiers: 28, sharpe: 1.1, maxDD: -20.2, avgRR: "1:1.8", avgHold: "12h", bestMonth: "+$14,600", worstMonth: "-$11,200", profitFactor: 1.2, favPairs: ["BTC/USDT", "SOL/USDT"], style: "Swing", exchange: "Bitget" },
+    bio: "Part-time trader, full-time surfer. Catching waves in the market like I catch them in the ocean. Chill entries only.", location: "Bali, Indonesia", joined: "Aug 2024", followers: 123, following: 89, copiers: 28, sharpe: 1.1, maxDD: -20.2, avgRR: "1:1.4", avgHold: "12h", bestMonth: "+$14,600", worstMonth: "-$11,200", profitFactor: 1.3, favPairs: ["BTC/USDT", "SOL/USDT"], style: "Swing", exchange: "Bitget" },
 ];
 
 /* Trader social links */
@@ -454,22 +456,57 @@ const mockGroups = [
 const traderColors = ["#58a6ff","#3fb950","#f85149","#d29922","#8b5cf6","#39d0d8","#f0883e","#bc8cff"];
 const traderEquity = (() => {
   const names = ["Scalp King","Crypto Ninja","Smart Money","Phoenix Rise","Bull Master","Rocket Launch","Iron Fist","Wave Rider"];
-  const seeds = [156200, 125400, 112300, 104200, 98500, 89600, 72400, 45800];
-  // Staggered start days — not all traders have full 30-day history
+  const finalPnL = [156200, 125400, 112300, 104200, 98500, 89600, 72400, 45800];
   const startDay = [1, 1, 3, 1, 5, 8, 1, 12];
+  // Daily volatility (σ) as fraction of current equity — skilled traders are smoother
+  const dailyVol = [0.06, 0.08, 0.05, 0.09, 0.10, 0.08, 0.12, 0.14];
+  // Drawdown events: [traderIdx, startDay, endDay, severity (fraction of equity lost)]
+  const drawdowns = [
+    [4, 14, 18, 0.18], // Bull Master: -18% drawdown days 14-18
+    [7, 20, 24, 0.22], // Wave Rider: -22% drawdown days 20-24
+    [6, 8, 11, 0.12],  // Iron Fist: -12% drawdown days 8-11
+    [5, 15, 17, 0.10], // Rocket Launch: -10% drawdown days 15-17
+  ];
+  // Seeded pseudo-random for deterministic results
+  const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
   const data = [];
+  // Pre-compute equity paths with geometric growth
+  const paths = names.map((_, i) => {
+    const totalDays = 30 - startDay[i] + 1;
+    // Daily compound rate to reach finalPnL from ~0 over totalDays
+    // Model: equity[d] = initialCapital * (1 + dailyRate)^d + noise
+    const initialCapital = 10000; // starting capital reference
+    const dailyRate = Math.pow((initialCapital + finalPnL[i]) / initialCapital, 1 / totalDays) - 1;
+    const path = [];
+    let equity = initialCapital;
+    for (let d = 0; d < totalDays; d++) {
+      const globalDay = startDay[i] + d;
+      // Base geometric growth
+      equity *= (1 + dailyRate);
+      // Add volatility noise (mean-reverting)
+      const noise = (srand(i * 1000 + d * 37) - 0.5) * 2 * dailyVol[i] * equity;
+      let dayEquity = equity + noise;
+      // Apply drawdown events
+      for (const [ti, ds, de, severity] of drawdowns) {
+        if (ti === i && globalDay >= ds && globalDay <= de) {
+          const ddProgress = (globalDay - ds) / (de - ds);
+          // V-shaped: deepest at midpoint, recovering toward end
+          const ddFactor = ddProgress < 0.5
+            ? severity * (ddProgress / 0.5)
+            : severity * (1 - (ddProgress - 0.5) / 0.5);
+          dayEquity *= (1 - ddFactor);
+        }
+      }
+      path.push(Math.round(dayEquity - initialCapital)); // PnL relative to start
+    }
+    return path;
+  });
   for (let d = 1; d <= 30; d++) {
     const point = { day: d };
     names.forEach((name, i) => {
       if (d < startDay[i]) { point[name] = null; return; }
-      const base = seeds[i];
-      const activeDays = d - startDay[i] + 1;
-      const totalActive = 30 - startDay[i] + 1;
-      const growth = (activeDays / totalActive) * base;
-      const noise = Math.sin(d * (i + 1) * 0.7) * base * 0.08 + Math.cos(d * 0.3 * (i + 1)) * base * 0.05;
-      // Some traders have drawdown periods
-      const drawdown = (i === 4 && d >= 14 && d <= 18) ? -base * 0.15 : (i === 7 && d >= 20 && d <= 24) ? -base * 0.2 : 0;
-      point[name] = Math.round(growth + noise + drawdown);
+      const idx = d - startDay[i];
+      point[name] = paths[i][idx];
     });
     data.push(point);
   }
@@ -477,14 +514,21 @@ const traderEquity = (() => {
 })();
 
 const heatAssets = ["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","AVAX"];
-const mockHeatmap = [
-  { t: "Scalp King", d: [12300,9870,6450,5230,3120,2100,1560,4980] },
-  { t: "Crypto Ninja", d: [8420,6230,4120,3850,2100,1240,890,3450] },
-  { t: "Smart Money", d: [9150,7620,5340,4210,2340,1560,980,3890] },
-  { t: "Bull Master", d: [6200,4850,2980,2650,1450,-820,-640,2340] },
-  { t: "Rocket Launch", d: [5430,3890,2340,1980,890,-450,-220,2100] },
-  { t: "Wave Rider", d: [2100,1450,890,-650,-1120,-1250,-340,1200] },
-];
+// Heatmap: per-asset PnL breakdown. Each row sums to the trader's total PnL.
+const mockHeatmap = (() => {
+  const traders = [
+    { t: "Scalp King", pnl: 156200, w: [0.32, 0.24, 0.15, 0.10, 0.06, 0.04, 0.03, 0.06] },
+    { t: "Crypto Ninja", pnl: 125400, w: [0.28, 0.22, 0.16, 0.12, 0.08, 0.05, 0.03, 0.06] },
+    { t: "Smart Money", pnl: 112300, w: [0.30, 0.25, 0.14, 0.11, 0.07, 0.05, 0.03, 0.05] },
+    { t: "Bull Master", pnl: 98500, w: [0.35, 0.25, 0.12, 0.10, 0.08, -0.02, -0.01, 0.13] },
+    { t: "Rocket Launch", pnl: 89600, w: [0.30, 0.22, 0.15, 0.12, 0.08, -0.02, -0.01, 0.16] },
+    { t: "Wave Rider", pnl: 45800, w: [0.28, 0.20, 0.14, -0.04, -0.08, -0.10, 0.08, 0.52] },
+  ];
+  return traders.map(({ t, pnl, w }) => ({
+    t,
+    d: w.map(weight => Math.round(pnl * weight))
+  }));
+})();
 
 const marchData = {};
 let cumPnl = 0;
@@ -620,22 +664,46 @@ const feedItems = (() => {
   const items = [];
   let id = 1;
   // Trade events from all traders
+  // Base prices for realistic entry generation
+  const basePrices = { "BTC/USDT": 67500, "ETH/USDT": 3450, "SOL/USDT": 145, "BNB/USDT": 580, "XRP/USDT": 0.62 };
+  // TP/SL distances vary by trader skill (better traders = tighter SL, wider TP)
+  const tpDistances = [0.025, 0.030, 0.022, 0.035, 0.040, 0.028, 0.020, 0.018]; // % move to TP
+  const slDistances = [0.010, 0.012, 0.009, 0.015, 0.018, 0.014, 0.013, 0.012]; // % move to SL
   mockTraders.forEach((t, ti) => {
     const pairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT"];
     for (let i = 0; i < 3; i++) {
       const isWin = Math.random() < (t.winRate / 100);
       const type = Math.random() > 0.45 ? "LONG" : "SHORT";
       const pair = pairs[(ti + i) % pairs.length];
-      const entry = pair.startsWith("BTC") ? 67000 + Math.random() * 2000 : pair.startsWith("ETH") ? 3400 + Math.random() * 200 : 50 + Math.random() * 100;
-      const pnl = isWin ? Math.round(400 + Math.random() * 4000) : -Math.round(200 + Math.random() * 2000);
-      const tp = Math.round((entry * (type === "LONG" ? 1.025 : 0.975)) * 100) / 100;
-      const sl = Math.round((entry * (type === "LONG" ? 0.99 : 1.01)) * 100) / 100;
+      const basePrice = basePrices[pair];
+      const spread = basePrice * 0.015; // 1.5% price spread for variety
+      const entry = Math.round((basePrice + (Math.random() - 0.5) * spread * 2) * 100) / 100;
+      const tpDist = tpDistances[ti] || 0.025;
+      const slDist = slDistances[ti] || 0.012;
+      const tp = Math.round((entry * (type === "LONG" ? (1 + tpDist) : (1 - tpDist))) * 100) / 100;
+      const sl = Math.round((entry * (type === "LONG" ? (1 - slDist) : (1 + slDist))) * 100) / 100;
+      const leverageNum = [3, 5, 10, 2, 4][(ti + i) % 5];
+      const leverageStr = `${leverageNum}x`;
+      // PnL = entry × leverage × %move (TP hit or SL hit)
       const status = i === 0 ? "active" : isWin ? "tp_hit" : "sl_hit";
+      let pnl;
+      if (status === "active") {
+        // Active trades: partial P&L (random 10-60% of the way to TP or SL)
+        const partial = 0.1 + Math.random() * 0.5;
+        const direction = Math.random() > 0.4 ? 1 : -1;
+        const movePercent = direction > 0 ? tpDist * partial : slDist * partial;
+        pnl = Math.round(entry * leverageNum * movePercent * direction);
+      } else if (status === "tp_hit") {
+        // Won: PnL = entry × leverage × tpDist (always positive)
+        pnl = Math.round(entry * leverageNum * tpDist);
+      } else {
+        // Lost: PnL = -entry × leverage × slDist (always negative)
+        pnl = -Math.round(entry * leverageNum * slDist);
+      }
       const minsAgo = ti * 12 + i * 25 + Math.floor(Math.random() * 15);
       items.push({
         id: id++, kind: "trade", trader: t.name, avatar: t.avatar, isBot: t.isBot, tier: t.tier,
-        pair, type, entry: Math.round(entry * 100) / 100, tp, sl, pnl, status,
-        leverage: ["3x","5x","10x","2x","4x"][(ti+i)%5],
+        pair, type, entry, tp, sl, pnl, status, leverage: leverageStr,
         analysis: isWin
           ? ["OB + FVG confluence en zona clave. Entrada limpia.", "Liquidez barrida + desplazamiento fuerte. Confluencia alta.", "BOS confirmado en 1H con volumen. Momentum a favor.", "Retest de Order Block + estructura intacta. Setup A+."][((ti*3+i)*7)%4]
           : ["Fakeout sobre resistencia. Mercado lateral.", "PA choppy sin dirección clara. Entré sin confirmación.", "Entré contra el bias de timeframe mayor.", "Perdí la killzone, volumen bajo."][((ti*3+i)*7)%4],
@@ -670,12 +738,12 @@ const feedItems = (() => {
   });
   // Signal events — trade ideas shared BEFORE executing (alerts/tips)
   const signalSetups = [
-    { pair: "BTC/USDT", bias: "LONG", idea: "OB diario en $66.8K con FVG sin mitigar. Espero barrido de liquidez para entrada.", conf: 85, tf: "4H" },
-    { pair: "ETH/USDT", bias: "SHORT", idea: "Divergencia bajista en RSI + rechazo en zona premium. Posible drop a $3.2K.", conf: 72, tf: "1H" },
-    { pair: "SOL/USDT", bias: "LONG", idea: "Acumulación Wyckoff en rango. Spring confirmado, buscando markup.", conf: 78, tf: "1D" },
-    { pair: "BNB/USDT", bias: "SHORT", idea: "Distribución en HTF. BOS bajista en 4H con volumen decreciente.", conf: 65, tf: "4H" },
-    { pair: "XRP/USDT", bias: "LONG", idea: "Zona de demanda institucional + confluencia con MA200. Setup de alta probabilidad.", conf: 90, tf: "1D" },
-    { pair: "BTC/USDT", bias: "SHORT", idea: "Resistencia semanal + sobrecomprado en múltiples TFs. Veo corrección.", conf: 68, tf: "1W" },
+    { pair: "BTC/USDT", bias: "LONG", idea: "OB diario en $66.8K con FVG sin mitigar. Espero barrido de liquidez para entrada.", conf: 92, tf: "4H" },
+    { pair: "ETH/USDT", bias: "SHORT", idea: "Divergencia bajista en RSI + rechazo en zona premium. Posible drop a $3.2K.", conf: 68, tf: "1H" },
+    { pair: "SOL/USDT", bias: "LONG", idea: "Acumulación Wyckoff en rango. Spring confirmado, buscando markup.", conf: 81, tf: "1D" },
+    { pair: "BNB/USDT", bias: "SHORT", idea: "Distribución en HTF. BOS bajista en 4H con volumen decreciente.", conf: 45, tf: "4H" },
+    { pair: "XRP/USDT", bias: "LONG", idea: "Zona de demanda institucional + confluencia con MA200. Setup de alta probabilidad.", conf: 95, tf: "1D" },
+    { pair: "BTC/USDT", bias: "SHORT", idea: "Resistencia semanal + sobrecomprado en múltiples TFs. Veo corrección.", conf: 55, tf: "1W" },
   ];
   mockTraders.slice(0, 6).forEach((t, i) => {
     const s = signalSetups[i];
@@ -705,6 +773,7 @@ const feedItems = (() => {
 })();
 
 /* ── Copy Trading Data ── */
+// Recent trades are scaled to AUM — 3 recent trades represent ~15-25% of monthly gains
 const copyPortfolios = [
   {
     name: "Scalp King", avatar: "👑", tier: "Diamond", followers: 1842, aum: 2450000,
@@ -712,9 +781,9 @@ const copyPortfolios = [
     fee: 15, minInvest: 500, riskLevel: "Medium",
     equity: Array.from({ length: 30 }, (_, i) => ({ day: i + 1, value: 100000 + i * 3200 + Math.sin(i * 0.8) * 5000 })),
     recentTrades: [
-      { pair: "BTC/USDT", type: "LONG", pnl: 3240, date: "Mar 22" },
-      { pair: "ETH/USDT", type: "LONG", pnl: 1850, date: "Mar 21" },
-      { pair: "SOL/USDT", type: "SHORT", pnl: -420, date: "Mar 21" },
+      { pair: "BTC/USDT", type: "LONG", pnl: 38200, date: "Mar 22" },
+      { pair: "ETH/USDT", type: "LONG", pnl: 22400, date: "Mar 21" },
+      { pair: "SOL/USDT", type: "SHORT", pnl: -8600, date: "Mar 21" },
     ],
     allocation: [{ asset: "BTC", pct: 45 }, { asset: "ETH", pct: 25 }, { asset: "SOL", pct: 15 }, { asset: "Others", pct: 15 }]
   },
@@ -724,9 +793,9 @@ const copyPortfolios = [
     fee: 12, minInvest: 300, riskLevel: "Medium-High",
     equity: Array.from({ length: 30 }, (_, i) => ({ day: i + 1, value: 80000 + i * 2800 + Math.cos(i * 0.6) * 4000 })),
     recentTrades: [
-      { pair: "BTC/USDT", type: "SHORT", pnl: 2100, date: "Mar 22" },
-      { pair: "XRP/USDT", type: "LONG", pnl: 890, date: "Mar 22" },
-      { pair: "BNB/USDT", type: "LONG", pnl: 1560, date: "Mar 20" },
+      { pair: "BTC/USDT", type: "SHORT", pnl: 24800, date: "Mar 22" },
+      { pair: "XRP/USDT", type: "LONG", pnl: 11200, date: "Mar 22" },
+      { pair: "BNB/USDT", type: "LONG", pnl: -5400, date: "Mar 20" },
     ],
     allocation: [{ asset: "BTC", pct: 35 }, { asset: "ETH", pct: 30 }, { asset: "XRP", pct: 20 }, { asset: "Others", pct: 15 }]
   },
@@ -736,9 +805,9 @@ const copyPortfolios = [
     fee: 18, minInvest: 1000, riskLevel: "Low",
     equity: Array.from({ length: 30 }, (_, i) => ({ day: i + 1, value: 120000 + i * 2400 + Math.sin(i * 0.5) * 3000 })),
     recentTrades: [
-      { pair: "BTC/USDT", type: "LONG", pnl: 4500, date: "Mar 22" },
-      { pair: "ETH/USDT", type: "LONG", pnl: 2200, date: "Mar 21" },
-      { pair: "AVAX/USDT", type: "SHORT", pnl: 1100, date: "Mar 19" },
+      { pair: "BTC/USDT", type: "LONG", pnl: 18500, date: "Mar 22" },
+      { pair: "ETH/USDT", type: "LONG", pnl: 9800, date: "Mar 21" },
+      { pair: "AVAX/USDT", type: "SHORT", pnl: -3200, date: "Mar 19" },
     ],
     allocation: [{ asset: "BTC", pct: 50 }, { asset: "ETH", pct: 30 }, { asset: "SOL", pct: 10 }, { asset: "Others", pct: 10 }]
   },
@@ -1723,110 +1792,108 @@ const SMCAnalysis = () => {
 const HomeTab = () => {
   const { openProfile } = useProfile();
   const { setFeedFilter, setActiveTab } = useFeedFilter();
-  const [selectedTrader, setSelectedTrader] = useState(mockTraders[0].name);
   const [selectedPair, setSelectedPair] = useState("BTC/USDT");
-  const [showTraderDD, setShowTraderDD] = useState(false);
   const [showPairDD, setShowPairDD] = useState(false);
   const [chartRange, setChartRange] = useState("1D");
-  const traderDDRef = useRef(null);
+  const [hoveredDot, setHoveredDot] = useState(null);
   const pairDDRef = useRef(null);
 
   const allPairs = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "AVAX/USDT"];
   const ranges = ["1H", "4H", "1D", "1W", "1M"];
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (traderDDRef.current && !traderDDRef.current.contains(e.target)) setShowTraderDD(false);
       if (pairDDRef.current && !pairDDRef.current.contains(e.target)) setShowPairDD(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Generate candlestick OHLC data + embed signal/trade markers
-  const chartData = useMemo(() => {
-    const trader = mockTraders.find(t => t.name === selectedTrader) || mockTraders[0];
-    const basePrice = selectedPair.startsWith("BTC") ? 67500 : selectedPair.startsWith("ETH") ? 3450 : selectedPair.startsWith("SOL") ? 145 : selectedPair.startsWith("BNB") ? 580 : selectedPair.startsWith("XRP") ? 0.62 : selectedPair.startsWith("DOGE") ? 0.15 : 35;
-    const volatility = basePrice * 0.008;
-    const traderSeed = trader.winRate + trader.pnl * 0.0001;
-    const points = chartRange === "1H" ? 12 : chartRange === "4H" ? 16 : chartRange === "1D" ? 24 : chartRange === "1W" ? 28 : 30;
+  // Top 10 traders sorted by Alpha Score
+  const top10Traders = useMemo(() => {
+    return [...mockTraders].sort((a, b) => calcAlphaScore(b) - calcAlphaScore(a)).slice(0, 10);
+  }, []);
 
-    // Collect feed events to place on chart
-    const traderEvents = feedItems.filter(f =>
-      (f.kind === "trade" || f.kind === "signal") && f.trader === selectedTrader && f.pair === selectedPair
+  // Generate signal heatmap: 8 rows × 10 cols grid of dots — each dot = a time bucket
+  // Color = aggregate signal bias (green = net LONG, red = net SHORT, dim = no signal)
+  const signalHeatmap = useMemo(() => {
+    const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
+    const rows = 8;
+    const cols = 10;
+    const grid = [];
+    const pairBase = allPairs.indexOf(selectedPair);
+    for (let r = 0; r < rows; r++) {
+      const row = [];
+      for (let c = 0; c < cols; c++) {
+        const seed = pairBase * 1000 + r * 100 + c * 7 + 42;
+        const hasSignal = srand(seed) > 0.35; // ~65% of dots have a signal
+        const isLong = srand(seed + 500) > 0.45; // slight long bias
+        const strength = 0.3 + srand(seed + 200) * 0.7; // opacity/intensity
+        // Attach a trader to each signal dot for mouseover
+        const traderIdx = Math.floor(srand(seed + 300) * mockTraders.length);
+        const trader = mockTraders[traderIdx];
+        const pnl = hasSignal ? Math.round((srand(seed + 400) - 0.3) * 5000) : 0;
+        row.push({ hasSignal, isLong, strength, trader, pnl, r, c });
+      }
+      grid.push(row);
+    }
+    return grid;
+  }, [selectedPair]);
+
+  // Chart data (same improved generation as before)
+  const chartData = useMemo(() => {
+    const assetParams = {
+      "BTC/USDT": [67500, 0.025, 0.012], "ETH/USDT": [3450, 0.032, 0.015],
+      "SOL/USDT": [145, 0.045, 0.022], "BNB/USDT": [580, 0.028, 0.014],
+      "XRP/USDT": [0.62, 0.038, 0.018], "DOGE/USDT": [0.15, 0.055, 0.028], "AVAX/USDT": [35, 0.042, 0.020]
+    };
+    const [basePrice, dailyVol, avgSpread] = assetParams[selectedPair] || [100, 0.03, 0.015];
+    const tfScale = { "1H": 0.15, "4H": 0.35, "1D": 1.0, "1W": 2.2, "1M": 4.5 };
+    const candleVol = dailyVol * (tfScale[chartRange] || 1.0);
+    const pairSeed = allPairs.indexOf(selectedPair) * 137 + 42;
+    const points = chartRange === "1H" ? 12 : chartRange === "4H" ? 16 : chartRange === "1D" ? 24 : chartRange === "1W" ? 28 : 30;
+    const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
+
+    // Collect ALL trader events for this pair to show as movement markers on hover
+    const allEvents = feedItems.filter(f =>
+      (f.kind === "trade" || f.kind === "signal") && f.pair === selectedPair
     );
 
     const data = [];
     let price = basePrice;
+    let momentum = 0;
     for (let i = 0; i < points; i++) {
-      const trend = (trader.winRate - 70) * 0.0003 * volatility;
-      const noise = (Math.sin(i * 2.3 + traderSeed) * 0.6 + Math.cos(i * 1.1 + traderSeed * 0.5) * 0.4) * volatility;
-      price = price + trend + noise;
-      const high = price + Math.abs(Math.sin(i * 1.7)) * volatility * 0.5;
-      const low = price - Math.abs(Math.cos(i * 2.1)) * volatility * 0.5;
-      const open = price - noise * 0.3;
+      const r1 = srand(pairSeed + i * 13.7) - 0.5;
+      const r2 = srand(pairSeed + i * 29.3 + 100) - 0.5;
+      momentum = momentum * 0.7 + r1 * candleVol * price;
+      const move = momentum + r2 * candleVol * price * 0.3;
+      const open = price;
+      price = price + move;
       const close = price;
+      const bodySize = Math.abs(close - open);
+      const wickExt = bodySize * (0.3 + srand(pairSeed + i * 7.1) * 0.8) + basePrice * avgSpread * 0.3;
+      const high = Math.max(open, close) + wickExt * srand(pairSeed + i * 3.3);
+      const low = Math.min(open, close) - wickExt * srand(pairSeed + i * 5.7);
       const label = chartRange === "1H" ? `${i * 5}m` : chartRange === "4H" ? `${i}:00` : chartRange === "1D" ? `${i}:00` : `Día ${i + 1}`;
       const bullish = close >= open;
+      const moveRatio = Math.abs(move) / (basePrice * candleVol + 0.001);
+      const baseVol = 800 + srand(pairSeed + i * 11.1) * 1200;
+      const vol = Math.round(baseVol * (0.6 + moveRatio * 2.5));
 
-      // Candlestick body: store as [bodyLow, bodyHigh] for stacked rendering
-      const bodyLow = Math.min(open, close);
-      const bodyHigh = Math.max(open, close);
+      // Attach movement events to candles (spread across chart)
+      const evtIdx = Math.floor(i / (points / Math.max(allEvents.length, 1)));
+      const evt = (allEvents[evtIdx] && i === Math.floor(evtIdx * (points / allEvents.length)) + 1) ? allEvents[evtIdx] : null;
 
-      const point = {
+      data.push({
         label, open: +open.toFixed(2), close: +close.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2),
-        price: +close.toFixed(2), bodyLow: +bodyLow.toFixed(2), bodyHigh: +bodyHigh.toFixed(2), bullish,
-        vol: Math.round(500 + Math.random() * 3000),
-        marker: null, markerKind: null, markerDir: null, markerPnl: null
-      };
-
-      // Place events at specific candle positions (spread across chart)
-      const evtIdx = Math.floor(i / (points / Math.max(traderEvents.length, 1)));
-      if (traderEvents[evtIdx] && i === Math.floor(evtIdx * (points / traderEvents.length)) + 2) {
-        const evt = traderEvents[evtIdx];
-        point.marker = evt.kind;
-        point.markerKind = evt.kind;
-        point.markerDir = evt.type || evt.bias;
-        point.markerPnl = evt.pnl || null;
-        point.markerLev = evt.leverage || null;
-        point.markerConf = evt.confidence || null;
-        traderEvents[evtIdx] = { ...traderEvents[evtIdx], _placed: true };
-      }
-
-      data.push(point);
+        price: +close.toFixed(2), bullish, vol,
+        evt // trader movement event attached to this candle
+      });
     }
     return data;
-  }, [selectedTrader, selectedPair, chartRange]);
+  }, [selectedPair, chartRange]);
 
-  // Custom candlestick bar shape
-  const CandlestickBar = useCallback((props) => {
-    const { x, y, width, height, payload } = props;
-    if (!payload) return null;
-    const { open, close, high, low, bullish } = payload;
-    const color = bullish ? C.green : C.red;
-    const yScale = (val) => {
-      // Approximate y position from bar props
-      const bodyLow = Math.min(open, close);
-      const bodyHigh = Math.max(open, close);
-      const bodyRange = bodyHigh - bodyLow || 0.01;
-      return y + height - ((val - bodyLow) / bodyRange) * height;
-    };
-    const candleX = x + width / 2;
-    const wickWidth = 1;
-    // We render wick + body in SVG
-    const bodyH = Math.max(height, 1);
-    return (
-      <g>
-        {/* Wick */}
-        <line x1={candleX} y1={yScale(high)} x2={candleX} y2={yScale(low)} stroke={color} strokeWidth={wickWidth} />
-        {/* Body */}
-        <rect x={x + 1} y={y} width={Math.max(width - 2, 2)} height={bodyH} fill={bullish ? color : color} rx={1} opacity={bullish ? 0.9 : 0.7} />
-      </g>
-    );
-  }, []);
-
-  // Custom chart marker renderer for signals/trades
+  // Chart markers: show all trader movements as speech bubbles
   const ChartMarkers = useCallback((props) => {
     const { formattedGraphicalItems } = props;
     if (!formattedGraphicalItems || !formattedGraphicalItems[0]) return null;
@@ -1834,82 +1901,42 @@ const HomeTab = () => {
     return (
       <g>
         {chartData.map((d, i) => {
-          if (!d.marker || !areaPoints[i]) return null;
+          if (!d.evt || !areaPoints[i]) return null;
           const pt = areaPoints[i];
-          const isLong = d.markerDir === "LONG";
+          const isLong = (d.evt.type === "LONG" || d.evt.bias === "LONG");
           const color = isLong ? C.green : C.red;
-          const arrowY = isLong ? -1 : 1;
-
-          if (d.markerKind === "signal") {
-            // Signal: speech bubble pin with arrow
-            const bx = pt.x;
-            const by = pt.y - 28;
-            return (
-              <g key={`marker-${i}`}>
-                {/* Pin line */}
-                <line x1={bx} y1={pt.y} x2={bx} y2={by + 12} stroke={color} strokeWidth={1.5} strokeDasharray="2 2" />
-                {/* Bubble */}
-                <ellipse cx={bx} cy={by} rx={14} ry={11} fill={color} />
-                {/* Arrow inside */}
-                <path d={isLong ? `M${bx} ${by+4} L${bx} ${by-4} M${bx-3} ${by-1} L${bx} ${by-4} L${bx+3} ${by-1}` : `M${bx} ${by-4} L${bx} ${by+4} M${bx-3} ${by+1} L${bx} ${by+4} L${bx+3} ${by+1}`} stroke="#fff" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                {/* Label */}
-                <text x={bx} y={by + 20} textAnchor="middle" fontSize={7} fontWeight="700" fill={color}>SEÑAL</text>
-              </g>
-            );
-          }
-
-          if (d.markerKind === "trade") {
-            // Trade: flag/pennant on pole
-            const px = pt.x;
-            const poleTop = pt.y - 40;
-            const poleBot = pt.y;
-            const flagW = 48;
-            const flagH = 22;
-            return (
-              <g key={`marker-${i}`}>
-                {/* Pole */}
-                <line x1={px} y1={poleBot} x2={px} y2={poleTop} stroke={color} strokeWidth={1.5} />
-                {/* Pole dot */}
-                <circle cx={px} cy={poleTop} r={2.5} fill={color} />
-                {/* Flag body (pennant shape) */}
-                <polygon points={`${px},${poleTop} ${px + flagW},${poleTop + flagH / 2} ${px},${poleTop + flagH}`} fill={color} opacity={0.9} />
-                {/* Arrow inside flag */}
-                <path d={isLong ? `M${px+8} ${poleTop+flagH/2+2} L${px+8} ${poleTop+flagH/2-3} M${px+6} ${poleTop+flagH/2-1} L${px+8} ${poleTop+flagH/2-3} L${px+10} ${poleTop+flagH/2-1}` : `M${px+8} ${poleTop+flagH/2-2} L${px+8} ${poleTop+flagH/2+3} M${px+6} ${poleTop+flagH/2+1} L${px+8} ${poleTop+flagH/2+3} L${px+10} ${poleTop+flagH/2+1}`} stroke="#fff" strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                {/* Pair text in flag */}
-                <text x={px + 18} y={poleTop + flagH / 2 - 2} fontSize={6} fontWeight="800" fill="#fff" dominantBaseline="middle">{selectedPair.split("/")[0]}</text>
-                {/* PnL / Price below flag */}
-                {d.markerPnl != null && (
-                  <text x={px + 18} y={poleTop + flagH / 2 + 6} fontSize={6} fontWeight="700" fill="#fff" dominantBaseline="middle" opacity={0.9}>
-                    {d.markerPnl >= 0 ? "+" : ""}${d.markerPnl.toLocaleString()}
-                  </text>
-                )}
-                {d.markerLev && (
-                  <text x={px + flagW - 4} y={poleTop + flagH / 2 + 1} fontSize={5.5} fontWeight="700" fill="#fff" dominantBaseline="middle" textAnchor="end" opacity={0.7}>{d.markerLev}</text>
-                )}
-              </g>
-            );
-          }
-          return null;
+          const bx = pt.x;
+          const by = pt.y - 30;
+          const isSignal = d.evt.kind === "signal";
+          return (
+            <g key={`mv-${i}`}>
+              {/* Dashed pin line */}
+              <line x1={bx} y1={pt.y} x2={bx} y2={by + 13} stroke={color} strokeWidth={1} strokeDasharray="2 2" opacity={0.6} />
+              {/* Bubble */}
+              <ellipse cx={bx} cy={by} rx={isSignal ? 13 : 16} ry={10} fill={color} opacity={0.9} />
+              {/* Direction arrow inside bubble */}
+              <path d={isLong
+                ? `M${bx} ${by+3} L${bx} ${by-3} M${bx-2.5} ${by-1} L${bx} ${by-3} L${bx+2.5} ${by-1}`
+                : `M${bx} ${by-3} L${bx} ${by+3} M${bx-2.5} ${by+1} L${bx} ${by+3} L${bx+2.5} ${by+1}`
+              } stroke="#fff" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+              {/* Trader avatar label below */}
+              <text x={bx} y={by + 21} textAnchor="middle" fontSize={8} fill={color} fontWeight="700">{d.evt.avatar || ""}</text>
+              {/* PnL or confidence next to bubble */}
+              {d.evt.pnl != null && !isSignal && (
+                <text x={bx + 20} y={by + 2} fontSize={7} fontWeight="800" fill={d.evt.pnl >= 0 ? C.green : C.red} dominantBaseline="middle" {...mono}>
+                  {d.evt.pnl >= 0 ? "+" : ""}${Math.abs(d.evt.pnl) >= 1000 ? (d.evt.pnl / 1000).toFixed(1) + "K" : d.evt.pnl}
+                </text>
+              )}
+              {isSignal && d.evt.confidence && (
+                <text x={bx + 17} y={by + 2} fontSize={7} fontWeight="800" fill={C.blue} dominantBaseline="middle">{d.evt.confidence}%</text>
+              )}
+            </g>
+          );
         })}
       </g>
     );
-  }, [chartData, selectedPair]);
+  }, [chartData]);
 
-  // Get trades + signals for this trader + pair (for the feed below)
-  const relevantFeed = useMemo(() => {
-    return feedItems.filter(f =>
-      (f.kind === "trade" || f.kind === "signal") &&
-      f.trader === selectedTrader &&
-      f.pair === selectedPair
-    );
-  }, [selectedTrader, selectedPair]);
-
-  const allTraderFeed = useMemo(() => {
-    return feedItems.filter(f => (f.kind === "trade" || f.kind === "signal") && f.trader === selectedTrader).slice(0, 8);
-  }, [selectedTrader]);
-
-  const currentTrader = mockTraders.find(t => t.name === selectedTrader) || mockTraders[0];
-  const traderIdx = mockTraders.indexOf(currentTrader);
   const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
   const startPrice = chartData.length > 0 ? chartData[0].price : 0;
   const priceChange = currentPrice - startPrice;
@@ -1917,251 +1944,311 @@ const HomeTab = () => {
   const isUp = priceChange >= 0;
   const trendColor = isUp ? C.green : C.red;
 
+  // Top 10 feeds for bottom cards
+  const top10Trades = useMemo(() =>
+    feedItems.filter(f => f.kind === "trade" && f.status !== "active").sort((a, b) => b.pnl - a.pnl).slice(0, 10), []);
+  const top10Signals = useMemo(() =>
+    feedItems.filter(f => f.kind === "signal").sort((a, b) => (b.confidence || 0) - (a.confidence || 0)).slice(0, 10), []);
+  const top10Predictions = useMemo(() =>
+    feedItems.filter(f => f.kind === "prediction").sort((a, b) => b.stake - a.stake).slice(0, 10), []);
+
   const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-      {/* ── Selectors row: Trader dropdown + Pair dropdown ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      {/* ═══ TOP SECTION: 2-column layout ═══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "12px" }}>
 
-        {/* Trader dropdown */}
-        <div ref={traderDDRef} style={{ position: "relative" }}>
-          <button onClick={() => { setShowTraderDD(!showTraderDD); setShowPairDD(false); }} style={{
-            display: "flex", alignItems: "center", gap: "8px", padding: "7px 14px",
-            backgroundColor: C.card, border: `1px solid ${showTraderDD ? C.purple : C.border}`, borderRadius: "8px",
-            color: C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", transition: "border-color 0.15s", minWidth: 160
-          }}>
-            <span style={{ fontSize: "16px" }}>{currentTrader.avatar}</span>
-            <span>{currentTrader.name}</span>
-            <Tag text={currentTrader.tier} color={tierColor[currentTrader.tier]} />
-            <ChevronDown size={14} color={C.textMuted} style={{ marginLeft: "auto", transform: showTraderDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
-          </button>
-          {showTraderDD && (
-            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 220, maxHeight: 300, overflowY: "auto" }}>
-              {mockTraders.map((t, i) => (
-                <button key={t.name} onClick={() => { setSelectedTrader(t.name); setShowTraderDD(false); }} style={{
-                  display: "flex", alignItems: "center", gap: "8px", width: "100%", padding: "8px 12px",
-                  backgroundColor: t.name === selectedTrader ? C.purpleBg : "transparent", border: "none",
-                  borderBottom: i < mockTraders.length - 1 ? `1px solid ${C.border}` : "none",
-                  color: C.text, fontSize: "11px", fontWeight: "600", cursor: "pointer", textAlign: "left"
-                }}>
-                  <span style={{ fontSize: "14px" }}>{t.avatar}</span>
-                  <span style={{ flex: 1 }}>{t.name}</span>
-                  <BotTag isBot={t.isBot} />
-                  <span style={{ fontSize: "10px", color: C.green, fontWeight: "700", ...mono }}>{t.winRate}%</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* ── LEFT: Pair selector + Signal Heatmap + Chart ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 
-        {/* Pair dropdown */}
-        <div ref={pairDDRef} style={{ position: "relative" }}>
-          <button onClick={() => { setShowPairDD(!showPairDD); setShowTraderDD(false); }} style={{
-            display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px",
-            backgroundColor: C.card, border: `1px solid ${showPairDD ? C.blue : C.border}`, borderRadius: "8px",
-            color: C.text, fontSize: "13px", fontWeight: "800", cursor: "pointer", ...mono, transition: "border-color 0.15s"
-          }}>
-            {selectedPair}
-            <ChevronDown size={14} color={C.textMuted} style={{ transform: showPairDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
-          </button>
-          {showPairDD && (
-            <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 140 }}>
-              {allPairs.map((pair, i) => (
-                <button key={pair} onClick={() => { setSelectedPair(pair); setShowPairDD(false); }} style={{
-                  display: "block", width: "100%", padding: "8px 14px",
-                  backgroundColor: pair === selectedPair ? C.blueBg : "transparent", border: "none",
-                  borderBottom: i < allPairs.length - 1 ? `1px solid ${C.border}` : "none",
-                  color: pair === selectedPair ? C.blue : C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", textAlign: "left", ...mono
-                }}>{pair}</button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Price display */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: "8px" }}>
-          <span style={{ fontSize: "22px", fontWeight: "900", ...mono }}>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          <span style={{ fontSize: "12px", fontWeight: "700", color: trendColor, ...mono }}>
-            {isUp ? "+" : ""}{priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct}%)
-          </span>
-        </div>
-      </div>
-
-      {/* ── Chart range selector ── */}
-      <div style={{ display: "flex", gap: "4px" }}>
-        {ranges.map(r => (
-          <button key={r} onClick={() => setChartRange(r)} style={{
-            padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
-            border: `1px solid ${chartRange === r ? C.purple : C.border}`,
-            backgroundColor: chartRange === r ? C.purpleBg : "transparent",
-            color: chartRange === r ? C.purple : C.textMuted, ...mono
-          }}>{r}</button>
-        ))}
-      </div>
-
-      {/* ── Main Chart with Candlesticks + Signal/Trade Markers ── */}
-      <div style={{ ...cardStyle, padding: "16px" }}>
-        {/* Chart legend for markers */}
-        <div style={{ display: "flex", gap: "16px", marginBottom: "8px", fontSize: "9px", color: C.textMuted }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <svg width="12" height="12"><ellipse cx="6" cy="6" rx="5" ry="4" fill={C.green} /><path d="M6 8 L6 4 M4 5.5 L6 4 L8 5.5" stroke="#fff" strokeWidth="1" fill="none" /></svg>
-            <span>Señal LONG</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <svg width="12" height="12"><ellipse cx="6" cy="6" rx="5" ry="4" fill={C.red} /><path d="M6 4 L6 8 M4 6.5 L6 8 L8 6.5" stroke="#fff" strokeWidth="1" fill="none" /></svg>
-            <span>Señal SHORT</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <svg width="16" height="12"><line x1="2" y1="10" x2="2" y2="1" stroke={C.green} strokeWidth="1" /><polygon points="2,1 14,6 2,11" fill={C.green} opacity="0.8" /></svg>
-            <span>Trade LONG</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <svg width="16" height="12"><line x1="2" y1="10" x2="2" y2="1" stroke={C.red} strokeWidth="1" /><polygon points="2,1 14,6 2,11" fill={C.red} opacity="0.8" /></svg>
-            <span>Trade SHORT</span>
-          </div>
-        </div>
-
-        <ResponsiveContainer width="100%" height={340}>
-          <AreaChart data={chartData} margin={{ top: 50, right: 10, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={trendColor} stopOpacity={0.08} />
-                <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-            <XAxis dataKey="label" stroke={C.textMuted} fontSize={9} tickLine={false} />
-            <YAxis stroke={C.textMuted} fontSize={9} tickLine={false} domain={["auto", "auto"]} tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : `$${v}`} />
-            <Tooltip
-              contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "11px" }}
-              formatter={(value, name) => {
-                if (name === "price") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Precio"];
-                if (name === "open") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Open"];
-                if (name === "high") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "High"];
-                if (name === "low") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Low"];
-                return [value, name];
-              }}
-            />
-            {/* Price line + fill */}
-            <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={1.5} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: trendColor }} />
-            {/* High/Low as invisible references for scale */}
-            <Area type="monotone" dataKey="high" stroke="transparent" fill="transparent" dot={false} />
-            <Area type="monotone" dataKey="low" stroke="transparent" fill="transparent" dot={false} />
-            {/* Signal + Trade markers overlay */}
-            <Customized component={ChartMarkers} />
-          </AreaChart>
-        </ResponsiveContainer>
-
-        {/* Volume bars underneath */}
-        <div style={{ marginTop: "-4px" }}>
-          <ResponsiveContainer width="100%" height={36}>
-            <BarChart data={chartData}>
-              <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
-                {chartData.map((d, i) => (
-                  <Cell key={i} fill={d.bullish ? C.green + "25" : C.red + "25"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ── Trader summary strip ── */}
-      <div style={{ display: "flex", gap: "8px" }}>
-        {[
-          { label: "Win Rate", value: `${currentTrader.winRate}%`, color: C.green, icon: Target },
-          { label: "PnL Total", value: `+$${(currentTrader.pnl / 1000).toFixed(0)}K`, color: C.green, icon: DollarSign },
-          { label: "Alpha Score", value: String(calcAlphaScore(currentTrader)), color: alphaColor(calcAlphaScore(currentTrader)), icon: Zap },
-          { label: "Racha", value: `${currentTrader.streak}W`, color: C.amber, icon: Flame },
-          { label: "Copiers", value: String(currentTrader.copiers), color: C.purple, icon: Users },
-        ].map(s => (
-          <div key={s.label} style={{ ...cardStyle, flex: 1, padding: "8px 12px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <s.icon size={13} color={s.color} />
-            <div>
-              <div style={{ fontSize: "8px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>{s.label}</div>
-              <div style={{ fontSize: "14px", fontWeight: "900", color: s.color, ...mono }}>{s.value}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Active signals & trades for this trader on this pair ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <span style={{ fontSize: "12px", fontWeight: "700" }}>Actividad de {selectedTrader}</span>
-        <span style={{ fontSize: "10px", color: C.textFaint }}>{selectedPair}</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-        {relevantFeed.length === 0 && <span style={{ fontSize: "10px", color: C.textFaint }}>Sin actividad en este par</span>}
-      </div>
-
-      {/* Relevant feed for selected pair */}
-      {relevantFeed.length > 0 && (
-        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
-          {relevantFeed.map((item, idx) => {
-            const accent = item.kind === "signal" ? C.blue : (item.type === "LONG" ? C.green : C.red);
-            const DirIcon = (item.type === "LONG" || item.bias === "LONG") ? ArrowUp : ArrowDown;
-            return (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: idx < relevantFeed.length - 1 ? `1px solid ${C.border}` : "none", gap: "8px", fontSize: "11px" }}>
-                <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: accent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <DirIcon size={12} color={accent} />
+          {/* Pair dropdown + Price */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div ref={pairDDRef} style={{ position: "relative" }}>
+              <button onClick={() => setShowPairDD(!showPairDD)} style={{
+                display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px",
+                backgroundColor: C.card, border: `1px solid ${showPairDD ? C.blue : C.border}`, borderRadius: "8px",
+                color: C.text, fontSize: "14px", fontWeight: "900", cursor: "pointer", ...mono
+              }}>
+                {selectedPair}
+                <ChevronDown size={14} color={C.textMuted} style={{ transform: showPairDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
+              </button>
+              {showPairDD && (
+                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 140 }}>
+                  {allPairs.map((pair, i) => (
+                    <button key={pair} onClick={() => { setSelectedPair(pair); setShowPairDD(false); }} style={{
+                      display: "block", width: "100%", padding: "8px 14px",
+                      backgroundColor: pair === selectedPair ? C.blueBg : "transparent", border: "none",
+                      borderBottom: i < allPairs.length - 1 ? `1px solid ${C.border}` : "none",
+                      color: pair === selectedPair ? C.blue : C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", textAlign: "left", ...mono
+                    }}>{pair}</button>
+                  ))}
                 </div>
-                <span style={{ fontSize: "9px", fontWeight: "700", color: accent, backgroundColor: accent + "15", padding: "1px 5px", borderRadius: "3px" }}>{item.kind === "signal" ? "SEÑAL" : "TRADE"}</span>
-                <span style={{ fontWeight: "700" }}>{item.pair}</span>
-                <span style={{ fontSize: "9px", fontWeight: "800", color: accent }}>{item.type || item.bias}</span>
-                {item.kind === "trade" && <span style={{ marginLeft: "auto", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</span>}
-                {item.kind === "signal" && <span style={{ marginLeft: "auto", fontSize: "10px", fontWeight: "700", color: item.confidence >= 80 ? C.green : C.amber, ...mono }}>{item.confidence}%</span>}
-                <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+              <span style={{ fontSize: "22px", fontWeight: "900", ...mono }}>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span style={{ fontSize: "12px", fontWeight: "700", color: trendColor, ...mono }}>
+                {isUp ? "+" : ""}{priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct}%)
+              </span>
+            </div>
+            {/* Range selector */}
+            <div style={{ marginLeft: "auto", display: "flex", gap: "3px" }}>
+              {ranges.map(r => (
+                <button key={r} onClick={() => setChartRange(r)} style={{
+                  padding: "3px 10px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", cursor: "pointer",
+                  border: `1px solid ${chartRange === r ? C.purple : C.border}`,
+                  backgroundColor: chartRange === r ? C.purpleBg : "transparent",
+                  color: chartRange === r ? C.purple : C.textMuted, ...mono
+                }}>{r}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Signal Heatmap Dot Grid — red/green signals */}
+          <div style={{ ...cardStyle, padding: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <Radio size={12} color={C.blue} />
+              <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Señales activas — {selectedPair}</span>
+              <div style={{ flex: 1 }} />
+              <div style={{ display: "flex", gap: "8px", fontSize: "8px", color: C.textFaint }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> LONG</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.red, display: "inline-block" }} /> SHORT</span>
               </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* All recent activity for this trader (any pair) */}
-      {allTraderFeed.length > 0 && (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: "700" }}>Toda la actividad</span>
-            <span style={{ fontSize: "10px", color: C.textFaint }}>todos los pares</span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-          </div>
-          <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
-            {allTraderFeed.map((item, idx) => {
-              const accent = item.kind === "signal" ? C.blue : (item.type === "LONG" ? C.green : C.red);
-              const DirIcon = (item.type === "LONG" || item.bias === "LONG") ? ArrowUp : ArrowDown;
-              return (
-                <div key={item.id} style={{ display: "flex", alignItems: "center", padding: "6px 12px", borderBottom: idx < allTraderFeed.length - 1 ? `1px solid ${C.border}` : "none", gap: "8px", fontSize: "11px" }}>
-                  <div style={{ width: 20, height: 20, borderRadius: "4px", backgroundColor: accent + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <DirIcon size={12} color={accent} />
-                  </div>
-                  <span style={{ fontSize: "9px", fontWeight: "700", color: accent, backgroundColor: accent + "15", padding: "1px 5px", borderRadius: "3px" }}>{item.kind === "signal" ? "SEÑAL" : "TRADE"}</span>
-                  <span style={{ fontWeight: "700" }}>{item.pair}</span>
-                  <span style={{ fontSize: "9px", fontWeight: "800", color: accent }}>{item.type || item.bias}</span>
-                  {item.kind === "trade" && (
-                    <>
-                      <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, ...mono }}>{item.leverage}</span>
-                      <span style={{ marginLeft: "auto", fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</span>
-                    </>
-                  )}
-                  {item.kind === "signal" && <span style={{ marginLeft: "auto", fontSize: "10px", fontWeight: "700", color: item.confidence >= 80 ? C.green : C.amber, ...mono }}>{item.confidence}%</span>}
-                  <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", position: "relative" }}>
+              {signalHeatmap.map((row, ri) => (
+                <div key={ri} style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                  {row.map((dot, ci) => (
+                    <div
+                      key={ci}
+                      onMouseEnter={() => dot.hasSignal && setHoveredDot({ r: ri, c: ci, ...dot })}
+                      onMouseLeave={() => setHoveredDot(null)}
+                      style={{
+                        width: 10, height: 10, borderRadius: "50%", cursor: dot.hasSignal ? "pointer" : "default",
+                        backgroundColor: dot.hasSignal
+                          ? (dot.isLong ? C.green : C.red)
+                          : C.border,
+                        opacity: dot.hasSignal ? (0.4 + dot.strength * 0.6) : 0.2,
+                        transition: "transform 0.15s, opacity 0.15s",
+                        transform: (hoveredDot && hoveredDot.r === ri && hoveredDot.c === ci) ? "scale(1.8)" : "scale(1)",
+                      }}
+                    />
+                  ))}
                 </div>
+              ))}
+              {/* Mouseover tooltip for heatmap dot — trader's movement */}
+              {hoveredDot && hoveredDot.hasSignal && (
+                <div style={{
+                  position: "absolute", top: hoveredDot.r * 14 - 48, left: hoveredDot.c * 14 + 20,
+                  backgroundColor: C.card, border: `1px solid ${hoveredDot.isLong ? C.green : C.red}`,
+                  borderRadius: "8px", padding: "8px 12px", zIndex: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                  minWidth: 140, pointerEvents: "none"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "14px" }}>{hoveredDot.trader.avatar}</span>
+                    <span style={{ fontSize: "11px", fontWeight: "700" }}>{hoveredDot.trader.name}</span>
+                    <BotTag isBot={hoveredDot.trader.isBot} />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    {hoveredDot.isLong
+                      ? <ArrowUp size={14} color={C.green} />
+                      : <ArrowDown size={14} color={C.red} />}
+                    <span style={{ fontSize: "11px", fontWeight: "800", color: hoveredDot.isLong ? C.green : C.red }}>
+                      {hoveredDot.isLong ? "LONG" : "SHORT"}
+                    </span>
+                    <span style={{ fontSize: "11px", fontWeight: "800", color: hoveredDot.pnl >= 0 ? C.green : C.red, ...mono }}>
+                      {hoveredDot.pnl >= 0 ? "+" : ""}${hoveredDot.pnl.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Chart with Trader Movement Bubbles */}
+          <div style={{ ...cardStyle, padding: "12px" }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={chartData} margin={{ top: 40, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={trendColor} stopOpacity={0.08} />
+                    <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                <XAxis dataKey="label" stroke={C.textMuted} fontSize={8} tickLine={false} />
+                <YAxis stroke={C.textMuted} fontSize={8} tickLine={false} domain={["auto", "auto"]} tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : `$${v}`} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "10px" }}
+                  formatter={(value, name) => {
+                    if (name === "price") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Precio"];
+                    return [value, name];
+                  }}
+                  labelFormatter={(label) => {
+                    const d = chartData.find(p => p.label === label);
+                    if (d && d.evt) {
+                      const dir = d.evt.type || d.evt.bias;
+                      return `${label} — ${d.evt.avatar} ${d.evt.trader} ${dir}`;
+                    }
+                    return label;
+                  }}
+                />
+                <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={1.5} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: trendColor }} />
+                <Area type="monotone" dataKey="high" stroke="transparent" fill="transparent" dot={false} />
+                <Area type="monotone" dataKey="low" stroke="transparent" fill="transparent" dot={false} />
+                <Customized component={ChartMarkers} />
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Volume bars */}
+            <div style={{ marginTop: "-4px" }}>
+              <ResponsiveContainer width="100%" height={28}>
+                <BarChart data={chartData}>
+                  <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
+                    {chartData.map((d, i) => (
+                      <Cell key={i} fill={d.bullish ? C.green + "25" : C.red + "25"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Top 10 Overall Traders Leaderboard ── */}
+        <div style={{ ...cardStyle, padding: "12px", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+            <Trophy size={14} color={C.amber} />
+            <span style={{ fontSize: "12px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px" }}>Top 10 Overall Traders</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+            {top10Traders.map((t, i) => {
+              const score = calcAlphaScore(t);
+              const maxScore = 100;
+              const barPct = (score / maxScore) * 100;
+              const tc = tierColor[t.tier] || C.textMuted;
+              return (
+                <button key={t.name} onClick={() => openProfile(t)} style={{
+                  display: "flex", alignItems: "center", gap: "8px", padding: "6px 8px",
+                  backgroundColor: "transparent", border: "none", borderRadius: "6px",
+                  cursor: "pointer", color: C.text, width: "100%", textAlign: "left",
+                  transition: "background-color 0.15s"
+                }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.cardHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                >
+                  <span style={{ fontSize: "10px", fontWeight: "700", color: i < 3 ? C.amber : C.textFaint, width: 16, textAlign: "right", ...mono }}>{i + 1}</span>
+                  <span style={{ fontSize: "16px" }}>{t.avatar}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span style={{ fontSize: "11px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>
+                      <BotTag isBot={t.isBot} />
+                    </div>
+                    {/* Score bar */}
+                    <div style={{ height: 3, backgroundColor: C.border, borderRadius: 2, marginTop: 3, width: "100%" }}>
+                      <div style={{ height: "100%", width: `${barPct}%`, backgroundColor: alphaColor(score), borderRadius: 2, transition: "width 0.3s" }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: "13px", fontWeight: "900", color: alphaColor(score), ...mono, minWidth: 48, textAlign: "right" }}>{score}/100</span>
+                </button>
               );
             })}
           </div>
-        </>
-      )}
+          <button onClick={() => { setActiveTab("traders"); }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "4px",
+            padding: "8px", marginTop: "8px", backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`,
+            borderRadius: "6px", color: C.purple, fontSize: "10px", fontWeight: "700", cursor: "pointer"
+          }}>
+            Ver todos los traders <ChevronRight size={12} />
+          </button>
+        </div>
+      </div>
 
-      {/* Quick link to full profile */}
-      <button onClick={() => openProfile(currentTrader)} style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-        padding: "10px", backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px",
-        color: C.purple, fontSize: "12px", fontWeight: "600", cursor: "pointer"
-      }}>
-        <Eye size={14} /> Ver perfil completo de {selectedTrader}
-        <ChevronRight size={14} />
-      </button>
+      {/* ═══ BOTTOM: 3 cards — Top 10 Trades, Top 10 Signals, Top 10 Futures ═══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+
+        {/* Top 10 Trades */}
+        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Activity size={12} color={C.green} />
+            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Trades</span>
+          </div>
+          {top10Trades.map((item, idx) => (
+            <div key={item.id} style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
+              borderBottom: idx < top10Trades.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            }}>
+              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
+              <span style={{ fontWeight: "700", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "10px" }}>{item.pair}</span>
+              <span style={{ fontSize: "8px", fontWeight: "800", color: item.type === "LONG" ? C.green : C.red }}>{item.type}</span>
+              <span style={{ fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono, fontSize: "10px" }}>
+                {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
+              </span>
+            </div>
+          ))}
+          <button onClick={() => { setFeedFilter("trade"); setActiveTab("arena:trade"); }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
+            padding: "6px", backgroundColor: C.greenBg, border: "none", borderTop: `1px solid ${C.border}`,
+            color: C.green, fontSize: "9px", fontWeight: "700", cursor: "pointer"
+          }}>
+            Ver todos <ChevronRight size={10} />
+          </button>
+        </div>
+
+        {/* Top 10 Signals */}
+        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Lightbulb size={12} color={C.blue} />
+            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Señales</span>
+          </div>
+          {top10Signals.map((item, idx) => (
+            <div key={item.id} style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
+              borderBottom: idx < top10Signals.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            }}>
+              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
+              <span style={{ fontWeight: "700", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "10px" }}>{item.pair} {item.bias}</span>
+              <span style={{ fontWeight: "900", color: item.confidence >= 80 ? C.green : item.confidence >= 60 ? C.amber : C.red, ...mono, fontSize: "10px" }}>
+                {item.confidence}%
+              </span>
+            </div>
+          ))}
+          <button onClick={() => { setFeedFilter("signal"); setActiveTab("arena:signal"); }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
+            padding: "6px", backgroundColor: C.blueBg, border: "none", borderTop: `1px solid ${C.border}`,
+            color: C.blue, fontSize: "9px", fontWeight: "700", cursor: "pointer"
+          }}>
+            Ver todas <ChevronRight size={10} />
+          </button>
+        </div>
+
+        {/* Top 10 Futures / Predictions */}
+        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
+          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
+            <Scale size={12} color={C.amber} />
+            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Futures</span>
+          </div>
+          {top10Predictions.map((item, idx) => (
+            <div key={item.id} style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
+              borderBottom: idx < top10Predictions.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            }}>
+              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
+              <span style={{ fontWeight: "600", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "9px", color: C.textMuted }}>{item.question}</span>
+              <span style={{ fontWeight: "800", color: item.bet === "YES" ? C.green : C.red, fontSize: "10px", ...mono }}>{item.bet}</span>
+              <span style={{ fontWeight: "700", color: C.amber, fontSize: "9px", ...mono }}>${item.stake}</span>
+            </div>
+          ))}
+          <button onClick={() => { setFeedFilter("prediction"); setActiveTab("arena:prediction"); }} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
+            padding: "6px", backgroundColor: C.amberBg, border: "none", borderTop: `1px solid ${C.border}`,
+            color: C.amber, fontSize: "9px", fontWeight: "700", cursor: "pointer"
+          }}>
+            Ver todas <ChevronRight size={10} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
