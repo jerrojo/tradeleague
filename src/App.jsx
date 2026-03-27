@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback, useRef, useEffect, createContext, useCo
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, BarChart, Bar, Cell, PieChart, Pie, Customized
+  AreaChart, Area, BarChart, Bar, Cell, PieChart, Pie, Customized,
+  ComposedChart
 } from "recharts";
 import {
   Settings, Bell, TrendingUp, TrendingDown, Target,
@@ -1893,42 +1894,74 @@ const HomeTab = () => {
     return data;
   }, [selectedPair, chartRange]);
 
-  // Chart markers: show all trader movements as speech bubbles
-  const ChartMarkers = useCallback((props) => {
-    const { formattedGraphicalItems } = props;
-    if (!formattedGraphicalItems || !formattedGraphicalItems[0]) return null;
-    const areaPoints = formattedGraphicalItems[0].props.points || [];
+  // Candlestick + trader movement bubble renderer (via Customized)
+  const CandlesAndMarkers = useCallback((props) => {
+    const { formattedGraphicalItems, xAxisMap, yAxisMap } = props;
+    if (!yAxisMap || !xAxisMap) return null;
+    const yAxis = Object.values(yAxisMap)[0];
+    const xAxis = Object.values(xAxisMap)[0];
+    if (!yAxis || !xAxis || !yAxis.scale || !xAxis.scale) return null;
+    const yScale = yAxis.scale;
+    const xScale = xAxis.scale;
+    const bandwidth = xAxis.bandSize || (xAxis.width / chartData.length);
+    const candleW = Math.max(Math.min(bandwidth * 0.6, 14), 3);
+
+    // Get area points for marker positioning fallback
+    const areaPoints = formattedGraphicalItems && formattedGraphicalItems[0]
+      ? (formattedGraphicalItems[0].props.points || [])
+      : [];
+
     return (
       <g>
+        {/* ── Candlestick bodies + wicks ── */}
         {chartData.map((d, i) => {
-          if (!d.evt || !areaPoints[i]) return null;
-          const pt = areaPoints[i];
+          const cx = xScale(d.label) + bandwidth / 2;
+          if (isNaN(cx)) return null;
+          const yOpen = yScale(d.open);
+          const yClose = yScale(d.close);
+          const yHigh = yScale(d.high);
+          const yLow = yScale(d.low);
+          const color = d.bullish ? C.green : C.red;
+          const bodyTop = Math.min(yOpen, yClose);
+          const bodyH = Math.max(Math.abs(yOpen - yClose), 1);
+          return (
+            <g key={`candle-${i}`}>
+              {/* Wick (high to low) */}
+              <line x1={cx} y1={yHigh} x2={cx} y2={yLow} stroke={color} strokeWidth={1} opacity={0.7} />
+              {/* Body */}
+              <rect x={cx - candleW / 2} y={bodyTop} width={candleW} height={bodyH}
+                fill={d.bullish ? color : C.bg} stroke={color} strokeWidth={1} rx={1} />
+            </g>
+          );
+        })}
+
+        {/* ── Trader movement bubbles on candles with events ── */}
+        {chartData.map((d, i) => {
+          if (!d.evt) return null;
+          const cx = xScale(d.label) + bandwidth / 2;
+          const yHigh = yScale(d.high);
+          if (isNaN(cx) || isNaN(yHigh)) return null;
           const isLong = (d.evt.type === "LONG" || d.evt.bias === "LONG");
           const color = isLong ? C.green : C.red;
-          const bx = pt.x;
-          const by = pt.y - 30;
+          const bx = cx;
+          const by = yHigh - 26;
           const isSignal = d.evt.kind === "signal";
           return (
             <g key={`mv-${i}`}>
-              {/* Dashed pin line */}
-              <line x1={bx} y1={pt.y} x2={bx} y2={by + 13} stroke={color} strokeWidth={1} strokeDasharray="2 2" opacity={0.6} />
-              {/* Bubble */}
-              <ellipse cx={bx} cy={by} rx={isSignal ? 13 : 16} ry={10} fill={color} opacity={0.9} />
-              {/* Direction arrow inside bubble */}
+              <line x1={bx} y1={yHigh} x2={bx} y2={by + 13} stroke={color} strokeWidth={1} strokeDasharray="2 2" opacity={0.5} />
+              <ellipse cx={bx} cy={by} rx={isSignal ? 12 : 15} ry={9} fill={color} opacity={0.9} />
               <path d={isLong
                 ? `M${bx} ${by+3} L${bx} ${by-3} M${bx-2.5} ${by-1} L${bx} ${by-3} L${bx+2.5} ${by-1}`
                 : `M${bx} ${by-3} L${bx} ${by+3} M${bx-2.5} ${by+1} L${bx} ${by+3} L${bx+2.5} ${by+1}`
               } stroke="#fff" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-              {/* Trader avatar label below */}
-              <text x={bx} y={by + 21} textAnchor="middle" fontSize={8} fill={color} fontWeight="700">{d.evt.avatar || ""}</text>
-              {/* PnL or confidence next to bubble */}
+              <text x={bx} y={by + 19} textAnchor="middle" fontSize={8} fill={color} fontWeight="700">{d.evt.avatar || ""}</text>
               {d.evt.pnl != null && !isSignal && (
-                <text x={bx + 20} y={by + 2} fontSize={7} fontWeight="800" fill={d.evt.pnl >= 0 ? C.green : C.red} dominantBaseline="middle" {...mono}>
+                <text x={bx + 19} y={by + 2} fontSize={7} fontWeight="800" fill={d.evt.pnl >= 0 ? C.green : C.red} dominantBaseline="middle">
                   {d.evt.pnl >= 0 ? "+" : ""}${Math.abs(d.evt.pnl) >= 1000 ? (d.evt.pnl / 1000).toFixed(1) + "K" : d.evt.pnl}
                 </text>
               )}
               {isSignal && d.evt.confidence && (
-                <text x={bx + 17} y={by + 2} fontSize={7} fontWeight="800" fill={C.blue} dominantBaseline="middle">{d.evt.confidence}%</text>
+                <text x={bx + 16} y={by + 2} fontSize={7} fontWeight="800" fill={C.blue} dominantBaseline="middle">{d.evt.confidence}%</text>
               )}
             </g>
           );
@@ -2067,47 +2100,52 @@ const HomeTab = () => {
             </div>
           </div>
 
-          {/* Chart with Trader Movement Bubbles */}
+          {/* Candlestick Chart with Trader Movement Bubbles */}
           <div style={{ ...cardStyle, padding: "12px" }}>
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={chartData} margin={{ top: 40, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="homeChartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={trendColor} stopOpacity={0.08} />
-                    <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                <XAxis dataKey="label" stroke={C.textMuted} fontSize={8} tickLine={false} />
-                <YAxis stroke={C.textMuted} fontSize={8} tickLine={false} domain={["auto", "auto"]} tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : `$${v}`} />
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={chartData} margin={{ top: 45, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} opacity={0.5} />
+                <XAxis dataKey="label" stroke={C.textMuted} fontSize={8} tickLine={false} axisLine={{ stroke: C.border }} />
+                <YAxis stroke={C.textMuted} fontSize={8} tickLine={false} axisLine={{ stroke: C.border }}
+                  domain={[
+                    (dataMin) => Math.floor(dataMin * 0.999 * 100) / 100,
+                    (dataMax) => Math.ceil(dataMax * 1.001 * 100) / 100
+                  ]}
+                  tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : selectedPair.startsWith("ETH") ? `$${v.toFixed(0)}` : `$${v}`} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "10px" }}
-                  formatter={(value, name) => {
-                    if (name === "price") return [`$${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, "Precio"];
-                    return [value, name];
-                  }}
-                  labelFormatter={(label) => {
-                    const d = chartData.find(p => p.label === label);
-                    if (d && d.evt) {
-                      const dir = d.evt.type || d.evt.bias;
-                      return `${label} — ${d.evt.avatar} ${d.evt.trader} ${dir}`;
-                    }
-                    return label;
+                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "10px", ...mono }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || !payload[0]) return null;
+                    const d = payload[0].payload;
+                    const fmt = (v) => `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+                    return (
+                      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", padding: "8px 12px", fontSize: "10px", ...mono }}>
+                        <div style={{ fontWeight: "700", marginBottom: "4px", color: C.text }}>{label}{d.evt ? ` — ${d.evt.avatar} ${d.evt.trader}` : ""}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "auto auto", gap: "2px 10px" }}>
+                          <span style={{ color: C.textMuted }}>O:</span><span style={{ color: d.bullish ? C.green : C.red }}>{fmt(d.open)}</span>
+                          <span style={{ color: C.textMuted }}>H:</span><span style={{ color: C.green }}>{fmt(d.high)}</span>
+                          <span style={{ color: C.textMuted }}>L:</span><span style={{ color: C.red }}>{fmt(d.low)}</span>
+                          <span style={{ color: C.textMuted }}>C:</span><span style={{ color: d.bullish ? C.green : C.red, fontWeight: "800" }}>{fmt(d.close)}</span>
+                        </div>
+                        <div style={{ marginTop: "3px", color: C.textFaint }}>Vol: {d.vol.toLocaleString()}</div>
+                      </div>
+                    );
                   }}
                 />
-                <Area type="monotone" dataKey="price" stroke={trendColor} strokeWidth={1.5} fill="url(#homeChartGrad)" dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: trendColor }} />
-                <Area type="monotone" dataKey="high" stroke="transparent" fill="transparent" dot={false} />
-                <Area type="monotone" dataKey="low" stroke="transparent" fill="transparent" dot={false} />
-                <Customized component={ChartMarkers} />
-              </AreaChart>
+                {/* Invisible lines to establish Y domain from high/low */}
+                <Line type="monotone" dataKey="high" stroke="transparent" dot={false} activeDot={false} />
+                <Line type="monotone" dataKey="low" stroke="transparent" dot={false} activeDot={false} />
+                {/* Candlesticks + markers drawn via Customized */}
+                <Customized component={CandlesAndMarkers} />
+              </ComposedChart>
             </ResponsiveContainer>
-            {/* Volume bars */}
-            <div style={{ marginTop: "-4px" }}>
-              <ResponsiveContainer width="100%" height={28}>
-                <BarChart data={chartData}>
+            {/* Volume bars — colored by candle direction */}
+            <div style={{ marginTop: "-2px" }}>
+              <ResponsiveContainer width="100%" height={32}>
+                <BarChart data={chartData} margin={{ left: 0, right: 10 }}>
                   <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
                     {chartData.map((d, i) => (
-                      <Cell key={i} fill={d.bullish ? C.green + "25" : C.red + "25"} />
+                      <Cell key={i} fill={d.bullish ? C.green + "30" : C.red + "30"} />
                     ))}
                   </Bar>
                 </BarChart>
