@@ -39,6 +39,7 @@ const C = {
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 const mono = { fontFamily: "'SF Mono','Cascadia Code','Fira Code',monospace", fontVariantNumeric: "tabular-nums" };
+const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
 
 const pillStyle = (color) => ({
   display: "inline-block", padding: "3px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "600",
@@ -288,6 +289,7 @@ const traderSocials = {
 };
 
 /* Per-trader deep data */
+const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
 const traderDeepData = (() => {
   const data = {};
   const pairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
@@ -309,18 +311,23 @@ const traderDeepData = (() => {
         pnl: pnlAmt, leverage: ["2x","3x","4x","5x"][i % 4], status: isWin ? "tp_hit" : "sl_hit",
         date: `Mar ${day}, ${String(8 + (i * 2) % 14).padStart(2,"0")}:${String((i * 17) % 60).padStart(2,"0")}`,
         duration: [`${1 + i % 8}h ${(i * 13) % 60}m`, `${(i * 7) % 24}h ${(i * 23) % 60}m`][i % 2],
-        rr: isWin ? `1:${(1.5 + Math.random() * 2.5).toFixed(1)}` : `1:${(0.3 + Math.random() * 0.7).toFixed(1)}`,
+        rr: isWin ? `1:${(1.5 + Math.random() * 2.5).toFixed(1)}` : `-1R`,
         notes: isWin ? ["Clean entry on OB retest","FVG filled perfectly","Momentum confirmation strong","Liquidity sweep before entry"][i%4] : ["Stopped out on fakeout","Missed the displacement","Entered too early","Should have waited for NY"][i%4]
       });
     }
     // Monthly P&L (last 6 months)
     const months = ["Oct","Nov","Dec","Jan","Feb","Mar"];
-    const monthlyPnl = months.map(m => ({
-      month: m,
-      pnl: Math.round((t.pnl / 6) * (0.6 + Math.random() * 0.8) * (Math.random() > 0.2 ? 1 : -0.4)),
-      trades: Math.round(t.trades / 6 * (0.7 + Math.random() * 0.6)),
-      winRate: Math.round(t.winRate + (Math.random() - 0.5) * 12)
-    }));
+    const monthlyPnl = months.map((m, mi) => {
+      const wr = Math.round(t.winRate + (srand(ti * 100 + mi * 13) - 0.5) * 12);
+      const wrRatio = wr / t.winRate;
+      const isLossMonth = wr < 50;
+      return {
+        month: m,
+        pnl: Math.round((t.pnl / 6) * (0.6 + srand(ti * 200 + mi * 7) * 0.8) * (isLossMonth ? -0.3 : 1)),
+        trades: Math.round(t.trades / 6 * (0.7 + srand(ti * 300 + mi * 11) * 0.6)),
+        winRate: Math.min(95, Math.max(35, wr))
+      };
+    });
     // Daily equity curve (last 30 days)
     const dailyEquity = [];
     let eq = 10000 + ti * 5000;
@@ -357,7 +364,7 @@ const traderDeepData = (() => {
         status: i < 3 ? "active" : isWin ? "tp_hit" : "sl_hit",
         date: `Mar ${day}`, pnl: i < 3 ? Math.round(pnlAmt * 0.3) : pnlAmt,
         group: sigGroups[(ti + i) % sigGroups.length],
-        rr: isWin ? `1:${(2.0 + Math.random() * 2).toFixed(1)}` : `1:${(0.4 + Math.random() * 0.6).toFixed(1)}`,
+        rr: isWin ? `1:${(2.0 + Math.random() * 2).toFixed(1)}` : `-1R`,
         subscribers: Math.round(120 + ti * 30 + Math.random() * 200),
         analysis: isWin
           ? ["OB + FVG confluence at key level","Liquidity sweep + displacement entry","BOS confirmed on 1H, momentum strong","Clean break of structure with volume"][i%4]
@@ -561,7 +568,7 @@ const predCategories = ["All", "Price", "Macro", "Dominance", "Traders"];
 
 /* ── BotTag: visual distinction for bots vs humans ── */
 const tagBase = { display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "3px" };
-const BotTag = ({ isBot }) => isBot ? (
+const BotTag = ({ isBot }) => isBot == null ? null : isBot ? (
   <span style={{ ...tagBase, color: C.cyan, backgroundColor: `${C.cyan}15`, border: `1px solid ${C.cyan}30` }}>
     <Bot size={9} /> BOT
   </span>
@@ -590,7 +597,8 @@ const TpProgressBar = ({ entry, tp, sl, status }) => {
 
 /* ── Community Vote: a favor / en contra on cards ── */
 const CommunityVote = ({ itemId, votesState, setVotesState }) => {
-  const v = votesState[itemId] || { up: Math.floor(Math.random() * 40 + 10), down: Math.floor(Math.random() * 15 + 2), myVote: null };
+  const seed = typeof itemId === "number" ? itemId : String(itemId).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const v = votesState[itemId] || { up: Math.floor(srand(seed * 7 + 3) * 40 + 10), down: Math.floor(srand(seed * 13 + 5) * 15 + 2), myVote: null };
   const total = v.up + v.down;
   const upPct = total > 0 ? Math.round((v.up / total) * 100) : 50;
   const vote = (side) => {
@@ -1812,7 +1820,7 @@ const HomeTab = () => {
 
   // Top 10 traders sorted by Alpha Score
   const top10Traders = useMemo(() => {
-    return [...mockTraders].sort((a, b) => calcAlphaScore(b) - calcAlphaScore(a)).slice(0, 10);
+    return [...mockTraders].map(t => ({ ...t, _alpha: calcAlphaScore(t) })).sort((a, b) => b._alpha - a._alpha).slice(0, 10);
   }, []);
 
   // Generate signal heatmap: 8 rows × 10 cols grid of dots — each dot = a time bucket
@@ -1985,13 +1993,13 @@ const HomeTab = () => {
   const top10Predictions = useMemo(() =>
     feedItems.filter(f => f.kind === "prediction").sort((a, b) => b.stake - a.stake).slice(0, 10), []);
 
-  const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
       {/* ═══ TOP SECTION: 2-column layout ═══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "12px" }}>
+      <div className="grid-2col">
 
         {/* ── LEFT: Pair selector + Signal Heatmap + Chart ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -2056,10 +2064,16 @@ const HomeTab = () => {
                   {row.map((dot, ci) => (
                     <div
                       key={ci}
+                      tabIndex={dot.hasSignal ? 0 : undefined}
+                      role={dot.hasSignal ? "button" : undefined}
+                      aria-label={dot.hasSignal ? `${dot.trader.name} ${dot.isLong ? "LONG" : "SHORT"} ${dot.pnl >= 0 ? "+" : ""}$${dot.pnl}` : undefined}
                       onMouseEnter={() => dot.hasSignal && setHoveredDot({ r: ri, c: ci, ...dot })}
                       onMouseLeave={() => setHoveredDot(null)}
+                      onFocus={() => dot.hasSignal && setHoveredDot({ r: ri, c: ci, ...dot })}
+                      onBlur={() => setHoveredDot(null)}
+                      onKeyDown={e => { if (dot.hasSignal && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openProfile(dot.trader); } }}
                       style={{
-                        width: 10, height: 10, borderRadius: "50%", cursor: dot.hasSignal ? "pointer" : "default",
+                        width: 10, height: 10, borderRadius: "50%", cursor: dot.hasSignal ? "pointer" : "default", outline: "none",
                         backgroundColor: dot.hasSignal
                           ? (dot.isLong ? C.green : C.red)
                           : C.border,
@@ -2072,9 +2086,16 @@ const HomeTab = () => {
                 </div>
               ))}
               {/* Mouseover tooltip for heatmap dot — trader's movement */}
-              {hoveredDot && hoveredDot.hasSignal && (
+              {hoveredDot && hoveredDot.hasSignal && (() => {
+                const tipW = 160;
+                const gridW = 10 * 14;
+                const rawLeft = hoveredDot.c * 14 + 20;
+                const clampedLeft = rawLeft + tipW > gridW ? rawLeft - tipW - 10 : rawLeft;
+                const rawTop = hoveredDot.r * 14 - 48;
+                const clampedTop = rawTop < 0 ? hoveredDot.r * 14 + 18 : rawTop;
+                return (
                 <div style={{
-                  position: "absolute", top: hoveredDot.r * 14 - 48, left: hoveredDot.c * 14 + 20,
+                  position: "absolute", top: clampedTop, left: clampedLeft,
                   backgroundColor: C.card, border: `1px solid ${hoveredDot.isLong ? C.green : C.red}`,
                   borderRadius: "8px", padding: "8px 12px", zIndex: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                   minWidth: 140, pointerEvents: "none"
@@ -2096,7 +2117,8 @@ const HomeTab = () => {
                     </span>
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -2142,7 +2164,9 @@ const HomeTab = () => {
             {/* Volume bars — colored by candle direction */}
             <div style={{ marginTop: "-2px" }}>
               <ResponsiveContainer width="100%" height={32}>
-                <BarChart data={chartData} margin={{ left: 0, right: 10 }}>
+                <BarChart data={chartData} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                  <YAxis hide domain={[0, "auto"]} />
+                  <XAxis dataKey="label" hide />
                   <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
                     {chartData.map((d, i) => (
                       <Cell key={i} fill={d.bullish ? C.green + "30" : C.red + "30"} />
@@ -2162,7 +2186,7 @@ const HomeTab = () => {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
             {top10Traders.map((t, i) => {
-              const score = calcAlphaScore(t);
+              const score = t._alpha;
               const maxScore = 100;
               const barPct = (score / maxScore) * 100;
               const tc = tierColor[t.tier] || C.textMuted;
@@ -2315,7 +2339,7 @@ const ArenaTab = () => {
   const toast = useToast();
   const TOTAL_TRADERS = 300;
 
-  const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+
   const toggleWatch = (name) => setWatching(prev => ({ ...prev, [name]: !prev[name] }));
   const watchedNames = Object.keys(watching).filter(k => watching[k]);
   const watchedTraders = mockTraders.filter(t => watching[t.name]);
@@ -3136,7 +3160,7 @@ const TraderProfile = ({ trader, onClose }) => {
   const { addToast } = useContext(ToastContext);
   const t = trader;
   const deep = traderDeepData[t.name];
-  const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+
   const profileTabs = ["overview","signals","trades","predictions","social","pnl","risk_dna","journal"];
   const tabLabels = { overview: "Overview", signals: "Señales", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
@@ -3875,7 +3899,7 @@ const TradersTab = () => {
     mockTraders.forEach((t, i) => { m[t.name] = i < 3; });
     return m;
   });
-  const tierColor = { Diamond: C.cyan, Platinum: C.purple, Gold: C.amber, Silver: C.textMuted };
+
   const rankColors = [C.amber, C.textMuted, "#cd7f32"]; // gold, silver, bronze
   const toggleTrader = (name) => setVisibleTraders(prev => ({ ...prev, [name]: !prev[name] }));
   const allOn = mockTraders.every(t => visibleTraders[t.name]);
@@ -4647,7 +4671,7 @@ const CopyTradingView = () => {
         <StatCard label="% Ganadoras" value={`${port.winRate}%`} sub={`Duración prom: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px" }}>
+      <div className="grid-2col-16">
         {/* Left: Equity + Trades */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Equity Curve */}
@@ -5107,7 +5131,7 @@ const FootballTab = () => {
       </div>
 
       {/* ── Main: Field + Scoreboard ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "16px" }}>
+      <div className="grid-2col-16">
 
         {/* Campo de Juego */}
         <div style={cardStyle}>
@@ -5404,6 +5428,18 @@ const App = () => {
   const [traderAlerts, setTraderAlerts] = useState({});
   const searchRef = useRef(null);
 
+  // Cmd+K keyboard shortcut for search
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setShowSearch(prev => !prev);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
   // Search results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return { traders: [], pairs: [], tabs: [] };
@@ -5525,6 +5561,14 @@ const App = () => {
             tr.hoverable:hover { background-color: ${C.cardHover} !important; }
             .card-hover:hover { border-color: ${C.borderLight} !important; }
             button.btn-hover:hover { filter: brightness(1.15); }
+            .grid-2col { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+            .grid-2col-16 { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+            @media (max-width: 900px) {
+              .grid-2col, .grid-2col-16 { grid-template-columns: 1fr !important; }
+            }
+            @media (max-width: 700px) {
+              .grid-3col { grid-template-columns: 1fr !important; }
+            }
           `}</style>
 
           {/* ── Top Ticker (fixed, full width, above everything) ── */}
@@ -5538,7 +5582,7 @@ const App = () => {
           <aside style={{
             width: sideW, minHeight: "calc(100vh - 32px)", backgroundColor: C.card, borderRight: `1px solid ${C.border}`,
             display: "flex", flexDirection: "column", position: "fixed", top: 32, left: 0, zIndex: 200,
-            transition: "width 0.2s ease"
+            transition: "width 0.2s ease", overflow: "hidden"
           }}>
             {/* Logo + collapse toggle */}
             <div style={{ height: 56, display: "flex", alignItems: "center", padding: sidebarCollapsed ? "0 12px" : "0 16px", borderBottom: `1px solid ${C.border}`, justifyContent: sidebarCollapsed ? "center" : "space-between" }}>
@@ -5744,7 +5788,7 @@ const App = () => {
                 <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
                   <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", borderBottom: `1px solid ${C.border}` }}>
                     <Search size={16} color={C.textMuted} />
-                    <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar traders, pares, secciones..." style={{
+                    <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar traders, pares, secciones..." aria-label="Buscar traders, pares, secciones" style={{
                       flex: 1, backgroundColor: "transparent", border: "none", outline: "none", color: C.text, fontSize: "14px", fontWeight: "500"
                     }} onKeyDown={e => { if (e.key === "Escape") setShowSearch(false); }} />
                     <span style={{ fontSize: "10px", color: C.textFaint, padding: "2px 6px", backgroundColor: C.bg, borderRadius: "4px", ...mono }}>ESC</span>
@@ -5906,7 +5950,7 @@ const App = () => {
               <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.border}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: C.card, borderRadius: "6px", padding: "6px 10px", border: `1px solid ${C.border}` }}>
                   <Search size={12} color={C.textFaint} />
-                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
+                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." aria-label="Buscar trader en watchlist" style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
                   {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={10} /></button>}
                 </div>
               </div>
@@ -5972,10 +6016,10 @@ const App = () => {
                             <button title={hasAlert ? "Quitar alertas" : "Alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
                               <BellRing size={10} />
                             </button>
-                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("copy"); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("traders"); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
                               <Copy size={10} />
                             </button>
-                            <button title="Chat" onClick={e => e.stopPropagation()} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                            <button title="Chat (coming soon)" onClick={e => { e.stopPropagation(); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "not-allowed", backgroundColor: "transparent", color: C.textFaint, opacity: 0.5 }}>
                               <MessageCircle size={10} />
                             </button>
                             <div style={{ width: "1px", height: 12, backgroundColor: C.border, margin: "0 1px" }} />
