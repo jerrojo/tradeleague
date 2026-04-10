@@ -51,6 +51,47 @@ const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, bo
 const thStyle = { padding: "10px 12px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
 const tdStyle = { padding: "10px 12px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
 
+const AnimatedValue = ({ value, duration = 600 }) => {
+  const [displayValue, setDisplayValue] = useState(value);
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    // Extract numeric part and prefix/suffix
+    const valueStr = String(value);
+    const match = valueStr.match(/^([^\d\-+]*)([+-]?\d+(?:\.\d+)?)([^\d]*)/);
+    if (!match) {
+      setDisplayValue(value);
+      return;
+    }
+    const [, prefix, numStr, suffix] = match;
+    const numValue = parseFloat(numStr);
+    if (isNaN(numValue)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    let startTime;
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(numValue * eased);
+      setDisplayValue(`${prefix}${current}${suffix}`);
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      }
+    };
+    frameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [value, duration]);
+
+  return <span>{displayValue}</span>;
+};
+
 const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
   <div style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px" }}>
     <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -60,7 +101,7 @@ const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
       <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
-      <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}>{value}</div>
+      <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}><AnimatedValue value={value} /></div>
       {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
     </div>
   </div>
@@ -1797,6 +1838,32 @@ const SMCAnalysis = () => {
   );
 };
 
+/* ═══════════════════════ RACE CHART TOOLTIP ═══════════════════════ */
+const RaceTooltip = ({ active, payload, label }) => {
+  if (!active || !payload) return null;
+  const entries = payload
+    .filter(entry => entry.value != null)
+    .sort((a, b) => b.value - a.value);
+  return (
+    <div style={{
+      backgroundColor: C.card,
+      border: `1px solid ${C.borderLight}`,
+      borderRadius: "10px",
+      padding: "12px 16px",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
+    }}>
+      <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "8px" }}>Day {label}</div>
+      {entries.map((entry, idx) => (
+        <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", marginBottom: idx < entries.length - 1 ? "4px" : "0" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: entry.color, flexShrink: 0 }} />
+          <span style={{ color: C.text, fontWeight: "500" }}>{entry.name}</span>
+          <span style={{ color: C.textMuted, marginLeft: "auto", ...mono }}>${Number(entry.value).toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 /* ═══════════════════════ TAB: ARENA (The Race) ═══════════════════════ */
 const HomeTab = () => {
   const { openProfile } = useProfile();
@@ -1883,22 +1950,30 @@ const HomeTab = () => {
               )}
             </div>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={traderEquity}>
+              <ComposedChart data={traderEquity}>
+                <defs>
+                  {traderColors.map((color, i) => (
+                    <linearGradient key={`grad-${i}`} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={color} stopOpacity={0.15} />
+                      <stop offset="100%" stopColor={color} stopOpacity={0} />
+                    </linearGradient>
+                  ))}
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={C.border} opacity={0.4} />
                 <XAxis dataKey="day" stroke={C.textMuted} fontSize={9} tickFormatter={v => `D${v}`} />
                 <YAxis stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "11px" }}
-                  formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]}
-                  labelFormatter={l => `Day ${l}`}
-                />
+                <Tooltip content={<RaceTooltip />} />
                 {mockTraders.map((t, i) => watching[t.name] && (
-                  <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]}
+                  <Area key={`area-${t.name}`} type="monotone" dataKey={t.name} fill={`url(#grad-${i})`}
+                    stroke="none" fillOpacity={0.3} isAnimationActive={false} />
+                ))}
+                {mockTraders.map((t, i) => watching[t.name] && (
+                  <Line key={`line-${t.name}`} type="monotone" dataKey={t.name} stroke={traderColors[i]}
                     strokeWidth={leader && leader.name === t.name ? 3 : 2}
                     dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }}
                     connectNulls={false} />
                 ))}
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
             {/* Legend with current standings */}
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "8px" }}>
@@ -5213,8 +5288,9 @@ const HallOfFameTab = () => {
           if (!trader) return null;
           const medal = idx < 3 ? "🥇" : idx < 6 ? "🥈" : "🥉";
           return (
-            <div key={`${activeCategory}-${idx}`} onClick={() => openProfile(trader)} className="card-hover" style={{
-              ...cardStyle, border: tier.border, boxShadow: tier.glow, padding: "14px", cursor: "pointer", position: "relative"
+            <div key={`${activeCategory}-${idx}`} onClick={() => openProfile(trader)} className="card-hover card-glow" style={{
+              ...cardStyle, border: tier.border, boxShadow: tier.glow, padding: "14px", cursor: "pointer", position: "relative",
+              animation: "fadeInUp 0.3s ease both", animationDelay: `${idx * 0.04}s`
             }}>
               <div style={{ position: "absolute", top: "8px", right: "10px", fontSize: "16px" }}>{medal}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
@@ -5307,10 +5383,11 @@ const AwardsTab = () => {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>
-        {awards.map(award => (
-          <div key={award.id} className="card-hover" style={{
+        {awards.map((award, idx) => (
+          <div key={award.id} className="card-hover card-glow" style={{
             ...cardStyle, border: `2px solid ${C.amber}40`, boxShadow: `0 0 12px ${C.amber}15`,
-            display: "flex", flexDirection: "column", gap: "12px", cursor: "pointer", transition: "all 0.2s"
+            display: "flex", flexDirection: "column", gap: "12px", cursor: "pointer", transition: "all 0.2s",
+            animation: "fadeInUp 0.3s ease both", animationDelay: `${idx * 0.04}s`
           }} onClick={() => openProfile(award.winner)}>
             <div>
               <div style={{ fontSize: "32px", marginBottom: "6px" }}>{award.icon}</div>
@@ -5502,6 +5579,8 @@ const App = () => {
   });
   const [traderAlerts, setTraderAlerts] = useState({});
   const [proMode, setProMode] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
+  const [rightPanelTab, setRightPanelTab] = useState(null);
   const searchRef = useRef(null);
 
   // Cmd+K keyboard shortcut for search
@@ -5624,7 +5703,8 @@ const App = () => {
   };
   const ActiveComponent = tabContent[activeTab] || HomeTab;
   const sideW = sidebarCollapsed ? 56 : 200;
-  const rightW = showWatchlist ? 340 : 0;
+  const rightPanelW = rightPanelCollapsed ? 48 : 220;
+  const rightW = (showWatchlist ? 340 : 0) + rightPanelW;
 
   // XP state for demo (user's own progress)
   const myXp = 3420;
@@ -5642,8 +5722,10 @@ const App = () => {
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <style>{`
             @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
             tr.hoverable:hover { background-color: ${C.cardHover} !important; }
             .card-hover:hover { border-color: ${C.borderLight} !important; }
+            .card-glow:hover { box-shadow: 0 0 20px rgba(139,92,246,0.08) !important; }
             button.btn-hover:hover { filter: brightness(1.15); }
             .grid-2col { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
             .grid-2col-16 { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
@@ -6039,9 +6121,86 @@ const App = () => {
               </div>
             )}
 
+            {/* ── Right Utility Panel ── */}
+            <aside style={{
+              width: rightPanelW, position: "fixed", top: 32, right: 0, bottom: 0, zIndex: 201,
+              backgroundColor: C.card, borderLeft: `1px solid ${C.border}`,
+              display: "flex", flexDirection: "column",
+              transition: "width 0.2s ease", overflow: "hidden"
+            }}>
+              {/* Top icons */}
+              <div style={{ height: 56, display: "flex", alignItems: rightPanelCollapsed ? "center" : "center", justifyContent: rightPanelCollapsed ? "center" : "space-between", padding: rightPanelCollapsed ? "0" : "0 12px", borderBottom: `1px solid ${C.border}`, gap: "6px" }}>
+                {rightPanelCollapsed ? (
+                  <button onClick={() => setRightPanelCollapsed(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px", display: "flex", alignItems: "center" }}>
+                    <ChevronRight size={14} style={{ transform: "rotate(180deg)" }} />
+                  </button>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Star size={14} color={C.amber} />
+                      <span style={{ fontSize: "12px", fontWeight: "700", whiteSpace: "nowrap" }}>Quick Access</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "4px" }}>
+                      <button onClick={() => setRightPanelCollapsed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px", display: "flex" }}>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Nav items */}
+              <nav style={{ flex: 1, padding: "8px 4px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                {[
+                  { id: "traders", label: "Traders", icon: Users, color: C.purple, action: () => { setShowWatchlist(true); setRightPanelTab("traders"); } },
+                  { id: "bots", label: "Bots", icon: Bot, color: C.cyan, action: () => { setShowWatchlist(true); setWatchlistCategory("bot"); setRightPanelTab("bots"); } },
+                  { id: "chat", label: "Chat", icon: MessageCircle, color: C.blue, action: () => setRightPanelTab(rightPanelTab === "chat" ? null : "chat") },
+                  { id: "alarms", label: "Alarms", icon: Bell, color: C.amber, action: () => { setShowAlerts(true); setRightPanelTab("alarms"); } },
+                  { id: "lists", label: "Lists", icon: Layers, color: C.green, action: () => setRightPanelTab(rightPanelTab === "lists" ? null : "lists") },
+                ].map(item => {
+                  const isActive = rightPanelTab === item.id;
+                  return (
+                    <button key={item.id} onClick={item.action} title={rightPanelCollapsed ? item.label : undefined} style={{
+                      display: "flex", alignItems: "center", gap: "10px",
+                      padding: rightPanelCollapsed ? "10px 0" : "10px 12px",
+                      justifyContent: rightPanelCollapsed ? "center" : "flex-start",
+                      backgroundColor: isActive ? `${item.color}12` : "transparent",
+                      border: "none", borderRadius: "6px", cursor: "pointer",
+                      color: isActive ? item.color : C.textMuted,
+                      fontSize: "12px", fontWeight: isActive ? "600" : "400",
+                      transition: "all 0.15s", width: "100%"
+                    }}>
+                      <item.icon size={16} />
+                      {!rightPanelCollapsed && <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Mini content area when expanded */}
+              {!rightPanelCollapsed && rightPanelTab === "chat" && (
+                <div style={{ flex: 1, padding: "8px", borderTop: `1px solid ${C.border}`, overflow: "auto" }}>
+                  <div style={{ fontSize: "10px", color: C.textFaint, textAlign: "center", padding: "20px 8px" }}>
+                    <MessageCircle size={16} style={{ marginBottom: "6px", opacity: 0.4 }} />
+                    <div style={{ fontWeight: "600" }}>Chat coming soon</div>
+                    <div style={{ marginTop: "4px", fontSize: "9px" }}>Connect with traders in real-time</div>
+                  </div>
+                </div>
+              )}
+              {!rightPanelCollapsed && rightPanelTab === "lists" && (
+                <div style={{ flex: 1, padding: "8px", borderTop: `1px solid ${C.border}`, overflow: "auto" }}>
+                  <div style={{ fontSize: "10px", color: C.textFaint, textAlign: "center", padding: "20px 8px" }}>
+                    <Layers size={16} style={{ marginBottom: "6px", opacity: 0.4 }} />
+                    <div style={{ fontWeight: "600" }}>Custom Lists</div>
+                    <div style={{ marginTop: "4px", fontSize: "9px" }}>Create watchlists and groups</div>
+                  </div>
+                </div>
+              )}
+            </aside>
+
             {/* ── Right Sidebar: Trader Watchlist (persistent, TradingView-style) ── */}
             <aside style={{
-              width: 340, position: "fixed", top: 32, right: 0, bottom: 0, zIndex: 200,
+              width: 340, position: "fixed", top: 32, right: rightPanelW, bottom: 0, zIndex: 200,
               backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`,
               display: "flex", flexDirection: "column",
               transform: showWatchlist ? "translateX(0)" : "translateX(100%)",
@@ -6234,7 +6393,7 @@ const App = () => {
             )}
 
             {/* Content */}
-            <main style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%" }}>
+            <main key={profileTrader ? `profile-${profileTrader.name}` : activeTab} style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%", animation: "fadeInUp 0.2s ease" }}>
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
             </main>
 
