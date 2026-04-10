@@ -13,7 +13,7 @@ import {
   Layers, GitBranch, Cpu, Bot, Gamepad2, ArrowUp, ArrowDown, Flame, Award,
   DollarSign, ToggleLeft, ToggleRight, Percent, Scale, Play, Pause, Power,
   MessageCircle, ThumbsUp, ThumbsDown, Radio, Heart, Lightbulb,
-  X, ExternalLink, Bookmark, BellRing, Home, Send, Link2
+  X, ExternalLink, Bookmark, BellRing, Home, Send, Link2, ArrowRight
 } from "lucide-react";
 
 /* ═══════════════════════ THEME ═══════════════════════ */
@@ -1537,6 +1537,115 @@ const smcCoins = {
 
 const smcCoinList = Object.keys(smcCoins);
 
+/* ═══════════════════════ TOKEN FIELD VISUALIZATION ═══════════════════════ */
+const TokenFieldViz = ({ pair, currentPrice, priceRange, players }) => {
+  const range = priceRange.high - priceRange.low;
+  const redZoneWidth = 8;
+  const priceToX = (price) => {
+    const pct = ((price - priceRange.low) / range) * 100;
+    return Math.max(2, Math.min(98, pct));
+  };
+  const ballX = priceToX(currentPrice);
+  const longs = players.filter(p => p.team === "LONG");
+  const shorts = players.filter(p => p.team === "SHORT");
+  const total = players.length || 1;
+  const longPct = Math.round((longs.length / total) * 100);
+  const shortPct = 100 - longPct;
+  const longHumans = longs.filter(p => { const t = mockTraders.find(tr => tr.name === p.name); return t && !t.isBot; }).length;
+  const longBots = longs.length - longHumans;
+  const shortHumans = shorts.filter(p => { const t = mockTraders.find(tr => tr.name === p.name); return t && !t.isBot; }).length;
+  const shortBots = shorts.length - shortHumans;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Gamepad2 size={14} color={C.purple} />
+          <span style={{ fontSize: "13px", fontWeight: "700" }}>Trading Field — {pair}</span>
+          <Tag text={`${players.length} active`} color={C.green} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "10px", color: C.textMuted }}>Current Price</span>
+          <span style={{ fontSize: "16px", fontWeight: "800", color: C.green, ...mono }}>${currentPrice.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* The Field */}
+      <div style={{ position: "relative", width: "100%", height: "240px", backgroundColor: C.bg, borderRadius: "8px", border: `1px solid ${C.border}`, overflow: "hidden" }}>
+        {/* Red zones */}
+        <div style={{ position: "absolute", top: 0, left: 0, width: `${redZoneWidth}%`, height: "100%", backgroundColor: "rgba(248,81,73,0.12)", borderRight: "2px dashed rgba(248,81,73,0.4)" }}>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-90deg)", fontSize: "9px", fontWeight: "700", color: C.red, textTransform: "uppercase", letterSpacing: "2px", whiteSpace: "nowrap" }}>RED ZONE</div>
+        </div>
+        <div style={{ position: "absolute", top: 0, right: 0, width: `${redZoneWidth}%`, height: "100%", backgroundColor: "rgba(248,81,73,0.12)", borderLeft: "2px dashed rgba(248,81,73,0.4)" }}>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(90deg)", fontSize: "9px", fontWeight: "700", color: C.red, textTransform: "uppercase", letterSpacing: "2px", whiteSpace: "nowrap" }}>RED ZONE</div>
+        </div>
+        {/* Goal labels */}
+        <div style={{ position: "absolute", bottom: "10px", left: "10px", fontSize: "10px", fontWeight: "700", color: C.red }}>SHORT<div style={{ fontSize: "8px", fontWeight: "400", color: C.textMuted }}>Goal Line</div></div>
+        <div style={{ position: "absolute", bottom: "10px", right: "10px", fontSize: "10px", fontWeight: "700", color: C.green, textAlign: "right" }}>LONG<div style={{ fontSize: "8px", fontWeight: "400", color: C.textMuted }}>Goal Line</div></div>
+        {/* Yard lines */}
+        {[20, 35, 50, 65, 80].map(pct => {
+          const price = priceRange.low + (pct / 100) * range;
+          return (
+            <div key={pct} style={{ position: "absolute", top: 0, left: `${pct}%`, height: "100%", borderLeft: `1px solid ${C.border}` }}>
+              <div style={{ position: "absolute", bottom: "2px", left: "4px", fontSize: "8px", color: C.textFaint, ...mono }}>${price.toFixed(0)}</div>
+            </div>
+          );
+        })}
+        {/* Center line */}
+        <div style={{ position: "absolute", top: 0, left: "50%", height: "100%", borderLeft: `1px solid ${C.borderLight}` }} />
+        {/* Ball */}
+        <div style={{ position: "absolute", top: "50%", left: `${ballX}%`, transform: "translate(-50%,-50%)", zIndex: 10, textAlign: "center" }}>
+          <div style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#ffd700", border: "2px solid #fff", margin: "0 auto 3px", boxShadow: "0 0 12px rgba(255,215,0,0.6)" }} />
+          <div style={{ fontSize: "8px", fontWeight: "700", color: "#ffd700" }}>BALL</div>
+        </div>
+        {/* Players */}
+        {players.map((p, i) => {
+          const x = priceToX(p.entry);
+          const isLong = p.team === "LONG";
+          const isWin = p.status === "Win";
+          const dotColor = isLong ? (isWin ? C.green : "rgba(63,185,80,0.5)") : (isWin ? C.red : "rgba(248,81,73,0.5)");
+          const yOff = 15 + (i % 5) * 16;
+          return (
+            <div key={p.name} title={`${p.name} — ${p.team} — ${p.roi >= 0 ? "+" : ""}${p.roi.toFixed(2)}%`} style={{ position: "absolute", left: `${x}%`, top: `${yOff}%`, transform: "translate(-50%,-50%)", textAlign: "center", cursor: "pointer", zIndex: 5 }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", backgroundColor: dotColor, border: `2px solid ${isWin ? "white" : "rgba(255,255,255,0.4)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", boxShadow: isWin ? `0 0 8px ${dotColor}` : "none" }}>
+                {isLong ? (isWin ? "↗" : "↘") : (isWin ? "↙" : "↗")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: "flex", gap: "14px", justifyContent: "center", flexWrap: "wrap" }}>
+        {[[C.green, "LONG (Winning)"], ["rgba(63,185,80,0.5)", "LONG (Losing)"], [C.red, "SHORT (Winning)"], ["rgba(248,81,73,0.5)", "SHORT (Losing)"]].map(([color, label]) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "9px", color: C.textMuted }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: color }} />{label}
+          </div>
+        ))}
+      </div>
+
+      {/* Sentiment cards + bar */}
+      <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ flex: 1, ...cardStyle, padding: "10px", textAlign: "center", border: `1px solid ${C.green}40` }}>
+          <div style={{ fontSize: "9px", fontWeight: "700", color: C.green }}>LONG</div>
+          <div style={{ fontSize: "22px", fontWeight: "900", color: C.green, ...mono }}>{longPct}%</div>
+          <div style={{ fontSize: "8px", color: C.textMuted, marginTop: "2px" }}>👤 {longHumans} humans · 🤖 {longBots} bots</div>
+        </div>
+        <div style={{ flex: 1, ...cardStyle, padding: "10px", textAlign: "center", border: `1px solid ${C.red}40` }}>
+          <div style={{ fontSize: "9px", fontWeight: "700", color: C.red }}>SHORT</div>
+          <div style={{ fontSize: "22px", fontWeight: "900", color: C.red, ...mono }}>{shortPct}%</div>
+          <div style={{ fontSize: "8px", color: C.textMuted, marginTop: "2px" }}>👤 {shortHumans} humans · 🤖 {shortBots} bots</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", height: "8px", borderRadius: "4px", overflow: "hidden", gap: "2px" }}>
+        <div style={{ flex: longPct, backgroundColor: C.green, borderRadius: "4px 0 0 4px" }} />
+        <div style={{ flex: shortPct, backgroundColor: C.red, borderRadius: "0 4px 4px 0" }} />
+      </div>
+    </div>
+  );
+};
+
 /* ═══════════════════════ TAB 1: SMC ANALYSIS ═══════════════════════ */
 const SMCAnalysis = () => {
   const [selectedCoin, setSelectedCoin] = useState("BTC");
@@ -1833,6 +1942,16 @@ const SMCAnalysis = () => {
             <Line type="monotone" dataKey="ma50" stroke={C.purple} dot={false} strokeWidth={1} strokeDasharray="4 4" />
           </AreaChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* ── Trading Field — Who's positioned on this token ── */}
+      <div style={cardStyle}>
+        <TokenFieldViz
+          pair={`${selectedCoin}/USDT`}
+          currentPrice={Math.round((coin.chartBase + 12 * coin.chartStep) * 100) / 100}
+          priceRange={{ low: Math.round(coin.chartBase * 0.97), high: Math.round((coin.chartBase + 24 * coin.chartStep) * 1.03) }}
+          players={ftgPlayers.map((p, i) => ({ ...p, coin: selectedCoin, entry: Math.round((coin.chartBase + (i * 1.3) * coin.chartStep) * 100) / 100, current: Math.round((coin.chartBase + 12 * coin.chartStep + (p.roi / 100) * coin.chartBase * 0.01) * 100) / 100 }))}
+        />
       </div>
     </div>
   );
@@ -4935,6 +5054,7 @@ const PredictionMarketsTab = () => {
 const FootballTab = () => {
   const [selTf, setSelTf] = useState("3D");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { setActiveTab } = useFeedFilter();
 
   const longs = ftgPlayers.filter(p => p.team === "LONG");
   const shorts = ftgPlayers.filter(p => p.team === "SHORT");
@@ -4945,14 +5065,6 @@ const FootballTab = () => {
   const shortPct = 100 - longPct;
   const avgRoi = (ftgPlayers.reduce((a, p) => a + p.roi, 0) / totalPlayers).toFixed(2);
   const bestPlayer = [...ftgPlayers].sort((a, b) => b.roi - a.roi)[0];
-  const range = ftgPriceRange.high - ftgPriceRange.low;
-
-  /* Map entry price to horizontal % position on the field (0% = left/SHORT goal, 100% = right/LONG goal) */
-  const priceToX = (price) => {
-    const pct = ((price - ftgPriceRange.low) / range) * 100;
-    return Math.max(2, Math.min(98, pct));
-  };
-  const ballX = priceToX(ftgCurrentPrice);
 
   /* Momentum: which team is "winning" the market */
   const momentum = shortPct > longPct ? "SHORT" : longPct > shortPct ? "LONG" : "NEUTRAL";
@@ -4986,7 +5098,7 @@ const FootballTab = () => {
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <Gamepad2 size={20} color={C.purple} />
           <span style={{ fontSize: "18px", fontWeight: "800" }}>Football Trading Game</span>
-          <Tag text={`${totalPlayers} jugadores activos`} color={C.green} />
+          <Tag text={`${totalPlayers} active players`} color={C.green} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{ backgroundColor: C.bg, border: `1px solid ${C.border}`, borderRadius: "6px", padding: "6px 12px", fontSize: "12px", fontWeight: "600", ...mono }}>{ftgPair}</div>
@@ -5009,91 +5121,56 @@ const FootballTab = () => {
       {/* ── Main: Field + Scoreboard ── */}
       <div className="grid-2col-16">
 
-        {/* Campo de Juego */}
+        {/* Multi-Token Sentiment Overview */}
         <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
-              <div style={{ fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}><Gamepad2 size={13} /> Campo de Juego</div>
-              <div style={{ fontSize: "10px", color: C.textMuted, ...mono }}>Rango: ${ftgPriceRange.low.toLocaleString()} – ${ftgPriceRange.high.toLocaleString()}</div>
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "10px", color: C.textMuted }}>Ball (Price)</div>
-              <div style={{ fontSize: "22px", fontWeight: "800", color: C.green, ...mono }}>${ftgCurrentPrice.toLocaleString()}</div>
+              <div style={{ fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}><Gamepad2 size={13} /> Market Sentiment Overview</div>
+              <div style={{ fontSize: "10px", color: C.textMuted }}>LONG vs SHORT positioning across top tokens</div>
             </div>
           </div>
 
-          {/* The Field = Price Chart */}
-          <div style={{ position: "relative", width: "100%", height: "320px", backgroundColor: C.bg, borderRadius: "8px", border: `1px solid ${C.border}`, overflow: "hidden" }}>
-            {/* Red zones (end zones) */}
-            <div style={{ position: "absolute", top: 0, left: 0, width: `${ftgRedZoneWidth}%`, height: "100%", backgroundColor: "rgba(248,81,73,0.12)", borderRight: "2px dashed rgba(248,81,73,0.4)" }}>
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-90deg)", fontSize: "10px", fontWeight: "700", color: C.red, textTransform: "uppercase", letterSpacing: "2px", whiteSpace: "nowrap" }}>RED ZONE</div>
-            </div>
-            <div style={{ position: "absolute", top: 0, right: 0, width: `${ftgRedZoneWidth}%`, height: "100%", backgroundColor: "rgba(248,81,73,0.12)", borderLeft: "2px dashed rgba(248,81,73,0.4)" }}>
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(90deg)", fontSize: "10px", fontWeight: "700", color: C.red, textTransform: "uppercase", letterSpacing: "2px", whiteSpace: "nowrap" }}>RED ZONE</div>
-            </div>
-
-            {/* Goal labels */}
-            <div style={{ position: "absolute", bottom: "12px", left: "12px", fontSize: "11px", fontWeight: "700", color: C.red }}>SHORT<div style={{ fontSize: "9px", fontWeight: "400", color: C.textMuted }}>Goal Line</div></div>
-            <div style={{ position: "absolute", bottom: "12px", right: "12px", fontSize: "11px", fontWeight: "700", color: C.green, textAlign: "right" }}>LONG<div style={{ fontSize: "9px", fontWeight: "400", color: C.textMuted }}>Goal Line</div></div>
-
-            {/* Vertical yard lines */}
-            {[20, 35, 50, 65, 80].map(pct => {
-              const price = ftgPriceRange.low + (pct / 100) * range;
-              return (
-                <div key={pct} style={{ position: "absolute", top: 0, left: `${pct}%`, height: "100%", borderLeft: `1px solid ${C.border}` }}>
-                  <div style={{ position: "absolute", bottom: "2px", left: "4px", fontSize: "9px", color: C.textFaint, ...mono }}>${price.toFixed(0)}</div>
-                </div>
-              );
-            })}
-
-            {/* Center line */}
-            <div style={{ position: "absolute", top: 0, left: "50%", height: "100%", borderLeft: `1px solid ${C.borderLight}` }} />
-
-            {/* Ball (current price) */}
-            <div style={{ position: "absolute", top: "50%", left: `${ballX}%`, transform: "translate(-50%,-50%)", zIndex: 10, textAlign: "center" }}>
-              <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: "#ffd700", border: "2px solid #fff", margin: "0 auto 4px", boxShadow: "0 0 12px rgba(255,215,0,0.6)" }} />
-              <div style={{ fontSize: "9px", fontWeight: "700", color: "#ffd700", textTransform: "uppercase" }}>BALL</div>
-            </div>
-
-            {/* Players positioned by entry price */}
-            {ftgPlayers.map((p, i) => {
-              const x = priceToX(p.entry);
-              const isLong = p.team === "LONG";
-              const isWin = p.status === "Win";
-              const dotColor = isLong
-                ? (isWin ? C.green : "rgba(63,185,80,0.5)")
-                : (isWin ? C.red : "rgba(248,81,73,0.5)");
-              const yOffset = 20 + (i % 4) * 18; // stagger vertically
-              return (
-                <div key={p.name} style={{ position: "absolute", left: `${x}%`, top: `${yOffset}%`, transform: "translate(-50%,-50%)", textAlign: "center", cursor: "pointer", zIndex: 5 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%", backgroundColor: dotColor,
-                    border: `2px solid ${isWin ? "white" : "rgba(255,255,255,0.4)"}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    margin: "0 auto 2px", fontSize: "10px",
-                    boxShadow: isWin ? `0 0 8px ${dotColor}` : "none"
-                  }}>
-                    {isLong ? (isWin ? "↗" : "↘") : (isWin ? "↙" : "↗")}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div style={{ display: "flex", gap: "20px", marginTop: "10px", justifyContent: "center", flexWrap: "wrap" }}>
+          {/* Token sentiment mini-cards */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
             {[
-              [C.green, "LONG (Ganando) ↗"],
-              ["rgba(63,185,80,0.5)", "LONG (Perdiendo) ↘"],
-              [C.red, "SHORT (Ganando) ↙"],
-              ["rgba(248,81,73,0.5)", "SHORT (Perdiendo) ↗"],
-            ].map(([color, label]) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "10px", color: C.textMuted }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: color }} />
-                {label}
-              </div>
-            ))}
+              { token: "BTC", longPct: 62, price: "$67,240" },
+              { token: "ETH", longPct: 55, price: "$3,410" },
+              { token: "SOL", longPct: 71, price: "$142.80" },
+              { token: "BNB", longPct: 48, price: "$580.50" },
+              { token: "XRP", longPct: 44, price: "$0.52" },
+            ].map(t => {
+              const shortP = 100 - t.longPct;
+              const dominant = t.longPct >= 50 ? "LONG" : "SHORT";
+              const domColor = dominant === "LONG" ? C.green : C.red;
+              return (
+                <div key={t.token} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 10px", borderRadius: "6px", backgroundColor: C.bg, border: `1px solid ${C.border}` }}>
+                  <div style={{ minWidth: "40px", fontSize: "12px", fontWeight: "700" }}>{t.token}</div>
+                  <div style={{ minWidth: "65px", fontSize: "11px", color: C.textMuted, ...mono }}>{t.price}</div>
+                  <div style={{ flex: 1, display: "flex", height: "14px", borderRadius: "3px", overflow: "hidden", gap: "1px" }}>
+                    <div style={{ flex: t.longPct, backgroundColor: C.green, borderRadius: "3px 0 0 3px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: "8px", fontWeight: "700", color: "#000" }}>{t.longPct}%</span>
+                    </div>
+                    <div style={{ flex: shortP, backgroundColor: C.red, borderRadius: "0 3px 3px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: "8px", fontWeight: "700", color: "#fff" }}>{shortP}%</span>
+                    </div>
+                  </div>
+                  <div style={{ minWidth: "50px", fontSize: "10px", fontWeight: "700", color: domColor, textAlign: "right" }}>{dominant}</div>
+                </div>
+              );
+            })}
           </div>
+
+          {/* CTA to Tokens tab */}
+          <button onClick={() => setActiveTab("tokens")} style={{
+            width: "100%", padding: "12px", borderRadius: "8px", cursor: "pointer",
+            backgroundColor: `${C.purple}15`, border: `1px solid ${C.purple}40`, color: C.purple,
+            fontSize: "12px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            transition: "all 0.2s"
+          }}>
+            <Gamepad2 size={14} />
+            Select a token in the Tokens tab for the full Trading Field view
+            <ArrowRight size={14} />
+          </button>
         </div>
 
         {/* ── Scoreboard ── */}
@@ -5140,7 +5217,7 @@ const FootballTab = () => {
 
           {/* ── Sentiment Breakdown ── */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><Users size={12} /> Sentimiento Traders vs Bots</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><Users size={12} /> Sentiment: Traders vs Bots</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
               {/* LONG Traders */}
               <div style={{ border: `1px solid ${C.green}40`, borderRadius: "6px", padding: "10px", backgroundColor: `${C.green}08` }}>
@@ -5209,11 +5286,11 @@ const FootballTab = () => {
 
           {/* Estadísticas */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><BarChart3 size={12} /> Estadísticas</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><BarChart3 size={12} /> Stats</div>
             {[
-              ["Total Jugadores", totalPlayers],
+              ["Total Players", totalPlayers],
               ["Distribution", `${longCount} LONG / ${shortCount} SHORT`],
-              ["ROI Promedio", <span style={{ color: Number(avgRoi) >= 0 ? C.green : C.red }}>+{avgRoi}%</span>],
+              ["Avg ROI", <span style={{ color: Number(avgRoi) >= 0 ? C.green : C.red }}>+{avgRoi}%</span>],
             ].map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
                 <span style={{ color: C.textMuted }}>{label}</span>
@@ -5221,18 +5298,18 @@ const FootballTab = () => {
               </div>
             ))}
             <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}><Trophy size={10} color={C.amber} /> Mejor Jugador</div>
+              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}><Trophy size={10} color={C.amber} /> Best Player</div>
               <div style={{ fontSize: "14px", fontWeight: "700" }}><TraderLink name={bestPlayer.name}>{bestPlayer.name}</TraderLink></div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Jugadores Activos ── */}
+      {/* ── Active Players ── */}
       <div style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <div style={{ fontSize: "14px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}><Users size={14} /> Jugadores Activos</div>
-          <span style={{ fontSize: "12px", color: C.textMuted }}>{totalPlayers} posiciones</span>
+          <div style={{ fontSize: "14px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}><Users size={14} /> Active Players</div>
+          <span style={{ fontSize: "12px", color: C.textMuted }}>{totalPlayers} positions</span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
