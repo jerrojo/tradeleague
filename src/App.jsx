@@ -1841,8 +1841,7 @@ const SMCAnalysis = () => {
 /* ═══════════════════════ RACE CHART TOOLTIP ═══════════════════════ */
 const RaceTooltip = ({ active, payload, label }) => {
   if (!active || !payload) return null;
-  const entries = payload
-    .filter(entry => entry.value != null)
+  const entries = [...new Map(payload.filter(entry => entry.value != null).map(e => [e.name, e])).values()]
     .sort((a, b) => b.value - a.value);
   return (
     <div style={{
