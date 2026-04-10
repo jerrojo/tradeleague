@@ -1797,193 +1797,38 @@ const SMCAnalysis = () => {
   );
 };
 
-/* ═══════════════════════ TAB: HOME (Live Chart) ═══════════════════════ */
+/* ═══════════════════════ TAB: ARENA (The Race) ═══════════════════════ */
 const HomeTab = () => {
   const { openProfile } = useProfile();
   const { setFeedFilter, setActiveTab } = useFeedFilter();
-  const [selectedPair, setSelectedPair] = useState("BTC/USDT");
-  const [showPairDD, setShowPairDD] = useState(false);
-  const [chartRange, setChartRange] = useState("1D");
-  const [hoveredDot, setHoveredDot] = useState(null);
-  const pairDDRef = useRef(null);
+  const [watching, setWatching] = useState(() => {
+    const m = {};
+    mockTraders.forEach((t, i) => { m[t.name] = i < 5; });
+    return m;
+  });
 
-  const allPairs = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT", "AVAX/USDT"];
-  const ranges = ["1H", "4H", "1D", "1W", "1M"];
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (pairDDRef.current && !pairDDRef.current.contains(e.target)) setShowPairDD(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const watchedNames = Object.keys(watching).filter(k => watching[k]);
 
   // Top 10 traders sorted by Alpha Score
   const top10Traders = useMemo(() => {
     return [...mockTraders].map(t => ({ ...t, _alpha: calcAlphaScore(t) })).sort((a, b) => b._alpha - a._alpha).slice(0, 10);
   }, []);
 
-  // Generate signal heatmap: 8 rows × 10 cols grid of dots — each dot = a time bucket
-  // Color = aggregate signal bias (green = net LONG, red = net SHORT, dim = no signal)
-  const signalHeatmap = useMemo(() => {
-    const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
-    const rows = 8;
-    const cols = 10;
-    const grid = [];
-    const pairBase = allPairs.indexOf(selectedPair);
-    for (let r = 0; r < rows; r++) {
-      const row = [];
-      for (let c = 0; c < cols; c++) {
-        const seed = pairBase * 1000 + r * 100 + c * 7 + 42;
-        const hasSignal = srand(seed) > 0.35; // ~65% of dots have a signal
-        const isLong = srand(seed + 500) > 0.45; // slight long bias
-        const strength = 0.3 + srand(seed + 200) * 0.7; // opacity/intensity
-        // Attach a trader to each signal dot for mouseover
-        const traderIdx = Math.floor(srand(seed + 300) * mockTraders.length);
-        const trader = mockTraders[traderIdx];
-        const pnl = hasSignal ? Math.round((srand(seed + 400) - 0.3) * 5000) : 0;
-        row.push({ hasSignal, isLong, strength, trader, pnl, r, c });
-      }
-      grid.push(row);
-    }
-    return grid;
-  }, [selectedPair]);
+  // Highlight moments — big plays from feed
+  const highlights = useMemo(() => {
+    return feedItems
+      .filter(f => (f.kind === "trade" && Math.abs(f.pnl) > 3000) || f.kind === "achievement" || f.kind === "whale")
+      .slice(0, 4);
+  }, []);
 
-  // Chart data (same improved generation as before)
-  const chartData = useMemo(() => {
-    const assetParams = {
-      "BTC/USDT": [67500, 0.025, 0.012], "ETH/USDT": [3450, 0.032, 0.015],
-      "SOL/USDT": [145, 0.045, 0.022], "BNB/USDT": [580, 0.028, 0.014],
-      "XRP/USDT": [0.62, 0.038, 0.018], "DOGE/USDT": [0.15, 0.055, 0.028], "AVAX/USDT": [35, 0.042, 0.020]
-    };
-    const [basePrice, dailyVol, avgSpread] = assetParams[selectedPair] || [100, 0.03, 0.015];
-    const tfScale = { "1H": 0.15, "4H": 0.35, "1D": 1.0, "1W": 2.2, "1M": 4.5 };
-    const candleVol = dailyVol * (tfScale[chartRange] || 1.0);
-    const pairSeed = allPairs.indexOf(selectedPair) * 137 + 42;
-    const points = chartRange === "1H" ? 12 : chartRange === "4H" ? 16 : chartRange === "1D" ? 24 : chartRange === "1W" ? 28 : 30;
-    const srand = (s) => { let x = Math.sin(s) * 10000; return x - Math.floor(x); };
-
-    // Collect ALL trader events for this pair to show as movement markers on hover
-    const allEvents = feedItems.filter(f =>
-      (f.kind === "trade" || f.kind === "signal") && f.pair === selectedPair
-    );
-
-    const data = [];
-    let price = basePrice;
-    let momentum = 0;
-    for (let i = 0; i < points; i++) {
-      const r1 = srand(pairSeed + i * 13.7) - 0.5;
-      const r2 = srand(pairSeed + i * 29.3 + 100) - 0.5;
-      momentum = momentum * 0.7 + r1 * candleVol * price;
-      const move = momentum + r2 * candleVol * price * 0.3;
-      const open = price;
-      price = price + move;
-      const close = price;
-      const bodySize = Math.abs(close - open);
-      const wickExt = bodySize * (0.3 + srand(pairSeed + i * 7.1) * 0.8) + basePrice * avgSpread * 0.3;
-      const high = Math.max(open, close) + wickExt * srand(pairSeed + i * 3.3);
-      const low = Math.min(open, close) - wickExt * srand(pairSeed + i * 5.7);
-      const label = chartRange === "1H" ? `${i * 5}m` : chartRange === "4H" ? `${i}:00` : chartRange === "1D" ? `${i}:00` : `Día ${i + 1}`;
-      const bullish = close >= open;
-      const moveRatio = Math.abs(move) / (basePrice * candleVol + 0.001);
-      const baseVol = 800 + srand(pairSeed + i * 11.1) * 1200;
-      const vol = Math.round(baseVol * (0.6 + moveRatio * 2.5));
-
-      // Attach movement events to candles (spread across chart)
-      const evtIdx = Math.floor(i / (points / Math.max(allEvents.length, 1)));
-      const evt = (allEvents[evtIdx] && i === Math.floor(evtIdx * (points / allEvents.length)) + 1) ? allEvents[evtIdx] : null;
-
-      data.push({
-        label, open: +open.toFixed(2), close: +close.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2),
-        price: +close.toFixed(2), bullish, vol,
-        evt // trader movement event attached to this candle
-      });
-    }
-    return data;
-  }, [selectedPair, chartRange]);
-
-  // Candlestick + trader movement bubble renderer (via Customized)
-  const CandlesAndMarkers = useCallback((props) => {
-    const { formattedGraphicalItems, xAxisMap, yAxisMap } = props;
-    if (!yAxisMap || !xAxisMap) return null;
-    const yAxis = Object.values(yAxisMap)[0];
-    const xAxis = Object.values(xAxisMap)[0];
-    if (!yAxis || !xAxis || !yAxis.scale || !xAxis.scale) return null;
-    const yScale = yAxis.scale;
-    const xScale = xAxis.scale;
-    const bandwidth = xAxis.bandSize || (xAxis.width / chartData.length);
-    const candleW = Math.max(Math.min(bandwidth * 0.6, 14), 3);
-
-    // Get area points for marker positioning fallback
-    const areaPoints = formattedGraphicalItems && formattedGraphicalItems[0]
-      ? (formattedGraphicalItems[0].props.points || [])
-      : [];
-
-    return (
-      <g>
-        {/* ── Candlestick bodies + wicks ── */}
-        {chartData.map((d, i) => {
-          const cx = xScale(d.label) + bandwidth / 2;
-          if (isNaN(cx)) return null;
-          const yOpen = yScale(d.open);
-          const yClose = yScale(d.close);
-          const yHigh = yScale(d.high);
-          const yLow = yScale(d.low);
-          const color = d.bullish ? C.green : C.red;
-          const bodyTop = Math.min(yOpen, yClose);
-          const bodyH = Math.max(Math.abs(yOpen - yClose), 1);
-          return (
-            <g key={`candle-${i}`}>
-              {/* Wick (high to low) */}
-              <line x1={cx} y1={yHigh} x2={cx} y2={yLow} stroke={color} strokeWidth={1} opacity={0.7} />
-              {/* Body */}
-              <rect x={cx - candleW / 2} y={bodyTop} width={candleW} height={bodyH}
-                fill={d.bullish ? color : C.bg} stroke={color} strokeWidth={1} rx={1} />
-            </g>
-          );
-        })}
-
-        {/* ── Trader movement bubbles on candles with events ── */}
-        {chartData.map((d, i) => {
-          if (!d.evt) return null;
-          const cx = xScale(d.label) + bandwidth / 2;
-          const yHigh = yScale(d.high);
-          if (isNaN(cx) || isNaN(yHigh)) return null;
-          const isLong = (d.evt.type === "LONG" || d.evt.bias === "LONG");
-          const color = isLong ? C.green : C.red;
-          const bx = cx;
-          const by = yHigh - 26;
-          const isSignal = d.evt.kind === "signal";
-          return (
-            <g key={`mv-${i}`}>
-              <line x1={bx} y1={yHigh} x2={bx} y2={by + 13} stroke={color} strokeWidth={1} strokeDasharray="2 2" opacity={0.5} />
-              <ellipse cx={bx} cy={by} rx={isSignal ? 12 : 15} ry={9} fill={color} opacity={0.9} />
-              <path d={isLong
-                ? `M${bx} ${by+3} L${bx} ${by-3} M${bx-2.5} ${by-1} L${bx} ${by-3} L${bx+2.5} ${by-1}`
-                : `M${bx} ${by-3} L${bx} ${by+3} M${bx-2.5} ${by+1} L${bx} ${by+3} L${bx+2.5} ${by+1}`
-              } stroke="#fff" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-              <text x={bx} y={by + 19} textAnchor="middle" fontSize={8} fill={color} fontWeight="700">{d.evt.avatar || ""}</text>
-              {d.evt.pnl != null && !isSignal && (
-                <text x={bx + 19} y={by + 2} fontSize={7} fontWeight="800" fill={d.evt.pnl >= 0 ? C.green : C.red} dominantBaseline="middle">
-                  {d.evt.pnl >= 0 ? "+" : ""}${Math.abs(d.evt.pnl) >= 1000 ? (d.evt.pnl / 1000).toFixed(1) + "K" : d.evt.pnl}
-                </text>
-              )}
-              {isSignal && d.evt.confidence && (
-                <text x={bx + 16} y={by + 2} fontSize={7} fontWeight="800" fill={C.blue} dominantBaseline="middle">{d.evt.confidence}%</text>
-              )}
-            </g>
-          );
-        })}
-      </g>
-    );
-  }, [chartData]);
-
-  const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;
-  const startPrice = chartData.length > 0 ? chartData[0].price : 0;
-  const priceChange = currentPrice - startPrice;
-  const priceChangePct = startPrice > 0 ? ((priceChange / startPrice) * 100).toFixed(2) : "0.00";
-  const isUp = priceChange >= 0;
-  const trendColor = isUp ? C.green : C.red;
+  // Current leader
+  const leader = useMemo(() => {
+    const last = traderEquity[traderEquity.length - 1];
+    if (!last) return null;
+    let best = null, bestVal = -Infinity;
+    mockTraders.forEach(t => { if (last[t.name] != null && last[t.name] > bestVal) { bestVal = last[t.name]; best = t; } });
+    return best;
+  }, []);
 
   // Top 10 feeds for bottom cards
   const top10Trades = useMemo(() =>
@@ -1993,187 +1838,127 @@ const HomeTab = () => {
   const top10Predictions = useMemo(() =>
     feedItems.filter(f => f.kind === "prediction").sort((a, b) => b.stake - a.stake).slice(0, 10), []);
 
-
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
       {/* ═══ TOP SECTION: 2-column layout ═══ */}
       <div className="grid-2col">
 
-        {/* ── LEFT: Pair selector + Signal Heatmap + Chart ── */}
+        {/* ── LEFT: Race Chart + Highlights ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 
-          {/* Pair dropdown + Price */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div ref={pairDDRef} style={{ position: "relative" }}>
-              <button onClick={() => setShowPairDD(!showPairDD)} style={{
-                display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px",
-                backgroundColor: C.card, border: `1px solid ${showPairDD ? C.blue : C.border}`, borderRadius: "8px",
-                color: C.text, fontSize: "14px", fontWeight: "900", cursor: "pointer", ...mono
-              }}>
-                {selectedPair}
-                <ChevronDown size={14} color={C.textMuted} style={{ transform: showPairDD ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }} />
-              </button>
-              {showPairDD && (
-                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", zIndex: 300, boxShadow: "0 8px 24px rgba(0,0,0,0.4)", minWidth: 140 }}>
-                  {allPairs.map((pair, i) => (
-                    <button key={pair} onClick={() => { setSelectedPair(pair); setShowPairDD(false); }} style={{
-                      display: "block", width: "100%", padding: "8px 14px",
-                      backgroundColor: pair === selectedPair ? C.blueBg : "transparent", border: "none",
-                      borderBottom: i < allPairs.length - 1 ? `1px solid ${C.border}` : "none",
-                      color: pair === selectedPair ? C.blue : C.text, fontSize: "12px", fontWeight: "700", cursor: "pointer", textAlign: "left", ...mono
-                    }}>{pair}</button>
-                  ))}
+          {/* Trader Toggles — who's racing */}
+          <div style={{ ...cardStyle, padding: "10px 14px", display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: "2px" }}>Racing:</span>
+            {mockTraders.map((t, i) => {
+              const on = watching[t.name];
+              const color = traderColors[i];
+              return (
+                <button key={t.name} onClick={() => setWatching(prev => ({ ...prev, [t.name]: !prev[t.name] }))} style={{
+                  display: "flex", alignItems: "center", gap: "5px",
+                  padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                  border: `1px solid ${on ? color : C.border}`,
+                  backgroundColor: on ? color + "15" : "transparent",
+                  color: on ? C.text : C.textFaint, transition: "all 0.15s"
+                }}>
+                  <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
+                  <span>{t.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Race Chart — multi-line equity curves */}
+          <div style={{ ...cardStyle, padding: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: "800" }}>The Race</div>
+                <div style={{ fontSize: "10px", color: C.textMuted }}>Cumulative P&L — 30 days — {watchedNames.length} traders racing</div>
+              </div>
+              {leader && (
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "8px", backgroundColor: C.amberBg, border: `1px solid ${C.amber}30` }}>
+                  <Trophy size={12} color={C.amber} />
+                  <span style={{ fontSize: "10px", fontWeight: "700", color: C.amber }}>{leader.avatar} {leader.name} leading</span>
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-              <span style={{ fontSize: "22px", fontWeight: "900", ...mono }}>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span style={{ fontSize: "12px", fontWeight: "700", color: trendColor, ...mono }}>
-                {isUp ? "+" : ""}{priceChange.toFixed(2)} ({isUp ? "+" : ""}{priceChangePct}%)
-              </span>
-            </div>
-            {/* Range selector */}
-            <div style={{ marginLeft: "auto", display: "flex", gap: "3px" }}>
-              {ranges.map(r => (
-                <button key={r} onClick={() => setChartRange(r)} style={{
-                  padding: "3px 10px", borderRadius: "4px", fontSize: "9px", fontWeight: "700", cursor: "pointer",
-                  border: `1px solid ${chartRange === r ? C.purple : C.border}`,
-                  backgroundColor: chartRange === r ? C.purpleBg : "transparent",
-                  color: chartRange === r ? C.purple : C.textMuted, ...mono
-                }}>{r}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Signal Heatmap Dot Grid — red/green signals */}
-          <div style={{ ...cardStyle, padding: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-              <Radio size={12} color={C.blue} />
-              <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Señales activas — {selectedPair}</span>
-              <div style={{ flex: 1 }} />
-              <div style={{ display: "flex", gap: "8px", fontSize: "8px", color: C.textFaint }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> LONG</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.red, display: "inline-block" }} /> SHORT</span>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px", position: "relative" }}>
-              {signalHeatmap.map((row, ri) => (
-                <div key={ri} style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                  {row.map((dot, ci) => (
-                    <div
-                      key={ci}
-                      tabIndex={dot.hasSignal ? 0 : undefined}
-                      role={dot.hasSignal ? "button" : undefined}
-                      aria-label={dot.hasSignal ? `${dot.trader.name} ${dot.isLong ? "LONG" : "SHORT"} ${dot.pnl >= 0 ? "+" : ""}$${dot.pnl}` : undefined}
-                      onMouseEnter={() => dot.hasSignal && setHoveredDot({ r: ri, c: ci, ...dot })}
-                      onMouseLeave={() => setHoveredDot(null)}
-                      onFocus={() => dot.hasSignal && setHoveredDot({ r: ri, c: ci, ...dot })}
-                      onBlur={() => setHoveredDot(null)}
-                      onKeyDown={e => { if (dot.hasSignal && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openProfile(dot.trader); } }}
-                      style={{
-                        width: 10, height: 10, borderRadius: "50%", cursor: dot.hasSignal ? "pointer" : "default", outline: "none",
-                        backgroundColor: dot.hasSignal
-                          ? (dot.isLong ? C.green : C.red)
-                          : C.border,
-                        opacity: dot.hasSignal ? (0.4 + dot.strength * 0.6) : 0.2,
-                        transition: "transform 0.15s, opacity 0.15s",
-                        transform: (hoveredDot && hoveredDot.r === ri && hoveredDot.c === ci) ? "scale(1.8)" : "scale(1)",
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
-              {/* Mouseover tooltip for heatmap dot — trader's movement */}
-              {hoveredDot && hoveredDot.hasSignal && (() => {
-                const tipW = 160;
-                const gridW = 10 * 14;
-                const rawLeft = hoveredDot.c * 14 + 20;
-                const clampedLeft = rawLeft + tipW > gridW ? rawLeft - tipW - 10 : rawLeft;
-                const rawTop = hoveredDot.r * 14 - 48;
-                const clampedTop = rawTop < 0 ? hoveredDot.r * 14 + 18 : rawTop;
-                return (
-                <div style={{
-                  position: "absolute", top: clampedTop, left: clampedLeft,
-                  backgroundColor: C.card, border: `1px solid ${hoveredDot.isLong ? C.green : C.red}`,
-                  borderRadius: "8px", padding: "8px 12px", zIndex: 200, boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
-                  minWidth: 140, pointerEvents: "none"
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "14px" }}>{hoveredDot.trader.avatar}</span>
-                    <span style={{ fontSize: "11px", fontWeight: "700" }}>{hoveredDot.trader.name}</span>
-                    <BotTag isBot={hoveredDot.trader.isBot} />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {hoveredDot.isLong
-                      ? <ArrowUp size={14} color={C.green} />
-                      : <ArrowDown size={14} color={C.red} />}
-                    <span style={{ fontSize: "11px", fontWeight: "800", color: hoveredDot.isLong ? C.green : C.red }}>
-                      {hoveredDot.isLong ? "LONG" : "SHORT"}
-                    </span>
-                    <span style={{ fontSize: "11px", fontWeight: "800", color: hoveredDot.pnl >= 0 ? C.green : C.red, ...mono }}>
-                      {hoveredDot.pnl >= 0 ? "+" : ""}${hoveredDot.pnl.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                );
-              })()}
-            </div>
-          </div>
-
-          {/* Candlestick Chart with Trader Movement Bubbles */}
-          <div style={{ ...cardStyle, padding: "12px" }}>
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={chartData} margin={{ top: 45, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} opacity={0.5} />
-                <XAxis dataKey="label" stroke={C.textMuted} fontSize={8} tickLine={false} axisLine={{ stroke: C.border }} />
-                <YAxis stroke={C.textMuted} fontSize={8} tickLine={false} axisLine={{ stroke: C.border }}
-                  domain={[
-                    (dataMin) => Math.floor(dataMin * 0.999 * 100) / 100,
-                    (dataMax) => Math.ceil(dataMax * 1.001 * 100) / 100
-                  ]}
-                  tickFormatter={v => selectedPair.startsWith("BTC") ? `$${(v/1000).toFixed(1)}K` : selectedPair.startsWith("ETH") ? `$${v.toFixed(0)}` : `$${v}`} />
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={traderEquity}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} opacity={0.4} />
+                <XAxis dataKey="day" stroke={C.textMuted} fontSize={9} tickFormatter={v => `D${v}`} />
+                <YAxis stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "10px", ...mono }}
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload || !payload[0]) return null;
-                    const d = payload[0].payload;
-                    const fmt = (v) => `$${Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-                    return (
-                      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", padding: "8px 12px", fontSize: "10px", ...mono }}>
-                        <div style={{ fontWeight: "700", marginBottom: "4px", color: C.text }}>{label}{d.evt ? ` — ${d.evt.avatar} ${d.evt.trader}` : ""}</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "auto auto", gap: "2px 10px" }}>
-                          <span style={{ color: C.textMuted }}>O:</span><span style={{ color: d.bullish ? C.green : C.red }}>{fmt(d.open)}</span>
-                          <span style={{ color: C.textMuted }}>H:</span><span style={{ color: C.green }}>{fmt(d.high)}</span>
-                          <span style={{ color: C.textMuted }}>L:</span><span style={{ color: C.red }}>{fmt(d.low)}</span>
-                          <span style={{ color: C.textMuted }}>C:</span><span style={{ color: d.bullish ? C.green : C.red, fontWeight: "800" }}>{fmt(d.close)}</span>
-                        </div>
-                        <div style={{ marginTop: "3px", color: C.textFaint }}>Vol: {d.vol.toLocaleString()}</div>
-                      </div>
-                    );
-                  }}
+                  contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "11px" }}
+                  formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]}
+                  labelFormatter={l => `Day ${l}`}
                 />
-                {/* Invisible lines to establish Y domain from high/low */}
-                <Line type="monotone" dataKey="high" stroke="transparent" dot={false} activeDot={false} />
-                <Line type="monotone" dataKey="low" stroke="transparent" dot={false} activeDot={false} />
-                {/* Candlesticks + markers drawn via Customized */}
-                <Customized component={CandlesAndMarkers} />
-              </ComposedChart>
+                {mockTraders.map((t, i) => watching[t.name] && (
+                  <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]}
+                    strokeWidth={leader && leader.name === t.name ? 3 : 2}
+                    dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }}
+                    connectNulls={false} />
+                ))}
+              </LineChart>
             </ResponsiveContainer>
-            {/* Volume bars — colored by candle direction */}
-            <div style={{ marginTop: "-2px" }}>
-              <ResponsiveContainer width="100%" height={32}>
-                <BarChart data={chartData} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                  <YAxis hide domain={[0, "auto"]} />
-                  <XAxis dataKey="label" hide />
-                  <Bar dataKey="vol" radius={[1, 1, 0, 0]}>
-                    {chartData.map((d, i) => (
-                      <Cell key={i} fill={d.bullish ? C.green + "30" : C.red + "30"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            {/* Legend with current standings */}
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "8px" }}>
+              {mockTraders.filter(t => watching[t.name]).map((t, idx) => {
+                const ci = mockTraders.indexOf(t);
+                const lastDay = traderEquity[traderEquity.length - 1];
+                const val = lastDay ? lastDay[t.name] : 0;
+                return (
+                  <div key={t.name} onClick={() => openProfile(t)} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", cursor: "pointer", padding: "2px 6px", borderRadius: "4px", border: `1px solid ${C.border}` }}>
+                    <div style={{ width: 8, height: 3, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
+                    <span style={{ fontWeight: "600", color: traderColors[ci] }}>{t.avatar} {t.name}</span>
+                    <span style={{ color: val >= 0 ? C.green : C.red, fontWeight: "700", ...mono }}>
+                      {val >= 0 ? "+" : ""}${val != null ? (Math.abs(val) >= 1000 ? (val/1000).toFixed(1) + "K" : val) : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Highlight Moments — live big plays */}
+          <div style={{ ...cardStyle, padding: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+              <Flame size={12} color={C.amber} />
+              <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Highlight Moments</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", marginLeft: "4px" }} />
+              <span style={{ fontSize: "8px", color: C.green, fontWeight: "600" }}>LIVE</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {highlights.map((h, i) => (
+                <div key={h.id || i} style={{
+                  display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px",
+                  backgroundColor: i === 0 ? `${C.amber}10` : "transparent",
+                  borderRadius: "6px", border: `1px solid ${i === 0 ? C.amber + "30" : C.border}`,
+                  fontSize: "11px"
+                }}>
+                  <span style={{ fontSize: "14px" }}>{h.avatar || (h.kind === "whale" ? "🐋" : "⚡")}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {h.kind === "trade" && (
+                      <span>
+                        <span style={{ fontWeight: "700" }}>{h.trader}</span>{" "}
+                        <span style={{ color: h.pnl >= 0 ? C.green : C.red, fontWeight: "800", ...mono }}>
+                          {h.pnl >= 0 ? "+" : ""}${Math.abs(h.pnl).toLocaleString()}
+                        </span>{" "}
+                        <span style={{ color: C.textMuted }}>on {h.pair} {h.type}</span>
+                      </span>
+                    )}
+                    {h.kind === "achievement" && (
+                      <span>
+                        <span style={{ fontWeight: "700" }}>{h.trader}</span>{" "}
+                        <span style={{ color: C.amber }}>unlocked {h.achievement.name}</span>
+                      </span>
+                    )}
+                    {(h.kind === "whale" || h.kind === "liquidation") && (
+                      <span style={{ color: C.cyan, fontWeight: "600" }}>{h.text}</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{h.time}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -5363,6 +5148,296 @@ const FootballTab = () => {
   );
 };
 
+/* ═══════════════════════ TAB: HALL OF FAME ═══════════════════════ */
+const HallOfFameTab = () => {
+  const { openProfile } = useProfile();
+  const [activeCategory, setActiveCategory] = useState("trades");
+  const [activeSeason, setActiveSeason] = useState("all");
+
+  const topTrades = useMemo(() =>
+    feedItems.filter(f => f.kind === "trade" && f.status !== "active")
+      .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl)).slice(0, 10), []);
+  const topSignals = useMemo(() =>
+    feedItems.filter(f => f.kind === "signal")
+      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)).slice(0, 10), []);
+  const topPredictions = useMemo(() =>
+    feedItems.filter(f => f.kind === "prediction")
+      .sort((a, b) => b.stake - a.stake).slice(0, 10), []);
+
+  const activeData = activeCategory === "signals" ? topSignals : activeCategory === "predictions" ? topPredictions : topTrades;
+  const bestTrade = topTrades.length > 0 ? topTrades[0] : null;
+
+  const getTierFrame = (i) => {
+    if (i < 3) return { border: `2px solid ${C.amber}`, glow: `0 0 20px ${C.amber}30` };
+    if (i < 6) return { border: `2px solid ${C.textMuted}`, glow: `0 0 15px ${C.textMuted}20` };
+    return { border: `1px solid ${C.amber}66`, glow: "none" };
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ ...cardStyle, padding: "20px", textAlign: "center" }}>
+        <div style={{ fontSize: "28px", fontWeight: "900", marginBottom: "6px" }}>🏆 Hall of Fame</div>
+        <div style={{ fontSize: "12px", color: C.textMuted }}>Museum of legendary trades, signals, and predictions. The Greatest Hits.</div>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px" }}>
+        {[{ id: "trades", label: "Top Trades", icon: TrendingUp }, { id: "signals", label: "Top Signals", icon: Lightbulb }, { id: "predictions", label: "Top Predictions", icon: Target }].map(cat => (
+          <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={{
+            flex: 1, padding: "10px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600",
+            border: activeCategory === cat.id ? `2px solid ${C.amber}` : `1px solid ${C.border}`,
+            backgroundColor: activeCategory === cat.id ? `${C.amber}15` : C.card,
+            color: activeCategory === cat.id ? C.amber : C.text, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+          }}><cat.icon size={14} />{cat.label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: "8px" }}>
+        {["all", "s1"].map(s => (
+          <button key={s} onClick={() => setActiveSeason(s)} style={pillStyle(activeSeason === s ? C.amber : C.textFaint)}>
+            {s === "all" ? "All Time" : "Season 1"}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+        <StatCard label="Total Legendary" value={feedItems.filter(f => f.kind === "trade").length} icon={Trophy} color={C.amber} />
+        <StatCard label="Best Single Trade" value={bestTrade ? `+$${(bestTrade.pnl / 1000).toFixed(1)}K` : "—"} icon={Flame} color={C.amber} />
+        <StatCard label="Top Win Rate" value={`${mockTraders[0].winRate}%`} sub={mockTraders[0].name} icon={Target} color={C.green} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+        {activeData.map((item, idx) => {
+          const tier = getTierFrame(idx);
+          const trader = mockTraders.find(t => t.name === item.trader);
+          if (!trader) return null;
+          const medal = idx < 3 ? "🥇" : idx < 6 ? "🥈" : "🥉";
+          return (
+            <div key={`${activeCategory}-${idx}`} onClick={() => openProfile(trader)} className="card-hover" style={{
+              ...cardStyle, border: tier.border, boxShadow: tier.glow, padding: "14px", cursor: "pointer", position: "relative"
+            }}>
+              <div style={{ position: "absolute", top: "8px", right: "10px", fontSize: "16px" }}>{medal}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                <span style={{ fontSize: "20px" }}>{trader.avatar}</span>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: "700" }}>{trader.name}</div>
+                  <BotTag isBot={trader.isBot} />
+                </div>
+              </div>
+              {activeCategory === "trades" && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                    <div><Tag text={item.type} color={item.type === "LONG" ? C.green : C.red} /><span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "6px", ...mono }}>{item.pair}</span></div>
+                    <div style={{ fontSize: "16px", fontWeight: "800", color: item.pnl >= 0 ? C.green : C.red, ...mono }}>{item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "12px", fontSize: "10px", color: C.textMuted }}>
+                    <span>Entry: <span style={{ color: C.text, ...mono }}>${item.entry?.toLocaleString()}</span></span>
+                    <span>TP: <span style={{ color: C.green, ...mono }}>${item.tp?.toLocaleString()}</span></span>
+                  </div>
+                </>
+              )}
+              {activeCategory === "signals" && (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                    <Tag text={item.bias} color={item.bias === "LONG" ? C.green : C.red} />
+                    <span style={{ fontSize: "11px", color: C.textMuted, ...mono }}>{item.pair}</span>
+                  </div>
+                  <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "6px", lineHeight: "1.4" }}>{item.idea?.substring(0, 80)}...</div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <div><span style={{ fontSize: "9px", color: C.textMuted }}>Confidence</span><div style={{ fontSize: "14px", fontWeight: "700", color: C.blue, ...mono }}>{item.confidence}%</div></div>
+                    <div style={{ textAlign: "right" }}><span style={{ fontSize: "9px", color: C.textMuted }}>TF</span><div style={{ fontSize: "11px", fontWeight: "600", ...mono }}>{item.timeframe}</div></div>
+                  </div>
+                </>
+              )}
+              {activeCategory === "predictions" && (
+                <>
+                  <div style={{ fontSize: "11px", color: C.text, marginBottom: "8px", lineHeight: "1.4" }}>{item.question?.substring(0, 60)}...</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
+                    <div><span style={{ color: C.textMuted }}>Bet</span><div><Tag text={item.bet} color={item.bet === "YES" ? C.green : C.red} /></div></div>
+                    <div style={{ textAlign: "center" }}><span style={{ color: C.textMuted }}>Stake</span><div style={{ fontWeight: "700", ...mono }}>${item.stake}</div></div>
+                    <div style={{ textAlign: "right" }}><span style={{ color: C.textMuted }}>Odds</span><div style={{ fontWeight: "700", color: C.cyan, ...mono }}>{item.odds}%</div></div>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════ TAB: AWARDS ═══════════════════════ */
+const AwardsTab = () => {
+  const { openProfile } = useProfile();
+  const [season, setSeason] = useState("Season 1");
+
+  const awards = [
+    { id: 1, icon: "🏆", category: "Trader of the Season", desc: "Highest risk-adjusted returns", winner: mockTraders[0], stat: { label: "Sharpe Ratio", value: `${mockTraders[0].sharpe}` } },
+    { id: 2, icon: "🎯", category: "Sniper", desc: "Best single trade ROI", winner: mockTraders[3], stat: { label: "Best Trade", value: mockTraders[3].bestMonth } },
+    { id: 3, icon: "📊", category: "Signal Master", desc: "Most accurate signal provider", winner: mockTraders[1], stat: { label: "Win Rate", value: `${mockTraders[1].winRate}%` } },
+    { id: 4, icon: "🔮", category: "Oracle", desc: "Best prediction accuracy", winner: mockTraders[2], stat: { label: "Profit Factor", value: `${mockTraders[2].profitFactor}` } },
+    { id: 5, icon: "🤖", category: "Best Bot", desc: "Top automated strategy", winner: mockTraders[4], stat: { label: "Monthly Return", value: "+18.3%" } },
+    { id: 6, icon: "🛡️", category: "Iron Wall", desc: "Lowest max drawdown while profitable", winner: mockTraders[2], stat: { label: "Max Drawdown", value: `${mockTraders[2].maxDD}%` } },
+    { id: 7, icon: "🔥", category: "Streak King", desc: "Longest winning streak", winner: mockTraders[0], stat: { label: "Win Streak", value: `${mockTraders[0].streak} trades` } },
+    { id: 8, icon: "🌱", category: "Rising Star", desc: "Best newcomer", winner: mockTraders[5], stat: { label: "PnL", value: `+$${(mockTraders[5].pnl / 1000).toFixed(1)}K` } },
+    { id: 9, icon: "🧠", category: "Teacher", desc: "Most helpful content (community voted)", winner: mockTraders[7], stat: { label: "Impressions", value: "45.6K" } },
+    { id: 10, icon: "💎", category: "Diamond Hands", desc: "Best long-term hold ROI", winner: mockTraders[4], stat: { label: "Avg Hold", value: mockTraders[4].avgHold } },
+  ];
+  const uniqueWinners = [...new Set(awards.map(a => a.winner.name))].length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div style={{ ...cardStyle, padding: "20px", textAlign: "center" }}>
+        <div style={{ fontSize: "28px", fontWeight: "900", marginBottom: "6px" }}>🏅 The Oscars of Trading</div>
+        <div style={{ fontSize: "12px", color: C.textMuted }}>Celebrating skill, not frequency. 10 categories, {uniqueWinners} winners.</div>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        {["Season 1", "All Time"].map(s => (
+          <button key={s} onClick={() => setSeason(s)} style={{
+            padding: "8px 16px", borderRadius: "6px", fontSize: "12px", fontWeight: "700", cursor: s === "All Time" ? "not-allowed" : "pointer",
+            border: `2px solid ${season === s ? C.amber : C.border}`,
+            backgroundColor: season === s ? C.amberBg : "transparent",
+            color: season === s ? C.amber : C.textFaint, opacity: s === "All Time" ? 0.5 : 1
+          }}>{s}</button>
+        ))}
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: "11px", color: C.textMuted }}>10 Categories · {uniqueWinners} Winners · {season}</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>
+        {awards.map(award => (
+          <div key={award.id} className="card-hover" style={{
+            ...cardStyle, border: `2px solid ${C.amber}40`, boxShadow: `0 0 12px ${C.amber}15`,
+            display: "flex", flexDirection: "column", gap: "12px", cursor: "pointer", transition: "all 0.2s"
+          }} onClick={() => openProfile(award.winner)}>
+            <div>
+              <div style={{ fontSize: "32px", marginBottom: "6px" }}>{award.icon}</div>
+              <div style={{ fontSize: "14px", fontWeight: "800", color: C.text, marginBottom: "2px" }}>{award.category}</div>
+              <div style={{ fontSize: "11px", color: C.textMuted }}>{award.desc}</div>
+            </div>
+            <div style={{ ...cardStyle, backgroundColor: `${C.amber}08`, border: `1px solid ${C.amber}30`, padding: "12px" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <div style={{ fontSize: "28px", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: `${C.amber}15`, borderRadius: "6px", flexShrink: 0 }}>{award.winner.avatar}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", fontWeight: "700" }}>{award.winner.name}</div>
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "10px" }}>
+                    <span style={{ color: tierColor[award.winner.tier], fontWeight: "700" }}>{award.winner.tier}</span>
+                    <BotTag isBot={award.winner.isBot} />
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginTop: "8px", paddingTop: "8px", borderTop: `1px solid ${C.amber}20` }}>
+                <div style={{ fontSize: "9px", color: C.textMuted, marginBottom: "2px" }}>{award.stat.label}</div>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: C.amber, ...mono }}>{award.stat.value}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════ TAB: SOCIALS ═══════════════════════ */
+const SocialsTab = () => {
+  const { openProfile } = useProfile();
+  const [platformFilter, setPlatformFilter] = useState("all");
+
+  const platforms = [
+    { id: "all", label: "All", color: C.purple },
+    { id: "twitter", label: "𝕏", color: "#1DA1F2" },
+    { id: "discord", label: "DC", color: "#5865F2" },
+    { id: "telegram", label: "TG", color: "#0088cc" },
+    { id: "whatsapp", label: "WA", color: "#25D366" },
+    { id: "reddit", label: "R", color: "#FF4500" },
+    { id: "tradehub", label: "TH", color: C.purple },
+  ];
+
+  const allPosts = useMemo(() => {
+    const posts = mockTraders.flatMap(t =>
+      (traderDeepData[t.name]?.socialPosts || []).map(p => ({
+        ...p, traderName: t.name, traderAvatar: t.avatar, traderTier: t.tier, isBot: t.isBot
+      }))
+    );
+    return posts.sort((a, b) => b.likes - a.likes);
+  }, []);
+
+  const filtered = platformFilter === "all" ? allPosts : allPosts.filter(p => p.platform === platformFilter);
+  const totalEng = allPosts.reduce((s, p) => s + p.likes + p.replies, 0);
+  const highlight = allPosts[0];
+
+  const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: C.purple, telegram: "#0088cc", whatsapp: "#25D366" };
+  const platIcons = { twitter: "𝕏", discord: "DC", reddit: "R", tradehub: "TH", telegram: "TG", whatsapp: "WA" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      <div style={{ ...cardStyle, padding: "20px", textAlign: "center" }}>
+        <div style={{ fontSize: "28px", fontWeight: "900", marginBottom: "6px" }}>💬 Socials</div>
+        <div style={{ fontSize: "12px", color: C.textMuted }}>Curated cross-posts from X, Discord, Telegram, and more. Content that moves markets.</div>
+      </div>
+
+      {/* Platform filter */}
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        {platforms.map(p => (
+          <button key={p.id} onClick={() => setPlatformFilter(p.id)} style={{
+            padding: "6px 14px", borderRadius: "16px", fontSize: "11px", fontWeight: "700", cursor: "pointer",
+            border: `1px solid ${platformFilter === p.id ? p.color : C.border}`,
+            backgroundColor: platformFilter === p.id ? p.color + "20" : "transparent",
+            color: platformFilter === p.id ? p.color : C.textMuted
+          }}>{p.label}</button>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+        <StatCard label="Total Posts" value={allPosts.length} icon={MessageCircle} color={C.cyan} />
+        <StatCard label="Total Engagement" value={totalEng >= 1000 ? `${(totalEng/1000).toFixed(1)}K` : totalEng} icon={Heart} color={C.red} />
+        <StatCard label="Highlight" value={highlight ? highlight.traderName : "—"} sub={highlight ? `${highlight.likes} likes` : ""} icon={Flame} color={C.amber} />
+      </div>
+
+      {/* Feed */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {filtered.slice(0, 20).map(post => {
+          const pColor = platColors[post.platform] || C.purple;
+          const pIcon = platIcons[post.platform] || "?";
+          const trader = mockTraders.find(t => t.name === post.traderName);
+          return (
+            <div key={post.id} className="card-hover" style={{ ...cardStyle, padding: "14px", borderLeft: `3px solid ${pColor}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "8px", fontWeight: "800", color: pColor, backgroundColor: pColor + "20", padding: "2px 6px", borderRadius: "3px" }}>{pIcon}</span>
+                <span style={{ fontSize: "14px" }}>{post.traderAvatar}</span>
+                <span onClick={() => trader && openProfile(trader)} style={{ fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>{post.traderName}</span>
+                <BotTag isBot={post.isBot} />
+                <span style={{ fontSize: "10px", color: C.textMuted, ...mono, marginLeft: "auto" }}>{post.handle}</span>
+                <span style={{ fontSize: "9px", color: C.textFaint }}>{post.time}</span>
+              </div>
+              <div style={{ fontSize: "12px", color: C.text, lineHeight: "1.5", marginBottom: "8px" }}>
+                {post.text.length > 200 ? post.text.substring(0, 200) + "..." : post.text}
+              </div>
+              {(post.channel || post.subreddit) && (
+                <div style={{ marginBottom: "6px" }}>
+                  <Tag text={post.channel || post.subreddit} color={pColor} />
+                </div>
+              )}
+              <div style={{ display: "flex", gap: "14px", alignItems: "center", fontSize: "10px", color: C.textMuted }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Heart size={10} /> {post.likes}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><MessageCircle size={10} /> {post.replies}</span>
+                {post.retweets > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Send size={10} /> {post.retweets}</span>}
+                {post.impressions > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Eye size={10} /> {(post.impressions/1000).toFixed(1)}K</span>}
+                <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "3px", color: pColor, cursor: "pointer", fontWeight: "600" }}>
+                  <ExternalLink size={10} /> View original
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 /* ═══════════════════════ PROFILE CONTEXT ═══════════════════════ */
 const ProfileContext = createContext();
 const useProfile = () => useContext(ProfileContext);
@@ -5405,7 +5480,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState("arena");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -5426,6 +5501,7 @@ const App = () => {
     return initial;
   });
   const [traderAlerts, setTraderAlerts] = useState({});
+  const [proMode, setProMode] = useState(false);
   const searchRef = useRef(null);
 
   // Cmd+K keyboard shortcut for search
@@ -5448,13 +5524,14 @@ const App = () => {
     const allPairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
-      { id: "arena", label: "Arena", desc: "Feed en vivo de trades, señales y predicciones" },
-      { id: "smc", label: "Análisis SMC", desc: "Smart Money Concepts — análisis técnico avanzado" },
-      { id: "signals", label: "Señales", desc: "Señales de trading filtradas por coin y tipo" },
-      { id: "traders", label: "Traders", desc: "Leaderboard, perfiles y comparación de traders" },
-      { id: "heatmap", label: "Heatmap", desc: "Rendimiento por asset y trader" },
-      { id: "report", label: "Reporte", desc: "Estadísticas mensuales y leaderboard" },
-      { id: "copy", label: "Copy Trading", desc: "Copiar automáticamente a los mejores traders" },
+      { id: "arena", label: "Arena", desc: "Live race — watch traders compete in real-time" },
+      { id: "halloffame", label: "Hall of Fame", desc: "Greatest trades, signals, and predictions ever" },
+      { id: "awards", label: "Awards", desc: "Seasonal awards — the Oscars of trading" },
+      { id: "trades", label: "Trades", desc: "Live feed of all trades — copy, share, discuss" },
+      { id: "signals", label: "Signals", desc: "Structured trading signals with verified outcomes" },
+      { id: "futures", label: "Futures", desc: "Prediction markets — who's bullish, who's bearish" },
+      { id: "socials", label: "Socials", desc: "Aggregated content from X, Telegram, Discord" },
+      { id: "tokens", label: "Tokens", desc: "Deep dive on any token — everything in one place" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
     return { traders, pairs, tabs };
@@ -5521,24 +5598,31 @@ const App = () => {
   const closeProfile = () => setProfileTrader(null);
 
   const tabs = [
-    { id: "home", label: "Home", icon: Home },
-    { id: "sep0", sep: true },
-    { id: "arena", label: "Arena", icon: Radio },
-    { id: "arena:trade", label: "Trades", icon: Activity, filter: "trade", accent: C.green },
-    { id: "arena:signal", label: "Señales", icon: Lightbulb, filter: "signal", accent: C.blue },
-    { id: "arena:prediction", label: "Predicciones", icon: Scale, filter: "prediction", accent: C.amber },
-    { id: "sep1", sep: true },
-    { id: "smc", label: "Análisis SMC", icon: Crosshair },
-    { id: "traders", label: "Traders", icon: Users },
-    { id: "report", label: "Reporte", icon: Calendar },
-    { id: "sep2", sep: true },
-    { id: "football", label: "Football", icon: Gamepad2 },
+    { id: "zone-compete", zone: true, label: "COMPETE" },
+    { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
+    { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
+    { id: "awards", label: "Awards", icon: Award, accent: C.amber },
+    { id: "zone-operate", zone: true, label: "OPERATE" },
+    { id: "trades", label: "Trades", icon: Activity, accent: C.green },
+    { id: "signals", label: "Signals", icon: Lightbulb, accent: C.blue },
+    { id: "futures", label: "Futures", icon: Scale, accent: C.amber },
+    { id: "zone-discover", zone: true, label: "DISCOVER" },
+    { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
+    { id: "tokens", label: "Tokens", icon: DollarSign, accent: C.green },
   ];
 
-  const tabContent = { home: HomeTab, arena: ArenaTab, smc: SMCAnalysis, signals: SignalsTab, traders: TradersTab, report: ReportTab, football: FootballTab };
-  // Arena sub-filter tabs resolve to "arena" for content
-  const resolveTab = (id) => id.startsWith("arena:") ? "arena" : id;
-  const ActiveComponent = tabContent[resolveTab(activeTab)];
+  // Tab → Component mapping
+  const tabContent = {
+    arena: HomeTab,           // Arena = the race chart
+    halloffame: HallOfFameTab, // Hall of Fame = trophy cards
+    awards: AwardsTab,         // Awards = the Oscars of trading
+    trades: ArenaTab,          // Trades = dedicated feed
+    signals: SignalsTab,       // Signals
+    futures: FootballTab,      // Futures = prediction markets
+    socials: SocialsTab,       // Socials = cross-platform curated feed
+    tokens: SMCAnalysis,       // Tokens = deep dive
+  };
+  const ActiveComponent = tabContent[activeTab] || HomeTab;
   const sideW = sidebarCollapsed ? 56 : 200;
   const rightW = showWatchlist ? 340 : 0;
 
@@ -5595,17 +5679,25 @@ const App = () => {
               </button>
             </div>
 
-            {/* Nav items */}
-            <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto" }}>
+            {/* Nav items — 3-zone grouping */}
+            <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "1px", overflowY: "auto" }}>
               {tabs.map(tab => {
-                if (tab.sep) return <div key={tab.id} style={{ height: "1px", backgroundColor: C.border, margin: "6px 8px" }} />;
+                if (tab.zone) return (
+                  <div key={tab.id} style={{ padding: sidebarCollapsed ? "8px 0 4px" : "12px 12px 4px", overflow: "hidden" }}>
+                    {!sidebarCollapsed && <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{tab.label}</span>}
+                    {sidebarCollapsed && <div style={{ height: "1px", backgroundColor: C.border, margin: "0 8px" }} />}
+                  </div>
+                );
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 const activeColor = tab.accent || C.purple;
                 return (
                   <button key={tab.id} onClick={() => {
-                    if (tab.filter) { setActiveTab(tab.id); setFeedFilter(tab.filter); }
-                    else { setActiveTab(tab.id); if (tab.id === "arena") setFeedFilter("all"); }
+                    setActiveTab(tab.id);
+                    if (tab.id === "trades") setFeedFilter("trade");
+                    else if (tab.id === "signals") setFeedFilter("signal");
+                    else if (tab.id === "futures") setFeedFilter("prediction");
+                    else setFeedFilter("all");
                     setProfileTrader(null);
                   }} title={sidebarCollapsed ? tab.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: "10px",
@@ -5670,9 +5762,25 @@ const App = () => {
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 32, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
-              {/* Left: Tab title */}
-              <div style={{ fontSize: "16px", fontWeight: "700" }}>
-                {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
+              {/* Left: Tab title + season badge */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ fontSize: "16px", fontWeight: "700" }}>
+                  {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
+                </span>
+                <span style={{ fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple, border: `1px solid ${C.purple}30`, ...mono }}>
+                  S1 · 47d left
+                </span>
+                {/* Casual / Pro toggle */}
+                <button onClick={() => setProMode(!proMode)} style={{
+                  display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "4px",
+                  border: `1px solid ${proMode ? C.cyan + "50" : C.border}`,
+                  backgroundColor: proMode ? C.cyan + "12" : "transparent",
+                  color: proMode ? C.cyan : C.textMuted, fontSize: "10px", fontWeight: "700",
+                  cursor: "pointer", transition: "all 0.2s", ...mono
+                }}>
+                  {proMode ? <Eye size={11} /> : <Eye size={11} />}
+                  {proMode ? "PRO" : "CASUAL"}
+                </button>
               </div>
 
               {/* Right: Unified date range selector + icons */}
