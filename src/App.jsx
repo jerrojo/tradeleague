@@ -424,12 +424,12 @@ const traderDeepData = (() => {
       { id: ti*50+2, platform: "discord", handle: t.name, text: `Hey everyone, just entered a BTC long at $67,850. My analysis shows strong confluence: OB + FVG + liquidity sweep. TP1 at $69,200. Will update you all on how it goes. 🎯`, time: "3h ago", likes: 67 + ti * 10, retweets: 0, replies: 23 + ti * 3, impressions: 0, channel: "#trading-signals" },
       { id: ti*50+3, platform: "telegram", handle: t.name, text: `🚨 SIGNAL ALERT 🚨\n\nBTC/USDT LONG\nEntry: $67,850\nTP1: $69,200\nTP2: $70,500\nSL: $67,200\n\nConfluence: OB + FVG + Liq Sweep\nRisk: 2% of capital\n\n⚡ Follow for more signals`, time: "2h ago", likes: 156 + ti * 25, retweets: 0, replies: 45 + ti * 6, impressions: 0, channel: "Trading Signals VIP" },
       { id: ti*50+4, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Thread 🧵 on why most retail traders lose money:\n\n1/ They don't understand market structure\n2/ They chase entries instead of waiting\n3/ They risk too much per trade\n4/ They don't journal\n\nFix these 4 things and you'll already be top 10%.`, time: "5h ago", likes: 892 + ti * 100, retweets: 234 + ti * 40, replies: 78 + ti * 10, impressions: 45600 + ti * 5000 },
-      { id: ti*50+5, platform: "whatsapp", handle: t.name, text: `Buenos días grupo 🙌\n\nAnálisis rápido del mercado:\n- BTC consolidando en $67K-$68K\n- ETH mostrando fuerza relativa\n- SOL con estructura bullish en 4H\n\nHoy busco entradas en London session. Les aviso cuando entre. 💪`, time: "4h ago", likes: 28 + ti * 5, retweets: 0, replies: 12 + ti * 2, impressions: 0, channel: "Grupo Trading VIP" },
+      { id: ti*50+5, platform: "whatsapp", handle: t.name, text: `Buenos días grupo 🙌\n\nAnálisis rápido del mercado:\n- BTC consolidando en $67K-$68K\n- ETH mostrando fuerza relativa\n- SOL con estructura bullish en 4H\n\nHoy busco entradas en London session. Les aviso cuando entre. 💪`, time: "4h ago", likes: 28 + ti * 5, retweets: 0, replies: 12 + ti * 2, impressions: 0, channel: "VIP Trading Group" },
       { id: ti*50+6, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `DD: Why I think SOL is the play for Q2 2026. The ecosystem growth is insane, DeFi TVL up 340% YoY, and the chart shows a massive cup and handle on the weekly. My position: Long from $142 with a $200 target.`, time: "8h ago", likes: 456 + ti * 50, retweets: 0, replies: 123 + ti * 15, impressions: 0, subreddit: "r/CryptoMarkets" },
       { id: ti*50+7, platform: "tradehub", handle: t.name, text: `Closed my ETH long at TP2. +$${(1200 + ti * 300).toLocaleString()} profit. The FVG at $3,420 held perfectly. Key takeaway: patience on entries saves you from fake breakouts.`, time: "12h ago", likes: 89 + ti * 12, retweets: 0, replies: 34 + ti * 4, impressions: 0 },
       { id: ti*50+8, platform: "telegram", handle: t.name, text: `📊 Actualización de posiciones:\n\n✅ BTC LONG — TP1 hit (+$1,350)\n🔄 ETH LONG — en profit, moviendo SL a BE\n❌ SOL SHORT — cerrado en SL (-$420)\n\nBalance del día: +$930\nSeguimos construyendo 💎`, time: "6h ago", likes: 89 + ti * 15, retweets: 0, replies: 34 + ti * 5, impressions: 0, channel: "Trading Updates" },
       { id: ti*50+9, platform: "discord", handle: t.name, text: `Quick market update: Funding rates just flipped negative on BTC. This usually means shorts are overcrowded and we might see a squeeze. Stay alert, don't get caught offside. 👀`, time: "1d ago", likes: 45 + ti * 8, retweets: 0, replies: 18 + ti * 2, impressions: 0, channel: "#market-chat" },
-      { id: ti*50+10, platform: "whatsapp", handle: t.name, text: `🎯 Resultado del día:\n\n3 trades tomados\n2 wins / 1 loss\nPnL: +$${(1800 + ti * 400).toLocaleString()}\n\nMejor trade: BTC long desde $67,850\nPeor trade: SOL short (SL hit)\n\nMañana viene la decisión de tasas del Fed. Voy a reducir exposición. 🧠`, time: "1d ago", likes: 42 + ti * 8, retweets: 0, replies: 18 + ti * 3, impressions: 0, channel: "Grupo Trading VIP" },
+      { id: ti*50+10, platform: "whatsapp", handle: t.name, text: `🎯 Resultado del día:\n\n3 trades tomados\n2 wins / 1 loss\nPnL: +$${(1800 + ti * 400).toLocaleString()}\n\nMejor trade: BTC long desde $67,850\nPeor trade: SOL short (SL hit)\n\nMañana viene la decisión de tasas del Fed. Voy a reducir exposición. 🧠`, time: "1d ago", likes: 42 + ti * 8, retweets: 0, replies: 18 + ti * 3, impressions: 0, channel: "VIP Trading Group" },
       { id: ti*50+11, platform: "twitter", handle: `@${t.name.replace(" ","")}`, text: `Monthly results for February:\n✅ 34 trades\n✅ ${t.winRate - 2}% win rate\n✅ +$${(t.pnl / 8 / 1000).toFixed(1)}K profit\n✅ Max drawdown: ${t.maxDD + 2}%\n\nConsistency > home runs. Always.`, time: "2d ago", likes: 1245 + ti * 150, retweets: 312 + ti * 50, replies: 89 + ti * 10, impressions: 67800 + ti * 8000 },
       { id: ti*50+12, platform: "reddit", handle: `u/${t.name.replace(" ","_")}`, text: `Anyone else notice the massive hidden divergence on the BTC daily RSI? Last time we saw this pattern was before the move from $54K to $74K. I'm loading up longs at any dip below $67K. Risk: $66K stop. Target: $72K+.`, time: "3d ago", likes: 234 + ti * 30, retweets: 0, replies: 67 + ti * 8, impressions: 0, subreddit: "r/Bitcoin" },
     ];
@@ -1696,26 +1696,26 @@ const SMCAnalysis = () => {
 
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Precio Actual" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
-        <StatCard label="Dirección" value={coin.bias === "BULLISH" ? "↑ SUBE" : "↓ BAJA"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
-        <StatCard label="Fuerza de Señal" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
-        <StatCard label="Nivel de Riesgo" value={coin.risk === "LOW" ? "BAJO" : coin.risk === "MEDIUM" ? "MEDIO" : "ALTO"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
+        <StatCard label="Current Price" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
+        <StatCard label="Direction" value={coin.bias === "BULLISH" ? "↑ UP" : "↓ DOWN"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
+        <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
+        <StatCard label="Risk Level" value={coin.risk === "LOW" ? "LOW" : coin.risk === "MEDIUM" ? "MEDIUM" : "HIGH"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
 
       {/* Multi-Timeframe Grid */}
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Análisis Multi-Timeframe — {selectedCoin}/{coin.pair}</div>
-        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Cada timeframe muestra lo que pasa en diferentes escalas de tiempo (minutos → horas)</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Multi-Timeframe Analysis — {selectedCoin}/{coin.pair}</div>
+        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Multi-Timeframe Analysis shows what happens across different time scales (minutes → hours)</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
           {coin.tfData.map(tf => (
             <div key={tf.tf} style={cardStyle}>
-              <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf === "15m" ? "15 min" : tf.tf === "1H" ? "1 hora" : "4 horas"}</div>
+              <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf === "15m" ? "15 min" : tf.tf === "1H" ? "1 hour" : "4 hours"}</div>
               {[
-                ["Tendencia", tf.trend === "Bullish" ? "↑ Alcista" : tf.trend === "Bearish" ? "↓ Bajista" : "↔ Lateral", tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber, null],
-                ["Estructura", tf.struct, tf.struct === "BOS" ? C.green : C.red, tf.struct === "BOS" ? "bos" : "choch"],
-                ["Bloque de Órdenes", tf.ob.includes("Bullish") ? "Compra" : "Venta", tf.ob.includes("Bullish") ? C.green : C.red, "ob"],
-                ["Gap de Precio", tf.fvg === "Filled" ? "Llenado" : "Pendiente", tf.fvg === "Filled" ? C.green : C.amber, "fvg"],
-                ["Liquidez", tf.liq === "Sweep Done" ? "✅ Capturada" : tf.liq, C.blue, "liquidity"],
+                ["Trend", tf.trend === "Bullish" ? "↑ Bullish" : tf.trend === "Bearish" ? "↓ Bearish" : "↔ Sideways", tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber, null],
+                ["Structure", tf.struct, tf.struct === "BOS" ? C.green : C.red, tf.struct === "BOS" ? "bos" : "choch"],
+                ["Order Block", tf.ob.includes("Bullish")  ? "Buy" : "Sell", tf.ob.includes("Bullish") ? C.green : C.red, "ob"],
+                ["Price Gap", tf.fvg === "Filled"  ? "Filled" : "Pending", tf.fvg === "Filled" ? C.green : C.amber, "fvg"],
+                ["Liquidity", tf.liq === "Sweep Done" ? "✅ Captured" : tf.liq, C.blue, "liquidity"],
               ].map(([label, val, clr, tipKey]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
                   <span style={{ fontSize: "11px", color: C.textMuted }}>
@@ -1732,15 +1732,15 @@ const SMCAnalysis = () => {
       {/* Ideal Entry + Kill Zones side by side */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         <div style={cardStyle}>
-          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Entrada Ideal — {selectedCoin}</div>
-          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Dónde entrar, cuánto puedes ganar, y dónde cortar pérdidas</div>
+          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ideal Entry — {selectedCoin}</div>
+          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Where to enter, how much you can gain, and where to cut losses</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
-              ["Zona de Entrada", coin.entry.zone, C.text, "entryZone"],
-              ["Riesgo:Ganancia", coin.entry.rr, C.green, "rr"],
-              ["Objetivo 1", coin.entry.tp1, C.blue, "tp"],
-              ["Objetivo 2", coin.entry.tp2, C.blue, "tp"],
-              ["Objetivo 3", coin.entry.tp3, C.blue, "tp"],
+              ["Entry Zone", coin.entry.zone, C.text, "entryZone"],
+              ["Risk:Reward", coin.entry.rr, C.green, "rr"],
+              ["Target 1", coin.entry.tp1, C.blue, "tp"],
+              ["Target 2", coin.entry.tp2, C.blue, "tp"],
+              ["Target 3", coin.entry.tp3, C.blue, "tp"],
               ["Stop Loss", coin.entry.sl, C.red, "sl"],
             ].map(([l, v, clr, tipKey]) => (
               <div key={l}>
@@ -1753,9 +1753,9 @@ const SMCAnalysis = () => {
           </div>
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: "12px" }}>
             <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "4px", fontWeight: "600" }}>
-              <InfoTip k="confluence" inline><span>FACTORES DE CONFIRMACIÓN</span></InfoTip>
+              <InfoTip k="confluence" inline><span>CONFIRMATION FACTORS</span></InfoTip>
             </div>
-            <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "8px" }}>Más factores = señal más confiable</div>
+            <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "8px" }}>More factors = more reliable signal</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               {coin.confluenceFactors.map(f => {
                 const tipMap = { "Order Block": "ob", "FVG": "fvg", "Liquidity": "liquidity", "Kill Zone": "killZone", "BOS": "bos" };
@@ -1796,7 +1796,7 @@ const SMCAnalysis = () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
           {coin.safety.map(c => {
             const tipMap = { "Funding Rate": "fundingRate", "Open Interest": "openInterest" };
-            const nameMap = { "Funding Rate": "Tasa de Fondeo", "Open Interest": "Interés Abierto", "Volume": "Volumen", "Correlation": "Correlación" };
+            const nameMap = { "Funding Rate": "Funding Rate", "Open Interest": "Open Interest", "Volume": "Volume", "Correlation": "Correlation" };
             return (
               <div key={c.name} style={{ ...cardStyle, textAlign: "center" }}>
                 {c.status === "pass" ? <CheckCircle size={22} color={C.green} /> : <AlertTriangle size={22} color={C.amber} />}
@@ -1804,7 +1804,7 @@ const SMCAnalysis = () => {
                   {tipMap[c.name] ? <InfoTip k={tipMap[c.name]} inline><span>{nameMap[c.name] || c.name}</span></InfoTip> : (nameMap[c.name] || c.name)}
                 </div>
                 <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px", ...mono }}>{c.detail}</div>
-                <div style={{ fontSize: "10px", color: c.status === "pass" ? C.green : C.amber, marginTop: "4px", textTransform: "uppercase", fontWeight: "600", display: "flex", alignItems: "center", gap: "3px" }}>{c.status === "pass" ? <><CheckCircle size={10} /> OK</> : <><AlertTriangle size={10} /> Precaución</>}</div>
+                <div style={{ fontSize: "10px", color: c.status === "pass" ? C.green : C.amber, marginTop: "4px", textTransform: "uppercase", fontWeight: "600", display: "flex", alignItems: "center", gap: "3px" }}>{c.status === "pass" ? <><CheckCircle size={10} /> OK</> : <><AlertTriangle size={10} /> Warning</>}</div>
               </div>
             );
           })}
@@ -2081,7 +2081,7 @@ const HomeTab = () => {
             padding: "8px", marginTop: "8px", backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`,
             borderRadius: "6px", color: C.purple, fontSize: "10px", fontWeight: "700", cursor: "pointer"
           }}>
-            Ver todos los traders <ChevronRight size={12} />
+            View all traders <ChevronRight size={12} />
           </button>
         </div>
       </div>
@@ -2121,7 +2121,7 @@ const HomeTab = () => {
         <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
           <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
             <Lightbulb size={12} color={C.blue} />
-            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Señales</span>
+            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Signals</span>
           </div>
           {top10Signals.map((item, idx) => (
             <div key={item.id} style={{
@@ -2140,7 +2140,7 @@ const HomeTab = () => {
             padding: "6px", backgroundColor: C.blueBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.blue, fontSize: "9px", fontWeight: "700", cursor: "pointer"
           }}>
-            Ver todas <ChevronRight size={10} />
+            View all <ChevronRight size={10} />
           </button>
         </div>
 
@@ -2166,7 +2166,7 @@ const HomeTab = () => {
             padding: "6px", backgroundColor: C.amberBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.amber, fontSize: "9px", fontWeight: "700", cursor: "pointer"
           }}>
-            Ver todas <ChevronRight size={10} />
+            View all <ChevronRight size={10} />
           </button>
         </div>
       </div>
@@ -2299,7 +2299,7 @@ const ArenaTab = () => {
             </button>
           );
         })}
-        <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "4px" }}>+292 más</span>
+        <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "4px" }}>+292 more</span>
       </div>
       )}
 
@@ -2309,7 +2309,7 @@ const ArenaTab = () => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
               <div style={{ fontSize: "13px", fontWeight: "700" }}>Performance en vivo</div>
-              <div style={{ fontSize: "10px", color: C.textMuted }}>Equity acumulada — últimos 30 días</div>
+              <div style={{ fontSize: "10px", color: C.textMuted }}>Cumulative Equity — last 30 days</div>
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
               {watchedTraders.slice(0, 5).map((t) => {
@@ -2328,7 +2328,7 @@ const ArenaTab = () => {
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
               <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
               <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => v >= 1000 ? `$${(v/1000).toFixed(0)}K` : `$${v}`} />
-              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]} labelFormatter={l => `Día ${l}`} />
+              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", fontSize: "12px" }} formatter={(value, name) => [value != null ? `$${Number(value).toLocaleString()}` : "—", name]} labelFormatter={l => `Day ${l}`} />
               {mockTraders.map((t, i) => watching[t.name] && <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 0 }} connectNulls={false} />)}
             </LineChart>
           </ResponsiveContainer>
@@ -2349,7 +2349,7 @@ const ArenaTab = () => {
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                 <th style={{ padding: "8px 10px", textAlign: "left", color: C.textFaint, fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", width: "30px" }}>#</th>
-                {[["Trader",null],["Alpha","alpha"],["Win","winRate"],["PnL",null],["Racha","streak"],["Copiers","copiers"]].map(([h,tip]) => (
+                {[["Trader",null],["Alpha","alpha"],["Win","winRate"],["PnL",null],["Streak","streak"],["Copiers","copiers"]].map(([h,tip]) => (
                   <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: C.textFaint, fontSize: "9px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>
                 ))}
               </tr>
@@ -2399,7 +2399,7 @@ const ArenaTab = () => {
         const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
         const signalCount = traderFeed.filter(f => f.kind === "signal").length;
         const predCount = traderFeed.filter(f => f.kind === "prediction").length;
-        const filterMeta = { trade: { label: "Trades", color: C.green, icon: Activity, count: tradeCount }, signal: { label: "Señales", color: C.blue, icon: Lightbulb, count: signalCount }, prediction: { label: "Predicciones", color: C.amber, icon: Scale, count: predCount } };
+        const filterMeta = { trade: { label: "Trades", color: C.green, icon: Activity, count: tradeCount }, signal: { label: "Signals", color: C.blue, icon: Lightbulb, count: signalCount }, prediction: { label: "Predictions", color: C.amber, icon: Scale, count: predCount } };
         const current = filterMeta[feedFilter] || filterMeta.trade;
         const CurrentIcon = current.icon;
 
@@ -2571,7 +2571,7 @@ const ArenaTab = () => {
                   <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
                     <Lightbulb size={14} color={current.color} />
                     <div>
-                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Señales</div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Signals</div>
                       <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{sectionItems.length}</div>
                     </div>
                   </div>
@@ -2636,7 +2636,7 @@ const ArenaTab = () => {
                     <span style={{ flex: 2, minWidth: 80 }}>Trader</span>
                     <span style={{ flex: 2, minWidth: 80 }}>Par</span>
                     <span style={{ width: 46, textAlign: "center" }}>TF</span>
-                    <span style={{ flex: 1, textAlign: "center" }}>Convicción</span>
+                    <span style={{ flex: 1, textAlign: "center" }}>Confidence</span>
                     <span style={{ width: 40, textAlign: "right" }}>Hora</span>
                     <span style={{ width: 36 }} />
                   </>
@@ -2768,8 +2768,8 @@ const ArenaTab = () => {
         const filterItems = [
           { id: "all", label: "Todo", color: C.purple, icon: null, count: traderFeed.length },
           { id: "trade", label: "Trades", color: C.green, icon: Activity, count: tradeCount },
-          { id: "signal", label: "Señales", color: C.blue, icon: Lightbulb, count: signalCount },
-          { id: "prediction", label: "Predicciones", color: C.amber, icon: Scale, count: predCount },
+          { id: "signal", label: "Signals", color: C.blue, icon: Lightbulb, count: signalCount },
+          { id: "prediction", label: "Predictions", color: C.amber, icon: Scale, count: predCount },
         ];
         return (
           <>
@@ -2796,7 +2796,7 @@ const ArenaTab = () => {
             {filteredFeed.length === 0 && (
               <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
                 <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Selecciona traders para seguir</div>
-                <div style={{ fontSize: "12px" }}>Usa los botones de arriba para elegir a quién quieres ver en vivo</div>
+                <div style={{ fontSize: "12px" }}>Use the buttons above to choose who you want to watch live</div>
               </div>
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -2804,7 +2804,7 @@ const ArenaTab = () => {
                 if (item.kind === "whale" || item.kind === "liquidation") {
                   return (
                     <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.kind === "whale" ? C.cyan : C.red}`, display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE" : "LIQUIDACIÓN"}</div>
+                      <div style={{ fontSize: "11px", fontWeight: "700", color: item.kind === "whale" ? C.cyan : C.red }}>{item.kind === "whale" ? "WHALE" : "LIQUIDATION"}</div>
                       <div style={{ fontSize: "11px", color: C.text, flex: 1 }}>{item.text}</div>
                       <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
                     </div>
@@ -2815,7 +2815,7 @@ const ArenaTab = () => {
                     <div key={item.id} style={{ ...cardStyle, padding: "10px 14px", borderLeft: `3px solid ${item.achievement.color || C.purple}`, display: "flex", alignItems: "center", gap: "10px" }}>
                       {item.achievement.icon && (() => { const AchIcon = item.achievement.icon; return <AchIcon size={16} color={item.achievement.color || C.purple} />; })()}
                       <div style={{ flex: 1, fontSize: "12px" }}>
-                        <TraderLink name={item.trader} /> <span style={{ color: item.achievement.color || C.purple, fontWeight: "600" }}>desbloqueó</span> <span style={{ fontWeight: "700", color: C.text }}>{item.achievement.name}</span>
+                        <TraderLink name={item.trader} /> <span style={{ color: item.achievement.color || C.purple, fontWeight: "600" }}>unlocked</span> <span style={{ fontWeight: "700", color: C.text }}>{item.achievement.name}</span>
                       </div>
                       <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>{item.time}</span>
                     </div>
@@ -2918,6 +2918,7 @@ const SignalsTab = () => {
   const [coinFilter, setCoinFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const { addToast } = useContext(ToastContext);
   const coins = ["ALL","BTC","ETH","SOL","BNB","XRP"];
   const types = ["ALL","LONG","SHORT"];
   const statuses = ["ALL","active","tp_hit","sl_hit","pending"];
@@ -2955,8 +2956,8 @@ const SignalsTab = () => {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Total Señales" value={filtered.length} icon={Zap} color={C.purple} />
-        <StatCard label="% Ganadoras" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} tip="winRate" />
+        <StatCard label="Total Signals" value={filtered.length} icon={Zap} color={C.purple} />
+        <StatCard label="Win Rate" value={total > 0 ? Math.round((wins / total) * 100) + "%" : "—"} icon={Trophy} color={C.green} tip="winRate" />
         <StatCard label="Ganancia Promedio" value={"$" + Math.round(filtered.reduce((a, s) => a + s.pnl, 0) / Math.max(filtered.length, 1)).toLocaleString()} icon={TrendingUp} color={C.blue} />
         <StatCard label="Activas Ahora" value={filtered.filter(s => s.status === "active").length} icon={Activity} color={C.amber} tip="signalActive" />
       </div>
@@ -2985,7 +2986,7 @@ const SignalsTab = () => {
             </div>
 
             <div style={{ display: "flex", gap: "16px", fontSize: "11px", color: C.textMuted, marginBottom: "6px" }}>
-              <span><InfoTip k="entryZone" inline><span>Entrada:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
+              <span><InfoTip k="entryZone" inline><span>Entry:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
               <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
               <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
             </div>
@@ -2996,11 +2997,18 @@ const SignalsTab = () => {
             {/* Quick Action */}
             {s.status === "active" && (
               <div style={{ marginTop: "6px" }}>
-                <button style={{
+                <button onClick={() => {
+                  const text = `Entry: $${s.entry}, TP: $${s.tp}, SL: $${s.sl}, Leverage: ${s.leverage}`;
+                  navigator.clipboard.writeText(text).then(() => {
+                    addToast("Signal copied to clipboard", "success");
+                  }).catch(() => {
+                    addToast("Entry: $" + s.entry + ", TP: $" + s.tp + ", SL: $" + s.sl, "info");
+                  });
+                }} style={{
                   display: "flex", alignItems: "center", gap: "3px", padding: "3px 10px", borderRadius: "4px",
                   cursor: "pointer", fontSize: "10px", fontWeight: "700",
                   backgroundColor: C.purpleBg, color: C.purple, border: "none"
-                }}><Copy size={10} /> Copiar</button>
+                }}><Copy size={10} /> Copy Signal</button>
               </div>
             )}
           </div>
@@ -3021,7 +3029,7 @@ const TraderProfile = ({ trader, onClose }) => {
   const deep = traderDeepData[t.name];
 
   const profileTabs = ["overview","signals","trades","predictions","social","pnl","risk_dna","journal"];
-  const tabLabels = { overview: "Overview", signals: "Señales", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
+  const tabLabels = { overview: "Overview", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
   const socials = traderSocials[t.name] || {};
@@ -3044,7 +3052,7 @@ const TraderProfile = ({ trader, onClose }) => {
           backgroundColor: isFollowing ? C.amberBg : "transparent",
           color: isFollowing ? C.amber : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
         }}>
-          <Star size={13} fill={isFollowing ? C.amber : "none"} /> {isFollowing ? "Siguiendo" : "Seguir"}
+          <Star size={13} fill={isFollowing ? C.amber : "none"} /> {isFollowing ? "Siguiendo" : "Follow"}
         </button>
 
         {/* 🔔 Alerts */}
@@ -3149,8 +3157,8 @@ const TraderProfile = ({ trader, onClose }) => {
 
             {/* Info grid — 2 rows of 4 */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
-              {[["Ranking", `#${t.rank}`, null], ["Ubicación", t.location, null], ["Desde", t.joined, null], ["Estilo", t.style, null],
-                ["Exchange", t.exchange, null], ["Pares Fav.", t.favPairs.slice(0, 2).join(", "), null], ["Duración Prom.", t.avgHold, null], ["Riesgo:Gan.", t.avgRR, "rr"],
+              {[["Rank", `#${t.rank}`, null], ["Location", t.location, null], ["Since", t.joined, null], ["Style", t.style, null],
+                ["Exchange", t.exchange, null], ["Favorite Pairs", t.favPairs.slice(0, 2).join(", "), null], ["Avg Duration", t.avgHold, null], ["Risk:Reward", t.avgRR, "rr"],
               ].map(([l, v, tip]) => (
                 <div key={l}>
                   <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase", fontWeight: "600", letterSpacing: "0.3px" }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</div>
@@ -3161,7 +3169,7 @@ const TraderProfile = ({ trader, onClose }) => {
 
             {/* Follower stats row */}
             <div style={{ display: "flex", gap: "16px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, marginBottom: "12px" }}>
-              {[["Seguidores", t.followers, null], ["Siguiendo", t.following, null], ["Copiadores", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
+              {[["Followers", t.followers, null], ["Siguiendo", t.following, null], ["Copiers", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
                 <div key={l}>
                   <span style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{v.toLocaleString()}</span>
                   <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span>
@@ -3218,11 +3226,11 @@ const TraderProfile = ({ trader, onClose }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
             {[
               ["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null, DollarSign],
-              ["% Ganadoras", `${t.winRate}%`, C.green, "winRate", Target],
+              ["Win Rate", `${t.winRate}%`, C.green, "winRate", Target],
               ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe", Activity],
-              ["Máx. Caída", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],
+              ["Max Drawdown", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],
               ["Factor Ganancia", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor", BarChart3],
-              ["Racha", `${t.streak}W`, C.purple, "streak", Flame],
+              ["Streak", `${t.streak}W`, C.purple, "streak", Flame],
             ].map(([l, v, clr, tip, Icon]) => (
               <div key={l} style={{
                 display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px",
@@ -3304,20 +3312,20 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "signals" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCard label="Total Señales" value={deep.signalStats.total} icon={Zap} color={C.purple} />
-            <StatCard label="Precisión" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
+            <StatCard label="Total Signals" value={deep.signalStats.total} icon={Zap} color={C.purple} />
+            <StatCard label="Accuracy" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Activas Ahora" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
             <StatCard label="Suscriptores" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-            <StatCard label="Ganancia Prom. / Señal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
-            <StatCard label="Mejor Señal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCard label="Avg Profit / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
+            <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active Signals */}
           {deep.signals.filter(s => s.status === "active").length > 0 && (
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: C.green, animation: "none" }} /> Señales Activas
+                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: C.green, animation: "none" }} /> Active Signals
               </div>
               {deep.signals.filter(s => s.status === "active").map(s => (
                 <div key={s.id} style={{ padding: "12px 0", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3329,7 +3337,7 @@ const TraderProfile = ({ trader, onClose }) => {
                       <span style={{ fontSize: "10px", color: C.textMuted }}>{s.group}</span>
                     </div>
                     <div style={{ display: "flex", gap: "16px", fontSize: "11px", color: C.textMuted }}>
-                      <span><InfoTip k="entryZone" inline><span>Entrada:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
+                      <span><InfoTip k="entryZone" inline><span>Entry:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
                       <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
                       <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
                       <span><InfoTip k="rr" inline><span>R:R</span></InfoTip> <span style={{ color: C.blue, ...mono }}>{s.rr}</span></span>
@@ -3346,10 +3354,10 @@ const TraderProfile = ({ trader, onClose }) => {
           )}
           {/* Signal History Table */}
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Historial de Señales — Últimas 12</div>
+            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Signal History — Últimas 12</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Par","Tipo","Entry","TP","SL","Lev","R:R","Grupo","PnL","Status","Subs","Fecha"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","PnL","Status","Subscribers","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.signals.map(s => (
                     <tr key={s.id} style={{ borderLeft: `3px solid ${s.type === "LONG" ? C.green : C.red}` }}>
@@ -3387,7 +3395,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Trade History — Last 20 Trades</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Par","Tipo","Entry","Exit","PnL","Lev","R:R","Duración","Status","Notes","Fecha"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Entry","Exit","PnL","Leverage","R:R","Duration","Status","Notes","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.history.map(tr => (
                     <tr key={tr.id} style={{ borderLeft: `3px solid ${tr.type === "LONG" ? C.green : C.red}` }}>
@@ -3415,7 +3423,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "predictions" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCard label="Precisión" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
+            <StatCard label="Accuracy" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Racha Actual" value={`${deep.predStats.streak} correctas`} icon={Flame} color={C.amber} tip="streak" />
             <StatCard label="Total Apostado" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
             <StatCard label="Ganancia Neta" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
@@ -3851,7 +3859,7 @@ const TradersTab = () => {
         {/* Toolbar: filter by type, sort, add */}
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {[
-            { id: "all", label: "Todos", icon: Users },
+            { id: "all", label: "All", icon: Users },
             { id: "human", label: "Traders", icon: Activity },
             { id: "bot", label: "Bots", icon: Bot },
             { id: "followed", label: "Siguiendo", icon: Star },
@@ -3877,7 +3885,7 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Racha","streak"],["% Ganadoras","winRate"],["PnL",null],["Copiadores","copiers"],["Acción",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["Win Rate","winRate"],["PnL",null],["Copiers","copiers"],["Action",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
                 {(() => {
@@ -3949,7 +3957,7 @@ const TradersTab = () => {
                     </td>
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        <button title="Seguir" onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.amber + "20" : "transparent", color: followedTraders[t.name] ? C.amber : C.textFaint }}>
+                        <button title="Follow" onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.amber + "20" : "transparent", color: followedTraders[t.name] ? C.amber : C.textFaint }}>
                           <Star size={13} fill={followedTraders[t.name] ? C.amber : "none"} />
                         </button>
                         <button title="Alertas" onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: traderAlerts[t.name] ? C.blue + "20" : "transparent", color: traderAlerts[t.name] ? C.blue : C.textFaint }}>
@@ -4008,7 +4016,7 @@ const TradersTab = () => {
         });
         const compareMetrics = [
           { id: "equity", label: "Equity" },
-          { id: "signals", label: "Señales" },
+          { id: "signals", label: "Signals" },
           { id: "trades", label: "Trades" },
           { id: "predictions", label: "Predictions" },
         ];
@@ -4420,7 +4428,7 @@ const ReportTab = () => {
       {/* Calendar */}
       <div style={cardStyle}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px" }}>
-          {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d => (
+          {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
             <div key={d} style={{ textAlign: "center", fontSize: "11px", fontWeight: "700", color: C.textMuted, padding: "6px" }}>{d}</div>
           ))}
           {Array.from({ length: emptyBefore }).map((_, i) => <div key={`e${i}`} />)}
@@ -4525,9 +4533,9 @@ const CopyTradingView = () => {
       {/* Top Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
         <StatCard label="Retorno Mensual" value={`+${port.monthlyReturn}%`} sub={`Sharpe ${port.sharpe}`} icon={TrendingUp} color={C.green} tip="sharpe" />
-        <StatCard label="Seguidores" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M en gestión`} icon={Users} color={C.blue} tip="aum" />
-        <StatCard label="Máxima Caída" value={`${port.maxDD}%`} sub={`Riesgo: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} tip="maxDD" />
-        <StatCard label="% Ganadoras" value={`${port.winRate}%`} sub={`Duración prom: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
+        <StatCard label="Followers" value={port.followers.toLocaleString()} sub={`$${(port.aum / 1e6).toFixed(1)}M under management`} icon={Users} color={C.blue} tip="aum" />
+        <StatCard label="Max Drawdown" value={`${port.maxDD}%`} sub={`Risk: ${port.riskLevel}`} icon={AlertTriangle} color={riskColor[port.riskLevel] || C.amber} tip="maxDD" />
+        <StatCard label="Win Rate" value={`${port.winRate}%`} sub={`Avg Duration: ${port.avgTrade}`} icon={Trophy} color={C.amber} tip="winRate" />
       </div>
 
       <div className="grid-2col-16">
@@ -4558,7 +4566,7 @@ const CopyTradingView = () => {
             <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Trades Recientes</div>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {["Par", "Tipo", "PnL", "Fecha"].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                {["Pair", "Type", "PnL", "Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {port.recentTrades.map((t, i) => (
@@ -4613,7 +4621,7 @@ const CopyTradingView = () => {
                   boxSizing: "border-box"
                 }} />
               </div>
-              {allocation < port.minInvest && <div style={{ fontSize: "10px", color: C.red, marginTop: "4px" }}>Mínimo: ${port.minInvest}</div>}
+              {allocation < port.minInvest && <div style={{ fontSize: "10px", color: C.red, marginTop: "4px" }}>Minimum: ${port.minInvest}</div>}
             </div>
 
             {/* Risk Multiplier */}
@@ -4629,14 +4637,14 @@ const CopyTradingView = () => {
                   }}>{m}x</button>
                 ))}
               </div>
-              {riskMult > 1.0 && <div style={{ fontSize: "10px", color: C.amber, marginTop: "4px" }}>Mayor riesgo = mayores ganancias y pérdidas</div>}
+              {riskMult > 1.0 && <div style={{ fontSize: "10px", color: C.amber, marginTop: "4px" }}>Higher risk = higher profits and losses</div>}
             </div>
 
             {/* Drawdown Stop Toggle */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
               <div>
                 <div style={{ fontSize: "11px", fontWeight: "600" }}><InfoTip k="maxDD"><span>Auto-stop por DD</span></InfoTip></div>
-                <div style={{ fontSize: "9px", color: C.textFaint }}>Parar si caída supera {port.maxDD}%</div>
+                <div style={{ fontSize: "9px", color: C.textFaint }}>Stop if drawdown exceeds {port.maxDD}%</div>
               </div>
               <button onClick={() => setMaxDDStop(!maxDDStop)} style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", color: maxDDStop ? C.green : C.textFaint }}>
                 {maxDDStop ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
@@ -4645,20 +4653,20 @@ const CopyTradingView = () => {
 
             {/* Projected Returns */}
             <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: `${C.purple}08`, borderRadius: "6px", border: `1px solid ${C.purple}20` }}>
-              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "6px", fontWeight: "600", textTransform: "uppercase" }}>Proyección mensual</div>
+              <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "6px", fontWeight: "600", textTransform: "uppercase" }}>Monthly Projection</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontSize: "20px", fontWeight: "800", color: C.green, ...mono }}>+${projectedMonthly}</span>
-                <span style={{ fontSize: "10px", color: C.textFaint }}>- ${projectedFee} comisión</span>
+                <span style={{ fontSize: "10px", color: C.textFaint }}>- ${projectedFee} fee</span>
               </div>
               <div style={{ fontSize: "9px", color: C.textFaint, marginTop: "4px" }}>Basado en rendimiento pasado. No garantiza resultados futuros.</div>
             </div>
 
             {/* Info rows */}
             {[
-              ["Comisión", `${port.fee}%`, "perfFee"],
-              ["Inversión Mín.", `$${port.minInvest}`, null],
-              ["Nivel de Riesgo", port.riskLevel, "riskLevel"],
-              ["Duración Prom.", port.avgTrade, null],
+              ["Commission", `${port.fee}%`, "perfFee"],
+              ["Min. Investment", `$${port.minInvest}`, null],
+              ["Risk Level", port.riskLevel, "riskLevel"],
+              ["Avg Duration", port.avgTrade, null],
             ].map(([l, v, tip]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "11px" }}>
                 <span style={{ color: C.textMuted }}>{tip ? <InfoTip k={tip}><span>{l}</span></InfoTip> : l}</span>
@@ -4686,7 +4694,7 @@ const CopyTradingView = () => {
                 boxShadow: allocation >= port.minInvest ? "0 0 12px rgba(63,185,80,0.3)" : "none",
                 opacity: allocation < port.minInvest ? 0.5 : 1
               }}>
-                <Play size={14} /> Empezar a Copiar
+                <Play size={14} /> Start Copying
               </button>
             )}
 
@@ -4698,7 +4706,7 @@ const CopyTradingView = () => {
                 </div>
                 <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "8px", lineHeight: 1.5 }}>
                   Vas a copiar a <strong style={{ color: C.text }}>{port.name}</strong> con <strong style={{ color: C.text }}>${allocation.toLocaleString()}</strong> a riesgo <strong style={{ color: C.purple }}>{riskMult}x</strong>.
-                  {maxDDStop && <> Auto-stop activado al <strong style={{ color: C.red }}>{port.maxDD}%</strong> de caída.</>}
+                  {maxDDStop && <> Auto-stop activado al <strong style={{ color: C.red }}>{port.maxDD}%</strong> in drawdown.</>}
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button onClick={() => setShowConfirm(false)} style={{
@@ -4716,7 +4724,7 @@ const CopyTradingView = () => {
 
           {/* Allocation */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Allocación del Portfolio</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Portfolio Allocation</div>
             {port.allocation.map(a => (
               <div key={a.asset} style={{ marginBottom: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
@@ -4732,13 +4740,13 @@ const CopyTradingView = () => {
 
           {/* Trader Stats Summary */}
           <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px" }}>Métricas del Trader</div>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px" }}>Trader Metrics</div>
             {[
               ["Ratio Sharpe", port.sharpe.toFixed(1), C.blue, "sharpe"],
-              ["Máxima Caída", `${port.maxDD}%`, C.red, "maxDD"],
-              ["% Ganadoras", `${port.winRate}%`, C.green, "winRate"],
-              ["Seguidores", port.followers.toLocaleString(), C.purple, "copiers"],
-              ["En Gestión", `$${(port.aum / 1e6).toFixed(1)}M`, C.amber, "aum"],
+              ["Max Drawdown", `${port.maxDD}%`, C.red, "maxDD"],
+              ["Win Rate", `${port.winRate}%`, C.green, "winRate"],
+              ["Followers", port.followers.toLocaleString(), C.purple, "copiers"],
+              ["Under Management", `$${(port.aum / 1e6).toFixed(1)}M`, C.amber, "aum"],
             ].map(([l, v, clr, tip]) => (
               <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
                 <span style={{ color: C.textMuted }}><InfoTip k={tip}><span>{l}</span></InfoTip></span>
@@ -4751,10 +4759,10 @@ const CopyTradingView = () => {
 
       {/* All Traders Comparison Table */}
       <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Todos los Portfolios</div>
+        <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>All Portfolios</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead><tr>
-            {[["Trader",null],["Retorno/Mes",null],["Sharpe","sharpe"],["% Ganadoras","winRate"],["Máx. Caída","maxDD"],["Seguidores","copiers"],["En Gestión","aum"],["Comisión","perfFee"],["Riesgo","riskLevel"],["Hot",null],["Estado",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+            {[["Trader",null],["Monthly Return",null],["Sharpe","sharpe"],["Win Rate","winRate"],["Max Drawdown","maxDD"],["Followers","copiers"],["Under Management","aum"],["Commission","perfFee"],["Riesgo","riskLevel"],["Hot",null],["Estado",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
           </tr></thead>
           <tbody>
             {copyPortfolios.map((p, i) => {
@@ -4838,7 +4846,7 @@ const PredictionMarketsTab = () => {
         <StatCard label="Volumen Total" value={`$${(totalVolume / 1000).toFixed(0)}K`} sub="+8.2% semana" icon={DollarSign} color={C.green} tip="pot" />
         <StatCard label="Participantes" value={totalParticipants.toLocaleString()} sub="+240 activos" icon={Users} color={C.blue} />
         <StatCard label="Mercados Activos" value={predictionMarkets.length} sub="2 resueltos" icon={Activity} color={C.purple} />
-        <StatCard label="Sentimiento" value={`${avgYesOdds}% YES`} sub="Tendencia alcista" icon={Flame} color={C.amber} tip="odds" />
+        <StatCard label="Sentiment" value={`${avgYesOdds}% YES`} sub="Bullish trend" icon={Flame} color={C.amber} tip="odds" />
       </div>
 
       {/* Category filter */}
@@ -4926,6 +4934,7 @@ const PredictionMarketsTab = () => {
 
 const FootballTab = () => {
   const [selTf, setSelTf] = useState("3D");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const longs = ftgPlayers.filter(p => p.team === "LONG");
   const shorts = ftgPlayers.filter(p => p.team === "SHORT");
@@ -4952,8 +4961,8 @@ const FootballTab = () => {
   /* Orderflow / Volume / Structure / Liquidity mini-gauges */
   const gauges = [
     { label: "Orderflow", val: 8, max: 23 },
-    { label: "Volume", val: 0, max: 7 },
-    { label: "Structure", val: 0, max: 20 },
+    { label: "Volume", val: 5, max: 7 },
+    { label: "Structure", val: 14, max: 20 },
     { label: "Liquidity", val: 10, max: 10 },
   ];
 
@@ -4963,6 +4972,11 @@ const FootballTab = () => {
 
   /* Active session */
   const activeSession = ftgSessions.find(s => s.active) || ftgSessions[0];
+  /* Sentiment breakdown: humans vs bots */
+  const longHumans = 3;
+  const longBots = longCount - longHumans;
+  const shortHumans = 2;
+  const shortBots = shortCount - shortHumans;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -4983,8 +4997,11 @@ const FootballTab = () => {
               border: `1px solid ${selTf === tf ? C.green : C.border}`, transition: "all 0.15s"
             }}>{tf}</button>
           ))}
-          <button style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "6px", backgroundColor: C.green, border: "none", color: "#000", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
-            <RefreshCw size={12} /> Refresh
+          <button onClick={() => {
+            setIsRefreshing(true);
+            setTimeout(() => setIsRefreshing(false), 600);
+          }} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "6px 14px", borderRadius: "6px", backgroundColor: C.green, border: "none", color: "#000", fontSize: "11px", fontWeight: "700", cursor: "pointer", opacity: isRefreshing ? 0.7 : 1, transition: "opacity 0.2s" }}>
+            <RefreshCw size={12} style={{ animation: isRefreshing ? "spin 0.6s linear" : "none" }} /> Refresh
           </button>
         </div>
       </div>
@@ -5000,7 +5017,7 @@ const FootballTab = () => {
               <div style={{ fontSize: "10px", color: C.textMuted, ...mono }}>Rango: ${ftgPriceRange.low.toLocaleString()} – ${ftgPriceRange.high.toLocaleString()}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "10px", color: C.textMuted }}>Balón (Precio)</div>
+              <div style={{ fontSize: "10px", color: C.textMuted }}>Ball (Price)</div>
               <div style={{ fontSize: "22px", fontWeight: "800", color: C.green, ...mono }}>${ftgCurrentPrice.toLocaleString()}</div>
             </div>
           </div>
@@ -5107,7 +5124,7 @@ const FootballTab = () => {
 
             {/* Possession bar */}
             <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px", display: "flex", justifyContent: "space-between" }}>
-              <span>POSESIÓN</span>
+              <span>HOLDINGS</span>
               <span style={{ ...mono }}>{longPct}% LONG / {shortPct}% SHORT</span>
             </div>
             <div style={{ display: "flex", height: "10px", borderRadius: "5px", overflow: "hidden", gap: "2px" }}>
@@ -5120,6 +5137,41 @@ const FootballTab = () => {
             </div>
           </div>
 
+
+          {/* ── Sentiment Breakdown ── */}
+          <div style={cardStyle}>
+            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><Users size={12} /> Sentimiento Traders vs Bots</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+              {/* LONG Traders */}
+              <div style={{ border: `1px solid ${C.green}40`, borderRadius: "6px", padding: "10px", backgroundColor: `${C.green}08` }}>
+                <div style={{ fontSize: "9px", fontWeight: "700", color: C.green, textTransform: "uppercase", marginBottom: "6px" }}>LONG</div>
+                <div style={{ fontSize: "14px", fontWeight: "800", color: C.green, ...mono, marginBottom: "6px" }}>{longCount}</div>
+                <div style={{ fontSize: "9px", color: C.textMuted, marginBottom: "4px" }}>👤 {longHumans} humans</div>
+                <div style={{ fontSize: "9px", color: C.textMuted }}>🤖 {longBots} bots</div>
+              </div>
+              {/* SHORT Traders */}
+              <div style={{ border: `1px solid ${C.red}40`, borderRadius: "6px", padding: "10px", backgroundColor: `${C.red}08` }}>
+                <div style={{ fontSize: "9px", fontWeight: "700", color: C.red, textTransform: "uppercase", marginBottom: "6px" }}>SHORT</div>
+                <div style={{ fontSize: "14px", fontWeight: "800", color: C.red, ...mono, marginBottom: "6px" }}>{shortCount}</div>
+                <div style={{ fontSize: "9px", color: C.textMuted, marginBottom: "4px" }}>👤 {shortHumans} humans</div>
+                <div style={{ fontSize: "9px", color: C.textMuted }}>🤖 {shortBots} bots</div>
+              </div>
+            </div>
+            {/* Sentiment bar with trader breakdown */}
+            <div style={{ fontSize: "9px", color: C.textMuted, marginBottom: "4px", fontWeight: "600" }}>Trader Distribution</div>
+            <div style={{ display: "flex", height: "24px", borderRadius: "6px", overflow: "hidden", gap: "2px", marginBottom: "8px" }}>
+              <div style={{ flex: longCount, backgroundColor: C.green, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                <span style={{ fontSize: "7px", fontWeight: "700", color: "#000" }}>{longCount}L</span>
+              </div>
+              <div style={{ flex: shortCount, backgroundColor: C.red, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <span style={{ fontSize: "7px", fontWeight: "700", color: "#fff" }}>{shortCount}S</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: C.textFaint }}>
+              <span>{Math.round((longCount/(longCount+shortCount))*100)}% LONG</span>
+              <span>{Math.round((shortCount/(longCount+shortCount))*100)}% SHORT</span>
+            </div>
+          </div>
           {/* Down & Distance + Game Clock */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             <div style={cardStyle}>
@@ -5160,7 +5212,7 @@ const FootballTab = () => {
             <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}><BarChart3 size={12} /> Estadísticas</div>
             {[
               ["Total Jugadores", totalPlayers],
-              ["Distribución", `${longCount} LONG / ${shortCount} SHORT`],
+              ["Distribution", `${longCount} LONG / ${shortCount} SHORT`],
               ["ROI Promedio", <span style={{ color: Number(avgRoi) >= 0 ? C.green : C.red }}>+{avgRoi}%</span>],
             ].map(([label, val]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
@@ -5502,7 +5554,7 @@ const SocialsTab = () => {
                 <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><MessageCircle size={10} /> {post.replies}</span>
                 {post.retweets > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Send size={10} /> {post.retweets}</span>}
                 {post.impressions > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Eye size={10} /> {(post.impressions/1000).toFixed(1)}K</span>}
-                <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "3px", color: pColor, cursor: "pointer", fontWeight: "600" }}>
+                <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "3px", color: pColor, fontWeight: "600", fontSize: "9px" }} title={`Opens on ${post.platform}`}>
                   <ExternalLink size={10} /> View original
                 </span>
               </div>
@@ -5722,6 +5774,8 @@ const App = () => {
           <style>{`
             @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
             @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
             tr.hoverable:hover { background-color: ${C.cardHover} !important; }
             .card-hover:hover { border-color: ${C.borderLight} !important; }
             .card-glow:hover { box-shadow: 0 0 20px rgba(139,92,246,0.08) !important; }
@@ -5808,7 +5862,7 @@ const App = () => {
                 <div style={{ height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden", marginBottom: "4px" }}>
                   <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "2px" }} />
                 </div>
-                <div style={{ fontSize: "9px", color: C.textFaint, textAlign: "center" }}>{myTitle} · {myXpNext - myXp} XP para LVL {myLevel + 1}</div>
+                <div style={{ fontSize: "9px", color: C.textFaint, textAlign: "center" }}>{myTitle} · {myXpNext - myXp} XP to LVL {myLevel + 1}</div>
               </div>
             )}
             {sidebarCollapsed && (
@@ -5977,7 +6031,7 @@ const App = () => {
                 <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "520px", backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "12px", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
                   <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: "10px", borderBottom: `1px solid ${C.border}` }}>
                     <Search size={16} color={C.textMuted} />
-                    <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar traders, pares, secciones..." aria-label="Buscar traders, pares, secciones" style={{
+                    <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search traders, pairs, sections..." aria-label="Buscar traders, pares, secciones" style={{
                       flex: 1, backgroundColor: "transparent", border: "none", outline: "none", color: C.text, fontSize: "14px", fontWeight: "500"
                     }} onKeyDown={e => { if (e.key === "Escape") setShowSearch(false); }} />
                     <span style={{ fontSize: "10px", color: C.textFaint, padding: "2px 6px", backgroundColor: C.bg, borderRadius: "4px", ...mono }}>ESC</span>
@@ -6009,7 +6063,7 @@ const App = () => {
                         }}>
                           <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: C.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={14} color={C.amber} /></div>
                           <span style={{ fontSize: "13px", fontWeight: "600" }}>{p}</span>
-                          <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "auto" }}>Ver señales</span>
+                          <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "auto" }}>View signals</span>
                         </button>
                       ))}
                     </>)}
@@ -6082,7 +6136,7 @@ const App = () => {
                           <div style={{ flex: 1 }}>
                             {(a.type === "pattern" || a.type === "macro") && (
                               <div style={{ fontSize: "8px", fontWeight: "800", color: aColor, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>
-                                {a.type === "pattern" ? "PATRÓN DETECTADO" : "INDICADOR MACRO"}
+                                {a.type === "pattern" ? "PATTERN DETECTED" : "MACRO INDICATOR"}
                                 {a.priority === "high" && <span style={{ marginLeft: "6px", color: C.red }}>IMPORTANTE</span>}
                               </div>
                             )}
@@ -6216,13 +6270,13 @@ const App = () => {
               <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.border}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: C.card, borderRadius: "6px", padding: "6px 10px", border: `1px solid ${C.border}` }}>
                   <Search size={12} color={C.textFaint} />
-                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Buscar trader..." aria-label="Buscar trader en watchlist" style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
+                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Search trader..." aria-label="Buscar trader en watchlist" style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
                   {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={10} /></button>}
                 </div>
               </div>
               {/* Category tabs */}
               <div style={{ display: "flex", gap: "3px", padding: "6px 10px", borderBottom: `1px solid ${C.border}` }}>
-                {[{ id: "all", label: "Todos", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Siguiendo", icon: Star }].map(cat => (
+                {[{ id: "all", label: "All", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Siguiendo", icon: Star }].map(cat => (
                   <button key={cat.id} onClick={() => setWatchlistCategory(cat.id)} style={{
                     display: "flex", alignItems: "center", gap: "3px", padding: "4px 8px", borderRadius: "5px", fontSize: "9px", fontWeight: "600", cursor: "pointer",
                     border: `1px solid ${watchlistCategory === cat.id ? C.purple : C.border}`,
@@ -6276,10 +6330,10 @@ const App = () => {
                           </div>
                           {/* Actions row */}
                           <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
-                            <button title={isFollowed ? "Dejar de seguir" : "Seguir"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
+                            <button title={isFollowed ? "Unfollow" : "Follow"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
                               <Star size={10} fill={isFollowed ? C.amber : "none"} />
                             </button>
-                            <button title={hasAlert ? "Quitar alertas" : "Alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
+                            <button title={hasAlert ? "Remove alerts" : "Alertas"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
                               <BellRing size={10} />
                             </button>
                             <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("traders"); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
@@ -6348,7 +6402,7 @@ const App = () => {
                         <span style={{ fontWeight: "700", color: C.green, ...mono }}>+$3,420</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
-                        <span style={{ color: C.textMuted }}>Copiando a</span>
+                        <span style={{ color: C.textMuted }}>Copying to</span>
                         <span style={{ fontWeight: "600", ...mono }}>2 traders</span>
                       </div>
                     </div>
@@ -6357,11 +6411,11 @@ const App = () => {
                     <div style={{ ...cardStyle, marginBottom: "12px" }}>
                       <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Notificaciones</div>
                       {[
-                        ["Trades en vivo", true],
+                        ["Live Trades", true],
                         ["Whale alerts", true],
-                        ["Señales nuevas", true],
-                        ["Predicciones resueltas", false],
-                        ["Logros desbloqueados", true],
+                        ["New Signals", true],
+                        ["Resolved Predictions", false],
+                        ["Unlocked Achievements", true],
                       ].map(([label, on]) => (
                         <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
                           <span style={{ fontSize: "12px" }}>{label}</span>
