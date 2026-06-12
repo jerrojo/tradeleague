@@ -17,7 +17,8 @@ const ActivityHeatmap = ({ traderData }) => {
         const tradeCount = Math.ceil(rand * 6);
         const isWin = rand < baseWR + 0.1;
         const pnl = isWin ? Math.round(rand * 3000 + 200) : -Math.round((1 - rand) * 1500 + 100);
-        const level = !hasTrade ? 0 : pnl > 2000 ? 4 : pnl > 500 ? 3 : pnl > 0 ? 2 : pnl > -500 ? -1 : -2;
+        const isBE = Math.abs(pnl) <= 150; // breakeven day (VARIV A.3: light green)
+        const level = !hasTrade ? 0 : isBE ? 1 : pnl > 2000 ? 4 : pnl > 500 ? 3 : pnl > 0 ? 2 : pnl > -500 ? -1 : -2;
         days.push({ level, trades: tradeCount, pnl });
       }
       result.push(days);
@@ -32,6 +33,7 @@ const ActivityHeatmap = ({ traderData }) => {
 
   const levelColor = (level) => {
     if (level === 0) return C.border;
+    if (level === 1) return `${C.green}33`; // breakeven
     if (level >= 4) return C.green;
     if (level >= 3) return `${C.green}bb`;
     if (level >= 2) return `${C.green}77`;
@@ -45,7 +47,7 @@ const ActivityHeatmap = ({ traderData }) => {
         <div style={{ fontSize: "13px", fontWeight: "600" }}>Trading Activity — Last 6 Months</div>
         <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "9px", color: C.textMuted }}>
           <span>Less</span>
-          {[C.border, `${C.red}77`, `${C.green}77`, `${C.green}bb`, C.green].map((clr, i) => (
+          {[C.border, `${C.red}77`, `${C.green}33`, `${C.green}77`, `${C.green}bb`, C.green].map((clr, i) => (
             <div key={i} style={{ width: 10, height: 10, borderRadius: "2px", backgroundColor: clr }} />
           ))}
           <span>More</span>
@@ -104,38 +106,61 @@ const ActivityHeatmap = ({ traderData }) => {
   );
 };
 
-/* ═══════════════════════ TRADE STRUCTURE DIAGRAM (SL ← Entry → TP) ═══════════════════════ */
-const TradeStructureDiagram = ({ entry, sl, tp, type = "LONG" }) => {
+/* ═══════════════════════ TRADE STRUCTURE DIAGRAM v2 (VARIV B.2 + B.3) ═══════════════════════
+   Horizontal geometry of the position: SL ← Entry → TP1 → TP2 → TP3, proportional to price.
+   Optional: close marker (actual exit) and MAE/MFE bars (the path the trade took). */
+const TradeStructureDiagram = ({ entry, sl, tp, tps, close, maePct, mfePct, type = "LONG" }) => {
   const isLong = type === "LONG";
+  const targets = (tps && tps.length ? tps : [tp]).filter(p => p != null);
   const slDist = Math.abs(entry - sl);
-  const tpDist = Math.abs(tp - entry);
-  const totalRange = slDist + tpDist;
-  if (totalRange === 0) return null;
-  const slPct = (slDist / totalRange) * 100;
-  const tpPct = (tpDist / totalRange) * 100;
-  const rr = (tpDist / Math.max(slDist, 0.01)).toFixed(1);
-
+  if (!slDist || !targets.length) return null;
+  // everything in R-multiples: SL = -1R, favor = positive
+  const toR = (price) => ((isLong ? price - entry : entry - price) / slDist);
+  const maeR = maePct != null ? Math.max(-1.15, -Math.abs(maePct / 100) * (entry / slDist)) : null;
+  const mfeR = mfePct != null ? Math.abs(mfePct / 100) * (entry / slDist) : null;
+  const closeR = close != null ? toR(close) : null;
+  const maxR = Math.max(...targets.map(toR), closeR ?? 0, mfeR ?? 0, 0.5) * 1.06;
+  const minR = -1.15;
+  const x = (r) => ((r - minR) / (maxR - minR)) * 100;
+  const rr = toR(targets[0]).toFixed(2);
+  const fmt = (p) => p < 1 ? p.toFixed(4) : p.toLocaleString();
+  const hasPath = maeR != null || mfeR != null;
   return (
-    <div style={{ padding: "6px 0" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0px", height: "18px", borderRadius: "3px", overflow: "hidden", position: "relative" }}>
-        {/* SL zone (red) */}
-        <div style={{ width: `${slPct}%`, height: "100%", backgroundColor: C.redBg, border: `1px solid ${C.red}40`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", borderRadius: "3px 0 0 3px" }}>
-          <span style={{ fontSize: "8px", fontWeight: "700", color: C.red, ...mono, whiteSpace: "nowrap" }}>SL ${sl.toLocaleString()}</span>
-        </div>
+    <div style={{ padding: "10px 0 2px" }}>
+      <div style={{ position: "relative", height: hasPath ? 52 : 34 }}>
+        {/* zones */}
+        <div style={{ position: "absolute", top: 12, left: `${x(-1)}%`, width: `${x(0) - x(-1)}%`, height: 16, backgroundColor: C.redBg, border: `1px solid ${C.red}40`, borderRadius: "3px 0 0 3px" }} />
+        <div style={{ position: "absolute", top: 12, left: `${x(0)}%`, width: `${x(toR(targets[targets.length - 1])) - x(0)}%`, height: 16, backgroundColor: C.greenBg, border: `1px solid ${C.green}30`, borderRadius: "0 3px 3px 0" }} />
+        {/* SL marker */}
+        <div style={{ position: "absolute", top: 8, left: `${x(-1)}%`, width: 2, height: 24, backgroundColor: C.red }} />
+        <div style={{ position: "absolute", top: 30, left: `${x(-1)}%`, transform: "translateX(-30%)", fontSize: 8, fontWeight: 700, color: C.red, ...mono, whiteSpace: "nowrap" }}>SL ${fmt(sl)}</div>
         {/* Entry marker */}
-        <div style={{ width: "2px", height: "22px", backgroundColor: C.text, flexShrink: 0, zIndex: 2, position: "relative" }}>
-          <div style={{ position: "absolute", top: "-14px", left: "50%", transform: "translateX(-50%)", fontSize: "7px", fontWeight: "700", color: C.text, whiteSpace: "nowrap", ...mono }}>ENTRY</div>
-        </div>
-        {/* TP zone (green) */}
-        <div style={{ width: `${tpPct}%`, height: "100%", backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", borderRadius: "0 3px 3px 0" }}>
-          <span style={{ fontSize: "8px", fontWeight: "700", color: C.green, ...mono, whiteSpace: "nowrap" }}>TP ${tp.toLocaleString()}</span>
-        </div>
+        <div style={{ position: "absolute", top: 6, left: `${x(0)}%`, width: 2, height: 28, backgroundColor: C.text, zIndex: 2 }} />
+        <div style={{ position: "absolute", top: -2, left: `${x(0)}%`, transform: "translateX(-50%)", fontSize: 7, fontWeight: 700, color: C.text, ...mono }}>ENTRY ${fmt(entry)}</div>
+        {/* TP markers */}
+        {targets.map((p, i) => (
+          <span key={i}>
+            <span style={{ position: "absolute", top: 8, left: `${x(toR(p))}%`, width: 2, height: 24, backgroundColor: C.green, opacity: 0.5 + i * 0.25, display: "block" }} />
+            <span style={{ position: "absolute", top: -2, left: `${x(toR(p))}%`, transform: "translateX(-50%)", fontSize: 7, fontWeight: 700, color: C.green, ...mono, whiteSpace: "nowrap", display: "block" }}>{targets.length > 1 ? `TP${i + 1}` : "TP"} ${fmt(p)}</span>
+          </span>
+        ))}
+        {/* Close marker (actual exit) */}
+        {closeR != null && (
+          <div title={`Closed at $${fmt(close)}`} style={{ position: "absolute", top: 9, left: `${x(closeR)}%`, transform: "translateX(-50%)", zIndex: 3, width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `8px solid ${closeR >= 0 ? C.green : C.red}`, filter: "drop-shadow(0 0 3px rgba(0,0,0,0.6))" }} />
+        )}
+        {/* MAE / MFE path bars (VARIV B.3) */}
+        {maeR != null && maeR < 0 && (
+          <div title={`MAE ${maePct}% — worst point against the position`} style={{ position: "absolute", top: 40, left: `${x(maeR)}%`, width: `${x(0) - x(maeR)}%`, height: 4, backgroundColor: C.red, opacity: 0.85, borderRadius: 2 }} />
+        )}
+        {mfeR != null && mfeR > 0 && (
+          <div title={`MFE +${mfePct}% — best point in favor`} style={{ position: "absolute", top: 40, left: `${x(0)}%`, width: `${Math.min(x(mfeR), 100) - x(0)}%`, height: 4, backgroundColor: C.green, opacity: 0.85, borderRadius: 2 }} />
+        )}
+        {hasPath && <div style={{ position: "absolute", top: 37, left: `${x(0)}%`, width: 1, height: 10, backgroundColor: C.textFaint }} />}
       </div>
-      {/* R:R label */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "3px", fontSize: "8px", color: C.textFaint }}>
-        <span>-{slDist.toFixed(slDist < 1 ? 4 : 0)} ({isLong ? "below" : "above"})</span>
-        <span style={{ color: C.blue, fontWeight: "700" }}>R:R 1:{rr}</span>
-        <span>+{tpDist.toFixed(tpDist < 1 ? 4 : 0)} ({isLong ? "above" : "below"})</span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 8, color: C.textFaint }}>
+        <span>{hasPath ? `MAE ${maePct ?? "—"}%` : `-1R (${isLong ? "below" : "above"})`}</span>
+        <span style={{ color: C.blue, fontWeight: 700 }}>R:R 1:{rr}{targets.length > 1 ? ` → TP3 1:${toR(targets[targets.length - 1]).toFixed(2)}` : ""}</span>
+        <span>{hasPath ? `MFE +${mfePct ?? "—"}%` : `+${rr}R (${isLong ? "above" : "below"})`}</span>
       </div>
     </div>
   );

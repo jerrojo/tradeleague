@@ -1,19 +1,21 @@
 import { BotTag, InfoTip, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
-import { Bell, BellRing, ChevronRight, Circle, Eye, Heart, Link2, MessageCircle, RefreshCw, Send } from "lucide-react";
+import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
 import { ACHIEVEMENTS, alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle, tierColor } from "../theme";
 import { ToastContext } from "./common";
 import { Activity, BarChart3, Clock, DollarSign, Flame, Lightbulb, Star, Target, TrendingDown, TrendingUp, Trophy, Users, Zap } from "lucide-react";
-import { useContext, useState } from "react";
+import { Fragment, useContext, useState } from "react";
 /* ═══════════════════════ TRADER PROFILE (standalone) ═══════════════════════ */
 const TraderProfile = ({ trader, onClose }) => {
   const [profileTab, setProfileTab] = useState("overview");
   const [socialFilter, setSocialFilter] = useState("all");
   const [isFollowing, setIsFollowing] = useState(false);
   const [alertsOn, setAlertsOn] = useState(false);
+  const [eqPeriod, setEqPeriod] = useState(90); // 7 / 30 / 90 days — VARIV A.2: toggles, not dropdown
+  const [expandedTrade, setExpandedTrade] = useState(null);
   const { addToast } = useContext(ToastContext);
   const t = trader;
   const deep = traderDeepData[t.name];
@@ -252,8 +254,20 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "overview" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-              <div style={{ fontSize: "13px", fontWeight: "600" }}>Equity Curve — Last 30 Days</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ fontSize: "13px", fontWeight: "600" }}>Equity Curve</div>
+                <div style={{ display: "flex", gap: "3px" }}>
+                  {[[7, "7D"], [30, "30D"], [90, "90D"]].map(([days, label]) => (
+                    <button key={days} onClick={() => setEqPeriod(days)} style={{
+                      padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer", ...mono,
+                      border: `1px solid ${eqPeriod === days ? C.purple : C.border}`,
+                      backgroundColor: eqPeriod === days ? C.purpleBg : "transparent",
+                      color: eqPeriod === days ? C.purple : C.textMuted,
+                    }}>{label}</button>
+                  ))}
+                </div>
+              </div>
               {/* Win Rate Trinity — VARIV anti-pattern rule: never show WR alone */}
               <div style={{ display: "flex", gap: "12px", fontSize: "10px" }}>
                 <span style={{ color: C.green, fontWeight: "700", ...mono }}><InfoTip k="winRate" inline><span>WR</span></InfoTip> {t.winRate}%</span>
@@ -264,7 +278,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={(() => {
                 let peak = -Infinity;
-                return deep.dailyEquity.map(d => {
+                return deep.dailyEquity.slice(-eqPeriod).map(d => {
                   peak = Math.max(peak, d.equity);
                   return { ...d, peak, drawdown: d.equity < peak ? d.equity : null };
                 });
@@ -330,9 +344,11 @@ const TraderProfile = ({ trader, onClose }) => {
             <StatCard label="Active Now" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
             <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
             <StatCard label="Avg Profit / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
             <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCard label="Actionability" value={`${deep.signalStats.actionability}%`} icon={Crosshair} color={C.blue} tip="actionability" />
+            <StatCard label="Avg TP Time" value={deep.signalStats.avgTpTime} icon={Clock} color={C.purple} tip="avgTpTime" />
           </div>
           {/* Active Signals */}
           {deep.signals.filter(s => s.status === "active").length > 0 && (
@@ -400,33 +416,82 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ TRADES ═══ */}
       {profileTab === "trades" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
             <StatCard label="Total Trades" value={t.trades} icon={Activity} color={C.blue} />
-            <StatCard label="Win Rate" value={`${t.winRate}%`} icon={Trophy} color={C.green} />
-            <StatCard label="Avg R:R" value={t.avgRR} icon={Target} color={C.purple} />
-            <StatCard label="Avg Hold" value={t.avgHold} icon={Clock} color={C.amber} />
+            <StatCard label="Win Rate" value={`${t.winRate}%`} icon={Trophy} color={C.green} tip="winRate" />
+            <StatCard label="Profit Factor" value={t.profitFactor?.toFixed(1)} icon={Scale} color={C.amber} tip="profitFactor" />
+            <StatCard label="Max Drawdown" value={`${t.maxDD}%`} icon={TrendingDown} color={C.red} tip="maxDD" />
+            <StatCard label="Avg R:R" value={t.avgRR} icon={Target} color={C.purple} tip="rr" />
+            <StatCard label="Avg Hold" value={t.avgHold} icon={Clock} color={C.cyan} />
           </div>
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Trade History — Last 20 Trades</div>
+            <div style={{ padding: "14px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600" }}>Trade History — Last 20 Trades</span>
+              <span style={{ fontSize: "10px", color: C.textFaint }}>Click a row for full trade anatomy (geometry + MAE/MFE)</span>
+            </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Pair","Type","Entry","Exit","PnL","Leverage","R:R","Duration","Status","Notes","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Style","Entry","Exit","PnL","R","Duration","Outcome","Setup","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
-                  {deep.history.map(tr => (
-                    <tr key={tr.id} style={{ borderLeft: `3px solid ${tr.type === "LONG" ? C.green : C.red}` }}>
-                      <td style={{ ...tdStyle, fontWeight: "600" }}>{tr.pair}</td>
-                      <td style={tdStyle}><Tag text={tr.type} color={tr.type === "LONG" ? C.green : C.red} /></td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.entry.toLocaleString()}</td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.exit.toLocaleString()}</td>
-                      <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: tr.pnl >= 0 ? C.green : C.red }}>{tr.pnl >= 0 ? "+" : ""}${tr.pnl.toLocaleString()}</td>
-                      <td style={{ ...tdStyle, ...mono, color: C.amber }}>{tr.leverage}</td>
-                      <td style={{ ...tdStyle, ...mono }}>{tr.rr}</td>
-                      <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{tr.duration}</td>
-                      <td style={tdStyle}><Tag text={tr.status === "tp_hit" ? "TP Hit" : "SL Hit"} color={tr.status === "tp_hit" ? C.green : C.red} /></td>
-                      <td style={{ ...tdStyle, fontSize: "10px", color: C.textMuted, maxWidth: "160px" }}>{tr.notes}</td>
-                      <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{tr.date}</td>
-                    </tr>
-                  ))}
+                  {deep.history.map(tr => {
+                    const isOpen = expandedTrade === tr.id;
+                    const outcomeColor = tr.outcome === "WIN" ? C.green : tr.outcome === "LOSS" ? C.red : C.amber;
+                    return (
+                      <Fragment key={tr.id}>
+                        <tr className="hoverable" onClick={() => setExpandedTrade(isOpen ? null : tr.id)} style={{ borderLeft: `3px solid ${tr.type === "LONG" ? C.green : C.red}`, cursor: "pointer", backgroundColor: isOpen ? C.cardHover : "transparent" }}>
+                          <td style={{ ...tdStyle, fontWeight: "600" }}>{tr.pair}</td>
+                          <td style={tdStyle}><Tag text={tr.type} color={tr.type === "LONG" ? C.green : C.red} /></td>
+                          <td style={tdStyle}><span style={{ fontSize: "9px", fontWeight: "700", padding: "2px 6px", borderRadius: "3px", backgroundColor: `${C.blue}15`, color: C.blue, border: `1px solid ${C.blue}30`, ...mono }}>{tr.style}</span></td>
+                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.entry.toLocaleString()}</td>
+                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.exit.toLocaleString()}</td>
+                          <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: tr.pnl >= 0 ? C.green : C.red }}>
+                            {tr.pnl >= 0 ? "+" : ""}${tr.pnl.toLocaleString()}
+                            <div style={{ fontSize: "9px", fontWeight: "600", color: tr.pnlPct >= 0 ? `${C.green}cc` : `${C.red}cc` }}>{tr.pnlPct >= 0 ? "+" : ""}{tr.pnlPct}% · {tr.leverage}</div>
+                          </td>
+                          <td style={{ ...tdStyle, ...mono, color: tr.rMultiple >= 0 ? C.green : C.red, fontWeight: "600" }}>{tr.rMultiple >= 0 ? "+" : ""}{tr.rMultiple}R</td>
+                          <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{tr.duration}</td>
+                          <td style={tdStyle}><Tag text={tr.outcome === "WIN" ? `WIN · ${tr.tpReached}` : tr.outcome === "BREAKEVEN" ? "BE" : "LOSS"} color={outcomeColor} /></td>
+                          <td style={tdStyle}>
+                            {tr.setupTag
+                              ? <span title={tr.setupTag} style={{ fontSize: "8px", fontWeight: "700", padding: "2px 5px", borderRadius: "3px", backgroundColor: `${C.purple}12`, color: C.purple, border: `1px solid ${C.purple}25`, ...mono, whiteSpace: "nowrap" }}>{tr.setupTag.split("_").slice(0, 3).join("·")}</span>
+                              : <span title="This trade has no setup tag — it is invisible to the ML pipeline until labeled" style={{ fontSize: "8px", fontWeight: "700", padding: "2px 5px", borderRadius: "3px", backgroundColor: C.amberBg, color: C.amber, border: `1px dashed ${C.amber}60`, ...mono, whiteSpace: "nowrap" }}>LABEL PENDING</span>}
+                          </td>
+                          <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted, whiteSpace: "nowrap" }}>{tr.date}</td>
+                        </tr>
+                        {isOpen && (
+                          <tr>
+                            <td colSpan={11} style={{ padding: "4px 16px 16px", borderBottom: `1px solid ${C.border}`, backgroundColor: `${C.bg}80` }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: "20px", alignItems: "start", paddingTop: "8px" }}>
+                                <div>
+                                  <div style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
+                                    Trade Anatomy <InfoTip k="mae" inline><span style={{ fontWeight: 400, textTransform: "none" }}>(geometry + path)</span></InfoTip>
+                                  </div>
+                                  <TradeStructureDiagram entry={tr.entry} sl={tr.sl} tps={[tr.tp1, tr.tp2, tr.tp3]} close={tr.exit} maePct={tr.maePct} mfePct={tr.mfePct} type={tr.type} />
+                                  <div style={{ fontSize: "10px", color: C.textMuted, fontStyle: "italic", marginTop: "8px" }}>"{tr.notes}"</div>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                                  {[
+                                    ["Session", tr.session, C.text, "session"],
+                                    ["Setup tag", tr.setupTag || "— pending —", tr.setupTag ? C.purple : C.amber, "setupTag"],
+                                    ["Position size", `$${tr.sizeUsd.toLocaleString()}`, C.text, null],
+                                    ["Fees paid", `$${tr.fees}`, C.textMuted, null],
+                                    ["Exit reason", tr.exitReason.replace("_", " "), tr.exitReason === "TP_HIT" ? C.green : tr.exitReason === "SL_HIT" ? C.red : C.amber, null],
+                                    ["MAE", `${tr.maePct}%`, C.red, "mae"],
+                                    ["MFE", `+${tr.mfePct}%`, C.green, "mfe"],
+                                  ].map(([l, v, clr, tip]) => (
+                                    <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", borderBottom: `1px solid ${C.border}`, paddingBottom: "4px" }}>
+                                      <span style={{ color: C.textMuted }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span>
+                                      <span style={{ color: clr, fontWeight: "700", ...mono, maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -439,8 +504,8 @@ const TraderProfile = ({ trader, onClose }) => {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
             <StatCard label="Accuracy" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
-            <StatCard label="Racha Actual" value={`${deep.predStats.streak} correctas`} icon={Flame} color={C.amber} tip="streak" />
-            <StatCard label="Total Apostado" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
+            <StatCard label="Current Streak" value={`${deep.predStats.streak} correct`} icon={Flame} color={C.amber} tip="streak" />
+            <StatCard label="Total Staked" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
             <StatCard label="Net Profit" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
           </div>
           {/* Active bets */}
