@@ -3,8 +3,9 @@ import { BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
-import { AlertTriangle, BellRing, Calendar, ChevronDown, ChevronRight, Search, Target, ToggleLeft, ToggleRight, X, Zap } from "lucide-react";
+import { AlertTriangle, BellRing, Briefcase, Calendar, ChevronDown, ChevronRight, Search, Target, ToggleLeft, ToggleRight, X, Zap } from "lucide-react";
 import { TradersTab } from "./components/tabs/TradersTab";
+import { PortfolioTab } from "./components/tabs/PortfolioTab";
 import { ArenaTab } from "./components/tabs/ArenaTab";
 import { AwardsTab } from "./components/tabs/AwardsTab";
 import { FootballTab } from "./components/tabs/FootballTab";
@@ -77,6 +78,7 @@ const App = () => {
     const allPairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
+      { id: "portfolio", label: "Portfolio", desc: "Fund-level KPIs, system equity curve, drawdown timeline" },
       { id: "arena", label: "Arena", desc: "Live race — watch traders compete in real-time" },
       { id: "halloffame", label: "Hall of Fame", desc: "Greatest trades, signals, and predictions ever" },
       { id: "awards", label: "Awards", desc: "Seasonal awards — the Oscars of trading" },
@@ -153,6 +155,7 @@ const App = () => {
 
   const tabs = [
     { id: "zone-compete", zone: true, label: "COMPETE" },
+    { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
     { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
     { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
     { id: "awards", label: "Awards", icon: Award, accent: C.amber },
@@ -167,6 +170,7 @@ const App = () => {
 
   // Tab → Component mapping
   const tabContent = {
+    portfolio: PortfolioTab,   // Portfolio = fund/system level (VARIV Vista C)
     arena: HomeTab,           // Arena = the race chart
     halloffame: HallOfFameTab, // Hall of Fame = trophy cards
     awards: AwardsTab,         // Awards = the Oscars of trading
