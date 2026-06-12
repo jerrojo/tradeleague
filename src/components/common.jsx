@@ -102,6 +102,14 @@ const GLOSSARY = {
   signalActive:   "Signal still active — the trader still has this position open",
   tpHit:          "Take Profit hit — the trade closed in profit",
   slHit:          "Stop Loss hit — the trade closed at a loss",
+  // Trade anatomy (VARIV)
+  mae:            "Maximum Adverse Excursion — how far price went AGAINST the trade before resolving. High MAE on a win = low-quality entry",
+  mfe:            "Maximum Favorable Excursion — how far price went IN FAVOR before closing. High MFE on a loss = profit left on the table",
+  setupTag:       "Machine-readable label of the setup: source_style_pattern_timeframe_assetclass. Trades without a tag can't train the AI",
+  session:        "Market session when the trade was opened: ASIA / LONDON / NY",
+  actionability:  "Share of emitted signals that actually reached their entry zone and could be traded",
+  avgTpTime:      "Average time for a signal to reach its first Take Profit",
+  expectancyR:    "Average profit per trade measured in R (risk units). +0.42R = each trade earns 0.42× the risked amount on average",
   // Predictions
   odds:           "Market probability. 38% YES = most believe it won't happen",
   pot:            "Total money staked on this prediction. Split among the winners",

@@ -83,22 +83,74 @@ const traderDeepData = (() => {
   const platIcons = { twitter: "𝕏", discord: "DC", reddit: "R", tradehub: "TH", telegram: "TG", whatsapp: "WA" };
   const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: "#8b5cf6", telegram: "#0088cc", whatsapp: "#25D366" };
   mockTraders.forEach((t, ti) => {
-    // Trade history (last 20 trades)
+    // Trade history (last 20 trades) — full VARIV "Vista D" schema:
+    // geometry (sl/tp1-3), path quality (MAE/MFE), classification (style/setup/session), result (% + USD + fees)
+    const STYLE_POOL = {
+      "Scalping":    ["SCALP","SCALP","INTRA","SCALP"],
+      "Day Trading": ["INTRA","SCALP","INTRA","SWING"],
+      "Swing":       ["SWING","SWING","INTRA","POSITION"],
+      "Position":    ["POSITION","SWING","POSITION","SWING"],
+      "Breakout":    ["INTRA","SWING","SCALP","INTRA"],
+    };
+    const SETUPS = ["FVG","OB","BOS","LIQ","CHOCH"];
+    const SOURCES = ["TG","TV","AI"];
+    const TFS = ["H1","H4","D1"];
+    const HOURS_BY_STYLE = { SCALP: [0.5, 4], INTRA: [2, 14], SWING: [14, 72], POSITION: [72, 240] };
+    const round2 = (x) => Math.round(x * 100) / 100;
     const history = [];
     for (let i = 0; i < 20; i++) {
-      const isWin = Math.random() < (t.winRate / 100);
+      const r = (k) => srand(ti * 1000 + i * 31 + k); // deterministic per trader+trade
+      const roll = r(1);
+      const isBE = roll > 0.9; // ~10% breakeven trades
+      const isWin = !isBE && roll < t.winRate / 100;
       const pair = pairs[(ti + i) % pairs.length];
-      const type = Math.random() > 0.45 ? "LONG" : "SHORT";
-      const entry = pair.startsWith("BTC") ? 67000 + Math.random() * 2000 : pair.startsWith("ETH") ? 3400 + Math.random() * 200 : 50 + Math.random() * 100;
-      const pnlAmt = isWin ? Math.round(200 + Math.random() * 3000) : -Math.round(100 + Math.random() * 1500);
+      const type = r(2) > 0.45 ? "LONG" : "SHORT";
+      const dir = type === "LONG" ? 1 : -1;
+      const entryRaw = pair.startsWith("BTC") ? 67000 + r(3) * 2000 : pair.startsWith("ETH") ? 3400 + r(3) * 200 : 50 + r(3) * 100;
+      const entry = round2(entryRaw);
+      // — geometry: SL + 3 proportional TPs —
+      const slDist = entry * (0.008 + r(4) * 0.008);       // 0.8–1.6% away
+      const tp1Dist = slDist * (1.2 + r(5) * 1.2);          // 1.2–2.4 R at TP1
+      const sl = round2(entry - dir * slDist);
+      const tp1 = round2(entry + dir * tp1Dist);
+      const tp2 = round2(entry + dir * tp1Dist * 1.8);
+      const tp3 = round2(entry + dir * tp1Dist * 2.8);
+      const tpReached = isWin ? ["TP1","TP1","TP2","TP3"][Math.floor(r(6) * 4)] : "NONE";
+      const exit = isBE ? round2(entry + dir * slDist * 0.05) : isWin ? { TP1: tp1, TP2: tp2, TP3: tp3 }[tpReached] : sl;
+      // — path quality: MAE (worst against) / MFE (best in favor), as % of entry —
+      const maePct = round2(-(isBE ? (0.3 + r(7) * 0.5) * (slDist / entry) * 100 : isWin ? r(7) * (slDist / entry) * 85 : (slDist / entry) * 100));
+      const mfePct = round2(isWin ? (Math.abs(exit - entry) / entry) * 100 * (1 + r(8) * 0.3) : (0.2 + r(8) * 0.5) * (tp1Dist / entry) * 100);
+      // — result —
+      const leverageNum = [2, 3, 4, 5][i % 4];
+      const sizeUsd = 800 + Math.round(r(9) * 2200);
+      const pnlPct = round2(dir * ((exit - entry) / entry) * 100 * leverageNum);
+      const pnlAmt = Math.round(sizeUsd * pnlPct / 100);
+      const fees = round2(sizeUsd * leverageNum * 0.0008);
+      const rMultiple = round2(dir * (exit - entry) / slDist);
+      // — classification (ML layer) —
+      const style = STYLE_POOL[t.style][i % 4];
+      const setupTag = r(10) < 0.12 ? null : `${SOURCES[Math.floor(r(11) * 3)]}_${style}_${SETUPS[(ti + i) % 5]}_${TFS[Math.floor(r(12) * 3)]}_CRYPTO`;
+      const hour = 8 + (i * 2) % 14;
+      const session = hour < 8 ? "ASIA" : hour < 13 ? "LONDON" : "NY";
+      const [hMin, hMax] = HOURS_BY_STYLE[style];
+      const durationHours = round2(hMin + r(13) * (hMax - hMin));
       const day = Math.max(1, 22 - i);
-      history.push({ id: ti * 100 + i, pair, type, entry: Math.round(entry * 100) / 100,
-        exit: Math.round((entry + (isWin ? (type === "LONG" ? 1 : -1) * entry * 0.02 : (type === "LONG" ? -1 : 1) * entry * 0.01)) * 100) / 100,
-        pnl: pnlAmt, leverage: ["2x","3x","4x","5x"][i % 4], status: isWin ? "tp_hit" : "sl_hit",
-        date: `Mar ${day}, ${String(8 + (i * 2) % 14).padStart(2,"0")}:${String((i * 17) % 60).padStart(2,"0")}`,
-        duration: [`${1 + i % 8}h ${(i * 13) % 60}m`, `${(i * 7) % 24}h ${(i * 23) % 60}m`][i % 2],
-        rr: isWin ? `1:${(1.5 + Math.random() * 2.5).toFixed(1)}` : `-1R`,
-        notes: isWin ? ["Clean entry on OB retest","FVG filled perfectly","Momentum confirmation strong","Liquidity sweep before entry"][i%4] : ["Stopped out on fakeout","Missed the displacement","Entered too early","Should have waited for NY"][i%4]
+      history.push({
+        id: ti * 100 + i, pair, type, entry, exit,
+        sl, tp1, tp2, tp3, tp: tp1, tpReached,
+        maePct, mfePct,
+        pnl: isBE ? Math.round(-fees) : pnlAmt, pnlPct: isBE ? 0 : pnlPct, fees, sizeUsd,
+        leverage: `${leverageNum}x`,
+        status: isBE ? "breakeven" : isWin ? "tp_hit" : "sl_hit",
+        outcome: isBE ? "BREAKEVEN" : isWin ? "WIN" : "LOSS",
+        exitReason: isBE ? "MANUAL" : isWin ? "TP_HIT" : r(14) > 0.85 ? "MANUAL" : "SL_HIT",
+        style, setupTag, session,
+        date: `Mar ${day}, ${String(hour).padStart(2, "0")}:${String((i * 17) % 60).padStart(2, "0")}`,
+        duration: durationHours >= 24 ? `${Math.floor(durationHours / 24)}d ${Math.round(durationHours % 24)}h` : `${Math.floor(durationHours)}h ${Math.round((durationHours % 1) * 60)}m`,
+        durationHours,
+        rr: isBE ? "0R" : isWin ? `1:${Math.abs(((exit - entry) / slDist) * dir).toFixed(1)}` : "-1R",
+        rMultiple,
+        notes: isWin ? ["Clean entry on OB retest","FVG filled perfectly","Momentum confirmation strong","Liquidity sweep before entry"][i%4] : isBE ? ["Closed at breakeven — setup invalidated","Moved SL to BE after TP1 tap","Cut early on momentum loss","News risk — flattened position"][i%4] : ["Stopped out on fakeout","Missed the displacement","Entered too early","Should have waited for NY"][i%4]
       });
     }
     // Monthly P&L (last 6 months)
@@ -117,7 +169,7 @@ const traderDeepData = (() => {
     // Daily equity curve (last 30 days)
     const dailyEquity = [];
     let eq = 10000 + ti * 5000;
-    for (let d = 1; d <= 30; d++) { eq += (Math.random() - 0.35) * (800 + ti * 200); dailyEquity.push({ day: d, equity: Math.round(eq) }); }
+    for (let d = 1; d <= 90; d++) { eq += (srand(ti * 500 + d * 13) - 0.35) * (800 + ti * 200); dailyEquity.push({ day: d, equity: Math.round(eq) }); }
 
     // ── PREDICTIONS (individual bets on prediction markets) ──
     const predictionsList = [
@@ -161,6 +213,8 @@ const traderDeepData = (() => {
       total: 45 + ti * 12, active: signals.filter(s => s.status === "active").length,
       accuracy: Math.round(t.winRate + 3), avgPnlPerSignal: Math.round(signals.reduce((a, s) => a + s.pnl, 0) / signals.length),
       bestSignal: Math.max(...signals.map(s => s.pnl)), subscribers: 340 + ti * 80,
+      actionability: 94 - ti * 3, // % of emitted signals that reached their entry zone
+      avgTpTime: `${2 + ti}h ${(10 + ti * 7) % 60}m`, // average time to first TP
     };
 
     // ── SOCIAL POSTS (cross-platform: Twitter, Discord, Reddit, Tradethlon, Telegram, WhatsApp) ──
@@ -305,6 +359,17 @@ const traderEquity = (() => {
     data.push(point);
   }
   return data;
+})();
+
+/* BTC buy-and-hold benchmark — 30-day % return path (deterministic) */
+const btcBenchmark = (() => {
+  const out = [];
+  let pct = 0;
+  for (let d = 1; d <= 30; d++) {
+    pct += (srand(d * 71 + 7) - 0.42) * 1.8; // mild upward drift with swings
+    out.push({ day: d, pct: Math.round(pct * 100) / 100 });
+  }
+  return out;
 })();
 
 const heatAssets = ["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","AVAX"];
@@ -1182,6 +1247,7 @@ const smcCoins = {
 const smcCoinList = Object.keys(smcCoins);
 
 export {
+  btcBenchmark,
   mockChartData,
   mockSignals,
   mockTraders,
