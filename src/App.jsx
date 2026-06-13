@@ -1,11 +1,13 @@
 import { TraderProfile } from "./components/TraderProfile";
+import { Activity, AlertTriangle, Award, BarChart3, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
 import { BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
-import { AlertTriangle, BellRing, Briefcase, Calendar, ChevronDown, ChevronRight, Search, Target, ToggleLeft, ToggleRight, X, Zap } from "lucide-react";
 import { TradersTab } from "./components/tabs/TradersTab";
 import { PortfolioTab } from "./components/tabs/PortfolioTab";
+import { TopTradesTab } from "./components/tabs/TopTradesTab";
+import { MarketsTab } from "./components/tabs/MarketsTab";
 import { ArenaTab } from "./components/tabs/ArenaTab";
 import { AwardsTab } from "./components/tabs/AwardsTab";
 import { FootballTab } from "./components/tabs/FootballTab";
@@ -17,7 +19,6 @@ import { SocialsTab } from "./components/tabs/SocialsTab";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
-import { Activity, Award, BarChart3, Bell, Bookmark, Bot, Copy, DollarSign, Eye, GitBranch, Layers, Lightbulb, MessageCircle, Radio, Scale, Settings, Star, Trophy, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
   { id: "24h", label: "24h" },
@@ -80,6 +81,8 @@ const App = () => {
     const tabList = [
       { id: "portfolio", label: "Portfolio", desc: "Fund-level KPIs, system equity curve, drawdown timeline" },
       { id: "arena", label: "Arena", desc: "Live race — watch traders compete in real-time" },
+      { id: "toptrades", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
+      { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and live signals" },
       { id: "halloffame", label: "Hall of Fame", desc: "Greatest trades, signals, and predictions ever" },
       { id: "awards", label: "Awards", desc: "Seasonal awards — the Oscars of trading" },
       { id: "trades", label: "Trades", desc: "Live feed of all trades — copy, share, discuss" },
@@ -158,12 +161,14 @@ const App = () => {
     { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
     { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
     { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
+    { id: "toptrades", label: "Top Trades", icon: Flame, accent: C.amber },
     { id: "awards", label: "Awards", icon: Award, accent: C.amber },
     { id: "zone-operate", zone: true, label: "OPERATE" },
     { id: "trades", label: "Trades", icon: Activity, accent: C.green },
     { id: "signals", label: "Signals", icon: Lightbulb, accent: C.blue },
     { id: "futures", label: "Futures", icon: Scale, accent: C.amber },
     { id: "zone-discover", zone: true, label: "DISCOVER" },
+    { id: "markets", label: "Markets", icon: Radio, accent: C.cyan },
     { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
     { id: "tokens", label: "Tokens", icon: DollarSign, accent: C.green },
   ];
@@ -172,6 +177,8 @@ const App = () => {
   const tabContent = {
     portfolio: PortfolioTab,   // Portfolio = fund/system level (VARIV Vista C)
     arena: HomeTab,           // Arena = the race chart
+    toptrades: TopTradesTab,   // Top Trades = which plays & why
+    markets: MarketsTab,       // Markets = per-coin sentiment & positioning
     halloffame: HallOfFameTab, // Hall of Fame = trophy cards
     awards: AwardsTab,         // Awards = the Oscars of trading
     trades: ArenaTab,          // Trades = dedicated feed
