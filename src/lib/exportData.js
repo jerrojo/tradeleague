@@ -6,9 +6,10 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export const TRADE_EXPORT_COLUMNS = [
-  "trader", "id", "date", "pair", "type", "style", "setupTag", "session",
+  "trader", "id", "signalTs", "execTs", "latencyMin", "date",
+  "pair", "type", "style", "styleConfidence", "setupTag", "source", "tfDominant", "assetClass", "session", "marketRegime",
   "entry", "sl", "tp1", "tp2", "tp3", "exit", "tpReached",
-  "leverage", "sizeUsd", "rr", "rMultiple",
+  "leverage", "sizeUsd", "positionSizePct", "rr", "rrGross", "rrNet", "rMultiple", "riskUsd",
   "pnl", "pnlPct", "fees", "maePct", "mfePct",
   "outcome", "exitReason", "durationHours",
 ];

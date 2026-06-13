@@ -109,7 +109,7 @@ export function computeMetrics(trades) {
   if (!n) {
     return { count: 0, wins: 0, losses: 0, breakeven: 0, winRate: 0, profitFactor: 0,
       totalPnl: 0, expectancyR: 0, avgR: 0, maxDrawdownPct: 0, avgMae: 0, avgMfe: 0,
-      rSharpe: 0, grossWin: 0, grossLoss: 0 };
+      rSharpe: 0, grossWin: 0, grossLoss: 0, totalRoiPct: 0, compoundRoiPct: 0, calmar: 0 };
   }
   let wins = 0, losses = 0, breakeven = 0, grossWin = 0, grossLoss = 0, totalPnl = 0, maeSum = 0, mfeSum = 0;
   const rs = [];
@@ -127,14 +127,21 @@ export function computeMetrics(trades) {
   const variance = rs.reduce((a, b) => a + (b - avgR) ** 2, 0) / n;
   const std = Math.sqrt(variance);
 
-  // max drawdown from chronological equity path
+  // max drawdown + compound ROI from the chronological equity path
+  // (Total ROI = simple sum of per-trade % returns; Compound ROI = chained — interest on interest)
   let equity = STARTING_CAPITAL, peak = STARTING_CAPITAL, maxDD = 0;
+  let totalRoiPct = 0, compoundMult = 1;
   for (const t of sortedChrono(trades)) {
     equity += t.pnl;
     peak = Math.max(peak, equity);
     const dd = ((equity - peak) / peak) * 100;
     maxDD = Math.min(maxDD, dd);
+    totalRoiPct += t.pnlPct ?? 0;
+    compoundMult *= 1 + (t.pnlPct ?? 0) / 100;
   }
+  const compoundRoiPct = (compoundMult - 1) * 100;
+  // Calmar = compound return ÷ worst drawdown (return earned per unit of pain)
+  const calmar = maxDD < 0 ? compoundRoiPct / Math.abs(maxDD) : Infinity;
 
   return {
     count: n, wins, losses, breakeven,
@@ -148,8 +155,17 @@ export function computeMetrics(trades) {
     avgMfe: Math.round((mfeSum / n) * 100) / 100,
     rSharpe: std > 0 ? Math.round((avgR / std) * 100) / 100 : 0,
     grossWin: Math.round(grossWin), grossLoss: Math.round(grossLoss),
+    totalRoiPct: Math.round(totalRoiPct * 10) / 10,
+    compoundRoiPct: Math.round(compoundRoiPct * 10) / 10,
+    calmar: calmar === Infinity ? Infinity : Math.round(calmar * 100) / 100,
   };
 }
+
+/* ── Leverage basis: ROI normal (de-levered) vs ROI apalancado ──────────────
+   The metrics catalog asks every return metric to have a normal & a leveraged
+   variant. `delever` re-expresses each trade as if it were taken at 1× — P&L,
+   %, fees scale down; R-multiple is price-based so it is unchanged. */
+export const delever = (trades) => trades.map((t) => capLeverage(t, 1));
 
 /* ── Equity curve (cumulative P&L over starting capital), chronological ───── */
 export function buildEquity(trades, startingCapital = STARTING_CAPITAL) {

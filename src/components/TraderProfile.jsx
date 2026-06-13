@@ -2,8 +2,9 @@ import { BotTag, InfoTip, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
 import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
+import { computeMetrics } from "../lib/tradeSim";
 import { ACHIEVEMENTS, alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle, tierColor } from "../theme";
 import { ToastContext } from "./common";
@@ -20,6 +21,7 @@ const TraderProfile = ({ trader, onClose }) => {
   const { addToast } = useContext(ToastContext);
   const t = trader;
   const deep = traderDeepData[t.name];
+  const histMetrics = computeMetrics(deep.history); // Calmar / compound from the real trade list
 
   const profileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
   const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
@@ -223,6 +225,7 @@ const TraderProfile = ({ trader, onClose }) => {
               ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe", Activity],
               ["Max Drawdown", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],
               ["Profit Factor", t.profitFactor?.toFixed(1) || "—", C.amber, "profitFactor", BarChart3],
+              ["Calmar", histMetrics.calmar === Infinity ? "∞" : histMetrics.calmar.toFixed(2), histMetrics.calmar >= 3 ? C.green : histMetrics.calmar >= 1 ? C.amber : C.red, "calmarRatio", Scale],
               ["Expectancy", `$${calcExpectancy(t)}`, expectancyColor(calcExpectancy(t)), "expectancy", Lightbulb],
               ["Streak", `${t.streak}W`, C.purple, "streak", Flame],
             ].map(([l, v, clr, tip, Icon]) => (
@@ -259,7 +262,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{ fontSize: "13px", fontWeight: "600" }}>Equity Curve</div>
                 <div style={{ display: "flex", gap: "3px" }}>
-                  {[[7, "7D"], [30, "30D"], [90, "90D"]].map(([days, label]) => (
+                  {[[7, "7D"], [30, "30D"], [90, "90D"], [9999, "All"]].map(([days, label]) => (
                     <button key={days} onClick={() => setEqPeriod(days)} style={{
                       padding: "3px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer", ...mono,
                       border: `1px solid ${eqPeriod === days ? C.purple : C.border}`,
@@ -270,31 +273,46 @@ const TraderProfile = ({ trader, onClose }) => {
                 </div>
               </div>
               {/* Win Rate Trinity — VARIV anti-pattern rule: never show WR alone */}
-              <div style={{ display: "flex", gap: "12px", fontSize: "10px" }}>
+              <div style={{ display: "flex", gap: "12px", fontSize: "10px", alignItems: "center" }}>
                 <span style={{ color: C.green, fontWeight: "700", ...mono }}><InfoTip k="winRate" inline><span>WR</span></InfoTip> {t.winRate}%</span>
                 <span style={{ color: C.amber, fontWeight: "700", ...mono }}><InfoTip k="profitFactor" inline><span>PF</span></InfoTip> {t.profitFactor?.toFixed(1)}</span>
                 <span style={{ color: C.red, fontWeight: "700", ...mono }}><InfoTip k="maxDD" inline><span>DD</span></InfoTip> {t.maxDD}%</span>
+                <span style={{ color: C.blue, fontWeight: "700", ...mono }}><InfoTip k="calmarRatio" inline><span>Calmar</span></InfoTip> {histMetrics.calmar === Infinity ? "∞" : histMetrics.calmar.toFixed(2)}</span>
               </div>
             </div>
+            {/* VARIV A.2: cumulative % return (primary) + gross account balance (secondary) + red drawdown */}
             <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={(() => {
+              <ComposedChart data={(() => {
+                const slice = deep.dailyEquity.slice(-eqPeriod);
+                const initial = slice.length ? slice[0].equity : 1;
                 let peak = -Infinity;
-                return deep.dailyEquity.slice(-eqPeriod).map(d => {
+                return slice.map(d => {
                   peak = Math.max(peak, d.equity);
-                  return { ...d, peak, drawdown: d.equity < peak ? d.equity : null };
+                  const retPct = Math.round(((d.equity - initial) / initial) * 1000) / 10;
+                  const peakPct = ((peak - initial) / initial) * 100;
+                  return { day: d.day, gross: d.equity, retPct, ddPct: retPct < peakPct ? Math.round((retPct - peakPct) * 10) / 10 : null };
                 });
               })()}>
                 <defs>
                   <linearGradient id="profEq" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.green} stopOpacity={0.3} /><stop offset="95%" stopColor={C.green} stopOpacity={0} /></linearGradient>
-                  <linearGradient id="ddFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.red} stopOpacity={0.15} /><stop offset="95%" stopColor={C.red} stopOpacity={0.03} /></linearGradient>
+                  <linearGradient id="ddFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.red} stopOpacity={0.25} /><stop offset="95%" stopColor={C.red} stopOpacity={0.04} /></linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="day" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
-                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={(v, name) => [`$${Number(v).toLocaleString()}`, name === "peak" ? "Peak" : name === "drawdown" ? "Drawdown" : "Equity"]} />
-                <Area type="monotone" dataKey="peak" stroke={`${C.textFaint}40`} fill="none" strokeWidth={1} strokeDasharray="4 3" dot={false} />
-                <Area type="monotone" dataKey="equity" stroke={C.green} fill="url(#profEq)" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="drawdown" stroke={C.red} fill="url(#ddFill)" strokeWidth={1} dot={false} connectNulls={false} />
-              </AreaChart>
+                <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
+                <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} />
+                <YAxis yAxisId="pct" stroke={C.textMuted} fontSize={10} tickFormatter={v => `${v}%`} />
+                <YAxis yAxisId="usd" orientation="right" stroke={C.textFaint} fontSize={9} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
+                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }}
+                  formatter={(v, name) => name === "gross" ? [`$${Number(v).toLocaleString()}`, "Account balance"] : name === "ddPct" ? [`${v}%`, "Drawdown"] : [`${v >= 0 ? "+" : ""}${v}%`, "Cumulative return"]} />
+                <Area yAxisId="pct" type="monotone" dataKey="retPct" stroke={C.green} fill="url(#profEq)" strokeWidth={2} dot={false} name="retPct" />
+                <Area yAxisId="pct" type="monotone" dataKey="ddPct" stroke={C.red} fill="url(#ddFill)" strokeWidth={1} dot={false} connectNulls={false} name="ddPct" />
+                <Line yAxisId="usd" type="monotone" dataKey="gross" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="gross" />
+              </ComposedChart>
             </ResponsiveContainer>
+            <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.green, borderRadius: 1 }} /> Cumulative return (% on initial capital)</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.blue}` }} /> Account balance</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown</span>
+            </div>
           </div>
           {/* Activity Heatmap — GitHub-style (VARIV View A.3) */}
           <ActivityHeatmap traderData={deep} />
@@ -475,9 +493,16 @@ const TraderProfile = ({ trader, onClose }) => {
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                                   {[
+                                    ["Signal → exec", tr.signalTs && tr.execTs ? `${tr.signalTs.split(", ")[1]} → ${tr.execTs.split(", ")[1]} (+${tr.latencyMin ?? "—"}m)` : "—", C.text, "latency"],
                                     ["Session", tr.session, C.text, "session"],
+                                    ["Market regime", tr.marketRegime || "—", tr.marketRegime === "trending" ? C.green : tr.marketRegime === "volatile" ? C.amber : C.textMuted, "marketRegime"],
+                                    ["Timeframe", tr.tfDominant || "—", C.text, "tfDominant"],
+                                    ["Asset class", tr.assetClass || "—", C.textMuted, "assetClass"],
+                                    ["Source", tr.source || "—", C.blue, "source"],
                                     ["Setup tag", tr.setupTag || "— pending —", tr.setupTag ? C.purple : C.amber, "setupTag"],
-                                    ["Position size", `$${tr.sizeUsd.toLocaleString()}`, C.text, null],
+                                    ["Style conf.", tr.styleConfidence != null ? `${Math.round(tr.styleConfidence * 100)}%` : "—", tr.styleConfidence >= 0.75 ? C.green : C.amber, "styleConfidence"],
+                                    ["Position size", `$${tr.sizeUsd.toLocaleString()}${tr.positionSizePct != null ? ` · ${tr.positionSizePct}%` : ""}`, C.text, "positionSizePct"],
+                                    ["R:R gross / net", `${tr.rrGross ?? "—"} / ${tr.rrNet ?? "—"}`, C.blue, "rrNet"],
                                     ["Fees paid", `$${tr.fees}`, C.textMuted, null],
                                     ["Exit reason", tr.exitReason.replace("_", " "), tr.exitReason === "TP_HIT" ? C.green : tr.exitReason === "SL_HIT" ? C.red : C.amber, null],
                                     ["MAE", `${tr.maePct}%`, C.red, "mae"],

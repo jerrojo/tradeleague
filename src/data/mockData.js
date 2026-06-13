@@ -127,14 +127,31 @@ const traderDeepData = (() => {
       const pnlAmt = Math.round(sizeUsd * pnlPct / 100);
       const fees = round2(sizeUsd * leverageNum * 0.0008);
       const rMultiple = round2(dir * (exit - entry) / slDist);
-      // — classification (ML layer) —
+      // — RRR: gross (price geometry) vs net (after fees) — VARIV Vista D wants the *net* one —
+      const riskUsd = sizeUsd * leverageNum * (slDist / entry);
+      const rewardUsd = sizeUsd * leverageNum * (tp1Dist / entry);
+      const rrGross = round2(rewardUsd / riskUsd);
+      const rrNet = round2((rewardUsd - fees) / (riskUsd + fees));
+      const positionSizePct = round2(1 + r(15) * 4); // % of account capital committed
+      // — classification (ML layer): the brief wants these as first-class fields, not buried in the tag —
       const style = STYLE_POOL[t.style][i % 4];
-      const setupTag = r(10) < 0.12 ? null : `${SOURCES[Math.floor(r(11) * 3)]}_${style}_${SETUPS[(ti + i) % 5]}_${TFS[Math.floor(r(12) * 3)]}_CRYPTO`;
+      const source = SOURCES[Math.floor(r(11) * 3)];        // TG / TV / AI
+      const tfDominant = TFS[Math.floor(r(12) * 3)];        // H1 / H4 / D1
+      const assetClass = "CRYPTO";
+      const styleConfidence = round2(0.55 + r(16) * 0.44);  // 0.55–0.99 ML style confidence
+      const marketRegime = ["trending", "ranging", "volatile"][Math.floor(r(17) * 3)];
+      const setupTag = r(10) < 0.12 ? null : `${source}_${style}_${SETUPS[(ti + i) % 5]}_${tfDominant}_${assetClass}`;
       const hour = 8 + (i * 2) % 14;
       const session = hour < 8 ? "ASIA" : hour < 13 ? "LONDON" : "NY";
       const [hMin, hMax] = HOURS_BY_STYLE[style];
       const durationHours = round2(hMin + r(13) * (hMax - hMin));
       const day = Math.max(1, 22 - i);
+      // — signal emission → execution latency (VARIV B.1 / Vista D) —
+      const sigMin = (i * 17) % 60;
+      const latencyMin = Math.round(0.5 + r(18) * 8);
+      const fmtHM = (mins) => `${String(Math.floor(mins / 60) % 24).padStart(2, "0")}:${String(((mins % 60) + 60) % 60).padStart(2, "0")}`;
+      const signalTs = `Mar ${day}, ${fmtHM(hour * 60 + sigMin)}`;
+      const execTs = `Mar ${day}, ${fmtHM(hour * 60 + sigMin + latencyMin)}`;
       history.push({
         id: ti * 100 + i, pair, type, entry, exit,
         sl, tp1, tp2, tp3, tp: tp1, tpReached,
@@ -143,8 +160,11 @@ const traderDeepData = (() => {
         leverage: `${leverageNum}x`,
         status: isBE ? "breakeven" : isWin ? "tp_hit" : "sl_hit",
         outcome: isBE ? "BREAKEVEN" : isWin ? "WIN" : "LOSS",
-        exitReason: isBE ? "MANUAL" : isWin ? "TP_HIT" : r(14) > 0.85 ? "MANUAL" : "SL_HIT",
+        exitReason: isBE ? "MANUAL" : isWin ? "TP_HIT" : r(14) > 0.9 ? "TIMEOUT" : r(14) > 0.8 ? "MANUAL" : "SL_HIT",
         style, setupTag, session,
+        source, tfDominant, assetClass, styleConfidence, marketRegime,
+        rrGross, rrNet, riskUsd: Math.round(riskUsd), positionSizePct,
+        signalTs, execTs, latencyMin,
         date: `Mar ${day}, ${String(hour).padStart(2, "0")}:${String((i * 17) % 60).padStart(2, "0")}`,
         duration: durationHours >= 24 ? `${Math.floor(durationHours / 24)}d ${Math.round(durationHours % 24)}h` : `${Math.floor(durationHours)}h ${Math.round((durationHours % 1) * 60)}m`,
         durationHours,

@@ -174,6 +174,8 @@ const TradeLab = ({ trader, history }) => {
             <KpiCompare label="Profit Factor" base={base.profitFactor} sim={sim.profitFactor} fmt={pf} better="up" />
             <KpiCompare label="Expectancy" base={base.expectancyR} sim={sim.expectancyR} fmt={r2} better="up" />
             <KpiCompare label="Max Drawdown" base={base.maxDrawdownPct} sim={sim.maxDrawdownPct} fmt={pct} better="up" />
+            <KpiCompare label="Calmar" base={base.calmar} sim={sim.calmar} fmt={pf} better="up" />
+            <KpiCompare label="Compound ROI" base={base.compoundRoiPct} sim={sim.compoundRoiPct} fmt={pct} better="up" />
             <KpiCompare label="Trades kept" base={base.count} sim={sim.count} fmt={(v) => String(Math.round(v))} better="up" />
           </div>
 
