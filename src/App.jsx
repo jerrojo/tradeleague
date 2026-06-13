@@ -1,5 +1,5 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
 import { BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
@@ -58,6 +58,18 @@ const App = () => {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState(null);
   const searchRef = useRef(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // First-run onboarding: show the welcome guide once (remembered across visits)
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("tl_onboarded")) setShowWelcome(true);
+    } catch { /* storage unavailable — skip */ }
+  }, []);
+  const dismissWelcome = () => {
+    setShowWelcome(false);
+    try { localStorage.setItem("tl_onboarded", "1"); } catch { /* ignore */ }
+  };
 
   // Cmd+K keyboard shortcut for search
   useEffect(() => {
@@ -156,22 +168,42 @@ const App = () => {
   const openProfile = (trader) => setProfileTrader(trader);
   const closeProfile = () => setProfileTrader(null);
 
+  // Goal-based information architecture: each zone answers a different user job.
   const tabs = [
-    { id: "zone-compete", zone: true, label: "COMPETE" },
-    { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
+    { id: "zone-overview", zone: true, label: "OVERVIEW" },
     { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
-    { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
+    { id: "zone-analyze", zone: true, label: "ANALYZE" },
+    { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
+    { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "toptrades", label: "Top Trades", icon: Flame, accent: C.amber },
-    { id: "awards", label: "Awards", icon: Award, accent: C.amber },
-    { id: "zone-operate", zone: true, label: "OPERATE" },
+    { id: "zone-activity", zone: true, label: "ACTIVITY" },
     { id: "trades", label: "Trades", icon: Activity, accent: C.green },
     { id: "signals", label: "Signals", icon: Lightbulb, accent: C.blue },
     { id: "futures", label: "Futures", icon: Scale, accent: C.amber },
-    { id: "zone-discover", zone: true, label: "DISCOVER" },
-    { id: "markets", label: "Markets", icon: Radio, accent: C.cyan },
+    { id: "zone-compete", zone: true, label: "COMPETE" },
+    { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
+    { id: "awards", label: "Awards", icon: Award, accent: C.amber },
+    { id: "zone-profiles", zone: true, label: "PROFILES" },
+    { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
     { id: "tokens", label: "Tokens", icon: DollarSign, accent: C.green },
   ];
+
+  // One-line orientation per tab (LukeW: every screen should say what it's for).
+  const tabMeta = {
+    arena: "The live pulse — who's winning right now and what just happened",
+    portfolio: "Fund-level health: profit factor, drawdown and the system equity curve",
+    markets: "How traders are positioned on every coin, and the overall market mood",
+    toptrades: "The best and worst plays across all traders — and exactly why",
+    trades: "Every trade as it happens — copy, inspect or discuss",
+    signals: "Structured trade ideas shared before execution, with verified outcomes",
+    futures: "Prediction markets — who's betting on what, and the odds",
+    halloffame: "The greatest trades, signals and predictions of all time",
+    awards: "Seasonal awards — the Oscars of trading",
+    traders: "The leaderboard — rank, compare and copy any trader",
+    socials: "Everything traders post across X, Telegram, Discord and more",
+    tokens: "Deep-dive any token: structure, entries, safety and the trading field",
+  };
 
   // Tab → Component mapping
   const tabContent = {
@@ -333,25 +365,30 @@ const App = () => {
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 32, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
-              {/* Left: Tab title + season badge */}
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <span style={{ fontSize: "16px", fontWeight: "700" }}>
-                  {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
+              {/* Left: Tab title + one-line orientation (LukeW: say what the screen is for) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "700" }}>
+                    {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
+                  </span>
+                  <span style={{ fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple, border: `1px solid ${C.purple}30`, ...mono }}>
+                    S1 · 47d left
+                  </span>
+                  {/* Casual / Pro toggle */}
+                  <button onClick={() => setProMode(!proMode)} title="Toggle detail density" style={{
+                    display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "4px",
+                    border: `1px solid ${proMode ? C.cyan + "50" : C.border}`,
+                    backgroundColor: proMode ? C.cyan + "12" : "transparent",
+                    color: proMode ? C.cyan : C.textMuted, fontSize: "10px", fontWeight: "700",
+                    cursor: "pointer", transition: "all 0.2s", ...mono
+                  }}>
+                    <Eye size={11} />
+                    {proMode ? "PRO" : "CASUAL"}
+                  </button>
+                </div>
+                <span style={{ fontSize: "11px", color: C.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {profileTrader ? `${profileTrader.style} trader · rank #${profileTrader.rank} · ${profileTrader.winRate}% win rate` : (tabMeta[activeTab] || "")}
                 </span>
-                <span style={{ fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple, border: `1px solid ${C.purple}30`, ...mono }}>
-                  S1 · 47d left
-                </span>
-                {/* Casual / Pro toggle */}
-                <button onClick={() => setProMode(!proMode)} style={{
-                  display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "4px",
-                  border: `1px solid ${proMode ? C.cyan + "50" : C.border}`,
-                  backgroundColor: proMode ? C.cyan + "12" : "transparent",
-                  color: proMode ? C.cyan : C.textMuted, fontSize: "10px", fontWeight: "700",
-                  cursor: "pointer", transition: "all 0.2s", ...mono
-                }}>
-                  {proMode ? <Eye size={11} /> : <Eye size={11} />}
-                  {proMode ? "PRO" : "CASUAL"}
-                </button>
               </div>
 
               {/* Right: Unified date range selector + icons */}
@@ -458,8 +495,60 @@ const App = () => {
                   <Search size={17} />
                   <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>⌘K</span>
                 </button>
+                {/* Help — reopen the welcome guide */}
+                <button onClick={() => setShowWelcome(true)} title="What is this? — platform guide" aria-label="Open platform guide" style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
+                  <HelpCircle size={17} />
+                </button>
               </div>
             </header>
+
+            {/* ── Welcome / Onboarding Guide ── */}
+            {showWelcome && (
+              <div onClick={dismissWelcome} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "640px", maxHeight: "85vh", overflowY: "auto", backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: "16px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
+                  <div style={{ padding: "24px 28px 16px", borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                      <div style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: C.purple }} />
+                      <span style={{ fontSize: "20px", fontWeight: "900", letterSpacing: "-0.5px" }}>Welcome to Tradethlon</span>
+                    </div>
+                    <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: 1.5 }}>
+                      An intelligence terminal for traders. Five areas, one job each — start anywhere, every screen tells you what it's for.
+                    </div>
+                  </div>
+                  <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    {[
+                      { icon: Radio, color: C.purple, t: "Overview", d: "The live pulse — who's winning right now.", go: "arena" },
+                      { icon: Globe, color: C.cyan, t: "Analyze", d: "Fund health, per-coin sentiment, and the best/worst plays explained.", go: "markets" },
+                      { icon: Activity, color: C.green, t: "Activity", d: "Live trades, signals and prediction markets.", go: "trades" },
+                      { icon: Trophy, color: C.amber, t: "Compete", d: "Hall of Fame and seasonal awards.", go: "halloffame" },
+                      { icon: Users, color: C.blue, t: "Profiles", d: "Rank, compare and copy any trader.", go: "traders" },
+                      { icon: Beaker, color: C.purple, t: "Trade Lab", d: "Open any profile → Trade Lab to turn a trader's behaviors on/off and see what really drives their results.", go: null },
+                    ].map(card => (
+                      <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
+                        textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
+                        backgroundColor: C.bg, border: `1px solid ${C.border}`, transition: "border-color 0.15s",
+                      }} className="card-hover">
+                        <div style={{ width: 30, height: 30, borderRadius: "8px", backgroundColor: `${card.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <card.icon size={16} color={card.color} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "2px" }}>{card.t}</div>
+                          <div style={{ fontSize: "11px", color: C.textMuted, lineHeight: 1.4 }}>{card.d}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ padding: "8px 28px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                    <span style={{ fontSize: "11px", color: C.textFaint, display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <Sparkles size={12} color={C.amber} /> Hover any “?” for a plain-language explainer. Press ⌘K to jump anywhere.
+                    </span>
+                    <button onClick={dismissWelcome} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", backgroundColor: C.purple, color: "#fff", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+                      Start exploring
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Search Overlay ── */}
             {showSearch && (
