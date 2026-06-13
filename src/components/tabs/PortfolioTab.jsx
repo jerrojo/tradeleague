@@ -3,10 +3,11 @@ import {
   Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { Activity, AlertTriangle, Scale, Target, TrendingDown, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, Download, Scale, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../../theme";
 import { InfoTip, StatCard, Tag } from "../common";
 import { btcBenchmark, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
+import { exportTrades } from "../../lib/exportData";
 
 /* ═══════════════════════ TAB: PORTFOLIO / SYSTEM (VARIV Vista C) ═══════════════════════
    Level-1 institutional view: aggregated fund performance.
@@ -116,6 +117,24 @@ const PortfolioTab = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* ── C.1 System KPIs — five core metrics, no Win Rate at this level ── */}
+      {/* Title + global export */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+        <div>
+          <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund / System Performance</div>
+          <div style={{ fontSize: "11px", color: C.textMuted }}>Aggregated across {mockTraders.length} traders · {allTrades.length} trades · {allTrades.filter(t => !t.setupTag).length} unlabeled</div>
+        </div>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button onClick={() => exportTrades(allTrades, { name: "tradethlon-fund", format: "csv" })}
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "6px", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.text, fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+            <Download size={13} /> Export CSV
+          </button>
+          <button onClick={() => exportTrades(allTrades, { name: "tradethlon-fund", format: "json" })}
+            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "6px", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.text, fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>
+            <Download size={13} /> JSON
+          </button>
+        </div>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
         <StatCard label="Profit Factor" value={kpis.profitFactor === Infinity ? "∞" : kpis.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
         <StatCard label="Sharpe Ratio" value={kpis.sharpe.toFixed(2)} icon={Activity} color={C.blue} tip="sharpe" />

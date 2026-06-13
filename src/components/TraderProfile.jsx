@@ -1,5 +1,6 @@
 import { BotTag, InfoTip, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
+import { TradeLab } from "./TradeLab";
 import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
@@ -20,8 +21,8 @@ const TraderProfile = ({ trader, onClose }) => {
   const t = trader;
   const deep = traderDeepData[t.name];
 
-  const profileTabs = ["overview","signals","trades","predictions","social","pnl","risk_dna","journal"];
-  const tabLabels = { overview: "Overview", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
+  const profileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
+  const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
   const socials = traderSocials[t.name] || {};
@@ -334,6 +335,9 @@ const TraderProfile = ({ trader, onClose }) => {
           </div>
         </div>
       )}
+
+      {/* ═══ TRADE LAB ═══ */}
+      {profileTab === "trade_lab" && <TradeLab trader={t} history={deep.history} />}
 
       {/* ═══ SEÑALES ═══ */}
       {profileTab === "signals" && (

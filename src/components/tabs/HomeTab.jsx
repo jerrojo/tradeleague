@@ -1,7 +1,7 @@
 import { BotTag } from "../common";
 import { Activity, ChevronRight, Flame, Lightbulb, Scale, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useFeedFilter, useProfile } from "../../contexts";
+import { TraderLink, useFeedFilter, useProfile } from "../../contexts";
 import { feedItems, mockTraders, traderColors, traderEquity } from "../../data/mockData";
 import { alphaColor, calcAlphaScore } from "../../lib/scoring";
 import { C, cardStyle, mono, tierColor } from "../../theme";
@@ -181,7 +181,7 @@ const HomeTab = () => {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {h.kind === "trade" && (
                       <span>
-                        <span style={{ fontWeight: "700" }}>{h.trader}</span>{" "}
+                        <TraderLink name={h.trader}><span style={{ fontWeight: "700" }}>{h.trader}</span></TraderLink>{" "}
                         <span style={{ color: h.pnl >= 0 ? C.green : C.red, fontWeight: "800", ...mono }}>
                           {h.pnl >= 0 ? "+" : ""}${Math.abs(h.pnl).toLocaleString()}
                         </span>{" "}
@@ -190,7 +190,7 @@ const HomeTab = () => {
                     )}
                     {h.kind === "achievement" && (
                       <span>
-                        <span style={{ fontWeight: "700" }}>{h.trader}</span>{" "}
+                        <TraderLink name={h.trader}><span style={{ fontWeight: "700" }}>{h.trader}</span></TraderLink>{" "}
                         <span style={{ color: C.amber }}>unlocked {h.achievement.name}</span>
                       </span>
                     )}
