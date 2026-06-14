@@ -104,7 +104,7 @@ export function applyScenario(history, scenario = DEFAULT_SCENARIO) {
 }
 
 /* ── Metrics over a concrete trade set ────────────────────────────────────── */
-export function computeMetrics(trades) {
+export function computeMetrics(trades, startingCapital = STARTING_CAPITAL) {
   const n = trades.length;
   if (!n) {
     return { count: 0, wins: 0, losses: 0, breakeven: 0, winRate: 0, profitFactor: 0,
@@ -127,21 +127,25 @@ export function computeMetrics(trades) {
   const variance = rs.reduce((a, b) => a + (b - avgR) ** 2, 0) / n;
   const std = Math.sqrt(variance);
 
-  // max drawdown + compound ROI from the chronological equity path
-  // (Total ROI = simple sum of per-trade % returns; Compound ROI = chained — interest on interest)
-  let equity = STARTING_CAPITAL, peak = STARTING_CAPITAL, maxDD = 0;
-  let totalRoiPct = 0, compoundMult = 1;
+  // Drawdown + returns from the chronological ACCOUNT equity path.
+  //  · Total ROI  = sum of each trade's position-level % return (catalog: sum of signal ROIs)
+  //  · Compound ROI = the account's actual growth on capital (equity end vs start) — NOT a
+  //    product of position %s (those are returns on a fractional position, so compounding
+  //    them as if they were whole-account returns explodes to nonsense).
+  let equity = startingCapital, peak = startingCapital, maxDD = 0;
+  let totalRoiPct = 0;
   for (const t of sortedChrono(trades)) {
     equity += t.pnl;
     peak = Math.max(peak, equity);
     const dd = ((equity - peak) / peak) * 100;
     maxDD = Math.min(maxDD, dd);
     totalRoiPct += t.pnlPct ?? 0;
-    compoundMult *= 1 + (t.pnlPct ?? 0) / 100;
   }
-  const compoundRoiPct = (compoundMult - 1) * 100;
-  // Calmar = compound return ÷ worst drawdown (return earned per unit of pain)
-  const calmar = maxDD < 0 ? compoundRoiPct / Math.abs(maxDD) : Infinity;
+  const compoundRoiPct = ((equity - startingCapital) / startingCapital) * 100;
+  // Calmar = account return ÷ worst drawdown. Floor the denominator so a near-flat
+  // synthetic drawdown can't blow it up, and clamp to a believable band.
+  const calmarRaw = compoundRoiPct / Math.max(Math.abs(maxDD), 5);
+  const calmar = Math.max(0, Math.min(40, calmarRaw));
 
   return {
     count: n, wins, losses, breakeven,
@@ -157,7 +161,7 @@ export function computeMetrics(trades) {
     grossWin: Math.round(grossWin), grossLoss: Math.round(grossLoss),
     totalRoiPct: Math.round(totalRoiPct * 10) / 10,
     compoundRoiPct: Math.round(compoundRoiPct * 10) / 10,
-    calmar: calmar === Infinity ? Infinity : Math.round(calmar * 100) / 100,
+    calmar: Math.round(calmar * 100) / 100,
   };
 }
 

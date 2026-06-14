@@ -117,7 +117,7 @@ const PortfolioTab = () => {
 
   /* ── Return metrics on chosen leverage basis (catalog: every return metric has both variants) ── */
   const returns = useMemo(
-    () => computeMetrics(leveraged ? allTrades : delever(allTrades)),
+    () => computeMetrics(leveraged ? allTrades : delever(allTrades), mockTraders.length * INITIAL_CAPITAL_PER_TRADER),
     [allTrades, leveraged]
   );
 

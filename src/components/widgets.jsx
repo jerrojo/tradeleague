@@ -208,15 +208,15 @@ const LivePnLTicker = () => {
         }
       `}</style>
       <div style={{
-        display: "flex", whiteSpace: "nowrap", animation: "tickerScroll 60s linear infinite",
-        fontSize: "12px", fontWeight: "600", color: C.text, gap: "24px", ...mono
+        display: "flex", whiteSpace: "nowrap", animation: "tickerScroll 75s linear infinite",
+        fontSize: "11px", fontWeight: "500", color: C.textMuted, gap: "28px", ...mono
       }}>
         {repeatedItems.map((item, i) => {
           const TIcon = tickerTypeIcon[item.type];
-          const tColor = tickerTypeColor[item.type] || C.text;
+          const tColor = tickerTypeColor[item.type] || C.textMuted;
           return (
-            <span key={i} style={{ color: tColor, display: "inline-flex", alignItems: "center", gap: "4px" }}>
-              <TIcon size={10} /> {item.text}
+            <span key={i} style={{ color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <TIcon size={10} color={tColor} /> {item.text}
             </span>
           );
         })}
