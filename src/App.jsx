@@ -5,6 +5,7 @@ import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
 import { TradersTab } from "./components/tabs/TradersTab";
+import { TradeLabTab } from "./components/tabs/TradeLabTab";
 import { PortfolioTab } from "./components/tabs/PortfolioTab";
 import { TopTradesTab } from "./components/tabs/TopTradesTab";
 import { MarketsTab } from "./components/tabs/MarketsTab";
@@ -92,6 +93,7 @@ const App = () => {
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
       { id: "portfolio", label: "Portfolio", desc: "Fund-level KPIs, system equity curve, drawdown timeline" },
+      { id: "tradelab", label: "Trade Lab", desc: "Counterfactual sandbox — falsify any trader's edge in one click" },
       { id: "arena", label: "Arena", desc: "Live race — watch traders compete in real-time" },
       { id: "toptrades", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
       { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and live signals" },
@@ -174,6 +176,7 @@ const App = () => {
     { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
     { id: "zone-analyze", zone: true, label: "ANALYZE" },
     { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
+    { id: "tradelab", label: "Trade Lab", icon: Beaker, accent: C.purple },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "toptrades", label: "Top Trades", icon: Flame, accent: C.amber },
     { id: "zone-activity", zone: true, label: "ACTIVITY" },
@@ -193,6 +196,7 @@ const App = () => {
   const tabMeta = {
     arena: "The live pulse — who's winning right now and what just happened",
     portfolio: "Fund-level health: profit factor, drawdown and the system equity curve",
+    tradelab: "Stress-test any trader's record — toggle behaviors and watch every metric recompute",
     markets: "How traders are positioned on every coin, and the overall market mood",
     toptrades: "The best and worst plays across all traders — and exactly why",
     trades: "Every trade as it happens — copy, inspect or discuss",
@@ -208,6 +212,7 @@ const App = () => {
   // Tab → Component mapping
   const tabContent = {
     portfolio: PortfolioTab,   // Portfolio = fund/system level (VARIV Vista C)
+    tradelab: TradeLabTab,     // Trade Lab = counterfactual sandbox (the moat), now top-level
     arena: HomeTab,           // Arena = the race chart
     toptrades: TopTradesTab,   // Top Trades = which plays & why
     markets: MarketsTab,       // Markets = per-coin sentiment & positioning
@@ -522,7 +527,7 @@ const App = () => {
                       { icon: Activity, color: C.green, t: "Activity", d: "Live trades, signals and prediction markets.", go: "trades" },
                       { icon: Trophy, color: C.amber, t: "Compete", d: "Hall of Fame and seasonal awards.", go: "halloffame" },
                       { icon: Users, color: C.blue, t: "Profiles", d: "Rank, compare and copy any trader.", go: "traders" },
-                      { icon: Beaker, color: C.purple, t: "Trade Lab", d: "Open any profile → Trade Lab to turn a trader's behaviors on/off and see what really drives their results.", go: null },
+                      { icon: Beaker, color: C.purple, t: "Trade Lab", d: "Turn a trader's behaviors on/off and watch every metric recompute — see what really drives their results.", go: "tradelab" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
