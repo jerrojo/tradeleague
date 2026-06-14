@@ -20,23 +20,27 @@ const SocialsTab = () => {
     { id: "tradehub", label: "TH", color: C.purple },
   ];
 
-  // Recency from a "1h ago" / "2d ago" style string → minutes (feed reads chronologically)
-  const ageMin = (t = "") => {
-    const m = /(\d+)\s*([mhd])/.exec(t);
-    if (!m) return 1e9;
-    const n = Number(m[1]);
-    return m[2] === "m" ? n : m[2] === "h" ? n * 60 : n * 1440;
-  };
-
   const allPosts = useMemo(() => {
-    const posts = mockTraders.flatMap(t =>
+    // Every trader has the same 12 post templates at the same timestamps, so ANY plain
+    // sort (likes OR recency) clusters identical texts together. Diagonal interleave —
+    // trader0·post0, trader1·post1, trader2·post2 … — guarantees each consecutive card
+    // differs in BOTH trader and content, so the feed actually reads as varied.
+    const byTrader = mockTraders.map(t =>
       (traderDeepData[t.name]?.socialPosts || []).map(p => ({
         ...p, traderName: t.name, traderTier: t.tier, isBot: t.isBot
       }))
     );
-    // Chronological, not by likes — sorting by likes clustered every trader's identical
-    // "monthly results" post (its highest engagement) at the top. Recency interleaves variety.
-    return posts.sort((a, b) => ageMin(a.time) - ageMin(b.time));
+    const maxLen = Math.max(1, ...byTrader.map(a => a.length));
+    const out = [];
+    const seen = new Set();
+    for (let k = 0; k < maxLen; k++) {
+      byTrader.forEach((arr, ti) => {
+        if (!arr.length) return;
+        const post = arr[(k + ti) % arr.length];
+        if (post && !seen.has(post.id)) { seen.add(post.id); out.push(post); }
+      });
+    }
+    return out;
   }, []);
 
   const filtered = platformFilter === "all" ? allPosts : allPosts.filter(p => p.platform === platformFilter);
