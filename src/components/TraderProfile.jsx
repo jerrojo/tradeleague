@@ -463,7 +463,7 @@ const TraderProfile = ({ trader, onClose }) => {
                         <tr className="hoverable" onClick={() => setExpandedTrade(isOpen ? null : tr.id)} style={{ borderLeft: `3px solid ${tr.type === "LONG" ? C.green : C.red}`, cursor: "pointer", backgroundColor: isOpen ? C.cardHover : "transparent" }}>
                           <td style={{ ...tdStyle, fontWeight: "600" }}>{tr.pair}</td>
                           <td style={tdStyle}><Tag text={tr.type} color={tr.type === "LONG" ? C.green : C.red} /></td>
-                          <td style={tdStyle}><span style={{ fontSize: "9px", fontWeight: "700", padding: "2px 6px", borderRadius: "3px", backgroundColor: `${C.blue}15`, color: C.blue, border: `1px solid ${C.blue}30`, ...mono }}>{tr.style}</span></td>
+                          <td style={tdStyle}><span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "3px", backgroundColor: `${C.blue}15`, color: C.blue, border: `1px solid ${C.blue}30`, ...mono }}>{tr.style}</span></td>
                           <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.entry.toLocaleString()}</td>
                           <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.exit.toLocaleString()}</td>
                           <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: tr.pnl >= 0 ? C.green : C.red }}>
@@ -475,8 +475,8 @@ const TraderProfile = ({ trader, onClose }) => {
                           <td style={tdStyle}><Tag text={tr.outcome === "WIN" ? `WIN · ${tr.tpReached}` : tr.outcome === "BREAKEVEN" ? "BE" : "LOSS"} color={outcomeColor} /></td>
                           <td style={tdStyle}>
                             {tr.setupTag
-                              ? <span title={tr.setupTag} style={{ fontSize: "8px", fontWeight: "700", padding: "2px 5px", borderRadius: "3px", backgroundColor: `${C.purple}12`, color: C.purple, border: `1px solid ${C.purple}25`, ...mono, whiteSpace: "nowrap" }}>{tr.setupTag.split("_").slice(0, 3).join("·")}</span>
-                              : <span title="This trade has no setup tag — it is invisible to the ML pipeline until labeled" style={{ fontSize: "8px", fontWeight: "700", padding: "2px 5px", borderRadius: "3px", backgroundColor: C.amberBg, color: C.amber, border: `1px dashed ${C.amber}60`, ...mono, whiteSpace: "nowrap" }}>LABEL PENDING</span>}
+                              ? <span title={tr.setupTag} style={{ fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "3px", backgroundColor: `${C.purple}12`, color: C.purple, border: `1px solid ${C.purple}25`, ...mono, whiteSpace: "nowrap" }}>{tr.setupTag.split("_").slice(0, 3).join("·")}</span>
+                              : <span title="This trade has no setup tag — it is invisible to the ML pipeline until labeled" style={{ fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "3px", backgroundColor: C.amberBg, color: C.amber, border: `1px dashed ${C.amber}60`, ...mono, whiteSpace: "nowrap" }}>LABEL PENDING</span>}
                           </td>
                           <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted, whiteSpace: "nowrap" }}>{tr.date}</td>
                         </tr>

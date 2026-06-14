@@ -857,16 +857,16 @@ const App = () => {
                           </div>
                           {/* Actions row */}
                           <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
-                            <button title={isFollowed ? "Unfollow" : "Follow"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
+                            <button title={isFollowed ? "Unfollow" : "Follow"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
                               <Star size={10} fill={isFollowed ? C.amber : "none"} />
                             </button>
-                            <button title={hasAlert ? "Remove alerts" : "Alerts"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
+                            <button title={hasAlert ? "Remove alerts" : "Alerts"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
                               <BellRing size={10} />
                             </button>
-                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("traders"); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
+                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("traders"); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
                               <Copy size={10} />
                             </button>
-                            <button title="Chat (coming soon)" onClick={e => { e.stopPropagation(); }} style={{ width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "not-allowed", backgroundColor: "transparent", color: C.textFaint, opacity: 0.5 }}>
+                            <button title="Chat (coming soon)" onClick={e => { e.stopPropagation(); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "not-allowed", backgroundColor: "transparent", color: C.textFaint, opacity: 0.5 }}>
                               <MessageCircle size={10} />
                             </button>
                             <div style={{ width: "1px", height: 12, backgroundColor: C.border, margin: "0 1px" }} />

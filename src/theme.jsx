@@ -34,8 +34,8 @@ const pillStyle = (color) => ({
 });
 
 const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", padding: "14px", boxShadow: C.shadow };
-const thStyle = { padding: "10px 12px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
-const tdStyle = { padding: "10px 12px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
+const thStyle = { padding: "11px 14px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
+const tdStyle = { padding: "11px 14px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
 
 export {
   ThemeContext,
