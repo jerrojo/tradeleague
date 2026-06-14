@@ -49,16 +49,18 @@ const AnimatedValue = ({ value, duration = 600 }) => {
   return <span>{displayValue}</span>;
 };
 
+/* StatCard v2 — one clear primary value, muted label, semantic accent bar (LukeW: one metric per card) */
 const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
-  <div style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px" }}>
-    <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <Icon size={18} color={color} />
+  <div className="card-hover" style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, opacity: 0.55 }} />
+    <div style={{ width: 34, height: 34, borderRadius: "9px", backgroundColor: `${color}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <Icon size={17} color={color} />
     </div>
-    <div>
-      <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "2px" }}>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: "600" }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
-      <div style={{ fontSize: "18px", fontWeight: "700", ...mono }}><AnimatedValue value={value} /></div>
+      <div style={{ fontSize: "21px", fontWeight: "800", letterSpacing: "-0.3px", ...mono }}><AnimatedValue value={value} /></div>
       {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
     </div>
   </div>

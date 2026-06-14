@@ -287,7 +287,7 @@ const App = () => {
               {tabs.map(tab => {
                 if (tab.zone) return (
                   <div key={tab.id} style={{ padding: sidebarCollapsed ? "8px 0 4px" : "12px 12px 4px", overflow: "hidden" }}>
-                    {!sidebarCollapsed && <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{tab.label}</span>}
+                    {!sidebarCollapsed && <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{tab.label}</span>}
                     {sidebarCollapsed && <div style={{ height: "1px", backgroundColor: C.border, margin: "0 8px" }} />}
                   </div>
                 );
@@ -977,28 +977,22 @@ const App = () => {
 
             {/* Footer - Live Stats Bar */}
             <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
-              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} />
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
                   <span style={{ color: C.green }}>LIVE</span>
                 </div>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Trophy size={10} color={C.amber} /> Season 1</span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Users size={10} /> {mockTraders.length} Traders</span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><BarChart3 size={10} /> <span style={{ color: C.green }}>$2.4M Vol</span></span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Zap size={10} color={C.amber} /> 47 Signals</span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Target size={10} /> 78% Avg Win Rate</span>
+                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Trophy size={11} color={C.amber} /> Season 1 · 47d left</span>
+                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} traders</span>
+                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><BarChart3 size={11} /> $2.4M volume</span>
               </div>
-              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Eye size={10} color={C.cyan} /> 3 Whale Alerts</span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AlertTriangle size={10} color={C.red} /> $4.2M Liquidated</span>
-                <div style={{ width: "1px", height: 18, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Zap size={10} /> Last: <span style={{ color: C.green }}>12s ago</span></span>
+              <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AlertTriangle size={11} color={C.red} /> $4.2M liquidated</span>
+                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <span style={{ color: C.green }}>12s ago</span></span>
               </div>
             </footer>
           </div>

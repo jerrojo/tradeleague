@@ -11,13 +11,16 @@ const ThemeProvider = ({ children }) => {
   );
 };
 
-/* ═══════════════════════ COLORS ═══════════════════════ */
+/* ═══════════════════════ COLORS (v2 — semantic-first, higher contrast) ═══════════════════════
+   Neutrals lifted for WCAG legibility (old textFaint #484f58 failed AA badly).
+   green/red/amber stay strictly semantic; purple is the single brand accent. */
 const C = {
-  bg: "#0d1117", card: "#161b22", cardHover: "#1c2129", border: "#21262d",
-  borderLight: "#30363d", text: "#e6edf3", textMuted: "#8b949e", textFaint: "#484f58",
+  bg: "#0b0f15", card: "#161b22", cardElev: "#1b212b", cardHover: "#1f2630", border: "#272d37",
+  borderLight: "#3a414c", text: "#e9eff5", textMuted: "#9ba6b2", textFaint: "#6b7482",
   green: "#3fb950", greenBg: "rgba(63,185,80,0.1)", red: "#f85149", redBg: "rgba(248,81,73,0.1)",
-  amber: "#d29922", amberBg: "rgba(210,153,34,0.1)", purple: "#8b5cf6", purpleBg: "rgba(139,92,246,0.1)",
-  blue: "#58a6ff", blueBg: "rgba(88,166,255,0.1)", cyan: "#39d0d8"
+  amber: "#e3a72f", amberBg: "rgba(227,167,47,0.1)", purple: "#8b5cf6", purpleBg: "rgba(139,92,246,0.1)",
+  blue: "#58a6ff", blueBg: "rgba(88,166,255,0.1)", cyan: "#39d0d8",
+  shadow: "0 1px 2px rgba(0,0,0,0.4)", shadowLg: "0 8px 28px rgba(0,0,0,0.45)"
 };
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
@@ -30,7 +33,7 @@ const pillStyle = (color) => ({
   color: color, border: `1px solid ${color}30`
 });
 
-const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "8px", padding: "12px" };
+const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", padding: "14px", boxShadow: C.shadow };
 const thStyle = { padding: "10px 12px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
 const tdStyle = { padding: "10px 12px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
 
