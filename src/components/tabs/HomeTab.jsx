@@ -43,6 +43,13 @@ const HomeTab = () => {
 
   const watchedNames = Object.keys(watching).filter(k => watching[k]);
 
+  // Open a trader profile by name (rows in the Top-10 cards are clickable)
+  const openTraderByName = (name) => { const tr = mockTraders.find(t => t.name === name); if (tr) openProfile(tr); };
+  const rowHover = {
+    onMouseEnter: (e) => { e.currentTarget.style.backgroundColor = C.cardHover; },
+    onMouseLeave: (e) => { e.currentTarget.style.backgroundColor = "transparent"; },
+  };
+
   // Top 10 traders sorted by Alpha Score
   const top10Traders = useMemo(() => {
     return [...mockTraders].map(t => ({ ...t, _alpha: calcAlphaScore(t) })).sort((a, b) => b._alpha - a._alpha).slice(0, 10);
@@ -264,14 +271,22 @@ const HomeTab = () => {
             <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Trades</span>
           </div>
           {top10Trades.map((item, idx) => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
-              borderBottom: idx < top10Trades.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            <div key={item.id} onClick={() => openTraderByName(item.trader)} title={`${item.trader} — ${item.pair} ${item.type}`} {...rowHover} style={{
+              display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
+              borderBottom: idx < top10Trades.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
-              <span style={{ fontWeight: "700", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "10px" }}>{item.pair}</span>
-              <span style={{ fontSize: "8px", fontWeight: "800", color: item.type === "LONG" ? C.green : C.red }}>{item.type}</span>
-              <span style={{ fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono, fontSize: "10px" }}>
+              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
+                  <BotTag isBot={item.isBot} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "1px" }}>
+                  <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{item.pair}</span>
+                  <span style={{ fontSize: "8px", fontWeight: "800", color: item.type === "LONG" ? C.green : C.red }}>{item.type}</span>
+                </div>
+              </div>
+              <span style={{ fontWeight: "900", color: item.pnl >= 0 ? C.green : C.red, ...mono, fontSize: "10px", flexShrink: 0 }}>
                 {item.pnl >= 0 ? "+" : ""}${item.pnl.toLocaleString()}
               </span>
             </div>
@@ -292,13 +307,22 @@ const HomeTab = () => {
             <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Signals</span>
           </div>
           {top10Signals.map((item, idx) => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
-              borderBottom: idx < top10Signals.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            <div key={item.id} onClick={() => openTraderByName(item.trader)} title={`${item.trader} — ${item.pair} ${item.bias}`} {...rowHover} style={{
+              display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
+              borderBottom: idx < top10Signals.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
-              <span style={{ fontWeight: "700", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "10px" }}>{item.pair} {item.bias}</span>
-              <span style={{ fontWeight: "900", color: item.confidence >= 80 ? C.green : item.confidence >= 60 ? C.amber : C.red, ...mono, fontSize: "10px" }}>
+              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
+                  <BotTag isBot={item.isBot} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "1px" }}>
+                  <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{item.pair}</span>
+                  <span style={{ fontSize: "8px", fontWeight: "800", color: item.bias === "LONG" ? C.green : C.red }}>{item.bias}</span>
+                </div>
+              </div>
+              <span style={{ fontWeight: "900", color: item.confidence >= 80 ? C.green : item.confidence >= 60 ? C.amber : C.red, ...mono, fontSize: "10px", flexShrink: 0 }}>
                 {item.confidence}%
               </span>
             </div>
@@ -319,14 +343,22 @@ const HomeTab = () => {
             <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Futures</span>
           </div>
           {top10Predictions.map((item, idx) => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: "6px", padding: "5px 10px",
-              borderBottom: idx < top10Predictions.length - 1 ? `1px solid ${C.border}` : "none", fontSize: "10px"
+            <div key={item.id} onClick={() => openTraderByName(item.trader)} title={`${item.trader} — ${item.question}`} {...rowHover} style={{
+              display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
+              borderBottom: idx < top10Predictions.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "12px" }}>{item.avatar}</span>
-              <span style={{ fontWeight: "600", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "9px", color: C.textMuted }}>{item.question}</span>
-              <span style={{ fontWeight: "800", color: item.bet === "YES" ? C.green : C.red, fontSize: "10px", ...mono }}>{item.bet}</span>
-              <span style={{ fontWeight: "700", color: C.amber, fontSize: "9px", ...mono }}>${item.stake}</span>
+              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                  <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
+                  <BotTag isBot={item.isBot} />
+                </div>
+                <div style={{ fontSize: "9px", color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{item.question}</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+                <span style={{ fontWeight: "800", color: item.bet === "YES" ? C.green : C.red, fontSize: "10px", ...mono }}>{item.bet}</span>
+                <span style={{ fontWeight: "700", color: C.amber, fontSize: "9px", ...mono }}>${item.stake}</span>
+              </div>
             </div>
           ))}
           <button onClick={() => { setFeedFilter("prediction"); setActiveTab("arena:prediction"); }} style={{
