@@ -1,7 +1,7 @@
 import { Avatar, BotTag, InfoTip, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
-import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
+import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Heart, MessageCircle, RefreshCw, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
 import { useProMode } from "../contexts";
@@ -65,25 +65,15 @@ const TraderProfile = ({ trader, onClose }) => {
           {alertsOn ? <BellRing size={13} /> : <Bell size={13} />} {alertsOn ? "Alerts ON" : "Alerts"}
         </button>
 
-        {/* ✉ DM / Message */}
-        <button onClick={() => addToast(`Message sent to ${t.name}`, "info")} style={{
-          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
-          border: `1px solid ${C.purple}40`, backgroundColor: C.purpleBg,
-          color: C.purple, fontSize: "11px", fontWeight: "700", cursor: "pointer"
+        {/* Copy — the core action: mirror this trader's trades */}
+        <button onClick={() => addToast(`Copying ${t.name}'s trades`, "success")} style={{
+          display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "6px",
+          border: "none", backgroundColor: C.green, color: C.bg, fontSize: "12px", fontWeight: "800", cursor: "pointer"
         }}>
-          <Send size={13} /> Message
+          <Copy size={14} /> Copy
         </button>
 
-        {/* 🔗 Chat Room */}
-        <button onClick={() => addToast(`Joined ${t.name}'s chat room`, "info")} style={{
-          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
-          border: `1px solid ${C.cyan}40`, backgroundColor: `${C.cyan}10`,
-          color: C.cyan, fontSize: "11px", fontWeight: "700", cursor: "pointer"
-        }}>
-          <Link2 size={13} /> Chat Room
-        </button>
-
-        {/* Social media quick links */}
+        {/* Social media quick links — these open the trader's real profiles */}
         {Object.keys(socials).map(platform => {
           const sm = socialMeta[platform];
           if (!sm) return null;
