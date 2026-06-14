@@ -98,11 +98,26 @@ const traderDeepData = (() => {
     const HOURS_BY_STYLE = { SCALP: [0.5, 4], INTRA: [2, 14], SWING: [14, 72], POSITION: [72, 240] };
     const round2 = (x) => Math.round(x * 100) / 100;
     const history = [];
+    // Realistic outcome distribution — every trader gets actual losses (no 100% win rate /
+    // no PF 247) and, via a seeded shuffle, clustered losing streaks that produce real
+    // drawdowns. Win count is derived from the trader's headline win rate.
+    const N = 20, beCount = 2;
+    const winCount = Math.round((N - beCount) * (t.winRate / 100));
+    const lossCount = (N - beCount) - winCount;
+    const outcomes = [
+      ...Array(winCount).fill("WIN"),
+      ...Array(lossCount).fill("LOSS"),
+      ...Array(beCount).fill("BREAKEVEN"),
+    ];
+    for (let j = outcomes.length - 1; j > 0; j--) {
+      const k = Math.floor(srand(ti * 911 + j * 17) * (j + 1));
+      const tmp = outcomes[j]; outcomes[j] = outcomes[k]; outcomes[k] = tmp;
+    }
     for (let i = 0; i < 20; i++) {
       const r = (k) => srand(ti * 1000 + i * 31 + k); // deterministic per trader+trade
-      const roll = r(1);
-      const isBE = roll > 0.9; // ~10% breakeven trades
-      const isWin = !isBE && roll < t.winRate / 100;
+      const oc = outcomes[i];
+      const isBE = oc === "BREAKEVEN";
+      const isWin = oc === "WIN";
       const pair = pairs[(ti + i) % pairs.length];
       const type = r(2) > 0.45 ? "LONG" : "SHORT";
       const dir = type === "LONG" ? 1 : -1;

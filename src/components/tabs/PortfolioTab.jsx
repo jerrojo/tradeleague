@@ -55,7 +55,9 @@ const PortfolioTab = () => {
     const expectancyR = allTrades.reduce((a, t) => a + t.rMultiple, 0) / Math.max(1, allTrades.length);
     const totalTrades = mockTraders.reduce((a, t) => a + t.trades, 0);
     const sharpe = mockTraders.reduce((a, t) => a + (t.sharpe || 0) * t.trades, 0) / Math.max(1, totalTrades);
-    const maxDD = Math.min(...systemSeries.map(d => d.drawdown));
+    // Real fund drawdown from the per-trade equity path (the aggregate daily curve barely
+    // dips because traders' drawdowns happen at different times and net out).
+    const maxDD = computeMetrics(allTrades, mockTraders.length * INITIAL_CAPITAL_PER_TRADER).maxDrawdownPct;
     return { profitFactor, expectancyR, totalTrades, sharpe, maxDD };
   }, [allTrades, systemSeries]);
 

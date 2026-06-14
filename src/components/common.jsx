@@ -2,52 +2,10 @@ import { Bot, ThumbsDown, ThumbsUp, Users } from "lucide-react";
 import { srand } from "../lib/scoring";
 import { C, cardStyle, mono, pillStyle } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-const AnimatedValue = ({ value, duration = 600 }) => {
-  const [displayValue, setDisplayValue] = useState(value);
-  const frameRef = useRef(null);
-
-  useEffect(() => {
-    // Extract numeric part and prefix/suffix
-    const valueStr = String(value);
-    const hasCommas = /\d,\d/.test(valueStr);
-    const cleanStr = hasCommas ? valueStr.replace(/(\d),(?=\d)/g, "$1") : valueStr;
-    const match = cleanStr.match(/^([^\d\-+]*)([+-]?\d+(?:\.\d+)?)(.*)/);
-    if (!match) {
-      setDisplayValue(value);
-      return;
-    }
-    const [, prefix, numStr, suffix] = match;
-    const numValue = parseFloat(numStr);
-    if (isNaN(numValue)) {
-      setDisplayValue(value);
-      return;
-    }
-
-    let startTime;
-    const animate = (currentTime) => {
-      if (!startTime) startTime = currentTime;
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const decimals = (numStr.split(".")[1] || "").length;
-      const current = numValue * eased;
-      const formatted = hasCommas
-        ? current.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-        : current.toFixed(decimals);
-      setDisplayValue(`${prefix}${formatted}${suffix}`);
-      if (progress < 1) {
-        frameRef.current = requestAnimationFrame(animate);
-      }
-    };
-    frameRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    };
-  }, [value, duration]);
-
-  return <span>{displayValue}</span>;
-};
+/* Renders the value as-is. (Previously counted up from 0, which briefly showed
+   misleading numbers — e.g. an 81% win rate flashing "16%" or a $68K price flashing
+   "$12K" mid-animation. Credibility beats the flourish: show the real number instantly.) */
+const AnimatedValue = ({ value }) => <span>{value}</span>;
 
 /* StatCard v2 — one clear primary value, muted label, semantic accent bar (LukeW: one metric per card) */
 const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (

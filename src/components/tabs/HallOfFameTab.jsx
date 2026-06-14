@@ -11,8 +11,8 @@ const HallOfFameTab = () => {
   const [activeSeason, setActiveSeason] = useState("all");
 
   const topTrades = useMemo(() =>
-    feedItems.filter(f => f.kind === "trade" && f.status !== "active")
-      .sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl)).slice(0, 10), []);
+    feedItems.filter(f => f.kind === "trade" && f.status !== "active" && f.pnl > 0)
+      .sort((a, b) => b.pnl - a.pnl).slice(0, 10), []);
   const topSignals = useMemo(() =>
     feedItems.filter(f => f.kind === "signal")
       .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)).slice(0, 10), []);
