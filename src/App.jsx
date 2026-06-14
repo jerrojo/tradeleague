@@ -4,18 +4,9 @@ import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
-import { TradersTab } from "./components/tabs/TradersTab";
-import { TradeLabTab } from "./components/tabs/TradeLabTab";
-import { PortfolioTab } from "./components/tabs/PortfolioTab";
-import { TopTradesTab } from "./components/tabs/TopTradesTab";
-import { MarketsTab } from "./components/tabs/MarketsTab";
-import { ArenaTab } from "./components/tabs/ArenaTab";
-import { AwardsTab } from "./components/tabs/AwardsTab";
-import { FuturesTab } from "./components/tabs/FuturesTab";
-import { HallOfFameTab } from "./components/tabs/HallOfFameTab";
 import { HomeTab } from "./components/tabs/HomeTab";
-import { SMCAnalysis } from "./components/tabs/SMCAnalysis";
 import { SocialsTab } from "./components/tabs/SocialsTab";
+import { MarketsSection, ActivitySection, TradersSection, AnalyzeSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
@@ -33,7 +24,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("arena");
+  const [activeTab, setActiveTab] = useState("pulse");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -66,6 +57,11 @@ const App = () => {
       if (!localStorage.getItem("tl_onboarded")) setShowWelcome(true);
     } catch { /* storage unavailable — skip */ }
   }, []);
+
+  // Analyze is the Pro workbench — leaving Pro mode drops you back to the live pulse.
+  useEffect(() => {
+    if (!proMode && activeTab === "analyze") setActiveTab("pulse");
+  }, [proMode, activeTab]);
   const dismissWelcome = () => {
     setShowWelcome(false);
     try { localStorage.setItem("tl_onboarded", "1"); } catch { /* ignore */ }
@@ -91,18 +87,17 @@ const App = () => {
     const allPairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
-      { id: "portfolio", label: "Portfolio", desc: "Fund-level KPIs, system equity curve, drawdown timeline" },
-      { id: "tradelab", label: "Trade Lab", desc: "Counterfactual sandbox — falsify any trader's edge in one click" },
-      { id: "arena", label: "Arena", desc: "Live race — watch traders compete in real-time" },
-      { id: "toptrades", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
-      { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and live signals" },
-      { id: "halloffame", label: "Hall of Fame", desc: "Greatest trades, signals, and predictions ever" },
-      { id: "awards", label: "Awards", desc: "Seasonal awards — the Oscars of trading" },
+      { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
+      { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and the coin terminal" },
+      { id: "markets", label: "Tokens / Coin detail", desc: "Deep-dive any coin — structure, entries, safety" },
       { id: "activity", label: "Activity", desc: "Trades, signals and predictions in one live stream" },
-      { id: "futures", label: "Predictions", desc: "Prediction markets — odds, volume and the best callers" },
-      { id: "socials", label: "Socials", desc: "Aggregated content from X, Telegram, Discord" },
-      { id: "traders", label: "Traders", desc: "Leaderboard, rankings, and copy trading" },
-      { id: "tokens", label: "Tokens", desc: "Deep dive on any token — everything in one place" },
+      { id: "activity", label: "Predictions", desc: "Prediction markets — odds, volume and the best callers" },
+      { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
+      { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
+      { id: "analyze", label: "Portfolio", desc: "Fund-level KPIs, equity curve, drawdown (Pro)" },
+      { id: "analyze", label: "Trade Lab", desc: "Falsify any trader's edge in one click (Pro)" },
+      { id: "analyze", label: "Top Trades", desc: "Best and worst plays, explained (Pro)" },
+      { id: "socials", label: "Socials", desc: "What traders post across X, Telegram, Discord" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
     return { traders, pairs, tabs };
@@ -168,59 +163,35 @@ const App = () => {
   const openProfile = (trader) => setProfileTrader(trader);
   const closeProfile = () => setProfileTrader(null);
 
-  // Goal-based information architecture: each zone answers a different user job.
+  // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
+  // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
-    { id: "zone-overview", zone: true, label: "OVERVIEW" },
-    { id: "arena", label: "Arena", icon: Radio, accent: C.purple },
-    { id: "zone-analyze", zone: true, label: "ANALYZE" },
-    { id: "portfolio", label: "Portfolio", icon: Briefcase, accent: C.blue },
-    { id: "tradelab", label: "Trade Lab", icon: Beaker, accent: C.purple },
+    { id: "pulse", label: "Pulse", icon: Radio, accent: C.purple },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
-    { id: "toptrades", label: "Top Trades", icon: Flame, accent: C.amber },
-    { id: "zone-activity", zone: true, label: "ACTIVITY" },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
-    { id: "futures", label: "Predictions", icon: Scale, accent: C.amber },
-    { id: "zone-compete", zone: true, label: "COMPETE" },
-    { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
-    { id: "awards", label: "Awards", icon: Award, accent: C.amber },
-    { id: "zone-profiles", zone: true, label: "PROFILES" },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
+    { id: "analyze", label: "Analyze", icon: BarChart3, accent: C.amber, pro: true },
     { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
-    { id: "tokens", label: "Tokens", icon: DollarSign, accent: C.green },
   ];
 
-  // One-line orientation per tab (LukeW: every screen should say what it's for).
+  // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
-    arena: "The live pulse — who's winning right now and what just happened",
-    portfolio: "Fund-level health: profit factor, drawdown and the system equity curve",
-    tradelab: "Stress-test any trader's record — toggle behaviors and watch every metric recompute",
-    markets: "How traders are positioned on every coin, and the overall market mood",
-    toptrades: "The best and worst plays across all traders — and exactly why",
-    activity: "Trades, signals and predictions in one live stream — filter to what you need",
-    futures: "Prediction markets — the question, the odds, and who calls them best",
-    halloffame: "The greatest trades, signals and predictions of all time",
-    awards: "Seasonal awards — the Oscars of trading",
-    traders: "The leaderboard — rank, compare and copy any trader",
-    socials: "Everything traders post across X, Telegram, Discord and more",
-    tokens: "Deep-dive any token: structure, entries, safety and the trading field",
+    pulse: "The live pulse — who's winning right now and the market mood",
+    markets: "Where the crowd is positioned on every coin, and the structure behind it",
+    activity: "Trades, signals and predictions as they happen — one live stream",
+    traders: "The leaderboard, profiles, all-time legends and season awards",
+    analyze: "The expert workbench — fund health, the Trade Lab and the best/worst plays",
+    socials: "What traders are posting across X, Telegram, Discord and more",
   };
 
-  // Tab → Component mapping
+  // Section → component mapping
   const tabContent = {
-    portfolio: PortfolioTab,   // Portfolio = fund/system level (VARIV Vista C)
-    tradelab: TradeLabTab,     // Trade Lab = counterfactual sandbox (the moat), now top-level
-    arena: HomeTab,           // Arena = the race chart
-    toptrades: TopTradesTab,   // Top Trades = which plays & why
-    markets: MarketsTab,       // Markets = per-coin sentiment & positioning
-    halloffame: HallOfFameTab, // Hall of Fame = trophy cards
-    awards: AwardsTab,         // Awards = the Oscars of trading
-    activity: ArenaTab,        // Activity = unified trades + signals + predictions feed (v2 merge)
-    trades: ArenaTab,          // alias for deep links / search
-    signals: ArenaTab,         // alias for deep links / search
-    futures: FuturesTab,       // Futures = real prediction markets (was a football game)
+    pulse: HomeTab,            // Pulse = the live overview / race
+    markets: MarketsSection,   // Markets = sentiment + coin terminal (+ Tokens)
+    activity: ActivitySection, // Activity = live stream + prediction markets
+    traders: TradersSection,   // Traders = leaderboard + legends + awards
+    analyze: AnalyzeSection,   // Analyze (Pro) = portfolio + trade lab + top trades
     socials: SocialsTab,       // Socials = cross-platform curated feed
-    traders: TradersTab,       // Traders = leaderboard, rankings & copy trading
-    tokens: SMCAnalysis,       // Tokens = deep dive
   };
   const ActiveComponent = tabContent[activeTab] || HomeTab;
   const sideW = sidebarCollapsed ? 56 : 200;
@@ -287,6 +258,7 @@ const App = () => {
             {/* Nav items — 3-zone grouping */}
             <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "1px", overflowY: "auto" }}>
               {tabs.map(tab => {
+                if (tab.pro && !proMode) return null; // Analyze is Pro-only
                 if (tab.zone) return (
                   <div key={tab.id} style={{ padding: sidebarCollapsed ? "8px 0 4px" : "12px 12px 4px", overflow: "hidden" }}>
                     {!sidebarCollapsed && <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{tab.label}</span>}
@@ -299,10 +271,7 @@ const App = () => {
                 return (
                   <button key={tab.id} onClick={() => {
                     setActiveTab(tab.id);
-                    if (tab.id === "trades") setFeedFilter("trade");
-                    else if (tab.id === "signals") setFeedFilter("signal");
-                    else if (tab.id === "futures") setFeedFilter("prediction");
-                    else setFeedFilter("all");
+                    setFeedFilter("all");
                     setProfileTrader(null);
                   }} title={sidebarCollapsed ? tab.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: "10px",
@@ -514,19 +483,19 @@ const App = () => {
                       <span style={{ fontSize: "20px", fontWeight: "900", letterSpacing: "-0.5px" }}>Welcome to Tradethlon</span>
                     </div>
                     <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: 1.5 }}>
-                      An intelligence terminal for traders. Five areas, one job each — start anywhere, every screen tells you what it's for.
+                      An intelligence terminal for traders. Six areas, one job each — start anywhere, every screen tells you what it's for.
                     </div>
                   </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {[
-                      { icon: Radio, color: C.purple, t: "Overview", d: "The live pulse — who's winning right now.", go: "arena" },
-                      { icon: Globe, color: C.cyan, t: "Analyze", d: "Fund health, per-coin sentiment, and the best/worst plays explained.", go: "markets" },
-                      { icon: Activity, color: C.green, t: "Activity", d: "Live trades, signals and prediction markets.", go: "trades" },
-                      { icon: Trophy, color: C.amber, t: "Compete", d: "Hall of Fame and seasonal awards.", go: "halloffame" },
-                      { icon: Users, color: C.blue, t: "Profiles", d: "Rank, compare and copy any trader.", go: "traders" },
-                      { icon: Beaker, color: C.purple, t: "Trade Lab", d: "Turn a trader's behaviors on/off and watch every metric recompute — see what really drives their results.", go: "tradelab" },
+                      { icon: Radio, color: C.purple, t: "Pulse", d: "The live pulse — who's winning right now and the market mood.", go: "pulse" },
+                      { icon: Globe, color: C.cyan, t: "Markets", d: "Where the crowd is positioned on every coin, and the structure behind it.", go: "markets" },
+                      { icon: Activity, color: C.green, t: "Activity", d: "Trades, signals and predictions as they happen — one live stream.", go: "activity" },
+                      { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, profiles, all-time legends and season awards.", go: "traders" },
+                      { icon: BarChart3, color: C.amber, t: "Analyze (Pro)", d: "The expert workbench — fund health, the Trade Lab and the best/worst plays.", go: "analyze" },
+                      { icon: MessageCircle, color: C.cyan, t: "Socials", d: "What traders are posting across X, Telegram, Discord and more.", go: "socials" },
                     ].map(card => (
-                      <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
+                      <button key={card.t} onClick={() => { if (card.go) { if (card.go === "analyze") setProMode(true); setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
                         backgroundColor: C.bg, border: `1px solid ${C.border}`, transition: "border-color 0.15s",
                       }} className="card-hover">
@@ -584,7 +553,7 @@ const App = () => {
                     {searchResults.pairs.length > 0 && (<>
                       <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pairs</div>
                       {searchResults.pairs.map(p => (
-                        <button key={p} onClick={() => { setActiveTab("signals"); setShowSearch(false); setSearchQuery(""); }} style={{
+                        <button key={p} onClick={() => { setActiveTab("activity"); setFeedFilter("all"); setShowSearch(false); setSearchQuery(""); }} style={{
                           display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
                           border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
                         }}>
@@ -597,7 +566,7 @@ const App = () => {
                     {searchResults.tabs.length > 0 && (<>
                       <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Sections</div>
                       {searchResults.tabs.map(t => (
-                        <button key={t.id} onClick={() => { setActiveTab(t.id); setShowSearch(false); setSearchQuery(""); setProfileTrader(null); }} style={{
+                        <button key={`${t.id}-${t.label}`} onClick={() => { if (t.id === "analyze") setProMode(true); setActiveTab(t.id); setShowSearch(false); setSearchQuery(""); setProfileTrader(null); }} style={{
                           display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
                           border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
                         }}>
