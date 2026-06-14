@@ -91,8 +91,34 @@ const ArenaTab = () => {
     });
   }, [filteredFeed]);
 
+  // Unified Activity filter — Trades + Signals + Predictions in one stream (LukeW v2: one place, a filter)
+  const activityFilters = [
+    ["all", "All", Activity, C.purple],
+    ["trade", "Trades", Activity, C.green],
+    ["signal", "Signals", Lightbulb, C.blue],
+    ["prediction", "Predictions", Scale, C.amber],
+  ];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
+      {/* ── Unified Activity filter (always visible) ── */}
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+        {activityFilters.map(([f, label, Icon, clr]) => {
+          const on = feedFilter === f;
+          return (
+            <button key={f} onClick={() => setFeedFilter(f)} style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", borderRadius: "8px",
+              fontSize: "12px", fontWeight: "700", cursor: "pointer", transition: "all 0.15s",
+              border: `1px solid ${on ? clr : C.border}`,
+              backgroundColor: on ? `${clr}14` : "transparent",
+              color: on ? clr : C.textMuted,
+            }}>
+              <Icon size={14} /> {label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* ── Header: title + LIVE badge + total traders (only in full Arena view) ── */}
       {feedFilter === "all" && (

@@ -15,7 +15,6 @@ import { FootballTab } from "./components/tabs/FootballTab";
 import { HallOfFameTab } from "./components/tabs/HallOfFameTab";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SMCAnalysis } from "./components/tabs/SMCAnalysis";
-import { SignalsTab } from "./components/tabs/SignalsTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -99,8 +98,7 @@ const App = () => {
       { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and live signals" },
       { id: "halloffame", label: "Hall of Fame", desc: "Greatest trades, signals, and predictions ever" },
       { id: "awards", label: "Awards", desc: "Seasonal awards — the Oscars of trading" },
-      { id: "trades", label: "Trades", desc: "Live feed of all trades — copy, share, discuss" },
-      { id: "signals", label: "Signals", desc: "Structured trading signals with verified outcomes" },
+      { id: "activity", label: "Activity", desc: "Trades, signals and predictions in one live stream" },
       { id: "futures", label: "Futures", desc: "Prediction markets — who's bullish, who's bearish" },
       { id: "socials", label: "Socials", desc: "Aggregated content from X, Telegram, Discord" },
       { id: "traders", label: "Traders", desc: "Leaderboard, rankings, and copy trading" },
@@ -180,8 +178,7 @@ const App = () => {
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "toptrades", label: "Top Trades", icon: Flame, accent: C.amber },
     { id: "zone-activity", zone: true, label: "ACTIVITY" },
-    { id: "trades", label: "Trades", icon: Activity, accent: C.green },
-    { id: "signals", label: "Signals", icon: Lightbulb, accent: C.blue },
+    { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "futures", label: "Futures", icon: Scale, accent: C.amber },
     { id: "zone-compete", zone: true, label: "COMPETE" },
     { id: "halloffame", label: "Hall of Fame", icon: Trophy, accent: C.amber },
@@ -199,8 +196,7 @@ const App = () => {
     tradelab: "Stress-test any trader's record — toggle behaviors and watch every metric recompute",
     markets: "How traders are positioned on every coin, and the overall market mood",
     toptrades: "The best and worst plays across all traders — and exactly why",
-    trades: "Every trade as it happens — copy, inspect or discuss",
-    signals: "Structured trade ideas shared before execution, with verified outcomes",
+    activity: "Trades, signals and predictions in one live stream — filter to what you need",
     futures: "Prediction markets — who's betting on what, and the odds",
     halloffame: "The greatest trades, signals and predictions of all time",
     awards: "Seasonal awards — the Oscars of trading",
@@ -218,8 +214,9 @@ const App = () => {
     markets: MarketsTab,       // Markets = per-coin sentiment & positioning
     halloffame: HallOfFameTab, // Hall of Fame = trophy cards
     awards: AwardsTab,         // Awards = the Oscars of trading
-    trades: ArenaTab,          // Trades = dedicated feed
-    signals: SignalsTab,       // Signals
+    activity: ArenaTab,        // Activity = unified trades + signals + predictions feed (v2 merge)
+    trades: ArenaTab,          // alias for deep links / search
+    signals: ArenaTab,         // alias for deep links / search
     futures: FootballTab,      // Futures = prediction markets
     socials: SocialsTab,       // Socials = cross-platform curated feed
     traders: TradersTab,       // Traders = leaderboard, rankings & copy trading

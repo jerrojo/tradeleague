@@ -291,7 +291,7 @@ const HomeTab = () => {
               </span>
             </div>
           ))}
-          <button onClick={() => { setFeedFilter("trade"); setActiveTab("arena:trade"); }} style={{
+          <button onClick={() => { setFeedFilter("trade"); setActiveTab("activity"); }} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
             padding: "6px", backgroundColor: C.greenBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.green, fontSize: "9px", fontWeight: "700", cursor: "pointer"
@@ -327,7 +327,7 @@ const HomeTab = () => {
               </span>
             </div>
           ))}
-          <button onClick={() => { setFeedFilter("signal"); setActiveTab("arena:signal"); }} style={{
+          <button onClick={() => { setFeedFilter("signal"); setActiveTab("activity"); }} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
             padding: "6px", backgroundColor: C.blueBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.blue, fontSize: "9px", fontWeight: "700", cursor: "pointer"
@@ -361,7 +361,7 @@ const HomeTab = () => {
               </div>
             </div>
           ))}
-          <button onClick={() => { setFeedFilter("prediction"); setActiveTab("arena:prediction"); }} style={{
+          <button onClick={() => { setFeedFilter("prediction"); setActiveTab("activity"); }} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
             padding: "6px", backgroundColor: C.amberBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.amber, fontSize: "9px", fontWeight: "700", cursor: "pointer"
