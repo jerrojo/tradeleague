@@ -1,4 +1,4 @@
-import { BotTag, StatCard, Tag } from "../common";
+import { Avatar, BotTag, StatCard, Tag } from "../common";
 import { ExternalLink, Eye, Send } from "lucide-react";
 import { useProfile } from "../../contexts";
 import { mockTraders, traderDeepData } from "../../data/mockData";
@@ -72,7 +72,7 @@ const SocialsTab = () => {
             <div key={post.id} className="card-hover" style={{ ...cardStyle, padding: "14px", borderLeft: `3px solid ${pColor}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                 <span style={{ fontSize: "8px", fontWeight: "800", color: pColor, backgroundColor: pColor + "20", padding: "2px 6px", borderRadius: "3px" }}>{pIcon}</span>
-                <span style={{ fontSize: "14px" }}>{post.traderAvatar}</span>
+                <Avatar name={post.traderName} size={26} />
                 <span onClick={() => trader && openProfile(trader)} style={{ fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>{post.traderName}</span>
                 <BotTag isBot={post.isBot} />
                 <span style={{ fontSize: "10px", color: C.textMuted, ...mono, marginLeft: "auto" }}>{post.handle}</span>

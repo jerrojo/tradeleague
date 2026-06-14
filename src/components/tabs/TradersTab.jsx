@@ -1,5 +1,5 @@
 import { TraderLink } from "../../contexts";
-import { BotTag, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
+import { Avatar, BotTag, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
 import { ArrowDown, BellRing, CheckCircle, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useWatchlist } from "../../contexts";
@@ -537,9 +537,7 @@ const TradersTab = () => {
             <div key={t.name} style={{ ...cardStyle, cursor: "pointer", borderLeft: isTopRanked ? `3px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s" }} onClick={() => openProfile(t)}>
               {/* Header: avatar + name + Alpha Score */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: C.cardHover, border: `2px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
-                  {t.avatar}
-                </div>
+                <Avatar name={t.name} size={48} ring={tierColor[t.tier]} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ fontSize: "14px", fontWeight: "700" }}>{t.name}</span>

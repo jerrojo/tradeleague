@@ -1,4 +1,4 @@
-import { BotTag } from "../common";
+import { Avatar, BotTag } from "../common";
 import { Activity, ChevronRight, Flame, Lightbulb, Scale, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TraderLink, useFeedFilter, useProfile } from "../../contexts";
@@ -119,7 +119,7 @@ const HomeTab = () => {
               {leader && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "8px", backgroundColor: C.amberBg, border: `1px solid ${C.amber}30` }}>
                   <Trophy size={12} color={C.amber} />
-                  <span style={{ fontSize: "10px", fontWeight: "700", color: C.amber }}>{leader.avatar} {leader.name} leading</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "10px", fontWeight: "700", color: C.amber }}><Avatar name={leader.name} size={16} /> {leader.name} leading</span>
                 </div>
               )}
             </div>
@@ -158,7 +158,7 @@ const HomeTab = () => {
                 return (
                   <div key={t.name} onClick={() => openProfile(t)} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "9px", cursor: "pointer", padding: "2px 6px", borderRadius: "4px", border: `1px solid ${C.border}` }}>
                     <div style={{ width: 8, height: 3, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
-                    <span style={{ fontWeight: "600", color: traderColors[ci] }}>{t.avatar} {t.name}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600", color: traderColors[ci] }}><Avatar name={t.name} size={14} /> {t.name}</span>
                     <span style={{ color: val >= 0 ? C.green : C.red, fontWeight: "700", ...mono }}>
                       {val >= 0 ? "+" : ""}${val != null ? (Math.abs(val) >= 1000 ? (val/1000).toFixed(1) + "K" : val) : "—"}
                     </span>
@@ -184,7 +184,7 @@ const HomeTab = () => {
                   borderRadius: "6px", border: `1px solid ${i === 0 ? C.amber + "30" : C.border}`,
                   fontSize: "11px"
                 }}>
-                  <span style={{ fontSize: "14px" }}>{h.avatar || (h.kind === "whale" ? "🐋" : "⚡")}</span>
+                  {h.trader ? <Avatar name={h.trader} size={22} /> : <span style={{ fontSize: "16px" }}>{h.kind === "whale" ? "🐋" : "⚡"}</span>}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {h.kind === "trade" && (
                       <span>
@@ -235,7 +235,7 @@ const HomeTab = () => {
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                 >
                   <span style={{ fontSize: "10px", fontWeight: "700", color: i < 3 ? C.amber : C.textFaint, width: 16, textAlign: "right", ...mono }}>{i + 1}</span>
-                  <span style={{ fontSize: "16px" }}>{t.avatar}</span>
+                  <Avatar name={t.name} size={24} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                       <span style={{ fontSize: "11px", fontWeight: "700", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>
@@ -275,7 +275,7 @@ const HomeTab = () => {
               display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
               borderBottom: idx < top10Trades.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <Avatar name={item.trader} size={26} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                   <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
@@ -311,7 +311,7 @@ const HomeTab = () => {
               display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
               borderBottom: idx < top10Signals.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <Avatar name={item.trader} size={26} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                   <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
@@ -347,7 +347,7 @@ const HomeTab = () => {
               display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
               borderBottom: idx < top10Predictions.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
             }}>
-              <span style={{ fontSize: "15px", flexShrink: 0 }}>{item.avatar}</span>
+              <Avatar name={item.trader} size={26} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                   <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>

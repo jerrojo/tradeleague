@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Beaker } from "lucide-react";
 import { TradeLab } from "../TradeLab";
 import { mockTraders, traderDeepData } from "../../data/mockData";
-import { BotTag } from "../common";
+import { Avatar, BotTag } from "../common";
 import { C, cardStyle, mono, tierColor } from "../../theme";
 
 /* ═══════════════════════ TAB: TRADE LAB (top-level, VARIV moat) ═══════════════════════
@@ -34,7 +34,7 @@ const TradeLabTab = () => {
                 backgroundColor: on ? C.purpleBg : "transparent",
                 color: on ? C.text : C.textMuted,
               }}>
-                <span style={{ fontSize: "14px" }}>{t.avatar}</span>
+                <Avatar name={t.name} size={20} />
                 <span>{t.name}</span>
                 <BotTag isBot={t.isBot} />
                 <span style={{ width: 4, height: 4, borderRadius: "50%", backgroundColor: tc }} />

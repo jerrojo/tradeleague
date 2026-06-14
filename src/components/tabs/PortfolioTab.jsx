@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import { Activity, AlertTriangle, Download, Scale, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../../theme";
-import { InfoTip, StatCard, Tag } from "../common";
+import { Avatar, InfoTip, StatCard, Tag } from "../common";
 import { btcBenchmark, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { exportTrades } from "../../lib/exportData";
 import { computeMetrics, delever } from "../../lib/tradeSim";
@@ -226,7 +226,7 @@ const PortfolioTab = () => {
                 color: overlay[t.name] ? traderColors[i] : C.textMuted,
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: traderColors[i] }} />
-                {t.avatar} {t.name.split(" ")[0]}
+                <Avatar name={t.name} size={14} /> {t.name.split(" ")[0]}
               </button>
             ))}
           </div>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Award, Crosshair, Flame, Lightbulb, TrendingDown, Trophy } from "lucide-react";
 import { C, cardStyle, mono } from "../../theme";
-import { Tag } from "../common";
+import { Avatar, Tag } from "../common";
 import { TradeStructureDiagram } from "../widgets";
 import { useProfile } from "../../contexts";
 import { mockTraders, traderDeepData } from "../../data/mockData";
@@ -34,7 +34,7 @@ const TradeCard = ({ t, rank, mode, onOpen }) => {
       {/* header */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {medal && <span style={{ fontSize: 16 }}>{medal}</span>}
-        <span style={{ fontSize: 18 }}>{trader?.avatar}</span>
+        <Avatar name={t.trader} size={26} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <button onClick={() => trader && onOpen(trader)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: C.text, fontSize: 13, fontWeight: 700, borderBottom: `1px dashed ${C.purple}40` }}>{t.trader}</button>
           <div style={{ fontSize: 10, color: C.textMuted, ...mono }}>{t.pair} · {t.style} · {t.session} · {t.date}</div>

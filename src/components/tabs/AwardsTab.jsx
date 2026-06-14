@@ -1,4 +1,4 @@
-import { BotTag } from "../common";
+import { Avatar, BotTag } from "../common";
 import { useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono, tierColor } from "../../theme";
@@ -56,7 +56,7 @@ const AwardsTab = () => {
             </div>
             <div style={{ ...cardStyle, backgroundColor: `${C.amber}08`, border: `1px solid ${C.amber}30`, padding: "12px" }}>
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                <div style={{ fontSize: "28px", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: `${C.amber}15`, borderRadius: "6px", flexShrink: 0 }}>{award.winner.avatar}</div>
+                <Avatar name={award.winner.name} size={40} style={{ borderRadius: "8px" }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "13px", fontWeight: "700" }}>{award.winner.name}</div>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center", fontSize: "10px" }}>

@@ -286,8 +286,41 @@ const ToastProvider = ({ children }) => {
   );
 };
 
+/* ═══════════════════════ AVATAR (placeholder until real X/Telegram photos) ═══════════════════════
+   Deterministic initials avatar: same name → same colors everywhere. Swap the
+   inner render for an <img src={photoUrl}> once profile photos are connected. */
+const avatarHue = (name = "") => {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+  return h;
+};
+const avatarInitials = (name = "") =>
+  name.trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+
+const Avatar = ({ name = "", size = 32, photoUrl = null, ring = null, style = {} }) => {
+  const h = avatarHue(name);
+  return (
+    <div title={name} style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0, overflow: "hidden",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      background: photoUrl ? "transparent" : `linear-gradient(135deg, hsl(${h} 58% 48%), hsl(${(h + 40) % 360} 55% 38%))`,
+      color: "#fff", fontWeight: 800, letterSpacing: "-0.5px",
+      fontSize: Math.max(9, Math.round(size * 0.4)),
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      border: ring ? `2px solid ${ring}` : "none",
+      boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08)",
+      ...style,
+    }}>
+      {photoUrl
+        ? <img src={photoUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : avatarInitials(name)}
+    </div>
+  );
+};
+
 export {
   AnimatedValue,
+  Avatar,
   StatCard,
   Tag,
   GLOSSARY,

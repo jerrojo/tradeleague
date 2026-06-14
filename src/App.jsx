@@ -1,6 +1,6 @@
 import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
-import { BotTag, ToastProvider } from "./components/common";
+import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
@@ -572,7 +572,7 @@ const App = () => {
                           display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
                           border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
                         }}>
-                          <div style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>{t.avatar}</div>
+                          <Avatar name={t.name} size={32} />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: "13px", fontWeight: "600" }}>{t.name}</div>
                             <div style={{ fontSize: "10px", color: C.textMuted }}>#{t.rank} · {t.style} · WR {t.winRate}%</div>

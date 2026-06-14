@@ -1,4 +1,4 @@
-import { BotTag, StatCard, Tag } from "../common";
+import { Avatar, BotTag, StatCard, Tag } from "../common";
 import { useProfile } from "../../contexts";
 import { feedItems, mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono, pillStyle } from "../../theme";
@@ -75,7 +75,7 @@ const HallOfFameTab = () => {
             }}>
               <div style={{ position: "absolute", top: "8px", right: "10px", fontSize: "16px" }}>{medal}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                <span style={{ fontSize: "20px" }}>{trader.avatar}</span>
+                <Avatar name={trader.name} size={30} />
                 <div>
                   <div style={{ fontSize: "12px", fontWeight: "700" }}>{trader.name}</div>
                   <BotTag isBot={trader.isBot} />

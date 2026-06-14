@@ -1,4 +1,4 @@
-import { BotTag, InfoTip, StatCard, Tag } from "./common";
+import { Avatar, BotTag, InfoTip, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
 import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
@@ -105,7 +105,7 @@ const TraderProfile = ({ trader, onClose }) => {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "140px" }}>
             {/* Avatar with tier ring + level indicator */}
             <div style={{ position: "relative" }}>
-              <div style={{ width: 88, height: 88, borderRadius: "50%", backgroundColor: C.bg, border: `3px solid ${tierColor[t.tier]}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "44px", boxShadow: `0 0 20px ${tierColor[t.tier]}25` }}>{t.avatar}</div>
+              <Avatar name={t.name} size={88} ring={tierColor[t.tier]} style={{ boxShadow: `0 0 20px ${tierColor[t.tier]}25` }} />
               {/* Level badge on avatar */}
               <div style={{ position: "absolute", bottom: -2, right: -2, backgroundColor: C.purple, color: "#fff", fontSize: "9px", fontWeight: "800", padding: "2px 6px", borderRadius: "10px", border: `2px solid ${C.card}`, ...mono }}>Lv.{t.level}</div>
             </div>
