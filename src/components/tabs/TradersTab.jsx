@@ -2,7 +2,7 @@ import { TraderLink } from "../../contexts";
 import { Avatar, BotTag, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
 import { ArrowDown, BellRing, CheckCircle, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useProfile, useWatchlist } from "../../contexts";
+import { useProfile, useWatchlist, useProMode } from "../../contexts";
 import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
@@ -15,6 +15,7 @@ const TradersTab = () => {
   const [traderFilter, setTraderFilter] = useState("all");
   const [sortField, setSortField] = useState("pnl");
   const { openProfile } = useProfile();
+  const proMode = useProMode(); // Simple hides secondary columns (Trend, Expectancy)
   const { followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts } = useWatchlist();
   const [visibleTraders, setVisibleTraders] = useState(() => {
     const m = {};
@@ -140,7 +141,7 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Action",null]].map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
                 {(() => {
@@ -188,9 +189,11 @@ const TradersTab = () => {
                         <span style={{ fontSize: "9px", fontWeight: "700", color: aClr, padding: "1px 5px", borderRadius: "3px", backgroundColor: `${aClr}18` }}>{alphaLabel(alpha)}</span>
                       </div>
                     </td>
+                    {proMode && (
                     <td style={{ ...tdStyle }}>
                       <MiniSparkline data={t.sparkData} width={56} height={18} />
                     </td>
+                    )}
                     <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>
                       <span style={isHotStreak ? { textShadow: `0 0 8px ${C.amber}60` } : undefined}>
                         {getFlames(t.streak)}<span style={{ marginLeft: "4px", color: isHotStreak ? C.amber : C.text }}>{t.streak}</span>
@@ -212,12 +215,14 @@ const TradersTab = () => {
                       </div>
                     </td>
                     <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
-                    {/* Expectancy — VARIV metrics catalog */}
+                    {/* Expectancy — VARIV metrics catalog (Pro only) */}
+                    {proMode && (
                     <td style={{ ...tdStyle }}>
                       {(() => { const exp = calcExpectancy(t); return (
                         <span style={{ ...mono, color: expectancyColor(exp), fontWeight: "600", fontSize: "11px" }}>${exp}</span>
                       ); })()}
                     </td>
+                    )}
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "4px", ...mono }}>
                         <Users size={12} color={C.textMuted} /> {t.copiers}

@@ -30,6 +30,11 @@ const useWatchlist = () => useContext(WatchlistContext);
 const DateContext = createContext();
 const useDate = () => useContext(DateContext);
 
+/* ═══════════════════════ PRO MODE CONTEXT ═══════════════════════ */
+/* Simple vs Pro density. Components read this to trim secondary detail for beginners. */
+const ProContext = createContext();
+const useProMode = () => useContext(ProContext)?.proMode ?? false;
+
 export {
   ProfileContext,
   useProfile,
@@ -39,5 +44,7 @@ export {
   WatchlistContext,
   useWatchlist,
   DateContext,
-  useDate
+  useDate,
+  ProContext,
+  useProMode
 };

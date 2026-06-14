@@ -76,6 +76,11 @@ const traderSocials = {
   "Wave Rider": { twitter: "@WaveRider_Bali", discord: "WaveRider#0123", youtube: "WaveRiderCrypto" },
 };
 
+// Realistic current price per coin — so every coin's trades/signals cluster around its
+// actual price (not a generic 50–150), which makes per-coin views and the Positioning Map read true.
+const COIN_PX = { BTC: 68000, ETH: 3480, SOL: 148.6, BNB: 618, XRP: 2.18, AVAX: 39.2, DOGE: 0.358, ADA: 1.24, LINK: 32.8, DOT: 12.5, MATIC: 1.42, UNI: 18.9, AAVE: 825, ATOM: 14.6 };
+const coinBase = (pair) => COIN_PX[String(pair).split("/")[0]] || 100;
+
 const traderDeepData = (() => {
   const data = {};
   const pairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
@@ -121,7 +126,7 @@ const traderDeepData = (() => {
       const pair = pairs[(ti + i) % pairs.length];
       const type = r(2) > 0.45 ? "LONG" : "SHORT";
       const dir = type === "LONG" ? 1 : -1;
-      const entryRaw = pair.startsWith("BTC") ? 67000 + r(3) * 2000 : pair.startsWith("ETH") ? 3400 + r(3) * 200 : 50 + r(3) * 100;
+      const entryRaw = coinBase(pair) * (1 + (r(3) - 0.5) * 0.03); // within ±1.5% of the coin's real price
       const entry = round2(entryRaw);
       // — geometry: SL + 3 proportional TPs —
       const slDist = entry * (0.008 + r(4) * 0.008);       // 0.8–1.6% away
@@ -225,7 +230,7 @@ const traderDeepData = (() => {
       const isWin = Math.random() < (t.winRate / 100 + 0.05);
       const pair = pairs[(ti + i) % pairs.length];
       const type = Math.random() > 0.45 ? "LONG" : "SHORT";
-      const basePrice = pair.startsWith("BTC") ? 67000 + Math.random() * 2000 : pair.startsWith("ETH") ? 3400 + Math.random() * 200 : 50 + Math.random() * 100;
+      const basePrice = coinBase(pair) * (1 + (Math.random() - 0.5) * 0.03);
       const entryP = Math.round(basePrice * 100) / 100;
       const tpP = Math.round((entryP * (type === "LONG" ? 1.02 : 0.98)) * 100) / 100;
       const slP = Math.round((entryP * (type === "LONG" ? 0.99 : 1.01)) * 100) / 100;
@@ -459,7 +464,7 @@ const feedItems = (() => {
   let id = 1;
   // Trade events from all traders
   // Base prices for realistic entry generation
-  const basePrices = { "BTC/USDT": 67500, "ETH/USDT": 3450, "SOL/USDT": 145, "BNB/USDT": 580, "XRP/USDT": 0.62 };
+  const basePrices = { "BTC/USDT": 68000, "ETH/USDT": 3480, "SOL/USDT": 148.6, "BNB/USDT": 618, "XRP/USDT": 2.18 };
   // TP/SL distances vary by trader skill (better traders = tighter SL, wider TP)
   const tpDistances = [0.025, 0.030, 0.022, 0.035, 0.040, 0.028, 0.020, 0.018]; // % move to TP
   const slDistances = [0.010, 0.012, 0.009, 0.015, 0.018, 0.014, 0.013, 0.012]; // % move to SL

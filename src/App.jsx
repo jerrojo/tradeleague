@@ -2,7 +2,7 @@ import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
-import { DateContext, FeedFilterContext, ProfileContext, WatchlistContext } from "./contexts";
+import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
@@ -207,6 +207,7 @@ const App = () => {
   return (
     <ThemeProvider>
     <ToastProvider>
+      <ProContext.Provider value={{ proMode }}>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
         <WatchlistContext.Provider value={{ followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts }}>
@@ -344,6 +345,10 @@ const App = () => {
                   </span>
                   <span style={{ fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple, border: `1px solid ${C.purple}30`, ...mono }}>
                     S1 · 47d left
+                  </span>
+                  {/* Data provenance — honest about simulated vs live (flips to LIVE when connectors are wired) */}
+                  <span title="All data on this preview is simulated. Will switch to LIVE once exchange/social connectors are wired." style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.amberBg, color: C.amber, border: `1px solid ${C.amber}30`, ...mono }}>
+                    <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block" }} /> SIMULATED
                   </span>
                   {/* Casual / Pro toggle */}
                   <button onClick={() => setProMode(!proMode)} title="Toggle detail density" style={{
@@ -974,6 +979,7 @@ const App = () => {
         </WatchlistContext.Provider>
         </ProfileContext.Provider>
       </DateContext.Provider>
+      </ProContext.Provider>
     </ToastProvider>
     </ThemeProvider>
   );
