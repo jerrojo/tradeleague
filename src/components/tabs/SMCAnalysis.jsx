@@ -1,4 +1,5 @@
 import { TokenFieldViz } from "../TokenFieldViz";
+import { PositioningMap } from "../PositioningMap";
 import { InfoTip, StatCard, Tag } from "../common";
 import { CheckCircle, ChevronDown, Search } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -15,6 +16,7 @@ const SMCAnalysis = () => {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const { dateLabel: globalDateLabel } = useDate();
   const coin = smcCoins[selectedCoin];
+  const currentPriceNum = Number(String(coin.price).replace(/[^0-9.]/g, "")) || coin.chartBase;
   const coinPickerRef = useRef(null);
 
   const categories = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
@@ -171,6 +173,9 @@ const SMCAnalysis = () => {
         <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
         <StatCard label="Risk Level" value={coin.risk === "LOW" ? "LOW" : coin.risk === "MEDIUM" ? "MEDIUM" : "HIGH"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
+
+      {/* Positioning Map — crowd long/short vs current price (the football idea, reborn) */}
+      <PositioningMap coin={selectedCoin} currentPrice={currentPriceNum} />
 
       {/* Multi-Timeframe Grid */}
       <div>
