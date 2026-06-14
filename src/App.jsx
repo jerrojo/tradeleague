@@ -198,10 +198,8 @@ const App = () => {
   const rightPanelW = rightPanelCollapsed ? 48 : 220;
   const rightW = (showWatchlist ? 340 : 0) + rightPanelW;
 
-  // XP state for demo (user's own progress)
-  const myXp = 3420;
+  // Account level/title (shown in Settings)
   const myLevel = 22;
-  const myXpNext = 5000;
   const myTitle = titleByLevel(myLevel);
 
   return (
@@ -291,28 +289,6 @@ const App = () => {
                 );
               })}
             </nav>
-
-            {/* XP Progress */}
-            {!sidebarCollapsed && (
-              <div style={{ padding: "12px", borderTop: `1px solid ${C.border}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: "700", color: C.purple }}>LVL {myLevel}</span>
-                  <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{myXp}/{myXpNext} XP</span>
-                </div>
-                <div style={{ height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden", marginBottom: "4px" }}>
-                  <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "2px" }} />
-                </div>
-                <div style={{ fontSize: "9px", color: C.textFaint, textAlign: "center" }}>{myTitle} · {myXpNext - myXp} XP to LVL {myLevel + 1}</div>
-              </div>
-            )}
-            {sidebarCollapsed && (
-              <div style={{ padding: "8px 4px", borderTop: `1px solid ${C.border}`, textAlign: "center" }}>
-                <div style={{ fontSize: "10px", fontWeight: "700", color: C.purple, ...mono }}>{myLevel}</div>
-                <div style={{ width: "100%", height: "2px", backgroundColor: C.border, borderRadius: "1px", marginTop: "4px", overflow: "hidden" }}>
-                  <div style={{ width: `${(myXp/myXpNext)*100}%`, height: "100%", background: `linear-gradient(90deg, ${C.purple}, ${C.cyan})`, borderRadius: "1px" }} />
-                </div>
-              </div>
-            )}
 
             {/* Bottom section */}
             <div style={{ padding: "8px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: "2px" }}>
