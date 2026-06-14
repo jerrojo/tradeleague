@@ -164,8 +164,8 @@ const ArenaTab = () => {
       </div>
       )}
 
-      {/* ── Live Equity Curves (only watched, only in full Arena view) ── */}
-      {feedFilter === "all" && watchedTraders.length > 0 && (
+      {/* ── Live Equity Curves — removed from Activity: the race lives in Arena (Overview), not here ── */}
+      {false && watchedTraders.length > 0 && (
         <div style={cardStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div>
@@ -196,8 +196,8 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ── Top 10 Leaderboard + Ver todos (compact table, only in full Arena view) ── */}
-      {feedFilter === "all" && (
+      {/* ── Top 10 Leaderboard — removed from Activity: the leaderboard lives in Arena (Overview) ── */}
+      {false && (
         <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -623,36 +623,12 @@ const ArenaTab = () => {
 
       {/* ═══ ARENA FULL VIEW (feedFilter === "all") — Feed section ═══ */}
       {feedFilter === "all" && (() => {
-        const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
-        const signalCount = traderFeed.filter(f => f.kind === "signal").length;
-        const predCount = traderFeed.filter(f => f.kind === "prediction").length;
-        const filterItems = [
-          { id: "all", label: "Todo", color: C.purple, icon: null, count: traderFeed.length },
-          { id: "trade", label: "Trades", color: C.green, icon: Activity, count: tradeCount },
-          { id: "signal", label: "Signals", color: C.blue, icon: Lightbulb, count: signalCount },
-          { id: "prediction", label: "Predictions", color: C.amber, icon: Scale, count: predCount },
-        ];
         return (
           <>
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              <span style={{ fontSize: "13px", fontWeight: "700" }}>Actividad</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span style={{ fontSize: "13px", fontWeight: "700" }}>Activity stream</span>
               <div style={{ flex: 1, height: "1px", backgroundColor: C.border }} />
-              {filterItems.map(f => {
-                const Icon = f.icon;
-                return (
-                  <button key={f.id} onClick={() => setFeedFilter(f.id)} style={{
-                    padding: "5px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                    border: `1px solid ${feedFilter === f.id ? f.color : C.border}`,
-                    backgroundColor: feedFilter === f.id ? f.color + "18" : "transparent",
-                    color: feedFilter === f.id ? f.color : C.textMuted,
-                    display: "flex", alignItems: "center", gap: "6px"
-                  }}>
-                    {Icon && <Icon size={12} />}
-                    {f.label}
-                    <span style={{ fontSize: "9px", fontWeight: "700", ...mono, color: feedFilter === f.id ? f.color : C.textFaint }}>{f.count}</span>
-                  </button>
-                );
-              })}
+              <span style={{ fontSize: "11px", color: C.textMuted, ...mono }}>{filteredFeed.length} items</span>
             </div>
             {filteredFeed.length === 0 && (
               <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
