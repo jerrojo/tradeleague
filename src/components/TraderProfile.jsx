@@ -4,6 +4,7 @@ import { TradeLab } from "./TradeLab";
 import { Bell, BellRing, ChevronRight, Circle, Crosshair, Eye, Heart, Link2, MessageCircle, RefreshCw, Scale, Send } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
+import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
 import { ACHIEVEMENTS, alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle, tierColor } from "../theme";
@@ -19,11 +20,15 @@ const TraderProfile = ({ trader, onClose }) => {
   const [eqPeriod, setEqPeriod] = useState(90); // 7 / 30 / 90 days — VARIV A.2: toggles, not dropdown
   const [expandedTrade, setExpandedTrade] = useState(null);
   const { addToast } = useContext(ToastContext);
+  const proMode = useProMode(); // Simple shows the essentials; Pro reveals the quant depth
   const t = trader;
   const deep = traderDeepData[t.name];
   const histMetrics = computeMetrics(deep.history); // Calmar / compound from the real trade list
 
-  const profileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
+  // Simple hides the Pro-only sub-tabs (Trade Lab, Risk DNA, Journal)
+  const allProfileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
+  const proOnlyTabs = ["trade_lab", "risk_dna", "journal"];
+  const profileTabs = proMode ? allProfileTabs : allProfileTabs.filter(pt => !proOnlyTabs.includes(pt));
   const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
@@ -228,7 +233,7 @@ const TraderProfile = ({ trader, onClose }) => {
               ["Calmar", histMetrics.calmar === Infinity ? "∞" : histMetrics.calmar.toFixed(2), histMetrics.calmar >= 3 ? C.green : histMetrics.calmar >= 1 ? C.amber : C.red, "calmarRatio", Scale],
               ["Expectancy", `$${calcExpectancy(t)}`, expectancyColor(calcExpectancy(t)), "expectancy", Lightbulb],
               ["Streak", `${t.streak}W`, C.purple, "streak", Flame],
-            ].map(([l, v, clr, tip, Icon]) => (
+            ].filter(row => proMode || ["Total PnL", "Win Rate", "Profit Factor", "Max Drawdown"].includes(row[0])).map(([l, v, clr, tip, Icon]) => (
               <div key={l} style={{
                 display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px",
                 borderRadius: "6px", backgroundColor: `${clr}06`, borderLeft: `2px solid ${clr}50`

@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { Activity, Flame, Radio, TrendingDown, TrendingUp } from "lucide-react";
 import { C, cardStyle, mono } from "../../theme";
 import { Tag } from "../common";
-import { TraderLink, useProfile } from "../../contexts";
+import { TraderLink, useProfile, useProMode } from "../../contexts";
 import { feedItems, mockTraders, smcCoins, traderDeepData } from "../../data/mockData";
 import { coinSentiment, coinOf } from "../../lib/tradeInsights";
 
@@ -27,6 +27,7 @@ const SentimentBar = ({ sentiment }) => {
 
 const MarketsTab = () => {
   const { openProfile } = useProfile();
+  const proMode = useProMode(); // Simple hides Net PnL + SMC Bias columns
   const [sortBy, setSortBy] = useState("trades");
   const [selected, setSelected] = useState(null);
 
@@ -121,7 +122,7 @@ const MarketsTab = () => {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {["Coin", "Price", "Trader Sentiment", "Long / Short", "Trades", "Win Rate", "Net PnL", "SMC Bias"].map((h) => (
+              {["Coin", "Price", "Trader Sentiment", "Long / Short", "Trades", "Win Rate", "Net PnL", "SMC Bias"].filter(h => proMode || (h !== "Net PnL" && h !== "SMC Bias")).map((h) => (
                 <th key={h} style={{ padding: "10px 12px", textAlign: h === "Coin" ? "left" : "center", color: C.textMuted, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` }}>{h}</th>
               ))}
             </tr>
@@ -151,10 +152,12 @@ const MarketsTab = () => {
                     </td>
                     <td style={{ padding: "10px 12px", textAlign: "center", ...mono, fontSize: 12, borderBottom: `1px solid ${C.border}` }}>{c.trades}</td>
                     <td style={{ padding: "10px 12px", textAlign: "center", borderBottom: `1px solid ${C.border}` }}><span style={{ ...mono, fontSize: 12, fontWeight: 700, color: c.winRate >= 50 ? C.green : C.red }}>{c.winRate}%</span></td>
-                    <td style={{ padding: "10px 12px", textAlign: "center", ...mono, fontSize: 12, fontWeight: 700, color: c.pnl >= 0 ? C.green : C.red, borderBottom: `1px solid ${C.border}` }}>{c.pnl >= 0 ? "+" : ""}${(c.pnl / 1000).toFixed(1)}K</td>
+                    {proMode && <td style={{ padding: "10px 12px", textAlign: "center", ...mono, fontSize: 12, fontWeight: 700, color: c.pnl >= 0 ? C.green : C.red, borderBottom: `1px solid ${C.border}` }}>{c.pnl >= 0 ? "+" : ""}${(c.pnl / 1000).toFixed(1)}K</td>}
+                    {proMode && (
                     <td style={{ padding: "10px 12px", textAlign: "center", borderBottom: `1px solid ${C.border}` }}>
                       {c.bias ? <Tag text={c.bias} color={c.bias === "BULLISH" ? C.green : C.red} /> : <span style={{ fontSize: 10, color: C.textFaint }}>—</span>}
                     </td>
+                    )}
                   </tr>
                   {open && (
                     <tr>

@@ -3,7 +3,7 @@ import { PositioningMap } from "../PositioningMap";
 import { InfoTip, StatCard, Tag } from "../common";
 import { CheckCircle, ChevronDown, Search } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useDate } from "../../contexts";
+import { useDate, useProMode } from "../../contexts";
 import { ftgPlayers, smcCoins } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
 import { AlertTriangle, ArrowDown, ArrowUp, Target, TrendingUp } from "lucide-react";
@@ -15,6 +15,7 @@ const SMCAnalysis = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const { dateLabel: globalDateLabel } = useDate();
+  const proMode = useProMode(); // Simple hides the dense SMC structure + safety checks
   const coin = smcCoins[selectedCoin];
   const currentPriceNum = Number(String(coin.price).replace(/[^0-9.]/g, "")) || coin.chartBase;
   const coinPickerRef = useRef(null);
@@ -177,7 +178,8 @@ const SMCAnalysis = () => {
       {/* Positioning Map — crowd long/short vs current price (the football idea, reborn) */}
       <PositioningMap coin={selectedCoin} currentPrice={currentPriceNum} />
 
-      {/* Multi-Timeframe Grid */}
+      {/* Multi-Timeframe Grid — Pro only (dense SMC structure) */}
+      {proMode && (
       <div>
         <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Multi-Timeframe Analysis — {selectedCoin}/{coin.pair}</div>
         <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Multi-Timeframe Analysis shows what happens across different time scales (minutes → hours)</div>
@@ -203,6 +205,7 @@ const SMCAnalysis = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Ideal Entry + Kill Zones side by side */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -264,9 +267,10 @@ const SMCAnalysis = () => {
         </div>
       </div>
 
-      {/* Safety Checks */}
+      {/* Safety Checks — Pro only (funding / OI / correlation) */}
+      {proMode && (
       <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Chequeo de Seguridad — {selectedCoin}</div>
+        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Safety Check — {selectedCoin}</div>
         <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Indicators confirming whether it's safe to trade right now</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
           {coin.safety.map(c => {
@@ -285,6 +289,7 @@ const SMCAnalysis = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* Price Chart */}
       <div style={cardStyle}>
