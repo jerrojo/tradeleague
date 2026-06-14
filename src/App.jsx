@@ -11,7 +11,7 @@ import { TopTradesTab } from "./components/tabs/TopTradesTab";
 import { MarketsTab } from "./components/tabs/MarketsTab";
 import { ArenaTab } from "./components/tabs/ArenaTab";
 import { AwardsTab } from "./components/tabs/AwardsTab";
-import { FootballTab } from "./components/tabs/FootballTab";
+import { FuturesTab } from "./components/tabs/FuturesTab";
 import { HallOfFameTab } from "./components/tabs/HallOfFameTab";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SMCAnalysis } from "./components/tabs/SMCAnalysis";
@@ -217,7 +217,7 @@ const App = () => {
     activity: ArenaTab,        // Activity = unified trades + signals + predictions feed (v2 merge)
     trades: ArenaTab,          // alias for deep links / search
     signals: ArenaTab,         // alias for deep links / search
-    futures: FootballTab,      // Futures = prediction markets
+    futures: FuturesTab,       // Futures = real prediction markets (was a football game)
     socials: SocialsTab,       // Socials = cross-platform curated feed
     traders: TradersTab,       // Traders = leaderboard, rankings & copy trading
     tokens: SMCAnalysis,       // Tokens = deep dive

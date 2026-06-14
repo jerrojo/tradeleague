@@ -242,7 +242,7 @@ const SMCAnalysis = () => {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            <InfoTip k="killZone" inline><span>Horarios Clave</span></InfoTip>
+            <InfoTip k="killZone" inline><span>Key Sessions</span></InfoTip>
           </div>
           {killZones.map(z => (
             <div key={z.name} style={{ ...cardStyle, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>

@@ -64,14 +64,14 @@ const ArenaTab = () => {
 
   const handleCopy = (item) => {
     setCopied(prev => ({ ...prev, [item.id]: true }));
-    toast.addToast(`Copiando ${item.type} ${item.pair} de ${item.trader}`, "success");
+    toast.addToast(`Copying ${item.type} ${item.pair} from ${item.trader}`, "success");
   };
 
   const activeCount = traderFeed.filter(f => f.kind === "trade" && f.status === "active").length;
   const watchedPnl = watchedTraders.reduce((a, t) => a + t.pnl, 0);
 
   const statusColors = { active: C.blue, tp_hit: C.green, sl_hit: C.red };
-  const statusLabels = { active: "Activa", tp_hit: "TP Hit", sl_hit: "SL Hit" };
+  const statusLabels = { active: "Active", tp_hit: "TP Hit", sl_hit: "SL Hit" };
   const isNew = (ts) => (Date.now() - ts) < 600000; // < 10 min
   const NewBadge = () => (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "8px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, padding: "1px 5px", borderRadius: "3px", border: `1px solid ${C.green}30`, animation: "livePulse 2s ease-in-out infinite" }}>
@@ -124,17 +124,17 @@ const ArenaTab = () => {
       {feedFilter === "all" && (
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ fontSize: "18px", fontWeight: "800" }}>Arena</div>
+          <div style={{ fontSize: "18px", fontWeight: "800" }}>Live activity</div>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "10px", fontWeight: "700", color: C.green, backgroundColor: C.greenBg, padding: "3px 10px", borderRadius: "10px", border: `1px solid ${C.green}30` }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> EN VIVO
+            <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block" }} /> LIVE
           </span>
           <span style={{ fontSize: "11px", color: C.textMuted }}>300 traders</span>
           <span style={{ fontSize: "11px", color: C.textFaint }}>·</span>
           <span style={{ fontSize: "11px", color: C.purple, fontWeight: "600" }}>Following {watchedNames.length}</span>
         </div>
         <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: C.textMuted, ...mono }}>
-          <span>{activeCount} ops activas</span>
-          <span style={{ color: C.green }}>+${(watchedPnl / 1000).toFixed(0)}K PnL total</span>
+          <span>{activeCount} active</span>
+          <span style={{ color: C.green }}>+${(watchedPnl / 1000).toFixed(0)}K total PnL</span>
         </div>
       </div>
       )}
@@ -203,7 +203,7 @@ const ArenaTab = () => {
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Trophy size={14} color={C.amber} />
               <span style={{ fontSize: "12px", fontWeight: "700" }}>Top 10 Leaderboard</span>
-              <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>de 300</span>
+              <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>of 300</span>
             </div>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
@@ -249,7 +249,7 @@ const ArenaTab = () => {
             transition: "background-color 0.15s"
           }}>
             <Users size={14} />
-            Ver los 300 traders
+            View all 300 traders
             <ChevronRight size={14} />
           </button>
         </div>
@@ -400,7 +400,7 @@ const ArenaTab = () => {
                   <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
                     <DollarSign size={14} color={totalPnl >= 0 ? C.green : C.red} />
                     <div>
-                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>PnL Total</div>
+                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Total PnL</div>
                       <div style={{ fontSize: "16px", fontWeight: "900", color: totalPnl >= 0 ? C.green : C.red, ...mono }}>{totalPnl >= 0 ? "+" : ""}${totalPnl.toLocaleString()}</div>
                     </div>
                   </div>
@@ -632,7 +632,7 @@ const ArenaTab = () => {
             </div>
             {filteredFeed.length === 0 && (
               <div style={{ ...cardStyle, textAlign: "center", padding: "40px", color: C.textMuted }}>
-                <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Selecciona traders para seguir</div>
+                <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "6px" }}>Select traders to follow</div>
                 <div style={{ fontSize: "12px" }}>Use the buttons above to choose who you want to watch live</div>
               </div>
             )}

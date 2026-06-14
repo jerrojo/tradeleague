@@ -20,18 +20,28 @@ const SocialsTab = () => {
     { id: "tradehub", label: "TH", color: C.purple },
   ];
 
+  // Recency from a "1h ago" / "2d ago" style string → minutes (feed reads chronologically)
+  const ageMin = (t = "") => {
+    const m = /(\d+)\s*([mhd])/.exec(t);
+    if (!m) return 1e9;
+    const n = Number(m[1]);
+    return m[2] === "m" ? n : m[2] === "h" ? n * 60 : n * 1440;
+  };
+
   const allPosts = useMemo(() => {
     const posts = mockTraders.flatMap(t =>
       (traderDeepData[t.name]?.socialPosts || []).map(p => ({
-        ...p, traderName: t.name, traderAvatar: t.avatar, traderTier: t.tier, isBot: t.isBot
+        ...p, traderName: t.name, traderTier: t.tier, isBot: t.isBot
       }))
     );
-    return posts.sort((a, b) => b.likes - a.likes);
+    // Chronological, not by likes — sorting by likes clustered every trader's identical
+    // "monthly results" post (its highest engagement) at the top. Recency interleaves variety.
+    return posts.sort((a, b) => ageMin(a.time) - ageMin(b.time));
   }, []);
 
   const filtered = platformFilter === "all" ? allPosts : allPosts.filter(p => p.platform === platformFilter);
   const totalEng = allPosts.reduce((s, p) => s + p.likes + p.replies, 0);
-  const highlight = allPosts[0];
+  const highlight = useMemo(() => [...allPosts].sort((a, b) => b.likes - a.likes)[0], [allPosts]);
 
   const platColors = { twitter: "#1DA1F2", discord: "#5865F2", reddit: "#FF4500", tradehub: C.purple, telegram: "#0088cc", whatsapp: "#25D366" };
   const platIcons = { twitter: "𝕏", discord: "DC", reddit: "R", tradehub: "TH", telegram: "TG", whatsapp: "WA" };

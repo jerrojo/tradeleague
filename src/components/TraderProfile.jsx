@@ -220,7 +220,7 @@ const TraderProfile = ({ trader, onClose }) => {
           {/* ── RIGHT: KPI Stats column with colored accents ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
             {[
-              ["PnL Total", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null, DollarSign],
+              ["Total PnL", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null, DollarSign],
               ["Win Rate", `${t.winRate}%`, C.green, "winRate", Target],
               ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe", Activity],
               ["Max Drawdown", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],

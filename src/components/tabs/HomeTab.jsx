@@ -296,7 +296,7 @@ const HomeTab = () => {
             padding: "6px", backgroundColor: C.greenBg, border: "none", borderTop: `1px solid ${C.border}`,
             color: C.green, fontSize: "9px", fontWeight: "700", cursor: "pointer"
           }}>
-            Ver todos <ChevronRight size={10} />
+            View all <ChevronRight size={10} />
           </button>
         </div>
 

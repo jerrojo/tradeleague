@@ -782,7 +782,7 @@ const CopyTradingView = () => {
             {/* Social Proof */}
             <div style={{ marginBottom: "12px", padding: "10px", backgroundColor: C.greenBg, borderRadius: "6px", border: `1px solid ${C.green}40` }}>
               <div style={{ fontSize: "11px", fontWeight: "700", color: C.green, display: "flex", alignItems: "center", gap: "6px" }}>
-                <Circle size={8} fill={C.green} color={C.green} /> {copiers} copiando ahora
+                <Circle size={8} fill={C.green} color={C.green} /> {copiers} copying now
                 {isHot && <span style={{ fontSize: "10px", fontWeight: "700", color: C.amber, display: "inline-flex", alignItems: "center", gap: "3px", backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: "3px", marginLeft: "6px" }}><Flame size={9} /> Hot</span>}
               </div>
             </div>
@@ -893,7 +893,7 @@ const CopyTradingView = () => {
                 </div>
                 <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "8px", lineHeight: 1.5 }}>
                   You'll copy <strong style={{ color: C.text }}>{port.name}</strong> with <strong style={{ color: C.text }}>${allocation.toLocaleString()}</strong> at <strong style={{ color: C.purple }}>{riskMult}x</strong> risk.
-                  {maxDDStop && <> Auto-stop activado al <strong style={{ color: C.red }}>{port.maxDD}%</strong> in drawdown.</>}
+                  {maxDDStop && <> Auto-stop enabled at <strong style={{ color: C.red }}>{port.maxDD}%</strong> drawdown.</>}
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
                   <button onClick={() => setShowConfirm(false)} style={{
@@ -970,7 +970,7 @@ const CopyTradingView = () => {
                 <td style={tdStyle}>{portIsHot ? <Flame size={14} color={C.amber} /> : <span style={{ color: C.textFaint }}>—</span>}</td>
                 <td style={tdStyle}>
                   {copying[p.name]
-                    ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, fontWeight: "600" }}><CheckCircle size={12} /> Copiando</span>
+                    ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: C.green, fontWeight: "600" }}><CheckCircle size={12} /> Copying</span>
                     : <span style={{ fontSize: "11px", color: C.textMuted }}>—</span>
                   }
                 </td>
