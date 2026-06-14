@@ -83,31 +83,24 @@ const SocialsTab = () => {
           const pIcon = platIcons[post.platform] || "?";
           const trader = mockTraders.find(t => t.name === post.traderName);
           return (
-            <div key={post.id} className="card-hover" style={{ ...cardStyle, padding: "14px", borderLeft: `3px solid ${pColor}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                <span style={{ fontSize: "8px", fontWeight: "800", color: pColor, backgroundColor: pColor + "20", padding: "2px 6px", borderRadius: "3px" }}>{pIcon}</span>
-                <Avatar name={post.traderName} size={26} />
-                <span onClick={() => trader && openProfile(trader)} style={{ fontSize: "12px", fontWeight: "700", cursor: "pointer" }}>{post.traderName}</span>
-                <BotTag isBot={post.isBot} />
-                <span style={{ fontSize: "10px", color: C.textMuted, ...mono, marginLeft: "auto" }}>{post.handle}</span>
-                <span style={{ fontSize: "9px", color: C.textFaint }}>{post.time}</span>
-              </div>
-              <div style={{ fontSize: "12px", color: C.text, lineHeight: "1.5", marginBottom: "8px" }}>
-                {post.text.length > 200 ? post.text.substring(0, 200) + "..." : post.text}
-              </div>
-              {(post.channel || post.subreddit) && (
-                <div style={{ marginBottom: "6px" }}>
-                  <Tag text={post.channel || post.subreddit} color={pColor} />
+            <div key={post.id} className="card-hover" style={{ ...cardStyle, padding: "16px", display: "flex", gap: "12px" }}>
+              <Avatar name={post.traderName} size={36} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "5px" }}>
+                  <span onClick={() => trader && openProfile(trader)} style={{ fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>{post.traderName}</span>
+                  <BotTag isBot={post.isBot} size={14} />
+                  <span title={post.platform} style={{ fontSize: "11px", fontWeight: "700", color: pColor }}>{pIcon}</span>
+                  <span style={{ fontSize: "11px", color: C.textFaint, ...mono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{post.handle}</span>
+                  <span style={{ marginLeft: "auto", fontSize: "10px", color: C.textFaint, flexShrink: 0 }}>{post.time}</span>
                 </div>
-              )}
-              <div style={{ display: "flex", gap: "14px", alignItems: "center", fontSize: "10px", color: C.textMuted }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Heart size={10} /> {post.likes}</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><MessageCircle size={10} /> {post.replies}</span>
-                {post.retweets > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Send size={10} /> {post.retweets}</span>}
-                {post.impressions > 0 && <span style={{ display: "flex", alignItems: "center", gap: "3px" }}><Eye size={10} /> {(post.impressions/1000).toFixed(1)}K</span>}
-                <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "3px", color: pColor, fontWeight: "600", fontSize: "9px" }} title={`Opens on ${post.platform}`}>
-                  <ExternalLink size={10} /> View original
-                </span>
+                <div style={{ fontSize: "13px", color: C.text, lineHeight: 1.55, marginBottom: "10px", whiteSpace: "pre-wrap" }}>{post.text}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "11px", color: C.textFaint }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Heart size={12} /> {post.likes.toLocaleString()}</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><MessageCircle size={12} /> {post.replies}</span>
+                  <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", color: pColor, cursor: "pointer", fontWeight: 600 }} title={`Opens on ${post.platform}`}>
+                    <ExternalLink size={11} /> Open
+                  </span>
+                </div>
               </div>
             </div>
           );

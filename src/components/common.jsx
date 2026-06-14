@@ -1,4 +1,4 @@
-import { Bot, ThumbsDown, ThumbsUp, Users } from "lucide-react";
+import { Bot, ThumbsDown, ThumbsUp, User, Users } from "lucide-react";
 import { srand } from "../lib/scoring";
 import { C, cardStyle, mono, pillStyle } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -139,17 +139,20 @@ const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot
   );
 };
 
-/* ── BotTag: visual distinction for bots vs humans ── */
+/* ── BotTag: bot vs human as a pure icon (no text) — quiet for beginners, instant for pros ── */
 const tagBase = { display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: "700", padding: "1px 6px", borderRadius: "3px" };
-const BotTag = ({ isBot }) => isBot == null ? null : isBot ? (
-  <span style={{ ...tagBase, color: C.cyan, backgroundColor: `${C.cyan}15`, border: `1px solid ${C.cyan}30` }}>
-    <Bot size={9} /> BOT
-  </span>
-) : (
-  <span style={{ ...tagBase, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}30` }}>
-    <Users size={9} /> HUMAN
-  </span>
-);
+const BotTag = ({ isBot, size = 15 }) => {
+  if (isBot == null) return null;
+  const Icon = isBot ? Bot : User;
+  const clr = isBot ? C.cyan : C.green;
+  return (
+    <span title={isBot ? "Bot — automated strategy" : "Human trader"} aria-label={isBot ? "Bot" : "Human"} style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      backgroundColor: `${clr}1c`, color: clr,
+    }}><Icon size={Math.round(size * 0.62)} /></span>
+  );
+};
 
 /* ── TP Progress Bar: thin inline bar ── */
 const TpProgressBar = ({ entry, tp, sl, status }) => {
