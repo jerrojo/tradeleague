@@ -76,7 +76,11 @@ export function coinSignals(coin, candles) {
   for (let k = 0; k < count; k++) {
     const r = (n) => srand(coin.length * 1000 + k * 53 + n);
     const trader = mockTraders[Math.floor(r(1) * mockTraders.length)];
-    const ei = 20 + Math.floor(r(2) * (N - 70)); // entry candle index
+    // ~1 in 4 signals is "fresh" — its entry sits near the present so it is still
+    // pending (waiting for price) or active (filled, not yet closed). The rest are
+    // older entries that have already resolved. This keeps the full lifecycle visible.
+    const recent = r(14) < 0.26;
+    const ei = recent ? (N - 14 + Math.floor(r(2) * 12)) : (20 + Math.floor(r(2) * (N - 80))); // entry candle index
     const px = candles[ei].close;
     // Where price actually went after entry — lets Robotín's approved calls look smart
     const horizon = Math.min(candles.length - 1, ei + 30 + Math.floor(r(13) * 20));
@@ -90,33 +94,39 @@ export function coinSignals(coin, candles) {
       ? (r(3) < alignProb ? realizedDir : (realizedDir === "LONG" ? "SHORT" : "LONG"))
       : (r(3) > 0.5 ? "LONG" : "SHORT");
     const sign = dir === "LONG" ? 1 : -1;
-    const slDist = px * (0.008 + r(4) * 0.008);   // 0.8%–1.6% stop
-    const tp1Dist = slDist * (1.3 + r(5) * 0.9);  // reward:risk 1.3–2.2
-    const sl = round(px - sign * slDist);
-    const tp1 = round(px + sign * tp1Dist);
-    const tp2 = round(px + sign * tp1Dist * 1.8);
-    const tp3 = round(px + sign * tp1Dist * 2.8);
+    // Robotín places a LIMIT entry back in the zone (below price for longs, above for
+    // shorts), so a fresh signal can sit PENDING until price returns to fill it.
+    const entryOffset = px * (0.0015 + r(15) * 0.0035); // 0.15%–0.5% into the zone
+    const entry = round(px - sign * entryOffset);
+    const slDist = entry * (0.008 + r(4) * 0.008);   // 0.8%–1.6% stop
+    const tp1Dist = slDist * (1.3 + r(5) * 0.9);     // reward:risk 1.3–2.2
+    const sl = round(entry - sign * slDist);
+    const tp1 = round(entry + sign * tp1Dist);
+    const tp2 = round(entry + sign * tp1Dist * 1.8);
+    const tp3 = round(entry + sign * tp1Dist * 2.8);
     const setup = SETUPS[Math.floor(r(6) * SETUPS.length)];
     const tf = TFS[Math.floor(r(7) * TFS.length)];
     const src = SOURCES[Math.floor(r(8) * SOURCES.length)];
     const tag = `${src}_SCALP_${setup}_${tf}_CRYPTO`;
 
     const rejectReason = !approved ? ["Risk:Reward below threshold", "Conflicts with higher-timeframe bias", "Entry already invalidated by price", "Liquidity sweep not confirmed"][Math.floor(r(10) * 4)] : null;
-    const reasoning = `Price tagged the ${tf} ${setup === "OB" ? "order block" : setup === "FVG" ? "fair-value gap" : setup} near ${entryFmt(px)}. ${dir === "LONG" ? "Bullish" : "Bearish"} rejection with volume confirms the zone; ${tf} is the structural timeframe anchoring the ${round((slDist / px) * 100)}% stop.`;
+    const reasoning = `Price tagged the ${tf} ${setup === "OB" ? "order block" : setup === "FVG" ? "fair-value gap" : setup} near ${entryFmt(entry)}. ${dir === "LONG" ? "Bullish" : "Bearish"} rejection with volume confirms the zone; ${tf} is the structural timeframe anchoring the ${round((slDist / entry) * 100)}% stop.`;
 
-    const res = approved ? resolve(candles, ei, dir, px, tp1, sl) : null;
+    let res = approved ? resolve(candles, ei, dir, entry, tp1, sl) : null;
+    // a fresh, still-unfilled limit order is PENDING (order live); an old one EXPIRED
+    if (res && res.status === "expired" && recent) res = { ...res, status: "pending", activeIdx: null };
     let pnlPct = 0, pnl = 0;
     if (res && res.status === "closed") {
       const lev = [3, 4, 5][Math.floor(r(11) * 3)];
       const notional = 2500 + r(12) * 5500; // $2.5k–8k position
-      pnlPct = round(sign * ((res.exit - px) / px) * 100 * lev);
-      pnl = round(sign * ((res.exit - px) / px) * lev * notional);
+      pnlPct = round(sign * ((res.exit - entry) / entry) * 100 * lev);
+      pnl = round(sign * ((res.exit - entry) / entry) * lev * notional);
     }
 
     out.push({
       id: `${coin}-${k}`, coin, pair: `${coin}/USDT`, trader: trader.name, isBot: trader.isBot,
       time: candles[ei].time, entryIdx: ei,
-      dir, entry: px, sl, tp1, tp2, tp3, tf, setup, tag,
+      dir, entry, signalPx: px, sl, tp1, tp2, tp3, tf, setup, tag,
       // Robotín
       approved, confidence: conf, reasoning, rejectReason,
       // execution (only if approved)
@@ -125,7 +135,7 @@ export function coinSignals(coin, candles) {
       pnlPct, pnl,
       // audit: what the signal implied vs what happened
       signalOutcome: "TP", // a published signal always claims it will hit TP
-      auditOutcome: res ? (res.status === "closed" ? (res.hit === "TP" ? "TP" : "SL") : res.status === "active" ? "OPEN" : "NO ENTRY") : null,
+      auditOutcome: res ? (res.status === "closed" ? (res.hit === "TP" ? "TP" : "SL") : res.status === "active" ? "OPEN" : res.status === "pending" ? "PENDING" : "NO ENTRY") : null,
     });
   }
   return out.sort((a, b) => a.time - b.time);
