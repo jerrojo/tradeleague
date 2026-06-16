@@ -1,39 +1,23 @@
 import { TokenFieldViz } from "../TokenFieldViz";
 import { PositioningMap } from "../PositioningMap";
+import { CoinSelector } from "../CoinSelector";
 import { InfoTip, StatCard, Tag } from "../common";
-import { CheckCircle, ChevronDown, Search } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useDate, useProMode } from "../../contexts";
 import { ftgPlayers, smcCoins } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
 import { AlertTriangle, ArrowDown, ArrowUp, Target, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 /* ═══════════════════════ TAB 1: SMC ANALYSIS ═══════════════════════ */
 const SMCAnalysis = () => {
   const [selectedCoin, setSelectedCoin] = useState("BTC");
-  const [coinPickerOpen, setCoinPickerOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
   const { dateLabel: globalDateLabel } = useDate();
   const proMode = useProMode(); // Simple hides the dense SMC structure + safety checks
   const coin = smcCoins[selectedCoin];
   const currentPriceNum = Number(String(coin.price).replace(/[^0-9.]/g, "")) || coin.chartBase;
-  const coinPickerRef = useRef(null);
 
   const categories = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
-
-  const filteredCoins = useMemo(() => Object.keys(smcCoins).filter(ticker => {
-    const matchesSearch = ticker.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "All" || smcCoins[ticker].category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  }).sort(), [searchQuery, categoryFilter]);
-
-  useEffect(() => {
-    if (!coinPickerOpen) return;
-    const handler = (e) => { if (coinPickerRef.current && !coinPickerRef.current.contains(e.target)) setCoinPickerOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [coinPickerOpen]);
 
   const chartData = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
     time: `${String(i).padStart(2, "0")}:00`,
@@ -55,117 +39,8 @@ const SMCAnalysis = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* ── Coin Selector: inline active coin + dropdown picker ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-        {/* Active coin display */}
-        <div ref={coinPickerRef} style={{ position: "relative" }}>
-          <button onClick={() => { setCoinPickerOpen(!coinPickerOpen); setSearchQuery(""); }} style={{
-            display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px",
-            backgroundColor: C.card, border: `1px solid ${coinPickerOpen ? C.purple : C.border}`,
-            borderRadius: "8px", cursor: "pointer", transition: "border-color 0.15s"
-          }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "4px" }}>
-              <span style={{ fontSize: "20px", fontWeight: "800", color: C.text, ...mono }}>{selectedCoin}</span>
-              <span style={{ fontSize: "12px", color: C.textMuted, fontWeight: "500" }}>/{coin.pair}</span>
-            </div>
-            <div style={{ width: "1px", height: "24px", backgroundColor: C.border }} />
-            <span style={{ fontSize: "16px", fontWeight: "700", color: C.text, ...mono }}>{coin.price}</span>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: coin.change.startsWith("+") ? C.green : C.red, ...mono }}>{coin.change}</span>
-            <div style={{ width: "1px", height: "24px", backgroundColor: C.border }} />
-            <span style={{ fontSize: "11px", fontWeight: "700", color: biasColor, textTransform: "uppercase" }}>{coin.bias}</span>
-            <ChevronDown size={16} color={C.textMuted} style={{ transform: coinPickerOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", marginLeft: "4px" }} />
-          </button>
-
-          {/* Dropdown picker */}
-          {coinPickerOpen && (
-            <div style={{
-              position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300,
-              backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px",
-              width: "420px", boxShadow: "0 12px 32px rgba(0,0,0,0.5)", overflow: "hidden"
-            }}>
-              {/* Search */}
-              <div style={{ padding: "12px 12px 8px", position: "relative" }}>
-                <Search size={14} style={{ position: "absolute", left: "22px", top: "22px", color: C.textMuted }} />
-                <input
-                  type="text" placeholder="Search coins..." value={searchQuery} autoFocus
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: "100%", padding: "8px 10px 8px 32px", borderRadius: "6px",
-                    border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text,
-                    fontSize: "12px", fontFamily: "inherit", outline: "none",
-                  }}
-                />
-              </div>
-              {/* Category tabs */}
-              <div style={{ display: "flex", gap: "2px", padding: "0 12px 8px", borderBottom: `1px solid ${C.border}` }}>
-                {categories.map(cat => (
-                  <button key={cat} onClick={() => setCategoryFilter(cat)} style={{
-                    padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                    border: "none", backgroundColor: categoryFilter === cat ? C.purpleBg : "transparent",
-                    color: categoryFilter === cat ? C.purple : C.textMuted,
-                  }}>{cat}</button>
-                ))}
-              </div>
-              {/* Coin list */}
-              <div style={{ maxHeight: "280px", overflowY: "auto" }}>
-                {filteredCoins.map(c => {
-                  const cd = smcCoins[c];
-                  const isSelected = selectedCoin === c;
-                  return (
-                    <button key={c} onClick={() => { setSelectedCoin(c); setCoinPickerOpen(false); }} style={{
-                      display: "flex", alignItems: "center", width: "100%", padding: "8px 14px",
-                      border: "none", cursor: "pointer", gap: "12px",
-                      backgroundColor: isSelected ? C.purpleBg : "transparent",
-                      borderLeft: isSelected ? `3px solid ${C.purple}` : "3px solid transparent",
-                    }}>
-                      <div style={{ flex: 1, textAlign: "left" }}>
-                        <span style={{ fontSize: "13px", fontWeight: "700", color: isSelected ? C.purple : C.text }}>{c}</span>
-                        <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "2px" }}>/{cd.pair}</span>
-                        <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "8px" }}>{cd.category}</span>
-                      </div>
-                      <span style={{ fontSize: "12px", fontWeight: "600", color: C.text, ...mono, minWidth: "80px", textAlign: "right" }}>{cd.price}</span>
-                      <span style={{ fontSize: "11px", fontWeight: "700", minWidth: "50px", textAlign: "right", ...mono,
-                        color: cd.change.startsWith("+") ? C.green : C.red
-                      }}>{cd.change}</span>
-                    </button>
-                  );
-                })}
-                {filteredCoins.length === 0 && (
-                  <div style={{ padding: "20px", textAlign: "center", color: C.textMuted, fontSize: "12px" }}>No coins found</div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quick-switch: top coins with performance */}
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {["BTC","ETH","SOL","BNB","XRP","DOGE","AVAX","ADA"].map(c => {
-            const cd = smcCoins[c];
-            const isUp = cd.change.startsWith("+");
-            const isActive = selectedCoin === c;
-            return (
-              <button key={c} onClick={() => setSelectedCoin(c)} style={{
-                padding: "4px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "6px",
-                border: `1px solid ${isActive ? C.purple : C.border}`,
-                backgroundColor: isActive ? C.purpleBg : "transparent",
-                color: isActive ? C.purple : C.text,
-                transition: "all 0.15s ease",
-                ...mono
-              }}>
-                <span>{c}</span>
-                <span style={{
-                  fontSize: "9px", fontWeight: "700",
-                  color: isUp ? C.green : C.red,
-                  backgroundColor: isUp ? C.greenBg : C.redBg,
-                  padding: "1px 4px", borderRadius: "3px"
-                }}>{cd.change}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* ── Coin Selector (shared component: dropdown + editable favorites) ── */}
+      <CoinSelector coins={Object.keys(smcCoins)} selected={selectedCoin} onSelect={setSelectedCoin} meta={smcCoins} categories={categories} />
 
       {/* Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>

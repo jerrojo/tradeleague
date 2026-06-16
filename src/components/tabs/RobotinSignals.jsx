@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CandlestickChart, LineChart, Check, X, Clock, Activity, ChevronDown, Cpu } from "lucide-react";
 import { CandleChart } from "../CandleChart";
+import { CoinSelector } from "../CoinSelector";
 import { Avatar, BotTag } from "../common";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
@@ -39,21 +40,24 @@ const RobotinSignals = () => {
       ]
     : [];
 
-  const counts = ROBOTIN_COINS.map((c) => ({ c, n: coinSignals(c, coinCandles(c)).length }));
   const approved = signals.filter((s) => s.approved).length;
+
+  // Per-coin meta (price + 24-period change) for the shared CoinSelector
+  const coinMeta = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => {
+      const cs = coinCandles(c);
+      const last = cs[cs.length - 1].close, first = cs[0].close;
+      const ch = ((last - first) / first) * 100;
+      m[c] = { pair: "USDT", price: fmt(last), change: `${ch >= 0 ? "+" : ""}${ch.toFixed(2)}%` };
+    });
+    return m;
+  }, []);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Asset selector */}
-      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 2 }}>Asset</span>
-        {counts.map(({ c, n }) => (
-          <button key={c} onClick={() => { setCoin(c); setOpen(null); }} style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", ...mono,
-            border: `1px solid ${coin === c ? C.purple : C.border}`, backgroundColor: coin === c ? C.purpleBg : "transparent", color: coin === c ? C.text : C.textMuted,
-          }}>{c}<span style={{ fontSize: 9, color: coin === c ? C.purple : C.textFaint }}>{n}</span></button>
-        ))}
-      </div>
+      {/* Asset selector (shared component: dropdown + editable favorites) */}
+      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={(c) => { setCoin(c); setOpen(null); }} meta={coinMeta} />
 
       {/* Chart */}
       <div style={cardStyle}>
