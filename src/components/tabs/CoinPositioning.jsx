@@ -27,8 +27,8 @@ const CoinPositioning = ({ coin = "BTC" }) => {
       <div style={cardStyle}>
         <TokenFieldViz
           pair={`${coin}/USDT`}
-          currentPrice={Math.round((base + 12 * step) * 100) / 100}
-          priceRange={{ low: Math.round(base * 0.97), high: Math.round((base + 24 * step) * 1.03) }}
+          currentPrice={price}
+          priceRange={{ low: Math.round(Math.min(base * 0.97, price * 0.985)), high: Math.round(Math.max((base + 24 * step) * 1.03, price * 1.015)) }}
           players={ftgPlayers.map((p, i) => ({
             ...p, coin,
             entry: Math.round((base + i * 1.3 * step) * 100) / 100,
