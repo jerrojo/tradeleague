@@ -1,9 +1,14 @@
 import { useState } from "react";
-import { Activity, Award, Beaker, Briefcase, Coins, Flame, Globe, Scale, Trophy, Users } from "lucide-react";
+import { Activity, Award, Beaker, Briefcase, Flame, Gamepad2, Globe, Lightbulb, Scale, Target, Trophy, Users } from "lucide-react";
 import { C } from "../theme";
+import { CoinSelector } from "./CoinSelector";
 import { MarketsTab } from "./tabs/MarketsTab";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
+import { RobotinSignals } from "./tabs/RobotinSignals";
+import { CoinPositioning } from "./tabs/CoinPositioning";
 import { ArenaTab } from "./tabs/ArenaTab";
+import { smcCoins } from "../data/mockData";
+import { ROBOTIN_COINS } from "../data/robotin";
 import { FuturesTab } from "./tabs/FuturesTab";
 import { TradersTab } from "./tabs/TradersTab";
 import { HallOfFameTab } from "./tabs/HallOfFameTab";
@@ -35,16 +40,37 @@ const SubTabs = ({ tabs, active, onChange }) => (
   </div>
 );
 
-/* ── MARKETS: per-coin sentiment + the coin terminal (absorbs Tokens) ── */
+/* ── MARKETS: the Coin Hub. Pick a coin once (single price, in the selector),
+   then move between its Signals, Structure and Positioning — plus an All-coins
+   overview. This folds the old standalone Signals tab and Coin Detail into one
+   coin-first terminal, killing the duplicated price displays. ── */
+const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
+
 const MarketsSection = () => {
-  const [sub, setSub] = useState("sentiment");
+  const [coin, setCoin] = useState("BTC");
+  const [view, setView] = useState("signals"); // signals | structure | positioning | overview
+  const onOverview = view === "overview";
+
   return (
     <div>
-      <SubTabs active={sub} onChange={setSub} tabs={[
-        { id: "sentiment", label: "Sentiment", icon: Globe },
-        { id: "coin", label: "Coin Detail", icon: Coins },
+      {/* Coin selector (single source of price) — hidden on the coin-agnostic overview */}
+      {!onOverview && (
+        <div style={{ marginBottom: "14px" }}>
+          <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={smcCoins} categories={COIN_CATEGORIES} />
+        </div>
+      )}
+
+      <SubTabs active={view} onChange={setView} tabs={[
+        { id: "signals", label: "Signals", icon: Lightbulb },
+        { id: "structure", label: "Structure", icon: Target },
+        { id: "positioning", label: "Positioning", icon: Gamepad2 },
+        { id: "overview", label: "All coins", icon: Globe },
       ]} />
-      {sub === "sentiment" ? <MarketsTab /> : <SMCAnalysis />}
+
+      {view === "signals" && <RobotinSignals coin={coin} embedded />}
+      {view === "structure" && <SMCAnalysis coin={coin} embedded />}
+      {view === "positioning" && <CoinPositioning coin={coin} />}
+      {view === "overview" && <MarketsTab />}
     </div>
   );
 };

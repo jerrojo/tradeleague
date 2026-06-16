@@ -1,31 +1,18 @@
-import { TokenFieldViz } from "../TokenFieldViz";
-import { PositioningMap } from "../PositioningMap";
 import { CoinSelector } from "../CoinSelector";
 import { InfoTip, StatCard, Tag } from "../common";
-import { CheckCircle } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useDate, useProMode } from "../../contexts";
-import { ftgPlayers, smcCoins } from "../../data/mockData";
+import { useProMode } from "../../contexts";
+import { smcCoins } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
-import { AlertTriangle, ArrowDown, ArrowUp, Target, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
-/* ═══════════════════════ TAB 1: SMC ANALYSIS ═══════════════════════ */
-const SMCAnalysis = () => {
-  const [selectedCoin, setSelectedCoin] = useState("BTC");
-  const { dateLabel: globalDateLabel } = useDate();
+import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle, Target } from "lucide-react";
+import { useState } from "react";
+/* ═══════════════════════ COIN STRUCTURE (SMC) ═══════════════════════ */
+const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
+  const [coinState, setSelectedCoin] = useState("BTC");
+  const selectedCoin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
   const proMode = useProMode(); // Simple hides the dense SMC structure + safety checks
   const coin = smcCoins[selectedCoin];
-  const currentPriceNum = Number(String(coin.price).replace(/[^0-9.]/g, "")) || coin.chartBase;
 
   const categories = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
-
-  const chartData = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
-    time: `${String(i).padStart(2, "0")}:00`,
-    price: Math.round((coin.chartBase + i * coin.chartStep + Math.sin(i * 0.5) * coin.chartAmp) * 100) / 100,
-    volume: Math.floor(1200 + Math.random() * 800),
-    ma20: Math.round((coin.chartBase - coin.chartAmp * 0.25 + i * coin.chartStep * 1.05) * 100) / 100,
-    ma50: Math.round((coin.chartBase - coin.chartAmp * 0.5 + i * coin.chartStep * 0.85) * 100) / 100,
-  })), [selectedCoin]);
 
   const killZones = [
     { name: "Asia", time: "00:00–08:00 UTC", active: false },
@@ -39,19 +26,17 @@ const SMCAnalysis = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* ── Coin Selector (shared component: dropdown + editable favorites) ── */}
-      <CoinSelector coins={Object.keys(smcCoins)} selected={selectedCoin} onSelect={setSelectedCoin} meta={smcCoins} categories={categories} />
+      {/* ── Coin Selector — hidden when the Coin Hub owns the coin ── */}
+      {!embedded && (
+        <CoinSelector coins={Object.keys(smcCoins)} selected={selectedCoin} onSelect={setSelectedCoin} meta={smcCoins} categories={categories} />
+      )}
 
-      {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        <StatCard label="Current Price" value={coin.price} sub={coin.change} icon={TrendingUp} color={coin.change.startsWith("+") ? C.green : C.red} />
+      {/* Stats Row — price lives in the hub header, so structure leads with bias/strength/risk */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
         <StatCard label="Direction" value={coin.bias === "BULLISH" ? "↑ UP" : "↓ DOWN"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
         <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
         <StatCard label="Risk Level" value={coin.risk === "LOW" ? "LOW" : coin.risk === "MEDIUM" ? "MEDIUM" : "HIGH"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
-
-      {/* Positioning Map — crowd long/short vs current price (the football idea, reborn) */}
-      <PositioningMap coin={selectedCoin} currentPrice={currentPriceNum} />
 
       {/* Multi-Timeframe Grid — Pro only (dense SMC structure) */}
       {proMode && (
@@ -166,39 +151,6 @@ const SMCAnalysis = () => {
       </div>
       )}
 
-      {/* Price Chart */}
-      <div style={cardStyle}>
-        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>
-          {selectedCoin}/{smcCoins[selectedCoin].pair} — Price Action ({globalDateLabel})
-        </div>
-        <ResponsiveContainer width="100%" height={280}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={C.blue} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-            <XAxis dataKey="time" stroke={C.textMuted} fontSize={10} />
-            <YAxis stroke={C.textMuted} fontSize={10} domain={["dataMin - auto", "dataMax + auto"]} />
-            <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
-            <Area type="monotone" dataKey="price" stroke={C.blue} fill="url(#priceGrad)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="ma20" stroke={C.amber} dot={false} strokeWidth={1} strokeDasharray="4 4" />
-            <Line type="monotone" dataKey="ma50" stroke={C.purple} dot={false} strokeWidth={1} strokeDasharray="4 4" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* ── Trading Field — Who's positioned on this token ── */}
-      <div style={cardStyle}>
-        <TokenFieldViz
-          pair={`${selectedCoin}/USDT`}
-          currentPrice={Math.round((coin.chartBase + 12 * coin.chartStep) * 100) / 100}
-          priceRange={{ low: Math.round(coin.chartBase * 0.97), high: Math.round((coin.chartBase + 24 * coin.chartStep) * 1.03) }}
-          players={ftgPlayers.map((p, i) => ({ ...p, coin: selectedCoin, entry: Math.round((coin.chartBase + (i * 1.3) * coin.chartStep) * 100) / 100, current: Math.round((coin.chartBase + 12 * coin.chartStep + (p.roi / 100) * coin.chartBase * 0.01) * 100) / 100 }))}
-        />
-      </div>
     </div>
   );
 };

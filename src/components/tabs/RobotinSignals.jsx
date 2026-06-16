@@ -21,9 +21,10 @@ const STATUS = {
 };
 const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 
-const RobotinSignals = () => {
+const RobotinSignals = ({ coin: coinProp, embedded = false } = {}) => {
   const { openProfile } = useProfile();
-  const [coin, setCoin] = useState("BTC");
+  const [coinState, setCoin] = useState("BTC");
+  const coin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
   const [chartMode, setChartMode] = useState("candles");
   const [open, setOpen] = useState(null); // expanded signal id
 
@@ -56,8 +57,10 @@ const RobotinSignals = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Asset selector (shared component: dropdown + editable favorites) */}
-      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={(c) => { setCoin(c); setOpen(null); }} meta={coinMeta} />
+      {/* Asset selector (shared component: dropdown + editable favorites) — hidden when the Coin Hub owns the coin */}
+      {!embedded && (
+        <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={(c) => { setCoin(c); setOpen(null); }} meta={coinMeta} />
+      )}
 
       {/* Chart */}
       <div style={cardStyle}>

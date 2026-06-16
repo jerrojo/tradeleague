@@ -1,4 +1,4 @@
-import { mockTraders } from "./mockData";
+import { mockTraders, smcCoins } from "./mockData";
 
 /* ═══════════════════════ ROBOTÍN DATA (v1, simulated) ═══════════════════════
    The model: traders publish SIGNALS → Robotín (the AI) approves/rejects each one
@@ -8,8 +8,14 @@ import { mockTraders } from "./mockData";
 
 const srand = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
 
-export const COIN_PX = { BTC: 68000, ETH: 3480, SOL: 148.6, BNB: 618, XRP: 2.18, LINK: 32.8, AVAX: 39.2, DOGE: 0.358 };
-export const ROBOTIN_COINS = Object.keys(COIN_PX);
+/* Single price source of truth: derive every coin's anchor price from smcCoins
+   (the master coin catalog), so the hub header, the candle chart and the
+   structure view never disagree on price. Falls back to a sane default. */
+const parsePx = (s) => Number(String(s).replace(/[^0-9.]/g, "")) || 100;
+export const COIN_PX = Object.fromEntries(Object.keys(smcCoins).map((k) => [k, parsePx(smcCoins[k].price)]));
+/* Curated, ordered shortlist for the asset menu (majors first); the rest stay searchable. */
+const PREFERRED = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "DOT", "MATIC", "TON", "NEAR", "ARB", "OP", "SUI", "INJ", "TIA", "PEPE", "WIF", "BONK"];
+export const ROBOTIN_COINS = [...PREFERRED.filter((c) => smcCoins[c]), ...Object.keys(smcCoins).filter((c) => !PREFERRED.includes(c))];
 
 const SETUPS = ["FVG", "OB", "BOS", "LIQ", "CHOCH"];
 const TFS = ["M15", "H1", "H4"];

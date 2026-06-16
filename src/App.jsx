@@ -1,12 +1,12 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
-import { RobotinSignals } from "./components/tabs/RobotinSignals";
+import { RobotinWallet } from "./components/tabs/RobotinWallet";
 import { MarketsSection, ActivitySection, TradersSection, AnalyzeSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -25,7 +25,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("signals");
+  const [activeTab, setActiveTab] = useState("markets");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -167,9 +167,9 @@ const App = () => {
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
-    { id: "signals", label: "Signals", icon: Lightbulb, accent: C.green },
     { id: "pulse", label: "Pulse", icon: Radio, accent: C.purple },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
+    { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "analyze", label: "Analyze", icon: BarChart3, accent: C.amber, pro: true },
@@ -178,9 +178,9 @@ const App = () => {
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
-    signals: "Live trader signals on the chart — and Robotín's call on each one",
     pulse: "The live pulse — who's winning right now and the market mood",
-    markets: "Where the crowd is positioned on every coin, and the structure behind it",
+    markets: "One coin at a time — its signals, structure and crowd positioning",
+    robotin: "Robotín's wallet — every trade the bot executed from approved signals",
     activity: "Trades, signals and predictions as they happen — one live stream",
     traders: "The leaderboard, profiles, all-time legends and season awards",
     analyze: "The expert workbench — fund health, the Trade Lab and the best/worst plays",
@@ -189,9 +189,9 @@ const App = () => {
 
   // Section → component mapping
   const tabContent = {
-    signals: RobotinSignals,   // Signals = trader signals on candles + Robotín's decision (v1 core)
     pulse: HomeTab,            // Pulse = the live overview / race
-    markets: MarketsSection,   // Markets = sentiment + coin terminal (+ Tokens)
+    markets: MarketsSection,   // Markets = the coin hub: Signals + Structure + Positioning (+ All coins)
+    robotin: RobotinWallet,    // Robotín = the bot's execution wallet / journal dashboard
     activity: ActivitySection, // Activity = live stream + prediction markets
     traders: TradersSection,   // Traders = leaderboard + legends + awards
     analyze: AnalyzeSection,   // Analyze (Pro) = portfolio + trade lab + top trades
