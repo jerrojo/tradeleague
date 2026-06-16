@@ -79,17 +79,20 @@ const RobotinWallet = () => {
     const balance = STARTING_BALANCE + netPnl;
     const returnPct = (netPnl / STARTING_BALANCE) * 100;
 
-    /* ── "Today" subset: the most recent N closed trades (clearly simulated) ── */
-    const todayN = Math.min(6, closedByExit.length);
-    const today = closedByExit.slice(closedByExit.length - todayN);
+    /* ── "Today" subset: Robotín's most recently OPENED closed trades (clearly
+       simulated). Ordered by entry time so it reflects recent activity rather
+       than the late-resolving tail (which skews to stop-outs). ── */
+    const recent = [...closed].sort((a, b) => a.time - b.time);
+    const todayN = Math.min(8, recent.length);
+    const today = recent.slice(recent.length - todayN);
     const todayPnl = today.reduce((a, t) => a + t.pnl, 0);
     const todayWins = today.filter((t) => t.hit === "TP").length;
     const todayLosses = today.filter((t) => t.hit === "SL").length;
-    // current streak: count run from the end (positive = wins, negative = losses)
+    // current streak across the most recent activity (positive = wins, negative = losses)
     let streak = 0;
-    for (let k = closedByExit.length - 1; k >= 0; k--) {
-      const win = closedByExit[k].hit === "TP";
-      if (k === closedByExit.length - 1) { streak = win ? 1 : -1; continue; }
+    for (let k = recent.length - 1; k >= 0; k--) {
+      const win = recent[k].hit === "TP";
+      if (k === recent.length - 1) { streak = win ? 1 : -1; continue; }
       if (win && streak > 0) streak++;
       else if (!win && streak < 0) streak--;
       else break;
