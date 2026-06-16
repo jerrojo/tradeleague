@@ -7,6 +7,9 @@ import { mockTraders, smcCoins } from "./mockData";
    same candle series the chart draws, so the audit is internally consistent. */
 
 const srand = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+/* Per-coin seed from the FULL ticker (not its length) so same-length coins
+   (BTC/ETH/SOL/BNB…) get genuinely different candles and signals, not clones. */
+const coinSeed = (coin) => { let h = 0; for (let i = 0; i < coin.length; i++) h = (h * 131 + coin.charCodeAt(i) * 17) % 100000; return h + 7; };
 
 /* Single price source of truth: derive every coin's anchor price from smcCoins
    (the master coin catalog), so the hub header, the candle chart and the
@@ -28,18 +31,19 @@ const N = 160;
 /* ── OHLC candle series for a coin (deterministic random walk around its price) ── */
 export function coinCandles(coin) {
   const base = COIN_PX[coin] || 100;
+  const cs = coinSeed(coin);
   const now = Math.floor(Date.now() / 1000 / STEP) * STEP;
   const start = now - N * STEP;
   const vol = base * 0.006;
   let price = base * 0.97;
   const out = [];
   for (let i = 0; i < N; i++) {
-    const r = srand(coin.length * 131 + i * 17);
+    const r = srand(cs * 131 + i * 17);
     const drift = (base - price) * 0.015;
     const open = price;
     const close = open + (r - 0.5) * 2 * vol + drift;
-    const high = Math.max(open, close) + srand(coin.length + i * 7) * vol * 0.8;
-    const low = Math.min(open, close) - srand(coin.length + i * 11) * vol * 0.8;
+    const high = Math.max(open, close) + srand(cs + i * 7) * vol * 0.8;
+    const low = Math.min(open, close) - srand(cs + i * 11) * vol * 0.8;
     out.push({ time: start + i * STEP, open: round(open), high: round(high), low: round(low), close: round(close) });
     price = close;
   }
@@ -72,9 +76,10 @@ function resolve(candles, ei, dir, entry, tp, sl) {
 /* ── Signals for a coin, each with Robotín's decision + (if approved) the trade ── */
 export function coinSignals(coin, candles) {
   const out = [];
-  const count = 5 + Math.floor(srand(coin.length * 3) * 4); // 5–8 per coin
+  const cs = coinSeed(coin);
+  const count = 5 + Math.floor(srand(cs * 3) * 4); // 5–8 per coin
   for (let k = 0; k < count; k++) {
-    const r = (n) => srand(coin.length * 1000 + k * 53 + n);
+    const r = (n) => srand(cs * 1000 + k * 53 + n);
     const trader = mockTraders[Math.floor(r(1) * mockTraders.length)];
     // ~1 in 4 signals is "fresh" — its entry sits near the present so it is still
     // pending (waiting for price) or active (filled, not yet closed). The rest are
