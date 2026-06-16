@@ -6,6 +6,7 @@ import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistCo
 import { ThemeProvider } from "./theme";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
+import { RobotinSignals } from "./components/tabs/RobotinSignals";
 import { MarketsSection, ActivitySection, TradersSection, AnalyzeSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -24,7 +25,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("pulse");
+  const [activeTab, setActiveTab] = useState("signals");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -166,6 +167,7 @@ const App = () => {
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
+    { id: "signals", label: "Signals", icon: Lightbulb, accent: C.green },
     { id: "pulse", label: "Pulse", icon: Radio, accent: C.purple },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
@@ -176,6 +178,7 @@ const App = () => {
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
+    signals: "Live trader signals on the chart — and Robotín's call on each one",
     pulse: "The live pulse — who's winning right now and the market mood",
     markets: "Where the crowd is positioned on every coin, and the structure behind it",
     activity: "Trades, signals and predictions as they happen — one live stream",
@@ -186,6 +189,7 @@ const App = () => {
 
   // Section → component mapping
   const tabContent = {
+    signals: RobotinSignals,   // Signals = trader signals on candles + Robotín's decision (v1 core)
     pulse: HomeTab,            // Pulse = the live overview / race
     markets: MarketsSection,   // Markets = sentiment + coin terminal (+ Tokens)
     activity: ActivitySection, // Activity = live stream + prediction markets
