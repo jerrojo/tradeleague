@@ -6,8 +6,8 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Lin
 import { traderDeepData, traderSocials } from "../data/mockData";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
-import { ACHIEVEMENTS, alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../lib/scoring";
-import { C, cardStyle, mono, tdStyle, thStyle, tierColor } from "../theme";
+import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
+import { C, cardStyle, mono, tdStyle, thStyle } from "../theme";
 import { ToastContext } from "./common";
 import { Activity, BarChart3, Clock, DollarSign, Flame, Lightbulb, Star, Target, TrendingDown, TrendingUp, Trophy, Users, Zap } from "lucide-react";
 import { Fragment, useContext, useMemo, useState } from "react";
@@ -122,23 +122,13 @@ const TraderProfile = ({ trader, onClose }) => {
 
       {/* Profile Header Card — redesigned */}
       <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        {/* ── Top banner strip with tier accent ── */}
-        <div style={{ height: 4, background: `linear-gradient(90deg, ${tierColor[t.tier]}, ${tierColor[t.tier]}60, transparent)` }} />
-
         <div style={{ padding: "16px 20px", display: "flex", gap: "20px", alignItems: "flex-start" }}>
           {/* ── LEFT: Avatar + Identity + Alpha ── */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: "140px" }}>
-            {/* Avatar with tier ring + level indicator */}
-            <div style={{ position: "relative" }}>
-              <Avatar name={t.name} size={88} ring={tierColor[t.tier]} style={{ boxShadow: `0 0 20px ${tierColor[t.tier]}25` }} />
-              {/* Level badge on avatar */}
-              <div style={{ position: "absolute", bottom: -2, right: -2, backgroundColor: C.purple, color: "#fff", fontSize: "9px", fontWeight: "800", padding: "2px 6px", borderRadius: "10px", border: `2px solid ${C.card}`, ...mono }}>Lv.{t.level}</div>
-            </div>
+            <Avatar name={t.name} size={88} />
             <div style={{ fontSize: "18px", fontWeight: "900", marginTop: "10px", letterSpacing: "-0.3px" }}>{t.name}</div>
             <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "4px", flexWrap: "wrap", justifyContent: "center" }}>
-              <Tag text={t.tier} color={tierColor[t.tier]} />
               <BotTag isBot={t.isBot} />
-              <span style={{ fontSize: "9px", color: C.textFaint, fontStyle: "italic" }}>{titleByLevel(t.level)}</span>
             </div>
 
             {/* Alpha Score — prominent badge */}
@@ -151,24 +141,6 @@ const TraderProfile = ({ trader, onClose }) => {
                 <div style={{ fontSize: "9px", fontWeight: "700", color: aClr, marginTop: "3px", letterSpacing: "1px" }}>ALPHA {alphaLabel(alpha)}</div>
               </div>
             ); })()}
-
-            {/* Degen Score pill */}
-            {(() => { const degen = calcDegenScore(t); const dClr = degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green; return (
-              <div style={{ marginTop: "8px", fontSize: "9px", fontWeight: "800", color: dClr, padding: "3px 10px", borderRadius: "4px", backgroundColor: `${dClr}15`, border: `1px solid ${dClr}25`, letterSpacing: "0.5px" }}>
-                {degenLabel(degen)}
-              </div>
-            ); })()}
-
-            {/* XP Progress bar */}
-            <div style={{ marginTop: "8px", width: "100%" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "8px", color: C.textFaint, marginBottom: "3px" }}>
-                <span>XP {(t.xp || 0).toLocaleString()}</span>
-                <span>{(t.xpNext || 10000).toLocaleString()}</span>
-              </div>
-              <div style={{ height: 3, backgroundColor: C.border, borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${((t.xp || 0) / (t.xpNext || 10000)) * 100}%`, backgroundColor: C.purple, borderRadius: 2 }} />
-              </div>
-            </div>
           </div>
 
           {/* ── CENTER: Bio + Info Grid + Stats + Badges ── */}
@@ -196,30 +168,6 @@ const TraderProfile = ({ trader, onClose }) => {
                 </div>
               ))}
             </div>
-
-            {/* ── Badges row — actual icons, not just a count ── */}
-            {t.badges.length > 0 && (
-              <div style={{ paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
-                <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginBottom: "6px", letterSpacing: "0.5px" }}>Badges ({t.badges.length})</div>
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {t.badges.map(bKey => {
-                    const ach = ACHIEVEMENTS[bKey];
-                    if (!ach) return null;
-                    const AchIcon = ach.icon;
-                    return (
-                      <div key={bKey} title={`${ach.name}: ${ach.desc}`} style={{
-                        display: "flex", alignItems: "center", gap: "5px", padding: "4px 8px",
-                        borderRadius: "6px", backgroundColor: `${ach.color}12`, border: `1px solid ${ach.color}25`,
-                        cursor: "default"
-                      }}>
-                        <AchIcon size={12} color={ach.color} />
-                        <span style={{ fontSize: "9px", fontWeight: "700", color: ach.color }}>{ach.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* ── Social links — compact row with handles ── */}
             {Object.keys(socials).length > 0 && (

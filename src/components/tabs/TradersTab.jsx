@@ -42,69 +42,7 @@ const TradersTab = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* ── Season 1 Battle Pass Banner ── */}
-      <div style={{ ...cardStyle, borderLeft: `4px solid ${C.purple}`, background: `linear-gradient(135deg, ${C.card} 0%, ${C.bg} 100%)` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <Trophy size={22} color={C.amber} />
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "16px", fontWeight: "900", letterSpacing: "1px" }}>SEASON 1</span>
-                <span style={{ fontSize: "10px", fontWeight: "700", color: C.green, padding: "2px 8px", borderRadius: "4px", backgroundColor: C.greenBg, border: `1px solid ${C.green}30` }}>LIVE</span>
-              </div>
-              <div style={{ fontSize: "11px", color: C.textMuted }}>MARCH 2026 · {mockTraders.length} traders competing</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "18px", fontWeight: "800", color: C.amber, ...mono }}>{daysLeft}d {hoursLeft}h</div>
-              <div style={{ fontSize: "9px", color: C.textFaint, textTransform: "uppercase" }}>remaining</div>
-            </div>
-            <div style={{ width: "1px", height: "28px", backgroundColor: C.border }} />
-            <div style={{ fontSize: "20px", fontWeight: "900", color: C.amber, ...mono }}>$50K</div>
-          </div>
-        </div>
-
-        {/* Battle Pass Tiers */}
-        <div style={{ display: "flex", gap: "4px", alignItems: "stretch", marginBottom: "12px" }}>
-          {[
-            { tier: "Silver", range: "Rank 7-8", color: C.textMuted, pct: 100 },
-            { tier: "Gold", range: "Rank 5-6", color: C.amber, pct: 100 },
-            { tier: "Platinum", range: "Rank 3-4", color: C.purple, pct: 100 },
-            { tier: "Diamond", range: "Rank 1-2", color: C.cyan, pct: 100 },
-            { tier: "Champion", range: "Rank 1", color: "#ffd700", pct: 50 },
-          ].map((bp, i) => (
-            <div key={bp.tier} style={{ flex: 1, position: "relative" }}>
-              <div style={{ height: "6px", backgroundColor: `${bp.color}25`, borderRadius: "3px", overflow: "hidden" }}>
-                <div style={{ width: `${bp.pct}%`, height: "100%", backgroundColor: bp.color, borderRadius: "3px" }} />
-              </div>
-              <div style={{ textAlign: "center", marginTop: "4px" }}>
-                <div style={{ fontSize: "9px", fontWeight: "700", color: bp.color }}>{bp.tier}</div>
-                <div style={{ fontSize: "8px", color: C.textFaint }}>{bp.range}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Prizes row */}
-        <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "10px", borderTop: `1px solid ${C.border}` }}>
-          {[
-            ["1", "$25K", "+ Diamond Frame + Lifetime Badge", C.amber],
-            ["2", "$15K", "+ Platinum Frame", "#c0c0c0"],
-            ["3", "$10K", "+ Gold Frame", "#cd7f32"],
-          ].map(([rank, prize, extras, clr]) => (
-            <div key={rank} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "16px", fontWeight: "900", color: clr, ...mono }}>{rank}</span>
-              <div>
-                <div style={{ fontSize: "13px", fontWeight: "800", color: clr, ...mono }}>{prize}</div>
-                <div style={{ fontSize: "8px", color: C.textFaint }}>{extras}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
         {[{id:"leaderboard",label:"Leaderboard"},{id:"compare",label:"Compare"},{id:"profiles",label:"Profiles"},{id:"heatmap",label:"Heatmap"},{id:"copy",label:"Copy Trading"}].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
             padding: "8px 16px", borderRadius: "6px", border: `1px solid ${view === v.id ? C.purple : C.border}`,
@@ -175,18 +113,10 @@ const TradersTab = () => {
                     </td>
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <TraderLink name={t.name} />
-                            <BotTag isBot={t.isBot} />
-                            <span style={pillStyle(tierColor[t.tier])}>{t.tier}</span>
-                            <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>LVL {t.level}</span>
-                          </div>
-                          {t.badges.length > 0 && (
-                            <div style={{ marginTop: "3px" }}>
-                              <span style={{ fontSize: "9px", color: C.amber, fontWeight: "600" }}>{t.badges.length} badges</span>
-                            </div>
-                          )}
+                        <Avatar name={t.name} size={28} />
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <TraderLink name={t.name} />
+                          <BotTag isBot={t.isBot} />
                         </div>
                         {t.viewersNow > 20 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600", marginLeft: "auto" }}><Eye size={9} /> {t.viewersNow}</span>}
                       </div>
@@ -487,20 +417,18 @@ const TradersTab = () => {
       {view === "profiles" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
           {mockTraders.map((t, ti) => {
-            const title = titleByLevel(t.level);
-            const xpPct = Math.round((t.xp / t.xpNext) * 100);
             const isTopRanked = t.rank === 1;
             const alpha = calcAlphaScore(t);
             const aClr = alphaColor(alpha);
-            const degen = calcDegenScore(t);
             return (
             <div key={t.name} style={{ ...cardStyle, cursor: "pointer", borderLeft: isTopRanked ? `3px solid ${C.amber}` : `1px solid ${C.border}`, transition: "border-color 0.15s" }} onClick={() => openProfile(t)}>
               {/* Header: avatar + name + Alpha Score */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                <Avatar name={t.name} size={48} ring={tierColor[t.tier]} />
+                <Avatar name={t.name} size={48} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ fontSize: "14px", fontWeight: "700" }}>{t.name}</span>
+                    <BotTag isBot={t.isBot} />
                     {t.viewersNow > 15 && <span style={{ fontSize: "9px", color: C.green, fontWeight: "600" }}><Eye size={9} /> {t.viewersNow} watching</span>}
                   </div>
                   <div style={{ fontSize: "10px", color: C.textMuted }}>#{t.rank} · {t.style} · {t.exchange}</div>
@@ -512,23 +440,9 @@ const TradersTab = () => {
                 </div>
               </div>
 
-              {/* Tier + Level + Sparkline */}
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
-                <Tag text={t.tier} color={tierColor[t.tier]} />
-                <span style={pillStyle(C.purple)}>LVL {t.level}</span>
-                <span style={{ fontSize: "9px", color: C.textFaint }}>{title}</span>
-                <div style={{ marginLeft: "auto" }}><MiniSparkline data={t.sparkData} width={64} height={20} /></div>
-              </div>
-
-              {/* XP Progress */}
-              <div style={{ marginBottom: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                  <span style={{ fontSize: "10px", color: C.textMuted }}>XP to Level {t.level + 1}</span>
-                  <span style={{ fontSize: "10px", fontWeight: "600", color: C.textMuted, ...mono }}>{t.xp}/{t.xpNext}</span>
-                </div>
-                <div style={{ width: "100%", height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
-                  <div style={{ width: `${xpPct}%`, height: "100%", backgroundColor: C.blue, borderRadius: "2px", transition: "width 0.3s" }} />
-                </div>
+              {/* Recent equity sparkline */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", marginBottom: "10px" }}>
+                <MiniSparkline data={t.sparkData} width={120} height={22} />
               </div>
 
               {/* Stats Grid */}
@@ -548,23 +462,11 @@ const TradersTab = () => {
                 ))}
               </div>
 
-              {/* Streak + Degen Score */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}>
-                  <span>{getFlames(t.streak)}</span>
-                  <span style={{ color: C.amber }}>{t.streak}W Streak</span>
-                </div>
-                <div style={{ fontSize: "9px", fontWeight: "700", color: degen >= 60 ? C.red : degen >= 40 ? C.amber : C.green, padding: "2px 6px", borderRadius: "3px", backgroundColor: degen >= 60 ? C.redBg : degen >= 40 ? C.amberBg : C.greenBg }}>
-                  {degenLabel(degen)}
-                </div>
+              {/* Streak */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600", marginBottom: "10px" }}>
+                <span>{getFlames(t.streak)}</span>
+                <span style={{ color: C.amber }}>{t.streak}W streak</span>
               </div>
-
-              {/* Badges count */}
-              {t.badges.length > 0 && (
-                <div style={{ marginBottom: "10px", fontSize: "10px", color: C.amber, fontWeight: "600" }}>
-                  {t.badges.length} badges
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div style={{ display: "flex", gap: "8px" }}>

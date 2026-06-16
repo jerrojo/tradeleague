@@ -4,7 +4,6 @@ import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
-import { HomeTab } from "./components/tabs/HomeTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
 import { MarketsSection, ActivitySection, TradersSection, RobotinSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
@@ -24,7 +23,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("markets");
+  const [activeTab, setActiveTab] = useState("traders");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -160,34 +159,31 @@ const App = () => {
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
-    { id: "pulse", label: "Pulse", icon: Radio, accent: C.purple },
-    { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
-    { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
-    { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
+    { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
+    { id: "activity", label: "Activity", icon: Activity, accent: C.green },
+    { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
     { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
-    pulse: "The live pulse — who's winning right now and the market mood",
-    markets: "One coin at a time — its signals, structure and crowd positioning",
+    traders: "Who's winning, and everyone you can follow — the live race plus the searchable directory",
+    markets: "One coin, everything at once — chart, signals, the trades they became, structure and positioning",
+    activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
     robotin: "Robotín's wallet and analytics — every trade the bot executed and how the system performs",
-    activity: "Trades and signals across all traders — one live stream",
-    traders: "The leaderboard, profiles, best/worst plays, legends and awards",
     socials: "What traders are posting across X, Telegram, Discord and more",
   };
 
   // Section → component mapping
   const tabContent = {
-    pulse: HomeTab,            // Pulse = the live overview / race
-    markets: MarketsSection,   // Markets = the coin hub: Signals + Structure + Positioning (+ All coins)
-    robotin: RobotinSection,   // Robotín = the bot's Wallet + system Analytics (Portfolio folded in)
-    activity: ActivitySection, // Activity = global live stream of trades + signals
-    traders: TradersSection,   // Traders = leaderboard + Top Trades + legends + awards
+    traders: TradersSection,   // Traders = the home: live overview/race + searchable directory + profiles
+    markets: MarketsSection,   // Markets = one coin, everything on one page
+    activity: ActivitySection, // Activity = the global Robotín lifecycle tape
+    robotin: RobotinSection,   // Robotín = the bot's Wallet + system Analytics
     socials: SocialsTab,       // Socials = cross-platform curated feed
   };
-  const ActiveComponent = tabContent[activeTab] || HomeTab;
+  const ActiveComponent = tabContent[activeTab] || TradersSection;
   const sideW = sidebarCollapsed ? 56 : 200;
   const rightPanelW = rightPanelCollapsed ? 48 : 220;
   const rightW = (showWatchlist ? 340 : 0) + rightPanelW;
