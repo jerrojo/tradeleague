@@ -12,7 +12,6 @@ const AwardsTab = () => {
     { id: 1, icon: "🏆", category: "Trader of the Season", desc: "Highest risk-adjusted returns", winner: mockTraders[0], stat: { label: "Sharpe Ratio", value: `${mockTraders[0].sharpe}` } },
     { id: 2, icon: "🎯", category: "Sniper", desc: "Best single trade ROI", winner: mockTraders[3], stat: { label: "Best Trade", value: mockTraders[3].bestMonth } },
     { id: 3, icon: "📊", category: "Signal Master", desc: "Most accurate signal provider", winner: mockTraders[1], stat: { label: "Win Rate", value: `${mockTraders[1].winRate}%` } },
-    { id: 4, icon: "🔮", category: "Oracle", desc: "Best prediction accuracy", winner: mockTraders[2], stat: { label: "Profit Factor", value: `${mockTraders[2].profitFactor}` } },
     { id: 5, icon: "🤖", category: "Best Bot", desc: "Top automated strategy", winner: mockTraders[4], stat: { label: "Monthly Return", value: "+18.3%" } },
     { id: 6, icon: "🛡️", category: "Iron Wall", desc: "Lowest max drawdown while profitable", winner: mockTraders[2], stat: { label: "Max Drawdown", value: `${mockTraders[2].maxDD}%` } },
     { id: 7, icon: "🔥", category: "Streak King", desc: "Longest winning streak", winner: mockTraders[0], stat: { label: "Win Streak", value: `${mockTraders[0].streak} trades` } },
@@ -26,7 +25,7 @@ const AwardsTab = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ ...cardStyle, padding: "20px", textAlign: "center" }}>
         <div style={{ fontSize: "28px", fontWeight: "900", marginBottom: "6px" }}>🏅 The Oscars of Trading</div>
-        <div style={{ fontSize: "12px", color: C.textMuted }}>Celebrating skill, not frequency. 10 categories, {uniqueWinners} winners.</div>
+        <div style={{ fontSize: "12px", color: C.textMuted }}>Celebrating skill, not frequency. {awards.length} categories, {uniqueWinners} winners.</div>
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -39,7 +38,7 @@ const AwardsTab = () => {
           }}>{s}</button>
         ))}
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: "11px", color: C.textMuted }}>10 Categories · {uniqueWinners} Winners · {season}</span>
+        <span style={{ fontSize: "11px", color: C.textMuted }}>{awards.length} Categories · {uniqueWinners} Winners · {season}</span>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "14px" }}>

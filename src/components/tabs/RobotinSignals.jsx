@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { CandlestickChart, LineChart, Check, X, Clock, Activity, ChevronDown, Cpu } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
+import { TradeDetail } from "../TradeDetail";
 import { Avatar, BotTag } from "../common";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
@@ -21,7 +22,7 @@ const STATUS = {
 };
 const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 
-const RobotinSignals = ({ coin: coinProp, embedded = false } = {}) => {
+const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false } = {}) => {
   const { openProfile } = useProfile();
   const [coinState, setCoin] = useState("BTC");
   const coin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
@@ -66,8 +67,8 @@ const RobotinSignals = ({ coin: coinProp, embedded = false } = {}) => {
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — signals on chart</div>
-            <div style={{ fontSize: 10, color: C.textMuted }}>{signals.length} signals · {approved} approved by Robotín · click a row to plot its levels</div>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
+            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} trades executed from approved signals · click a row for full detail` : `${signals.length} signals · ${approved} approved by Robotín · click a row to plot its levels`}</div>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {[["candles", "Candles", CandlestickChart], ["line", "Line", LineChart]].map(([m, label, Icon]) => (
@@ -87,9 +88,9 @@ const RobotinSignals = ({ coin: coinProp, embedded = false } = {}) => {
         </div>
       </div>
 
-      {/* Signals list */}
+      {/* Signals / Trades list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {signals.map((s) => {
+        {(onlyTrades ? signals.filter((s) => s.approved) : signals).map((s) => {
           const st = STATUS[statusKey(s)] || STATUS.pending;
           const isOpen = open === s.id;
           return (
@@ -127,29 +128,14 @@ const RobotinSignals = ({ coin: coinProp, embedded = false } = {}) => {
               </button>
 
               {isOpen && (
-                <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, paddingTop: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}><Cpu size={10} color={C.purple} /> Robotín's reasoning</div>
-                    <div style={{ fontSize: 12, color: C.text, lineHeight: 1.55, fontStyle: "italic" }}>“{s.reasoning}”</div>
-                    {!s.approved && <div style={{ marginTop: 8, fontSize: 11, color: C.red }}>Rejected — {s.rejectReason}</div>}
-                    <div style={{ marginTop: 8, fontSize: 10, color: C.textMuted, ...mono }}>Semantic tag: <span style={{ color: C.purple }}>{s.tag}</span></div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {[
-                      ["Confidence", `${s.confidence}%`, s.confidence >= 75 ? C.green : C.amber],
-                      ["Targets", `TP1 ${fmt(s.tp1)} · TP2 ${fmt(s.tp2)} · TP3 ${fmt(s.tp3)}`, C.green],
-                      ["Stop loss", fmt(s.sl), C.red],
-                      ["Signal said", "Take Profit", C.green],
-                      ["What happened", s.auditOutcome || "—", s.auditOutcome === "TP" ? C.green : s.auditOutcome === "SL" ? C.red : C.textMuted],
-                      ["Audit", s.approved ? (s.status === "closed" ? (s.hit === "TP" ? "Exact match" : "Outcome mismatch") : s.status) : "Not executed", s.hit === "TP" ? C.green : s.hit === "SL" ? C.amber : C.textMuted],
-                    ].map(([l, v, clr]) => (
-                      <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 11, borderBottom: `1px solid ${C.border}`, paddingBottom: 4 }}>
-                        <span style={{ color: C.textMuted }}>{l}</span>
-                        <span style={{ color: clr, fontWeight: 700, ...mono, textAlign: "right" }}>{v}</span>
-                      </div>
-                    ))}
-                    <button onClick={() => { const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }} style={{ marginTop: 4, alignSelf: "flex-start", fontSize: 10, color: C.purple, background: "none", border: "none", cursor: "pointer", padding: 0 }}>View {s.trader}'s profile →</button>
-                  </div>
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: "14px" }}>
+                  {!s.approved && (
+                    <div style={{ marginBottom: 12, fontSize: 12, color: C.red, display: "flex", alignItems: "center", gap: 6 }}>
+                      <X size={13} /> Robotín rejected this signal — {s.rejectReason}. Not executed.
+                    </div>
+                  )}
+                  <TradeDetail trade={s} candles={candles} />
+                  <button onClick={() => { const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }} style={{ marginTop: 10, fontSize: 11, color: C.purple, background: "none", border: "none", cursor: "pointer", padding: 0 }}>View {s.trader}'s profile →</button>
                 </div>
               )}
             </div>

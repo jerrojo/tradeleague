@@ -1,6 +1,6 @@
 import { Avatar, BotTag } from "../common";
 import { TraderSelector } from "../TraderSelector";
-import { Activity, ChevronRight, Flame, Lightbulb, Scale, Trophy } from "lucide-react";
+import { Activity, ChevronRight, Flame, Lightbulb, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TraderLink, useFeedFilter, useProfile } from "../../contexts";
 import { feedItems, mockTraders, traderColors, traderEquity } from "../../data/mockData";
@@ -77,8 +77,6 @@ const HomeTab = () => {
     feedItems.filter(f => f.kind === "trade" && f.status !== "active").sort((a, b) => b.pnl - a.pnl).slice(0, 10), []);
   const top10Signals = useMemo(() =>
     feedItems.filter(f => f.kind === "signal").sort((a, b) => (b.confidence || 0) - (a.confidence || 0)).slice(0, 10), []);
-  const top10Predictions = useMemo(() =>
-    feedItems.filter(f => f.kind === "prediction").sort((a, b) => b.stake - a.stake).slice(0, 10), []);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -252,8 +250,8 @@ const HomeTab = () => {
         </div>
       </div>
 
-      {/* ═══ BOTTOM: 3 cards — Top 10 Trades, Top 10 Signals, Top 10 Futures ═══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+      {/* ═══ BOTTOM: 2 cards — Top 10 Trades, Top 10 Signals ═══ */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
 
         {/* Top 10 Trades */}
         <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
@@ -327,39 +325,6 @@ const HomeTab = () => {
           </button>
         </div>
 
-        {/* Top 10 Futures / Predictions */}
-        <div style={{ ...cardStyle, padding: "0", overflow: "hidden" }}>
-          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
-            <Scale size={12} color={C.amber} />
-            <span style={{ fontSize: "11px", fontWeight: "800" }}>Top 10 Futures</span>
-          </div>
-          {top10Predictions.map((item, idx) => (
-            <div key={item.id} onClick={() => openTraderByName(item.trader)} title={`${item.trader} — ${item.question}`} {...rowHover} style={{
-              display: "flex", alignItems: "center", gap: "8px", padding: "5px 10px", cursor: "pointer",
-              borderBottom: idx < top10Predictions.length - 1 ? `1px solid ${C.border}` : "none", transition: "background-color 0.15s"
-            }}>
-              <Avatar name={item.trader} size={26} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <span style={{ fontWeight: "700", fontSize: "10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.trader}</span>
-                  <BotTag isBot={item.isBot} />
-                </div>
-                <div style={{ fontSize: "9px", color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "1px" }}>{item.question}</div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-                <span style={{ fontWeight: "800", color: item.bet === "YES" ? C.green : C.red, fontSize: "10px", ...mono }}>{item.bet}</span>
-                <span style={{ fontWeight: "700", color: C.amber, fontSize: "9px", ...mono }}>${item.stake}</span>
-              </div>
-            </div>
-          ))}
-          <button onClick={() => { setFeedFilter("prediction"); setActiveTab("activity"); }} style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", width: "100%",
-            padding: "6px", backgroundColor: C.amberBg, border: "none", borderTop: `1px solid ${C.border}`,
-            color: C.amber, fontSize: "9px", fontWeight: "700", cursor: "pointer"
-          }}>
-            View all <ChevronRight size={10} />
-          </button>
-        </div>
       </div>
     </div>
   );

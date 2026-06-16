@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
-import { Activity, Flame, Radio, TrendingDown, TrendingUp } from "lucide-react";
+import { Activity, ChevronRight, Flame, Radio, TrendingDown, TrendingUp } from "lucide-react";
 import { C, cardStyle, mono } from "../../theme";
 import { Tag } from "../common";
 import { TraderLink, useProfile, useProMode } from "../../contexts";
@@ -25,7 +25,7 @@ const SentimentBar = ({ sentiment }) => {
   );
 };
 
-const MarketsTab = () => {
+const MarketsTab = ({ onPick }) => {
   const { openProfile } = useProfile();
   const proMode = useProMode(); // Simple hides Net PnL + SMC Bias columns
   const [sortBy, setSortBy] = useState("trades");
@@ -133,7 +133,11 @@ const MarketsTab = () => {
               return (
                 <Fragment key={c.coin}>
                   <tr className="hoverable" onClick={() => setSelected(open ? null : c.coin)} style={{ cursor: "pointer", backgroundColor: open ? C.cardHover : "transparent" }}>
-                    <td style={{ padding: "10px 12px", fontWeight: 700, fontSize: 13, borderBottom: `1px solid ${C.border}` }}>{c.coin}</td>
+                    <td style={{ padding: "10px 12px", fontWeight: 700, fontSize: 13, borderBottom: `1px solid ${C.border}` }}>
+                      {onPick
+                        ? <button onClick={(e) => { e.stopPropagation(); onPick(c.coin); }} title={`Open ${c.coin}`} style={{ background: "none", border: "none", cursor: "pointer", color: C.text, fontWeight: 700, fontSize: 13, padding: 0, display: "inline-flex", alignItems: "center", gap: 5 }}>{c.coin}<ChevronRight size={13} color={C.purple} /></button>
+                        : c.coin}
+                    </td>
                     <td style={{ padding: "10px 12px", textAlign: "center", ...mono, fontSize: 11, borderBottom: `1px solid ${C.border}` }}>
                       {c.price || "—"}{c.change && <span style={{ color: c.change.startsWith("-") ? C.red : C.green, marginLeft: 4, fontSize: 10 }}>{c.change}</span>}
                     </td>

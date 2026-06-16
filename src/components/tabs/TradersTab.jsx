@@ -6,7 +6,7 @@ import { useProfile, useWatchlist, useProMode } from "../../contexts";
 import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
-import { Activity, AlertTriangle, Bot, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
+import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
@@ -14,6 +14,7 @@ const TradersTab = () => {
   const [compareMetric, setCompareMetric] = useState("equity");
   const [traderFilter, setTraderFilter] = useState("all");
   const [sortField, setSortField] = useState("pnl");
+  const [search, setSearch] = useState("");
   const { openProfile } = useProfile();
   const proMode = useProMode(); // Simple hides secondary columns (Trend, Expectancy)
   const { followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts } = useWatchlist();
@@ -133,6 +134,12 @@ const TradersTab = () => {
           <button onClick={() => setSortField(prev => prev === "pnl" ? "winRate" : prev === "winRate" ? "alpha" : "pnl")} title={`Sort by ${sortField}`} style={{ display: "flex", alignItems: "center", gap: "3px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted }}>
             <ArrowDown size={11} /> {sortField === "pnl" ? "PnL" : sortField === "winRate" ? "Win%" : "Alpha"}
           </button>
+          <div style={{ width: "1px", height: 20, backgroundColor: C.border, margin: "0 4px" }} />
+          {/* Search: jump to any trader by name */}
+          <div style={{ position: "relative" }}>
+            <Search size={12} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: C.textMuted, pointerEvents: "none" }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search traders…" style={{ width: 150, padding: "5px 10px 5px 26px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+          </div>
         </div>
       </div>
 
@@ -149,6 +156,7 @@ const TradersTab = () => {
                   if (traderFilter === "human") filtered = filtered.filter(t => !t.isBot);
                   else if (traderFilter === "bot") filtered = filtered.filter(t => t.isBot);
                   else if (traderFilter === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
+                  if (search.trim()) filtered = filtered.filter(t => t.name.toLowerCase().includes(search.trim().toLowerCase()));
                   filtered.sort((a, b) => {
                     if (sortField === "pnl") return b.pnl - a.pnl;
                     if (sortField === "winRate") return b.winRate - a.winRate;
@@ -283,7 +291,6 @@ const TradersTab = () => {
             name: t.name, avatar: t.avatar, color: traderColors[mockTraders.indexOf(t)],
             winRate: t.winRate, pnl: t.pnl, trades: t.trades, streak: t.streak,
             signalAccuracy: deep.signalStats.accuracy, signalTotal: deep.signalStats.total, signalAvgPnl: deep.signalStats.avgPnlPerSignal,
-            predAccuracy: Math.round((deep.predStats.correct / deep.predStats.total) * 100), predTotal: deep.predStats.total, predStreak: deep.predStats.streak,
             sharpe: t.sharpe, maxDD: Math.abs(t.maxDD), profitFactor: t.profitFactor || 0,
           };
         });
@@ -291,7 +298,6 @@ const TradersTab = () => {
           { id: "equity", label: "Equity" },
           { id: "signals", label: "Signals" },
           { id: "trades", label: "Trades" },
-          { id: "predictions", label: "Predictions" },
         ];
         return (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -474,57 +480,6 @@ const TradersTab = () => {
             </div>
           </>)}
 
-          {compareMetric === "predictions" && (<>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div style={cardStyle}>
-                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Prediction Accuracy (%)</div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={compareBarData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-                    <XAxis type="number" stroke={C.textMuted} fontSize={10} domain={[0, 100]} />
-                    <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={10} width={90} />
-                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`${v}%`, "Accuracy"]} />
-                    <Bar dataKey="predAccuracy" radius={[0, 4, 4, 0]}>{compareBarData.map((e, i) => <Cell key={i} fill={e.color} />)}</Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={cardStyle}>
-                <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Total Predictions & Current Streak</div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={compareBarData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-                    <XAxis dataKey="name" stroke={C.textMuted} fontSize={9} angle={-20} textAnchor="end" height={50} />
-                    <YAxis stroke={C.textMuted} fontSize={10} />
-                    <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
-                    <Bar dataKey="predTotal" name="Total Predictions" fill={C.blue} radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="predStreak" name="Current Streak" fill={C.amber} radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr>{["","Trader","Accuracy","Total Predictions","Current Streak","Total Staked","Net Won"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {activeTraders.map(t => {
-                    const i = mockTraders.indexOf(t);
-                    const deep = traderDeepData[t.name];
-                    return (
-                      <tr key={t.name} className="hoverable" style={{ cursor: "pointer" }} onClick={() => openProfile(t)}>
-                        <td style={{ ...tdStyle, width: "30px" }}><div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: traderColors[i] }} /></td>
-                        <td style={{ ...tdStyle, fontWeight: "600" }}><TraderLink name={t.name}>{t.name}</TraderLink></td>
-                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%</td>
-                        <td style={{ ...tdStyle, ...mono }}>{deep.predStats.total}</td>
-                        <td style={{ ...tdStyle, ...mono, color: C.amber }}>{deep.predStats.streak} correct</td>
-                        <td style={{ ...tdStyle, ...mono }}>${deep.predStats.totalStaked.toLocaleString()}</td>
-                        <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${deep.predStats.totalWon.toLocaleString()}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>)}
         </div>
         );
       })()}

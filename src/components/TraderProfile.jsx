@@ -56,10 +56,10 @@ const TraderProfile = ({ trader, onClose }) => {
   }, [deep.history, histMetrics]);
 
   // Simple hides the Pro-only sub-tabs (Trade Lab, Risk DNA, Journal)
-  const allProfileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
+  const allProfileTabs = ["overview","trade_lab","signals","trades","social","pnl","risk_dna","journal"];
   const proOnlyTabs = ["trade_lab", "risk_dna", "journal"];
   const profileTabs = proMode ? allProfileTabs : allProfileTabs.filter(pt => !proOnlyTabs.includes(pt));
-  const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", predictions: "Predictions", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
+  const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
   const socials = traderSocials[t.name] || {};
@@ -574,58 +574,6 @@ const TraderProfile = ({ trader, onClose }) => {
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ PREDICTIONS ═══ */}
-      {profileTab === "predictions" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-            <StatCard label="Accuracy" value={`${Math.round((deep.predStats.correct / deep.predStats.total) * 100)}%`} sub={`${deep.predStats.correct}/${deep.predStats.total}`} icon={Target} color={C.green} tip="winRate" />
-            <StatCard label="Current Streak" value={`${deep.predStats.streak} correct`} icon={Flame} color={C.amber} tip="streak" />
-            <StatCard label="Total Staked" value={`$${deep.predStats.totalStaked.toLocaleString()}`} icon={DollarSign} color={C.blue} tip="pot" />
-            <StatCard label="Net Profit" value={`+$${deep.predStats.totalWon.toLocaleString()}`} icon={Trophy} color={C.green} />
-          </div>
-          {/* Active bets */}
-          <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Active Predictions</div>
-            {deep.predictionsList.filter(p => p.status === "open").map(p => (
-              <div key={p.id} style={{ padding: "12px 0", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "4px" }}>{p.question}</div>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                    <Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} />
-                    <span style={{ fontSize: "11px", color: C.textMuted }}>at {p.odds}¢</span>
-                    <span style={{ fontSize: "11px", color: C.textMuted }}>{p.date}</span>
-                  </div>
-                </div>
-                <div style={{ textAlign: "right", minWidth: "120px" }}>
-                  <div style={{ fontSize: "13px", fontWeight: "700", ...mono }}>${p.stake}</div>
-                  <div style={{ fontSize: "10px", color: C.green }}>Potential: ${p.potential}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* History */}
-          <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-            <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Prediction History</div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>{["Market","Bet","Odds","Stake","Result","P&L","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
-              <tbody>
-                {deep.predictionsList.filter(p => p.status !== "open").map(p => (
-                  <tr key={p.id} style={{ borderLeft: `3px solid ${p.status === "won" ? C.green : C.red}` }}>
-                    <td style={{ ...tdStyle, maxWidth: "250px" }}>{p.question}</td>
-                    <td style={tdStyle}><Tag text={p.bet} color={p.bet === "YES" ? C.green : C.red} /></td>
-                    <td style={{ ...tdStyle, ...mono }}>{p.odds}¢</td>
-                    <td style={{ ...tdStyle, ...mono }}>${p.stake}</td>
-                    <td style={tdStyle}><Tag text={p.status === "won" ? "Won" : "Lost"} color={p.status === "won" ? C.green : C.red} /></td>
-                    <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: (p.pnl||0) >= 0 ? C.green : C.red }}>{(p.pnl||0) >= 0 ? "+" : ""}${(p.pnl||0)}</td>
-                    <td style={{ ...tdStyle, color: C.textMuted }}>{p.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       )}

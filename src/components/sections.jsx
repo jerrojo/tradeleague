@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, Award, Beaker, Briefcase, Flame, Gamepad2, Globe, Lightbulb, Scale, Target, Trophy, Users } from "lucide-react";
+import { Award, Beaker, Briefcase, Flame, Gamepad2, Globe, Lightbulb, Receipt, Target, Trophy, Users } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { MarketsTab } from "./tabs/MarketsTab";
@@ -9,7 +9,6 @@ import { CoinPositioning } from "./tabs/CoinPositioning";
 import { ArenaTab } from "./tabs/ArenaTab";
 import { smcCoins } from "../data/mockData";
 import { ROBOTIN_COINS } from "../data/robotin";
-import { FuturesTab } from "./tabs/FuturesTab";
 import { TradersTab } from "./tabs/TradersTab";
 import { HallOfFameTab } from "./tabs/HallOfFameTab";
 import { AwardsTab } from "./tabs/AwardsTab";
@@ -48,46 +47,51 @@ const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
 
 const MarketsSection = () => {
   const [coin, setCoin] = useState("BTC");
-  const [view, setView] = useState("signals"); // signals | structure | positioning | overview
-  const onOverview = view === "overview";
+  const [view, setView] = useState("signals"); // signals | trades | structure | positioning
+  const [allCoins, setAllCoins] = useState(false);
+
+  const pickCoin = (c) => { setCoin(c); setAllCoins(false); };
 
   return (
     <div>
-      {/* Coin selector (single source of price) — hidden on the coin-agnostic overview */}
-      {!onOverview && (
-        <div style={{ marginBottom: "14px" }}>
-          <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={smcCoins} categories={COIN_CATEGORIES} />
+      {/* Top bar: "All coins" sits at the SAME level as the coin selector, so it
+         no longer breaks the per-coin navigation below. */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "14px" }}>
+        <button onClick={() => setAllCoins(true)} style={{
+          display: "flex", alignItems: "center", gap: "7px", padding: "9px 14px", borderRadius: "8px",
+          fontSize: "13px", fontWeight: "700", cursor: "pointer", transition: "all 0.15s",
+          border: `1px solid ${allCoins ? C.purple : C.border}`,
+          backgroundColor: allCoins ? C.purpleBg : "transparent",
+          color: allCoins ? C.purple : C.textMuted,
+        }}><Globe size={15} /> All coins</button>
+        <div style={{ width: 1, height: 26, backgroundColor: C.border }} />
+        <div style={{ opacity: allCoins ? 0.55 : 1, transition: "opacity 0.15s" }}>
+          <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={pickCoin} meta={smcCoins} categories={COIN_CATEGORIES} />
         </div>
+      </div>
+
+      {allCoins ? (
+        <MarketsTab onPick={pickCoin} />
+      ) : (
+        <>
+          <SubTabs active={view} onChange={setView} tabs={[
+            { id: "signals", label: "Signals", icon: Lightbulb },
+            { id: "trades", label: "Trades", icon: Receipt },
+            { id: "structure", label: "Structure", icon: Target },
+            { id: "positioning", label: "Positioning", icon: Gamepad2 },
+          ]} />
+          {view === "signals" && <RobotinSignals coin={coin} embedded />}
+          {view === "trades" && <RobotinSignals coin={coin} embedded onlyTrades />}
+          {view === "structure" && <SMCAnalysis coin={coin} embedded />}
+          {view === "positioning" && <CoinPositioning coin={coin} />}
+        </>
       )}
-
-      <SubTabs active={view} onChange={setView} tabs={[
-        { id: "signals", label: "Signals", icon: Lightbulb },
-        { id: "structure", label: "Structure", icon: Target },
-        { id: "positioning", label: "Positioning", icon: Gamepad2 },
-        { id: "overview", label: "All coins", icon: Globe },
-      ]} />
-
-      {view === "signals" && <RobotinSignals coin={coin} embedded />}
-      {view === "structure" && <SMCAnalysis coin={coin} embedded />}
-      {view === "positioning" && <CoinPositioning coin={coin} />}
-      {view === "overview" && <MarketsTab />}
     </div>
   );
 };
 
-/* ── ACTIVITY: the live stream (trades + signals + predictions) + prediction markets ── */
-const ActivitySection = () => {
-  const [sub, setSub] = useState("stream");
-  return (
-    <div>
-      <SubTabs active={sub} onChange={setSub} tabs={[
-        { id: "stream", label: "Live Stream", icon: Activity },
-        { id: "predictions", label: "Predictions", icon: Scale },
-      ]} />
-      {sub === "stream" ? <ArenaTab /> : <FuturesTab />}
-    </div>
-  );
-};
+/* ── ACTIVITY: the global live stream of trades + signals across all traders. ── */
+const ActivitySection = () => <ArenaTab />;
 
 /* ── TRADERS: leaderboard + all-time legends + season awards ── */
 const TradersSection = () => {

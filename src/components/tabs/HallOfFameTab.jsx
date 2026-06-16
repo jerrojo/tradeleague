@@ -16,11 +16,8 @@ const HallOfFameTab = () => {
   const topSignals = useMemo(() =>
     feedItems.filter(f => f.kind === "signal")
       .sort((a, b) => (b.confidence || 0) - (a.confidence || 0)).slice(0, 10), []);
-  const topPredictions = useMemo(() =>
-    feedItems.filter(f => f.kind === "prediction")
-      .sort((a, b) => b.stake - a.stake).slice(0, 10), []);
 
-  const activeData = activeCategory === "signals" ? topSignals : activeCategory === "predictions" ? topPredictions : topTrades;
+  const activeData = activeCategory === "signals" ? topSignals : topTrades;
   const bestTrade = topTrades.length > 0 ? topTrades[0] : null;
 
   const getTierFrame = (i) => {
@@ -33,11 +30,11 @@ const HallOfFameTab = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ ...cardStyle, padding: "20px", textAlign: "center" }}>
         <div style={{ fontSize: "28px", fontWeight: "900", marginBottom: "6px" }}>🏆 Hall of Fame</div>
-        <div style={{ fontSize: "12px", color: C.textMuted }}>Museum of legendary trades, signals, and predictions. The Greatest Hits.</div>
+        <div style={{ fontSize: "12px", color: C.textMuted }}>Museum of legendary trades and signals. The Greatest Hits.</div>
       </div>
 
       <div style={{ display: "flex", gap: "8px" }}>
-        {[{ id: "trades", label: "Top Trades", icon: TrendingUp }, { id: "signals", label: "Top Signals", icon: Lightbulb }, { id: "predictions", label: "Top Predictions", icon: Target }].map(cat => (
+        {[{ id: "trades", label: "Top Trades", icon: TrendingUp }, { id: "signals", label: "Top Signals", icon: Lightbulb }].map(cat => (
           <button key={cat.id} onClick={() => setActiveCategory(cat.id)} style={{
             flex: 1, padding: "10px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "600",
             border: activeCategory === cat.id ? `2px solid ${C.amber}` : `1px solid ${C.border}`,
@@ -103,16 +100,6 @@ const HallOfFameTab = () => {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div><span style={{ fontSize: "9px", color: C.textMuted }}>Confidence</span><div style={{ fontSize: "14px", fontWeight: "700", color: C.blue, ...mono }}>{item.confidence}%</div></div>
                     <div style={{ textAlign: "right" }}><span style={{ fontSize: "9px", color: C.textMuted }}>TF</span><div style={{ fontSize: "11px", fontWeight: "600", ...mono }}>{item.timeframe}</div></div>
-                  </div>
-                </>
-              )}
-              {activeCategory === "predictions" && (
-                <>
-                  <div style={{ fontSize: "11px", color: C.text, marginBottom: "8px", lineHeight: "1.4" }}>{item.question?.substring(0, 60)}...</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
-                    <div><span style={{ color: C.textMuted }}>Bet</span><div><Tag text={item.bet} color={item.bet === "YES" ? C.green : C.red} /></div></div>
-                    <div style={{ textAlign: "center" }}><span style={{ color: C.textMuted }}>Stake</span><div style={{ fontWeight: "700", ...mono }}>${item.stake}</div></div>
-                    <div style={{ textAlign: "right" }}><span style={{ color: C.textMuted }}>Odds</span><div style={{ fontWeight: "700", color: C.cyan, ...mono }}>{item.odds}%</div></div>
                   </div>
                 </>
               )}

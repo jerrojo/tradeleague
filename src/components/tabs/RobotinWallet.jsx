@@ -7,6 +7,7 @@ import {
   Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { Avatar, BotTag, InfoTip, StatCard } from "../common";
+import { TradeDetail } from "../TradeDetail";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
 
@@ -309,29 +310,8 @@ const RobotinWallet = () => {
               </button>
 
               {isOpen && (
-                <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, paddingTop: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}><Cpu size={10} color={C.purple} /> Robotín's reasoning</div>
-                    <div style={{ fontSize: 12, color: C.text, lineHeight: 1.55, fontStyle: "italic" }}>“{s.reasoning}”</div>
-                    <div style={{ marginTop: 8, fontSize: 10, color: C.textMuted, ...mono }}>Semantic tag: <span style={{ color: C.purple }}>{s.tag}</span></div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {[
-                      ["Confidence", `${s.confidence}%`, s.confidence >= 75 ? C.green : C.amber],
-                      ["Entry", fmt(s.entry), C.text],
-                      ["Targets", `TP1 ${fmt(s.tp1)} · TP2 ${fmt(s.tp2)} · TP3 ${fmt(s.tp3)}`, C.green],
-                      ["Stop loss", fmt(s.sl), C.red],
-                      ["P&L", s.status === "closed" ? usd(s.pnl) + ` (${s.pnlPct >= 0 ? "+" : ""}${s.pnlPct}%)` : "Open", s.status === "closed" ? (s.pnl >= 0 ? C.green : C.red) : C.textMuted],
-                      ["Signal said", "Take Profit", C.green],
-                      ["What happened", s.auditOutcome || "—", s.auditOutcome === "TP" ? C.green : s.auditOutcome === "SL" ? C.red : C.textMuted],
-                      ["Audit", s.status === "closed" ? (s.hit === "TP" ? "Exact match" : "Outcome mismatch") : s.status, s.hit === "TP" ? C.green : s.hit === "SL" ? C.amber : C.textMuted],
-                    ].map(([l, v, clr]) => (
-                      <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 11, borderBottom: `1px solid ${C.border}`, paddingBottom: 4 }}>
-                        <span style={{ color: C.textMuted }}>{l}</span>
-                        <span style={{ color: clr, fontWeight: 700, ...mono, textAlign: "right" }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div style={{ borderTop: `1px solid ${C.border}`, padding: "14px" }}>
+                  <TradeDetail trade={s} />
                 </div>
               )}
             </div>

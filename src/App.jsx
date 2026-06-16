@@ -89,10 +89,9 @@ const App = () => {
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
       { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
-      { id: "markets", label: "Markets", desc: "Per-coin sentiment, positioning and the coin terminal" },
-      { id: "markets", label: "Tokens / Coin detail", desc: "Deep-dive any coin — structure, entries, safety" },
-      { id: "activity", label: "Activity", desc: "Trades, signals and predictions in one live stream" },
-      { id: "activity", label: "Predictions", desc: "Prediction markets — odds, volume and the best callers" },
+      { id: "markets", label: "Markets", desc: "One coin at a time — signals, trades, structure, positioning" },
+      { id: "robotin", label: "Robotín Wallet", desc: "Every trade the bot executed from approved signals" },
+      { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
       { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
       { id: "analyze", label: "Portfolio", desc: "Fund-level KPIs, equity curve, drawdown (Pro)" },
@@ -895,7 +894,7 @@ const App = () => {
                         ["Live Trades", true],
                         ["Whale alerts", true],
                         ["New Signals", true],
-                        ["Resolved Predictions", false],
+                        ["Robotín executions", true],
                         ["Unlocked Achievements", true],
                       ].map(([label, on]) => (
                         <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>

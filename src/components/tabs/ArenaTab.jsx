@@ -8,8 +8,8 @@ import { feedItems, mockTraders, traderColors, traderEquity } from "../../data/m
 import { alphaColor, calcAlphaScore } from "../../lib/scoring";
 import { C, cardStyle, mono } from "../../theme";
 import { useToast } from "../common";
-import { Activity, ArrowDown, ArrowUp, Lightbulb, Scale } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Activity, ArrowDown, ArrowUp, Lightbulb } from "lucide-react";
+import { useState } from "react";
 /* ═══════════════════════ TAB: ARENA (Watch traders live) ═══════════════════════ */
 const ArenaTab = () => {
   const { openProfile } = useProfile();
@@ -40,8 +40,10 @@ const ArenaTab = () => {
   const watchedTraders = mockTraders.filter(t => watching[t.name]);
 
   // Filter feed items to only watched traders (+ whales/liquidations always show)
+  // Predictions/Futures are no longer a product surface — drop them entirely.
   const traderFeed = feedItems.filter(f =>
-    f.kind === "whale" || f.kind === "liquidation" || watchedNames.includes(f.trader)
+    f.kind !== "prediction" &&
+    (f.kind === "whale" || f.kind === "liquidation" || watchedNames.includes(f.trader))
   );
   const filteredFeed = (() => {
     let feed = traderFeed;
@@ -59,7 +61,6 @@ const ArenaTab = () => {
       if (signalType !== "ALL") feed = feed.filter(f => f.bias === signalType);
       return feed;
     }
-    if (feedFilter === "prediction") return feed.filter(f => f.kind === "prediction");
     return feed.filter(f => f.kind === feedFilter);
   })();
 
@@ -80,24 +81,13 @@ const ArenaTab = () => {
     </span>
   );
 
-  // Group predictions by question — only show the first predictor's card, embed others inside
-  const dedupedFeed = useMemo(() => {
-    const seen = new Set();
-    return filteredFeed.filter(item => {
-      if (item.kind === "prediction") {
-        if (seen.has(item.questionId)) return false;
-        seen.add(item.questionId);
-      }
-      return true;
-    });
-  }, [filteredFeed]);
+  const dedupedFeed = filteredFeed;
 
-  // Unified Activity filter — Trades + Signals + Predictions in one stream (LukeW v2: one place, a filter)
+  // Unified Activity filter — Trades + Signals in one stream (LukeW v2: one place, a filter)
   const activityFilters = [
     ["all", "All", Activity, C.purple],
     ["trade", "Trades", Activity, C.green],
     ["signal", "Signals", Lightbulb, C.blue],
-    ["prediction", "Predictions", Scale, C.amber],
   ];
 
   return (
@@ -244,12 +234,11 @@ const ArenaTab = () => {
         </div>
       )}
 
-      {/* ═══ SUB-VIEW: Trades / Signals / Predictions ═══ */}
+      {/* ═══ SUB-VIEW: Trades / Signals ═══ */}
       {feedFilter !== "all" && (() => {
         const tradeCount = traderFeed.filter(f => f.kind === "trade").length;
         const signalCount = traderFeed.filter(f => f.kind === "signal").length;
-        const predCount = traderFeed.filter(f => f.kind === "prediction").length;
-        const filterMeta = { trade: { label: "Trades", color: C.green, icon: Activity, count: tradeCount }, signal: { label: "Signals", color: C.blue, icon: Lightbulb, count: signalCount }, prediction: { label: "Predictions", color: C.amber, icon: Scale, count: predCount } };
+        const filterMeta = { trade: { label: "Trades", color: C.green, icon: Activity, count: tradeCount }, signal: { label: "Signals", color: C.blue, icon: Lightbulb, count: signalCount } };
         const current = filterMeta[feedFilter] || filterMeta.trade;
         const CurrentIcon = current.icon;
 
@@ -258,7 +247,6 @@ const ArenaTab = () => {
         const totalPnl = feedFilter === "trade" ? sectionItems.reduce((s, f) => s + (f.pnl || 0), 0) : 0;
         const avgWin = feedFilter === "trade" && sectionItems.length > 0 ? Math.round(sectionItems.filter(f => f.pnl > 0).length / sectionItems.length * 100) : 0;
         const avgConf = feedFilter === "signal" && sectionItems.length > 0 ? Math.round(sectionItems.reduce((s, f) => s + (f.confidence || 0), 0) / sectionItems.length) : 0;
-        const totalVol = feedFilter === "prediction" ? sectionItems.reduce((s, f) => s + (f.stake || 0), 0) : 0;
 
         return (
           <>
@@ -401,31 +389,6 @@ const ArenaTab = () => {
                   </div>
                 </>
               )}
-              {feedFilter === "prediction" && (
-                <>
-                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <DollarSign size={14} color={C.amber} />
-                    <div>
-                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Vol Total</div>
-                      <div style={{ fontSize: "16px", fontWeight: "900", color: C.amber, ...mono }}>${totalVol.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Scale size={14} color={current.color} />
-                    <div>
-                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Predictions</div>
-                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{sectionItems.length}</div>
-                    </div>
-                  </div>
-                  <div style={{ ...cardStyle, flex: 1, padding: "10px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Users size={14} color={C.purple} />
-                    <div>
-                      <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Traders</div>
-                      <div style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{new Set(sectionItems.map(f => f.trader)).size}</div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
 
             {/* Compact Feed — table-like rows for max scanning speed */}
@@ -456,15 +419,6 @@ const ArenaTab = () => {
                     <span style={{ flex: 1, textAlign: "center" }}>Confidence</span>
                     <span style={{ width: 40, textAlign: "right" }}>Hora</span>
                     <span style={{ width: 36 }} />
-                  </>
-                )}
-                {feedFilter === "prediction" && (
-                  <>
-                    <span style={{ flex: 3 }}>Pregunta</span>
-                    <span style={{ width: 80, textAlign: "center" }}>Consenso</span>
-                    <span style={{ width: 50, textAlign: "right" }}>Odds</span>
-                    <span style={{ width: 50, textAlign: "right" }}>Vol</span>
-                    <span style={{ width: 40, textAlign: "right" }}>Hora</span>
                   </>
                 )}
               </div>
@@ -548,28 +502,6 @@ const ArenaTab = () => {
                     </div>
                   );
                 }
-                if (feedFilter === "prediction") {
-                  const allOnQ = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId);
-                  const yesC = allOnQ.filter(p => p.bet === "YES").length;
-                  const yesPct = allOnQ.length > 0 ? Math.round((yesC / allOnQ.length) * 100) : 50;
-                  const noPct = 100 - yesPct;
-                  const tStake = allOnQ.reduce((s, p) => s + p.stake, 0);
-                  return (
-                    <div key={item.id} className="hoverable" style={{ display: "flex", alignItems: "center", padding: "7px 12px", borderBottom: `1px solid ${C.border}`, cursor: "pointer", fontSize: "11px", minHeight: "38px" }}>
-                      <div style={{ flex: 3, fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: "8px" }}>{item.question}</div>
-                      <div style={{ width: 80, display: "flex", alignItems: "center", gap: "3px" }}>
-                        <div style={{ flex: 1, height: "6px", borderRadius: "3px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
-                          <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green }} />
-                          <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red }} />
-                        </div>
-                        <span style={{ fontSize: "8px", fontWeight: "700", color: C.green, ...mono, minWidth: 20 }}>{yesPct}%</span>
-                      </div>
-                      <div style={{ width: 50, textAlign: "right", fontSize: "10px", color: C.textMuted, ...mono }}>{item.odds}%</div>
-                      <div style={{ width: 50, textAlign: "right", fontSize: "10px", fontWeight: "700", color: C.amber, ...mono }}>${tStake.toLocaleString()}</div>
-                      <div style={{ width: 40, textAlign: "right", fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</div>
-                    </div>
-                  );
-                }
                 return null;
               })}
             </div>
@@ -634,29 +566,6 @@ const ArenaTab = () => {
                           <span style={{ fontSize: "9px", fontWeight: "700", color: confColor, ...mono }}>{item.confidence}%</span>
                         </div>
                         <div style={{ fontSize: "10px", color: C.textMuted, marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.idea}</div>
-                      </div>
-                      <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
-                    </div>
-                  );
-                }
-                if (item.kind === "prediction") {
-                  const allOnQ = traderFeed.filter(f => f.kind === "prediction" && f.questionId === item.questionId);
-                  const yesC = allOnQ.filter(p => p.bet === "YES").length;
-                  const yesPct = allOnQ.length > 0 ? Math.round((yesC / allOnQ.length) * 100) : 50;
-                  const noPct = 100 - yesPct;
-                  return (
-                    <div key={item.id} style={{ ...cardStyle, padding: "8px 14px", borderLeft: `3px solid ${C.amber}`, display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Scale size={14} color={C.amber} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "12px", fontWeight: "600" }}>{item.question}</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
-                          <div style={{ width: 60, height: "5px", borderRadius: "3px", overflow: "hidden", display: "flex", backgroundColor: C.border }}>
-                            <div style={{ width: `${yesPct}%`, height: "100%", backgroundColor: C.green }} />
-                            <div style={{ width: `${noPct}%`, height: "100%", backgroundColor: C.red }} />
-                          </div>
-                          <span style={{ fontSize: "9px", fontWeight: "700", color: C.green, ...mono }}>YES {yesPct}%</span>
-                          <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{allOnQ.length} traders</span>
-                        </div>
                       </div>
                       <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{item.time}</span>
                     </div>
