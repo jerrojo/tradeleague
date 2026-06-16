@@ -1,4 +1,5 @@
 import { TraderLink } from "../../contexts";
+import { TraderSelector } from "../TraderSelector";
 import { BotTag, InfoTip } from "../common";
 import { BellRing, CheckCircle, ChevronRight, Copy, DollarSign, Eye, Radio, Target, TrendingUp, Trophy, Users, Zap } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -139,28 +140,16 @@ const ArenaTab = () => {
       </div>
       )}
 
-      {/* ── Top 10 Trader selector: pick who you're watching (only in full Arena view) ── */}
+      {/* ── Trader selector: pick who you're watching (only in full Arena view) ── */}
       {feedFilter === "all" && (
-      <div style={{ ...cardStyle, padding: "12px 16px", display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: "10px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase", marginRight: "4px" }}>Top 10:</span>
-        {mockTraders.map((t, i) => {
-          const on = watching[t.name];
-          const color = traderColors[i];
-          return (
-            <button key={t.name} onClick={() => toggleWatch(t.name)} style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "5px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-              border: `1px solid ${on ? color : C.border}`,
-              backgroundColor: on ? color + "15" : "transparent",
-              color: on ? C.text : C.textFaint, transition: "all 0.15s"
-            }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
-              <span>{t.name}</span>
-              {on && <span style={{ fontSize: "9px", color: color, ...mono }}>{t.winRate}%</span>}
-            </button>
-          );
-        })}
-        <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "4px" }}>+292 more</span>
+      <div style={{ ...cardStyle, padding: "12px 16px" }}>
+        <TraderSelector
+          traders={mockTraders}
+          selected={watchedNames}
+          onToggle={toggleWatch}
+          colorOf={(name) => traderColors[mockTraders.findIndex(t => t.name === name)]}
+          label="Following"
+        />
       </div>
       )}
 
@@ -284,55 +273,22 @@ const ArenaTab = () => {
               </button>
             </div>
 
-            {/* Draggable trader selector */}
+            {/* Trader comparison selector (shared component: search + editable favorites) */}
             <div style={{ ...cardStyle, padding: "10px 14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "8px" }}>
                 <span style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>Comparar Traders</span>
-                <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>· arrastra para reordenar</span>
+                <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>· busca y fija favoritos</span>
               </div>
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-                {subViewOrder.map((name, idx) => {
-                  const t = mockTraders.find(tt => tt.name === name);
-                  if (!t) return null;
-                  const on = subViewVisible[name];
-                  const ci = mockTraders.indexOf(t);
-                  const color = traderColors[ci];
-                  return (
-                    <button key={name} draggable onDragStart={e => { e.dataTransfer.setData("text/plain", String(idx)); setDragIdx(idx); }}
-                      onDragOver={e => e.preventDefault()}
-                      onDrop={e => { e.preventDefault(); const from = parseInt(e.dataTransfer.getData("text/plain")); if (from === idx) return; setSubViewOrder(prev => { const n = [...prev]; const item = n.splice(from, 1)[0]; n.splice(idx, 0, item); return n; }); setDragIdx(null); }}
-                      onDragEnd={() => setDragIdx(null)}
-                      onClick={() => setSubViewVisible(prev => ({ ...prev, [name]: !prev[name] }))}
-                      style={{
-                        display: "flex", alignItems: "center", gap: "5px",
-                        padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "grab",
-                        border: `1px solid ${on ? color : C.border}`,
-                        backgroundColor: on ? color + "15" : "transparent",
-                        color: on ? C.text : C.textFaint, transition: "all 0.15s",
-                        opacity: dragIdx === idx ? 0.5 : 1,
-                      }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
-                      {name}
-                      {on && <span style={{ fontSize: "8px", color, ...mono }}>{t.winRate}%</span>}
-                    </button>
-                  );
-                })}
-                {/* Add trader button */}
-                <button onClick={() => {
-                  const notInList = mockTraders.filter(t => !subViewOrder.includes(t.name));
-                  if (notInList.length > 0) {
-                    const next = notInList[0].name;
-                    setSubViewOrder(prev => [...prev, next]);
-                    setSubViewVisible(prev => ({ ...prev, [next]: true }));
-                  }
-                }} style={{
-                  display: "flex", alignItems: "center", gap: "3px",
-                  padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                  border: `1px dashed ${C.border}`, backgroundColor: "transparent", color: C.textFaint
-                }}>
-                  <span style={{ fontSize: "14px", lineHeight: 1 }}>+</span> Add
-                </button>
-              </div>
+              <TraderSelector
+                traders={mockTraders}
+                selected={mockTraders.map(t => t.name).filter(n => subViewVisible[n])}
+                onToggle={(name) => {
+                  setSubViewVisible(prev => ({ ...prev, [name]: !prev[name] }));
+                  setSubViewOrder(prev => prev.includes(name) ? prev : [...prev, name]);
+                }}
+                colorOf={(name) => traderColors[mockTraders.findIndex(t => t.name === name)]}
+                label="Comparing"
+              />
             </div>
 
             {/* Filters: coin + direction (all sub-views) */}

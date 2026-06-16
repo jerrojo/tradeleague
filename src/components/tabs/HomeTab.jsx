@@ -1,4 +1,5 @@
 import { Avatar, BotTag } from "../common";
+import { TraderSelector } from "../TraderSelector";
 import { Activity, ChevronRight, Flame, Lightbulb, Scale, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TraderLink, useFeedFilter, useProfile } from "../../contexts";
@@ -88,25 +89,15 @@ const HomeTab = () => {
         {/* ── LEFT: Race Chart + Highlights ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 
-          {/* Trader Toggles — who's racing */}
-          <div style={{ ...cardStyle, padding: "10px 14px", display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-            <span style={{ fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: "2px" }}>Racing:</span>
-            {mockTraders.map((t, i) => {
-              const on = watching[t.name];
-              const color = traderColors[i];
-              return (
-                <button key={t.name} onClick={() => setWatching(prev => ({ ...prev, [t.name]: !prev[t.name] }))} style={{
-                  display: "flex", alignItems: "center", gap: "5px",
-                  padding: "4px 10px", borderRadius: "16px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                  border: `1px solid ${on ? color : C.border}`,
-                  backgroundColor: on ? color + "15" : "transparent",
-                  color: on ? C.text : C.textFaint, transition: "all 0.15s"
-                }}>
-                  <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: on ? color : C.textFaint }} />
-                  <span>{t.name}</span>
-                </button>
-              );
-            })}
+          {/* Trader selector — who's racing (shared component: search + editable favorites) */}
+          <div style={{ ...cardStyle, padding: "10px 14px" }}>
+            <TraderSelector
+              traders={mockTraders}
+              selected={watchedNames}
+              onToggle={(name) => setWatching(prev => ({ ...prev, [name]: !prev[name] }))}
+              colorOf={(name) => traderColors[mockTraders.findIndex(t => t.name === name)]}
+              label="Racing"
+            />
           </div>
 
           {/* Race Chart — multi-line equity curves */}
