@@ -31,9 +31,11 @@ const DateContext = createContext();
 const useDate = () => useContext(DateContext);
 
 /* ═══════════════════════ PRO MODE CONTEXT ═══════════════════════ */
-/* Simple vs Pro density. Components read this to trim secondary detail for beginners. */
+/* The Casual/Pro split was removed — the product now always shows full Pro detail.
+   useProMode() is kept (and always true) so existing `proMode &&` guards keep
+   rendering everything; ProContext remains exported for backward compatibility. */
 const ProContext = createContext();
-const useProMode = () => useContext(ProContext)?.proMode ?? false;
+const useProMode = () => true;
 
 export {
   ProfileContext,

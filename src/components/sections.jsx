@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Award, Beaker, Briefcase, Flame, Gamepad2, Globe, Lightbulb, Receipt, Target, Trophy, Users } from "lucide-react";
+import { Award, BarChart3, Flame, Gamepad2, Globe, Lightbulb, Receipt, Target, Trophy, Users, Wallet } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { MarketsTab } from "./tabs/MarketsTab";
@@ -13,8 +13,8 @@ import { TradersTab } from "./tabs/TradersTab";
 import { HallOfFameTab } from "./tabs/HallOfFameTab";
 import { AwardsTab } from "./tabs/AwardsTab";
 import { PortfolioTab } from "./tabs/PortfolioTab";
-import { TradeLabTab } from "./tabs/TradeLabTab";
 import { TopTradesTab } from "./tabs/TopTradesTab";
+import { RobotinWallet } from "./tabs/RobotinWallet";
 
 /* ═══════════════════════ SECTION SUB-NAV ═══════════════════════
    Each top-level section groups related destinations behind one nav item, so the
@@ -93,34 +93,36 @@ const MarketsSection = () => {
 /* ── ACTIVITY: the global live stream of trades + signals across all traders. ── */
 const ActivitySection = () => <ArenaTab />;
 
-/* ── TRADERS: leaderboard + all-time legends + season awards ── */
+/* ── TRADERS: leaderboard + best/worst plays + all-time legends + season awards.
+   "Top Trades" (formerly in Analyze) lives here — it's about traders' plays. ── */
 const TradersSection = () => {
   const [sub, setSub] = useState("leaderboard");
   return (
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
         { id: "leaderboard", label: "Leaderboard", icon: Users },
+        { id: "toptrades", label: "Top Trades", icon: Flame },
         { id: "legends", label: "Legends", icon: Trophy },
         { id: "awards", label: "Awards", icon: Award },
       ]} />
-      {sub === "leaderboard" ? <TradersTab /> : sub === "legends" ? <HallOfFameTab /> : <AwardsTab />}
+      {sub === "leaderboard" ? <TradersTab /> : sub === "toptrades" ? <TopTradesTab /> : sub === "legends" ? <HallOfFameTab /> : <AwardsTab />}
     </div>
   );
 };
 
-/* ── ANALYZE (Pro): the expert workbench ── */
-const AnalyzeSection = () => {
-  const [sub, setSub] = useState("portfolio");
+/* ── ROBOTÍN: the bot's execution Wallet + system Analytics (Portfolio folded in,
+   since Robotín executes every approved signal, its book IS the system book). ── */
+const RobotinSection = () => {
+  const [sub, setSub] = useState("wallet");
   return (
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
-        { id: "portfolio", label: "Portfolio", icon: Briefcase },
-        { id: "tradelab", label: "Trade Lab", icon: Beaker },
-        { id: "toptrades", label: "Top Trades", icon: Flame },
+        { id: "wallet", label: "Wallet", icon: Wallet },
+        { id: "analytics", label: "Analytics", icon: BarChart3 },
       ]} />
-      {sub === "portfolio" ? <PortfolioTab /> : sub === "tradelab" ? <TradeLabTab /> : <TopTradesTab />}
+      {sub === "wallet" ? <RobotinWallet /> : <PortfolioTab />}
     </div>
   );
 };
 
-export { MarketsSection, ActivitySection, TradersSection, AnalyzeSection };
+export { MarketsSection, ActivitySection, TradersSection, RobotinSection };

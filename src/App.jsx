@@ -6,8 +6,7 @@ import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistCo
 import { ThemeProvider } from "./theme";
 import { HomeTab } from "./components/tabs/HomeTab";
 import { SocialsTab } from "./components/tabs/SocialsTab";
-import { RobotinWallet } from "./components/tabs/RobotinWallet";
-import { MarketsSection, ActivitySection, TradersSection, AnalyzeSection } from "./components/sections";
+import { MarketsSection, ActivitySection, TradersSection, RobotinSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
@@ -46,7 +45,7 @@ const App = () => {
     return initial;
   });
   const [traderAlerts, setTraderAlerts] = useState({});
-  const [proMode, setProMode] = useState(false);
+  const proMode = true; // Casual/Pro split removed — always show full Pro detail
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [rightPanelTab, setRightPanelTab] = useState(null);
   const searchRef = useRef(null);
@@ -59,10 +58,6 @@ const App = () => {
     } catch { /* storage unavailable — skip */ }
   }, []);
 
-  // Analyze is the Pro workbench — leaving Pro mode drops you back to the live pulse.
-  useEffect(() => {
-    if (!proMode && activeTab === "analyze") setActiveTab("pulse");
-  }, [proMode, activeTab]);
   const dismissWelcome = () => {
     setShowWelcome(false);
     try { localStorage.setItem("tl_onboarded", "1"); } catch { /* ignore */ }
@@ -91,12 +86,11 @@ const App = () => {
       { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
       { id: "markets", label: "Markets", desc: "One coin at a time — signals, trades, structure, positioning" },
       { id: "robotin", label: "Robotín Wallet", desc: "Every trade the bot executed from approved signals" },
+      { id: "robotin", label: "Robotín Analytics", desc: "System fund-level KPIs, equity curve, drawdown and segmentation" },
       { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
+      { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
       { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
-      { id: "analyze", label: "Portfolio", desc: "Fund-level KPIs, equity curve, drawdown (Pro)" },
-      { id: "analyze", label: "Trade Lab", desc: "Falsify any trader's edge in one click (Pro)" },
-      { id: "analyze", label: "Top Trades", desc: "Best and worst plays, explained (Pro)" },
       { id: "socials", label: "Socials", desc: "What traders post across X, Telegram, Discord" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
@@ -171,7 +165,6 @@ const App = () => {
     { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
-    { id: "analyze", label: "Analyze", icon: BarChart3, accent: C.amber, pro: true },
     { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
   ];
 
@@ -179,10 +172,9 @@ const App = () => {
   const tabMeta = {
     pulse: "The live pulse — who's winning right now and the market mood",
     markets: "One coin at a time — its signals, structure and crowd positioning",
-    robotin: "Robotín's wallet — every trade the bot executed from approved signals",
-    activity: "Trades, signals and predictions as they happen — one live stream",
-    traders: "The leaderboard, profiles, all-time legends and season awards",
-    analyze: "The expert workbench — fund health, the Trade Lab and the best/worst plays",
+    robotin: "Robotín's wallet and analytics — every trade the bot executed and how the system performs",
+    activity: "Trades and signals across all traders — one live stream",
+    traders: "The leaderboard, profiles, best/worst plays, legends and awards",
     socials: "What traders are posting across X, Telegram, Discord and more",
   };
 
@@ -190,10 +182,9 @@ const App = () => {
   const tabContent = {
     pulse: HomeTab,            // Pulse = the live overview / race
     markets: MarketsSection,   // Markets = the coin hub: Signals + Structure + Positioning (+ All coins)
-    robotin: RobotinWallet,    // Robotín = the bot's execution wallet / journal dashboard
-    activity: ActivitySection, // Activity = live stream + prediction markets
-    traders: TradersSection,   // Traders = leaderboard + legends + awards
-    analyze: AnalyzeSection,   // Analyze (Pro) = portfolio + trade lab + top trades
+    robotin: RobotinSection,   // Robotín = the bot's Wallet + system Analytics (Portfolio folded in)
+    activity: ActivitySection, // Activity = global live stream of trades + signals
+    traders: TradersSection,   // Traders = leaderboard + Top Trades + legends + awards
     socials: SocialsTab,       // Socials = cross-platform curated feed
   };
   const ActiveComponent = tabContent[activeTab] || HomeTab;
@@ -260,7 +251,6 @@ const App = () => {
             {/* Nav items — 3-zone grouping */}
             <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "1px", overflowY: "auto" }}>
               {tabs.map(tab => {
-                if (tab.pro && !proMode) return null; // Analyze is Pro-only
                 if (tab.zone) return (
                   <div key={tab.id} style={{ padding: sidebarCollapsed ? "8px 0 4px" : "12px 12px 4px", overflow: "hidden" }}>
                     {!sidebarCollapsed && <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{tab.label}</span>}
@@ -329,17 +319,6 @@ const App = () => {
                   <span title="All data on this preview is simulated. Will switch to LIVE once exchange/social connectors are wired." style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.amberBg, color: C.amber, border: `1px solid ${C.amber}30`, ...mono }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block" }} /> SIMULATED
                   </span>
-                  {/* Casual / Pro toggle */}
-                  <button onClick={() => setProMode(!proMode)} title="Toggle detail density" style={{
-                    display: "flex", alignItems: "center", gap: "5px", padding: "4px 10px", borderRadius: "4px",
-                    border: `1px solid ${proMode ? C.cyan + "50" : C.border}`,
-                    backgroundColor: proMode ? C.cyan + "12" : "transparent",
-                    color: proMode ? C.cyan : C.textMuted, fontSize: "10px", fontWeight: "700",
-                    cursor: "pointer", transition: "all 0.2s", ...mono
-                  }}>
-                    <Eye size={11} />
-                    {proMode ? "PRO" : "CASUAL"}
-                  </button>
                 </div>
                 <span style={{ fontSize: "11px", color: C.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {profileTrader ? `${profileTrader.style} trader · rank #${profileTrader.rank} · ${profileTrader.winRate}% win rate` : (tabMeta[activeTab] || "")}
@@ -474,12 +453,12 @@ const App = () => {
                     {[
                       { icon: Radio, color: C.purple, t: "Pulse", d: "The live pulse — who's winning right now and the market mood.", go: "pulse" },
                       { icon: Globe, color: C.cyan, t: "Markets", d: "Where the crowd is positioned on every coin, and the structure behind it.", go: "markets" },
-                      { icon: Activity, color: C.green, t: "Activity", d: "Trades, signals and predictions as they happen — one live stream.", go: "activity" },
-                      { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, profiles, all-time legends and season awards.", go: "traders" },
-                      { icon: BarChart3, color: C.amber, t: "Analyze (Pro)", d: "The expert workbench — fund health, the Trade Lab and the best/worst plays.", go: "analyze" },
+                      { icon: Wallet, color: C.amber, t: "Robotín", d: "The bot's execution wallet and the system's performance analytics.", go: "robotin" },
+                      { icon: Activity, color: C.green, t: "Activity", d: "Trades and signals across all traders — one live stream.", go: "activity" },
+                      { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles, legends and awards.", go: "traders" },
                       { icon: MessageCircle, color: C.cyan, t: "Socials", d: "What traders are posting across X, Telegram, Discord and more.", go: "socials" },
                     ].map(card => (
-                      <button key={card.t} onClick={() => { if (card.go) { if (card.go === "analyze") setProMode(true); setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
+                      <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
                         backgroundColor: C.bg, border: `1px solid ${C.border}`, transition: "border-color 0.15s",
                       }} className="card-hover">
@@ -550,7 +529,7 @@ const App = () => {
                     {searchResults.tabs.length > 0 && (<>
                       <div style={{ padding: "6px 10px", fontSize: "9px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Sections</div>
                       {searchResults.tabs.map(t => (
-                        <button key={`${t.id}-${t.label}`} onClick={() => { if (t.id === "analyze") setProMode(true); setActiveTab(t.id); setShowSearch(false); setSearchQuery(""); setProfileTrader(null); }} style={{
+                        <button key={`${t.id}-${t.label}`} onClick={() => { setActiveTab(t.id); setShowSearch(false); setSearchQuery(""); setProfileTrader(null); }} style={{
                           display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "10px 12px", backgroundColor: "transparent",
                           border: "none", borderRadius: "8px", cursor: "pointer", color: C.text, textAlign: "left"
                         }}>
