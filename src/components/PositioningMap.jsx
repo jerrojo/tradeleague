@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { mockTraders, traderDeepData, predictionMarkets } from "../data/mockData";
+import { mockTraders, traderDeepData } from "../data/mockData";
 import { C, cardStyle, mono } from "../theme";
 
 /* ═══════════════════════ POSITIONING MAP ═══════════════════════
@@ -34,8 +34,7 @@ const PositioningMap = ({ coin, currentPrice }) => {
     const shorts = positions.filter((p) => p.type === "SHORT").length;
     const wsum = positions.reduce((a, p) => a + p.lev, 0) || 1;
     const netPct = positions.reduce((a, p) => a + ((p.target - currentPrice) / currentPrice * 100) * p.lev, 0) / wsum;
-    const related = predictionMarkets.filter((m) => m.question.toUpperCase().includes(coin)).slice(0, 3);
-    return { positions, longs, shorts, netPct, related };
+    return { positions, longs, shorts, netPct };
   }, [coin, currentPrice]);
 
   if (!currentPrice || !data.positions.length) return null;
@@ -98,22 +97,11 @@ const PositioningMap = ({ coin, currentPrice }) => {
         })}
       </div>
 
-      {/* legend + predictions */}
+      {/* legend */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: `${C.green}cc`, border: `1.5px solid ${C.green}` }} /> trade</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "transparent", border: `1.5px solid ${C.blue}` }} /> signal</span>
         <span style={{ color: C.textFaint }}>larger dot = more leverage</span>
-        {related.length > 0 && (
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Predictions:</span>
-            {related.map((m) => (
-              <span key={m.id} title={m.question} style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: 10, padding: "3px 8px", borderRadius: 6, backgroundColor: C.bg, border: `1px solid ${C.border}` }}>
-                <span style={{ maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: C.textMuted }}>{m.question}</span>
-                <span style={{ color: C.green, fontWeight: 700, ...mono }}>{m.yesOdds}%</span>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
