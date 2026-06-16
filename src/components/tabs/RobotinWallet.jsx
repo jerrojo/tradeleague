@@ -134,16 +134,16 @@ const RobotinWallet = () => {
         </div>
       </div>
 
-      {/* ── KPI grid ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
+      {/* ── KPI grid — the six that matter ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
         <StatCard
-          label="Total Net P&L" value={usd(data.netPnl)} icon={Wallet}
+          label="Net P&L" value={usd(data.netPnl)} icon={Wallet}
           color={data.netPnl >= 0 ? C.green : C.red}
           sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(2)}% on balance`}
         />
         <StatCard
           label="Total Trades" value={data.trades.length.toLocaleString()} icon={TrendingUp} color={C.purple}
-          sub={`${data.pending.length} pending · ${data.active.length} active · ${data.closed.length} closed`}
+          sub={`${data.active.length} active · ${data.closed.length} closed`}
         />
         <StatCard
           label="Win Rate" value={`${data.winRate.toFixed(1)}%`} icon={Percent}
@@ -151,33 +151,17 @@ const RobotinWallet = () => {
           sub={`${data.wins.length} W / ${data.losses.length} L`}
         />
         <StatCard
-          label="Wins vs Losses" value={`${data.wins.length} / ${data.losses.length}`} icon={Activity}
-          color={C.blue} sub={`of ${data.closed.length} closed`}
-        />
-        <StatCard
-          label="Avg Win / Avg Loss" value={`+$${data.avgWin.toFixed(0)} / -$${data.avgLoss.toFixed(0)}`}
-          icon={Scale} color={C.amber}
-          sub={data.avgLoss > 0 ? `ratio ${(data.avgWin / data.avgLoss).toFixed(2)}x` : "—"}
-        />
-        <StatCard
-          label="Best / Worst" value={`+$${data.best.toFixed(0)} / -$${Math.abs(data.worst).toFixed(0)}`}
-          icon={Award} color={C.green} sub="single trade"
-        />
-        <StatCard
           label="Profit Factor" value={pfFmt(data.profitFactor)} icon={Scale}
-          color={data.profitFactor >= 1 ? C.green : C.red} tip="profitFactor"
+          color={data.profitFactor >= 1 ? C.green : C.red} tip="profitFactor" sub="gross win / gross loss"
         />
         <StatCard
-          label="Expectancy" value={usd(data.expectancy)} icon={Target}
-          color={data.expectancy >= 0 ? C.green : C.red} tip="expectancy" sub="avg per closed trade"
+          label="Avg Win / Loss" value={`+$${data.avgWin.toFixed(0)} / -$${data.avgLoss.toFixed(0)}`}
+          icon={Activity} color={C.amber}
+          sub={data.avgLoss > 0 ? `ratio ${(data.avgWin / data.avgLoss).toFixed(2)}x` : "—"}
         />
         <StatCard
           label="Max Drawdown" value={usd(data.maxDrawdown)} icon={TrendingDown}
           color={C.red} tip="maxDD" sub="peak-to-trough equity"
-        />
-        <StatCard
-          label="Avg Confidence" value={`${data.avgConfidence.toFixed(0)}%`} icon={Cpu}
-          color={C.cyan} tip="confidence" sub="Robotín on executed trades"
         />
       </div>
 

@@ -39,8 +39,8 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
       </div>
 
 
-      {/* Ideal Entry + Kill Zones side by side */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      {/* Ideal Entry */}
+      <div>
         <div style={cardStyle}>
           <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ideal Entry — {selectedCoin}</div>
           <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Where to enter, how much you can gain, and where to cut losses</div>
@@ -80,23 +80,6 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            <InfoTip k="killZone" inline><span>Key Sessions</span></InfoTip>
-          </div>
-          {killZones.map(z => (
-            <div key={z.name} style={{ ...cardStyle, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: z.active ? C.green : C.textFaint }} />
-                <div>
-                  <div style={{ fontSize: "12px", fontWeight: "600" }}>{z.name}</div>
-                  <div style={{ fontSize: "10px", color: C.textMuted }}>{z.time}</div>
-                </div>
-              </div>
-              <Tag text={z.active ? "ACTIVE" : "INACTIVE"} color={z.active ? C.green : C.textFaint} />
-            </div>
-          ))}
-        </div>
       </div>
 
     </div>
