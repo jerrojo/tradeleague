@@ -177,7 +177,7 @@ const LivePnLTicker = () => {
     { text: "Smart Money +$1,560 (AVAX LONG)", type: "trade" },
     { text: "Robotín approved 6 of Phoenix Rise's last 8 signals", type: "achievement" },
     { text: "Rocket Launch +$745 (BTC SHORT)", type: "trade" },
-    { text: "Scalp King hit Alpha Score 87 — new season high", type: "achievement" },
+    { text: "Scalp King hit Alpha Score 87 — best on the board", type: "achievement" },
     { text: "Bull Master -$420 (SOL LONG)", type: "loss" },
     { text: "DOGE +12.4% in 2h — meme szn is back", type: "moon" },
     { text: "Phoenix Rise +$2,100 (DOGE LONG)", type: "trade" },

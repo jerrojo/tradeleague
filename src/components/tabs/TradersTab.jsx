@@ -42,6 +42,12 @@ const TradersTab = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Prominent trader search — jump straight to anyone */}
+      <div style={{ position: "relative" }}>
+        <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: search ? C.purple : C.textMuted, pointerEvents: "none" }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search any trader by name…" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 10, border: `1px solid ${search ? C.purple : C.border}`, backgroundColor: C.card, color: C.text, fontSize: 14, fontFamily: "inherit", outline: "none" }} />
+      </div>
+
       <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
         {[{id:"leaderboard",label:"Leaderboard"},{id:"compare",label:"Compare"},{id:"profiles",label:"Profiles"},{id:"heatmap",label:"Heatmap"},{id:"copy",label:"Copy Trading"}].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
@@ -72,12 +78,6 @@ const TradersTab = () => {
           <button onClick={() => setSortField(prev => prev === "pnl" ? "winRate" : prev === "winRate" ? "alpha" : "pnl")} title={`Sort by ${sortField}`} style={{ display: "flex", alignItems: "center", gap: "3px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted }}>
             <ArrowDown size={11} /> {sortField === "pnl" ? "PnL" : sortField === "winRate" ? "Win%" : "Alpha"}
           </button>
-          <div style={{ width: "1px", height: 20, backgroundColor: C.border, margin: "0 4px" }} />
-          {/* Search: jump to any trader by name */}
-          <div style={{ position: "relative" }}>
-            <Search size={12} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: C.textMuted, pointerEvents: "none" }} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search traders…" style={{ width: 150, padding: "5px 10px 5px 26px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none" }} />
-          </div>
         </div>
       </div>
 
@@ -416,7 +416,7 @@ const TradersTab = () => {
 
       {view === "profiles" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-          {mockTraders.map((t, ti) => {
+          {mockTraders.filter(t => !search.trim() || t.name.toLowerCase().includes(search.trim().toLowerCase())).map((t, ti) => {
             const isTopRanked = t.rank === 1;
             const alpha = calcAlphaScore(t);
             const aClr = alphaColor(alpha);

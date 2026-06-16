@@ -308,9 +308,6 @@ const App = () => {
                   <span style={{ fontSize: "16px", fontWeight: "700" }}>
                     {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
                   </span>
-                  <span style={{ fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.purpleBg, color: C.purple, border: `1px solid ${C.purple}30`, ...mono }}>
-                    S1 · 47d left
-                  </span>
                   {/* Data provenance — honest about simulated vs live (flips to LIVE when connectors are wired) */}
                   <span title="All data on this preview is simulated. Will switch to LIVE once exchange/social connectors are wired." style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "9px", fontWeight: "700", padding: "3px 8px", borderRadius: "4px", backgroundColor: C.amberBg, color: C.amber, border: `1px solid ${C.amber}30`, ...mono }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block" }} /> SIMULATED
@@ -763,20 +760,17 @@ const App = () => {
                   return filtered.map(t => {
                     const isFollowed = followedTraders[t.name];
                     const hasAlert = traderAlerts[t.name];
-                    const tierColor = t.tier === "Diamond" ? C.cyan : t.tier === "Platinum" ? "#a78bfa" : t.tier === "Gold" ? C.amber : C.textMuted;
                     return (
                       <div key={t.name} className="card-hover" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${isFollowed ? C.purple + "30" : C.border}`, backgroundColor: isFollowed ? C.purpleBg + "40" : C.card, marginBottom: "3px", cursor: "pointer", transition: "all 0.15s" }}>
                         {/* Rank */}
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", minWidth: "18px", paddingTop: "2px" }}>
                           <span style={{ fontSize: "10px", fontWeight: "800", color: t.rank <= 3 ? C.amber : C.textMuted, ...mono }}>#{t.rank}</span>
-                          <div style={{ width: 3, height: 10, borderRadius: "1px", backgroundColor: tierColor }} />
                         </div>
                         {/* Info + actions */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "2px" }} onClick={() => openProfile(t)}>
                             <span style={{ fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>{t.name}</span>
                             <BotTag isBot={t.isBot} />
-                            <span style={{ fontSize: "7px", fontWeight: "700", color: tierColor, backgroundColor: `${tierColor}15`, padding: "1px 4px", borderRadius: "2px", border: `1px solid ${tierColor}30` }}>{t.tier}</span>
                           </div>
                           <div style={{ display: "flex", gap: "6px", fontSize: "8px", color: C.textMuted, ...mono, marginBottom: "3px" }}>
                             <span style={{ color: C.green }}>{t.winRate}%</span>
@@ -845,7 +839,7 @@ const App = () => {
                         </div>
                         <div>
                           <div style={{ fontSize: "14px", fontWeight: "700" }}>Trader Demo</div>
-                          <div style={{ fontSize: "10px", color: C.textMuted }}>{myTitle} · LVL {myLevel}</div>
+                          <div style={{ fontSize: "10px", color: C.textMuted }}>Following {Object.values(followedTraders).filter(Boolean).length} · {mockTraders.length} traders tracked</div>
                         </div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
@@ -912,8 +906,6 @@ const App = () => {
                   <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
                   <span style={{ color: C.green }}>LIVE</span>
                 </div>
-                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Trophy size={11} color={C.amber} /> Season 1 · 47d left</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} traders</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
