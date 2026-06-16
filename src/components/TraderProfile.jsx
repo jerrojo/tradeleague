@@ -10,7 +10,7 @@ import { ACHIEVEMENTS, alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, c
 import { C, cardStyle, mono, tdStyle, thStyle, tierColor } from "../theme";
 import { ToastContext } from "./common";
 import { Activity, BarChart3, Clock, DollarSign, Flame, Lightbulb, Star, Target, TrendingDown, TrendingUp, Trophy, Users, Zap } from "lucide-react";
-import { Fragment, useContext, useState } from "react";
+import { Fragment, useContext, useMemo, useState } from "react";
 /* ═══════════════════════ TRADER PROFILE (standalone) ═══════════════════════ */
 const TraderProfile = ({ trader, onClose }) => {
   const [profileTab, setProfileTab] = useState("overview");
@@ -24,6 +24,36 @@ const TraderProfile = ({ trader, onClose }) => {
   const t = trader;
   const deep = traderDeepData[t.name];
   const histMetrics = computeMetrics(deep.history); // Calmar / compound from the real trade list
+
+  // Trading Journal — crypto-journal KPIs derived from the trader's own trade history.
+  // Reuses computeMetrics for the heavy lifting (winRate / profitFactor / maxDD / expectancyR)
+  // and layers the per-trade P&L cuts (avg win/loss, best/worst, best win streak) on top.
+  const journal = useMemo(() => {
+    const hist = deep.history || [];
+    if (!hist.length) return null;
+    const winsArr = hist.filter(h => h.outcome === "WIN");
+    const lossArr = hist.filter(h => h.outcome === "LOSS");
+    const mean = (arr, pick) => arr.length ? arr.reduce((a, x) => a + pick(x), 0) / arr.length : 0;
+    // Longest consecutive WIN run, scanning the list in order.
+    let bestStreak = 0, run = 0;
+    for (const h of hist) { if (h.outcome === "WIN") { run++; bestStreak = Math.max(bestStreak, run); } else run = 0; }
+    return {
+      totalNetPnl: histMetrics.totalPnl,
+      totalTrades: hist.length,
+      wins: winsArr.length,
+      losses: lossArr.length,
+      winRate: histMetrics.winRate,
+      profitFactor: histMetrics.profitFactor,
+      avgWin: mean(winsArr, h => h.pnl),
+      avgLoss: mean(lossArr, h => h.pnl), // negative
+      expectancyR: histMetrics.expectancyR, // mean rMultiple (R)
+      bestTrade: Math.max(...hist.map(h => h.pnl)),
+      worstTrade: Math.min(...hist.map(h => h.pnl)),
+      maxDrawdownPct: Math.abs(histMetrics.maxDrawdownPct),
+      bestStreak,
+      avgHold: mean(hist, h => h.durationHours ?? 0),
+    };
+  }, [deep.history, histMetrics]);
 
   // Simple hides the Pro-only sub-tabs (Trade Lab, Risk DNA, Journal)
   const allProfileTabs = ["overview","trade_lab","signals","trades","predictions","social","pnl","risk_dna","journal"];
@@ -236,6 +266,31 @@ const TraderProfile = ({ trader, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* ═══ Trading Journal — compact KPI dashboard (crypto journal) ═══ */}
+      {journal && (
+        <div style={{ ...cardStyle, padding: "16px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <BarChart3 size={15} color={C.purple} />
+              <span style={{ fontSize: "13px", fontWeight: "700" }}>Trading Journal</span>
+            </div>
+            <span style={{ fontSize: "10px", color: C.textFaint }}>
+              {journal.wins}W · {journal.losses}L over {journal.totalTrades} logged trades · avg hold {journal.avgHold.toFixed(1)}h
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+            <StatCard label="Net P&L" value={`${journal.totalNetPnl >= 0 ? "+" : "-"}$${Math.abs(journal.totalNetPnl).toLocaleString()}`} icon={DollarSign} color={journal.totalNetPnl >= 0 ? C.green : C.red} />
+            <StatCard label="Win Rate" value={`${journal.winRate}%`} sub={`${journal.wins}W / ${journal.losses}L`} icon={Target} color={C.green} tip="winRate" />
+            <StatCard label="Profit Factor" value={journal.profitFactor === Infinity ? "∞" : journal.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
+            <StatCard label="Expectancy" value={`${journal.expectancyR >= 0 ? "+" : ""}${journal.expectancyR.toFixed(2)}R`} icon={Lightbulb} color={journal.expectancyR >= 0 ? C.green : C.red} tip="expectancyR" />
+            <StatCard label="Max Drawdown" value={`${journal.maxDrawdownPct}%`} icon={TrendingDown} color={C.red} tip="maxDD" />
+            <StatCard label="Avg Win / Loss" value={`+$${Math.round(journal.avgWin).toLocaleString()}`} sub={`-$${Math.abs(Math.round(journal.avgLoss)).toLocaleString()}`} icon={TrendingUp} color={C.green} />
+            <StatCard label="Best / Worst" value={`+$${journal.bestTrade.toLocaleString()}`} sub={`-$${Math.abs(journal.worstTrade).toLocaleString()}`} icon={Trophy} color={C.blue} />
+            <StatCard label="Best Streak" value={`${journal.bestStreak}W`} icon={Flame} color={C.purple} tip="streak" />
+          </div>
+        </div>
+      )}
 
       {/* Sub-Tabs */}
       <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>

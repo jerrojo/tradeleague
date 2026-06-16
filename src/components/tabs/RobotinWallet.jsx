@@ -15,7 +15,7 @@ import { C, cardStyle, mono } from "../../theme";
    Same candle-derived outcomes as RobotinSignals, aggregated into a wallet-style
    P&L journal: account balance, equity curve, win rate and a per-trade audit. */
 
-const STARTING_BALANCE = 250000;
+const STARTING_BALANCE = 50000;
 
 const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString());
 const usd = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;

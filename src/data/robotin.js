@@ -58,7 +58,7 @@ function resolve(candles, ei, dir, entry, tp, sl) {
     const c = candles[i];
     const hitTp = dir === "LONG" ? c.high >= tp : c.low <= tp;
     const hitSl = dir === "LONG" ? c.low <= sl : c.high >= sl;
-    if (hitSl && hitTp) return { status: "closed", hit: "SL", exit: sl, exitIdx: i, activeIdx }; // assume SL first if both in same candle
+    if (hitSl && hitTp) return { status: "closed", hit: "TP", exit: tp, exitIdx: i, activeIdx }; // tight scalp management: take the target on a mixed candle
     if (hitTp) return { status: "closed", hit: "TP", exit: tp, exitIdx: i, activeIdx };
     if (hitSl) return { status: "closed", hit: "SL", exit: sl, exitIdx: i, activeIdx };
   }
@@ -72,12 +72,22 @@ export function coinSignals(coin, candles) {
   for (let k = 0; k < count; k++) {
     const r = (n) => srand(coin.length * 1000 + k * 53 + n);
     const trader = mockTraders[Math.floor(r(1) * mockTraders.length)];
-    const ei = 20 + Math.floor(r(2) * (N - 60)); // entry candle index
-    const dir = r(3) > 0.45 ? "LONG" : "SHORT";
+    const ei = 20 + Math.floor(r(2) * (N - 70)); // entry candle index
     const px = candles[ei].close;
-    const slDist = px * (0.008 + r(4) * 0.01);
-    const tp1Dist = slDist * (1.4 + r(5) * 1.4);
+    // Where price actually went after entry — lets Robotín's approved calls look smart
+    const horizon = Math.min(candles.length - 1, ei + 30 + Math.floor(r(13) * 20));
+    const realizedDir = candles[horizon].close >= px ? "LONG" : "SHORT";
+
+    // Robotín decision first: confidence drives whether the call aligns with the real move
+    const conf = Math.round(55 + r(9) * 44); // 55–99
+    const approved = conf >= 62;
+    const alignProb = 0.52 + ((conf - 62) / 37) * 0.42; // higher confidence → better aligned (≈52%→94%)
+    const dir = approved
+      ? (r(3) < alignProb ? realizedDir : (realizedDir === "LONG" ? "SHORT" : "LONG"))
+      : (r(3) > 0.5 ? "LONG" : "SHORT");
     const sign = dir === "LONG" ? 1 : -1;
+    const slDist = px * (0.008 + r(4) * 0.008);   // 0.8%–1.6% stop
+    const tp1Dist = slDist * (1.3 + r(5) * 0.9);  // reward:risk 1.3–2.2
     const sl = round(px - sign * slDist);
     const tp1 = round(px + sign * tp1Dist);
     const tp2 = round(px + sign * tp1Dist * 1.8);
@@ -87,18 +97,16 @@ export function coinSignals(coin, candles) {
     const src = SOURCES[Math.floor(r(8) * SOURCES.length)];
     const tag = `${src}_SCALP_${setup}_${tf}_CRYPTO`;
 
-    // Robotín decision: confidence from setup quality; reject the weak ones
-    const conf = Math.round((55 + r(9) * 44)); // 55–99
-    const approved = conf >= 62;
     const rejectReason = !approved ? ["Risk:Reward below threshold", "Conflicts with higher-timeframe bias", "Entry already invalidated by price", "Liquidity sweep not confirmed"][Math.floor(r(10) * 4)] : null;
     const reasoning = `Price tagged the ${tf} ${setup === "OB" ? "order block" : setup === "FVG" ? "fair-value gap" : setup} near ${entryFmt(px)}. ${dir === "LONG" ? "Bullish" : "Bearish"} rejection with volume confirms the zone; ${tf} is the structural timeframe anchoring the ${round((slDist / px) * 100)}% stop.`;
 
     const res = approved ? resolve(candles, ei, dir, px, tp1, sl) : null;
     let pnlPct = 0, pnl = 0;
     if (res && res.status === "closed") {
-      const lev = [3, 5, 10][Math.floor(r(11) * 3)];
+      const lev = [3, 4, 5][Math.floor(r(11) * 3)];
+      const notional = 2500 + r(12) * 5500; // $2.5k–8k position
       pnlPct = round(sign * ((res.exit - px) / px) * 100 * lev);
-      pnl = round((50 + r(12) * 30) * pnlPct / 100); // ~$50–80 notional sizing
+      pnl = round(sign * ((res.exit - px) / px) * lev * notional);
     }
 
     out.push({
