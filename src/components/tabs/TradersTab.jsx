@@ -49,15 +49,10 @@ const TradersTab = () => {
       </div>
 
       <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-        {[{id:"leaderboard",label:"Leaderboard"},{id:"compare",label:"Compare"},{id:"profiles",label:"Profiles"},{id:"heatmap",label:"Heatmap"},{id:"copy",label:"Copy Trading"}].map(v => (
-          <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding: "8px 16px", borderRadius: "6px", border: `1px solid ${view === v.id ? C.purple : C.border}`,
-            backgroundColor: view === v.id ? C.purpleBg : "transparent", color: view === v.id ? C.purple : C.textMuted,
-            fontSize: "11px", fontWeight: "600", cursor: "pointer"
-          }}>{v.label}</button>
-        ))}
+        <span style={{ fontSize: "13px", fontWeight: "800" }}>Directory</span>
+        <span style={{ fontSize: "11px", color: C.textMuted }}>{mockTraders.length} traders</span>
         <div style={{ flex: 1 }} />
-        {/* Toolbar: filter by type, sort, add */}
+        {/* Filter by type + sort */}
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {[
             { id: "all", label: "All", icon: Users },
@@ -184,31 +179,6 @@ const TradersTab = () => {
                 );})}
               </tbody>
             </table>
-          </div>
-
-          <div style={{ ...cardStyle }}>
-            <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Signal Groups</div>
-            <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr>
-                  {["Rank","Group","Members","Win Rate","Monthly PnL","Signals","Accuracy","Hot"].map(h => <th key={h} style={thStyle}>{h}</th>)}
-                </tr></thead>
-                <tbody>
-                  {mockGroups.map((g, i) => (
-                  <tr key={g.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
-                    <td style={{ ...tdStyle, fontWeight: "800", fontSize: "13px", color: i < 3 ? rankColors[i] : C.textMuted, ...mono }}>{i + 1}</td>
-                    <td style={{ ...tdStyle, fontWeight: "600" }}>{g.name}</td>
-                    <td style={{ ...tdStyle, ...mono }}>{g.members}</td>
-                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>{g.winRate}%</td>
-                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(g.monthlyPnl / 1000).toFixed(1)}K</td>
-                    <td style={{ ...tdStyle, ...mono }}>{g.signals}</td>
-                    <td style={{ ...tdStyle, ...mono, color: C.amber, fontWeight: "600" }}>{g.accuracy}%</td>
-                    <td style={{ ...tdStyle, fontSize: "13px", fontWeight: "600" }}>{getFlames(Math.max(...mockTraders.map(t => t.streak))) || "—"}</td>
-                  </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       )}

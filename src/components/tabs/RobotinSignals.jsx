@@ -9,7 +9,14 @@ import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../da
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
 
-const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString());
+const fmt = (p) => {
+  if (p == null) return "—";
+  const a = Math.abs(p);
+  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (a >= 0.01) return p.toFixed(4);
+  if (a >= 0.0001) return p.toFixed(6);
+  return p.toPrecision(3);
+};
 
 /* Status → label + color */
 const STATUS = {

@@ -38,34 +38,6 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
         <StatCard label="Risk Level" value={coin.risk === "LOW" ? "LOW" : coin.risk === "MEDIUM" ? "MEDIUM" : "HIGH"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
       </div>
 
-      {/* Multi-Timeframe Grid — Pro only (dense SMC structure) */}
-      {proMode && (
-      <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Multi-Timeframe Analysis — {selectedCoin}/{coin.pair}</div>
-        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Multi-Timeframe Analysis shows what happens across different time scales (minutes → hours)</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-          {coin.tfData.map(tf => (
-            <div key={tf.tf} style={cardStyle}>
-              <div style={{ fontSize: "15px", fontWeight: "700", color: C.purple, marginBottom: "12px" }}>{tf.tf === "15m" ? "15 min" : tf.tf === "1H" ? "1 hour" : "4 hours"}</div>
-              {[
-                ["Trend", tf.trend === "Bullish" ? "↑ Bullish" : tf.trend === "Bearish" ? "↓ Bearish" : "↔ Sideways", tf.trend === "Bullish" ? C.green : tf.trend === "Bearish" ? C.red : C.amber, null],
-                ["Structure", tf.struct, tf.struct === "BOS" ? C.green : C.red, tf.struct === "BOS" ? "bos" : "choch"],
-                ["Order Block", tf.ob.includes("Bullish")  ? "Buy" : "Sell", tf.ob.includes("Bullish") ? C.green : C.red, "ob"],
-                ["Price Gap", tf.fvg === "Filled"  ? "Filled" : "Pending", tf.fvg === "Filled" ? C.green : C.amber, "fvg"],
-                ["Liquidity", tf.liq === "Sweep Done" ? "✅ Captured" : tf.liq, C.blue, "liquidity"],
-              ].map(([label, val, clr, tipKey]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.border}` }}>
-                  <span style={{ fontSize: "11px", color: C.textMuted }}>
-                    {tipKey ? <InfoTip k={tipKey} inline><span>{label}</span></InfoTip> : label}
-                  </span>
-                  <span style={{ fontSize: "11px", fontWeight: "600", color: clr }}>{val}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
 
       {/* Ideal Entry + Kill Zones side by side */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
@@ -126,30 +98,6 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
           ))}
         </div>
       </div>
-
-      {/* Safety Checks — Pro only (funding / OI / correlation) */}
-      {proMode && (
-      <div>
-        <div style={{ fontSize: "13px", fontWeight: "600", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Safety Check — {selectedCoin}</div>
-        <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "10px" }}>Indicators confirming whether it's safe to trade right now</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-          {coin.safety.map(c => {
-            const tipMap = { "Funding Rate": "fundingRate", "Open Interest": "openInterest" };
-            const nameMap = { "Funding Rate": "Funding Rate", "Open Interest": "Open Interest", "Volume": "Volume", "Correlation": "Correlation" };
-            return (
-              <div key={c.name} style={{ ...cardStyle, textAlign: "center" }}>
-                {c.status === "pass" ? <CheckCircle size={22} color={C.green} /> : <AlertTriangle size={22} color={C.amber} />}
-                <div style={{ fontSize: "12px", fontWeight: "600", marginTop: "8px" }}>
-                  {tipMap[c.name] ? <InfoTip k={tipMap[c.name]} inline><span>{nameMap[c.name] || c.name}</span></InfoTip> : (nameMap[c.name] || c.name)}
-                </div>
-                <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px", ...mono }}>{c.detail}</div>
-                <div style={{ fontSize: "10px", color: c.status === "pass" ? C.green : C.amber, marginTop: "4px", textTransform: "uppercase", fontWeight: "600", display: "flex", alignItems: "center", gap: "3px" }}>{c.status === "pass" ? <><CheckCircle size={10} /> OK</> : <><AlertTriangle size={10} /> Warning</>}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      )}
 
     </div>
   );

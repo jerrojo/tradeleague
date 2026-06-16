@@ -23,7 +23,15 @@ export const ROBOTIN_COINS = [...PREFERRED.filter((c) => smcCoins[c]), ...Object
 const SETUPS = ["FVG", "OB", "BOS", "LIQ", "CHOCH"];
 const TFS = ["M15", "H1", "H4"];
 const SOURCES = ["TG", "TV", "AI"];
-const round = (x) => (x < 1 ? Math.round(x * 1e5) / 1e5 : Math.round(x * 100) / 100);
+/* Adaptive precision: keep enough decimals for sub-cent meme coins so entry/TP/SL
+   don't collapse onto the same number (which made TP trades read as +$0.00). */
+const round = (x) => {
+  const a = Math.abs(x);
+  if (a >= 1) return Math.round(x * 100) / 100;
+  if (a >= 0.01) return Math.round(x * 1e5) / 1e5;
+  if (a >= 0.0001) return Math.round(x * 1e7) / 1e7;
+  return Math.round(x * 1e10) / 1e10;
+};
 
 const STEP = 3600; // 1h candles
 const N = 160;

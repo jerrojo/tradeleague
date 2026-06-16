@@ -10,7 +10,14 @@ import { C, cardStyle, mono } from "../theme";
    model's reasoning, and a resampleable execution chart with entry/SL/TP lines. */
 
 const round2 = (x) => (x == null ? null : x < 1 ? Math.round(x * 1e5) / 1e5 : Math.round(x * 100) / 100);
-const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString(undefined, { maximumFractionDigits: 2 }));
+const fmt = (p) => {
+  if (p == null) return "—";
+  const a = Math.abs(p);
+  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (a >= 0.01) return p.toFixed(4);
+  if (a >= 0.0001) return p.toFixed(6);
+  return p.toPrecision(3);
+};
 const fmtUsd = (v) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
 
 /* unix seconds → "Jun 16, 14:32" */
