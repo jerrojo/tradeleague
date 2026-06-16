@@ -175,7 +175,7 @@ const LivePnLTicker = () => {
     { text: "Crypto Ninja +$890 (ETH SHORT)", type: "trade" },
     { text: "$1.2M LIQUIDATED — shorts rekt in 15min", type: "liquidation" },
     { text: "Smart Money +$1,560 (AVAX LONG)", type: "trade" },
-    { text: "Phoenix Rise won 6th prediction in a row", type: "achievement" },
+    { text: "Robotín approved 6 of Phoenix Rise's last 8 signals", type: "achievement" },
     { text: "Rocket Launch +$745 (BTC SHORT)", type: "trade" },
     { text: "Scalp King hit Alpha Score 87 — new season high", type: "achievement" },
     { text: "Bull Master -$420 (SOL LONG)", type: "loss" },
