@@ -68,20 +68,31 @@ const TradeDetail = ({ trade, candles }) => {
   const isLong = trade.dir === "LONG";
   const dirColor = isLong ? C.green : C.red;
 
+  /* ── execution state: a signal Robotín rejected (or one that never filled)
+     is NOT a trade — it must never read as a $0 round-trip. ── */
+  const isClosed = trade.status === "closed";
+  const isRejected = trade.status === "rejected";
+  const isOpen = trade.status === "active" || trade.status === "pending";
+
   /* ── derived audit / match logic ── */
   const audit = auditStatus(trade);
   // a published signal always claims TP; "Exact Match" only when the audit also resolved to TP
-  const exactMatch = trade.signalOutcome === "TP" && trade.status === "closed" && trade.hit === "TP";
-  const match = exactMatch
-    ? { label: "Exact Match", color: C.green, prefix: "✓ " }
-    : { label: "Mismatch", color: C.amber, prefix: "" };
+  const exactMatch = trade.signalOutcome === "TP" && isClosed && trade.hit === "TP";
+  const match = isClosed
+    ? (exactMatch ? { label: "Exact Match", color: C.green, prefix: "✓ " } : { label: "Mismatch", color: C.amber, prefix: "" })
+    : isOpen
+      ? { label: "Open", color: C.blue, prefix: "" }
+      : { label: "Not executed", color: C.textFaint, prefix: "" };
+  const netPnlDisplay = isClosed ? fmtUsd(trade.pnl) : isOpen ? "Open" : "Not executed";
+  const netPnlColor = isClosed ? ((trade.pnl ?? 0) >= 0 ? C.green : C.red) : isOpen ? C.blue : C.textFaint;
 
   /* ── two-leg entry zone + execution prices ── */
-  const entry2 = round2(trade.entry * 0.994);
+  const entry2 = round2(trade.entry * (isLong ? 0.994 : 1.006));
   const tickDown = trade.entry < 1 ? 0.00002 : trade.entry * 0.0003;
-  const entryVwap = round2(trade.entry - tickDown);
-  const lastClose = series.length ? series[series.length - 1].close : trade.entry;
-  const exitVwap = round2(trade.exit != null ? trade.exit : lastClose);
+  const filled = trade.activeIdx != null; // price actually traded into the entry
+  const entryVwap = filled ? round2(trade.entry - (isLong ? tickDown : -tickDown)) : null;
+  const exitVwap = isClosed ? round2(trade.exit) : null;
+  const rr = trade.entry !== trade.sl ? Math.abs((trade.tp1 - trade.entry) / (trade.entry - trade.sl)) : 0;
 
   /* ── execution timestamps ── */
   const entryExecTime = trade.activeIdx != null && series[trade.activeIdx] ? series[trade.activeIdx].time : trade.time + 120;
@@ -92,9 +103,11 @@ const TradeDetail = ({ trade, candles }) => {
   const realized = trade.pnl != null ? round2(trade.pnl + fees) : null;
 
   /* ── audit issues ── */
-  const issues = trade.status === "closed" && trade.hit === "SL"
-    ? ["exitType=unknown (MARKET close); audit exitType inferred from ROI → sl"]
-    : [];
+  const issues = isRejected
+    ? [`rejected by Robotín → ${trade.rejectReason || "did not meet execution criteria"}`]
+    : isClosed && trade.hit === "SL"
+      ? ["exitType=unknown (MARKET close); audit exitType inferred from ROI → sl"]
+      : [];
 
   /* ── Robotín serial (deterministic) ── */
   const serial = useMemo(() => {
@@ -127,23 +140,26 @@ const TradeDetail = ({ trade, candles }) => {
       return out.length ? out : src;
     }
 
-    // finer frames (M5 / M15): synthesize a deterministic denser walk between 1h closes
+    // finer frames (M5 / M15): a deterministic intrabar random walk that starts at
+    // each hour's open and is pulled toward its close, so the sub-candles faithfully
+    // reconstruct the 1h bar instead of a straight interpolation line.
     const sub = tf === "M15" ? 4 : 12; // 1h → 4×15m or 12×5m
     const step = 3600 / sub;
     const out = [];
     for (let i = 0; i < src.length; i++) {
       const c = src[i];
-      const next = src[i + 1] || c;
-      const span = next.close - c.open;
+      const range = Math.max(c.high - c.low, c.close * 0.0006);
+      let px = c.open;
       for (let j = 0; j < sub; j++) {
         const r = seedFrom(`${c.time}:${j}:${tf}`);
-        const t0 = c.open + (span * j) / sub;
-        const t1 = c.open + (span * (j + 1)) / sub;
-        const o = round2(t0);
-        const cl = round2(t1 + (r - 0.5) * (c.high - c.low) * 0.12);
-        const hi = round2(Math.max(o, cl) + r * (c.high - c.low) * 0.18);
-        const lo = round2(Math.min(o, cl) - (1 - r) * (c.high - c.low) * 0.18);
+        const w = seedFrom(`${c.time}:${j}:${tf}:w`);
+        const target = c.open + (c.close - c.open) * ((j + 1) / sub); // converge to the hour close
+        const o = round2(px);
+        const cl = round2(target + (r - 0.5) * range * 0.28);
+        const hi = round2(Math.max(o, cl) + w * range * 0.16);
+        const lo = round2(Math.min(o, cl) - (1 - w) * range * 0.16);
         out.push({ time: Math.round(c.time + j * step), open: o, high: hi, low: lo, close: cl });
+        px = cl;
       }
     }
     return out.length ? out : src;
@@ -206,7 +222,7 @@ const TradeDetail = ({ trade, candles }) => {
           <HeaderStat label="Signal Status" value="Take Profit" color={C.green} />
           <HeaderStat label="Audit Status" value={audit.label} color={audit.color} />
           <HeaderStat label="Match" value={`${match.prefix}${match.label}`} color={match.color} />
-          <HeaderStat label="Net PNL" value={fmtUsd(trade.pnl)} color={pnlColor} />
+          <HeaderStat label="Net PNL" value={netPnlDisplay} color={netPnlColor} />
         </div>
       </div>
 
@@ -232,17 +248,26 @@ const TradeDetail = ({ trade, candles }) => {
 
         {/* PERFORMANCE */}
         <DetailColumn title="Performance">
-          <Row label="Realized PNL" value={fmtUsd(realized)} color={(realized ?? 0) >= 0 ? C.green : C.red} />
-          <Row label="Total Fees" value={`−$${fees.toFixed(2)}`} color={C.textMuted} />
-          <Row label="Net PNL" value={fmtUsd(trade.pnl)} color={pnlColor} bold />
-          <Row label="ROI Notional" value={`${(trade.pnlPct ?? 0) >= 0 ? "+" : ""}${(trade.pnlPct ?? 0).toFixed(2)}%`} color={(trade.pnlPct ?? 0) >= 0 ? C.green : C.red} />
+          {isClosed ? (<>
+            <Row label="Realized PNL" value={fmtUsd(realized)} color={(realized ?? 0) >= 0 ? C.green : C.red} />
+            <Row label="Total Fees" value={`−$${fees.toFixed(2)}`} color={C.textMuted} />
+            <Row label="Net PNL" value={fmtUsd(trade.pnl)} color={pnlColor} bold />
+            <Row label="ROI Notional" value={`${(trade.pnlPct ?? 0) >= 0 ? "+" : ""}${(trade.pnlPct ?? 0).toFixed(2)}%`} color={(trade.pnlPct ?? 0) >= 0 ? C.green : C.red} />
+          </>) : isOpen ? (<>
+            <Row label="Status" value={trade.status === "pending" ? "Pending fill" : "Open position"} color={C.blue} bold />
+            <Row label="Unrealized PNL" value="—" color={C.textMuted} />
+            <Row label="Planned R:R" value={`${rr.toFixed(2)}R`} color={C.green} />
+            <Row label="Risk to SL" value={`${(Math.abs((trade.entry - trade.sl) / trade.entry) * 100).toFixed(2)}%`} color={C.red} />
+          </>) : (
+            <div style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.5 }}>Robotín did not execute this signal — no position was opened, so there is no P&amp;L.</div>
+          )}
         </DetailColumn>
 
         {/* AUDIT */}
         <DetailColumn title="Audit">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11 }}>
             <span style={{ color: C.textMuted }}>Match Quality</span>
-            {exactMatch ? pill("FULL", C.green) : pill("PARTIAL", C.amber)}
+            {isClosed ? (exactMatch ? pill("FULL", C.green) : pill("PARTIAL", C.amber)) : isOpen ? pill("OPEN", C.blue) : pill("N/A", C.textFaint)}
           </div>
           <div style={{ ...sectionLabel, fontSize: 8, marginTop: 2 }}>Issues</div>
           {issues.length ? (

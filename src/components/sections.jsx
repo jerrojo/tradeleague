@@ -71,7 +71,7 @@ const MarketsSection = () => {
       </div>
 
       {allCoins ? (
-        <MarketsTab onPick={pickCoin} />
+        <MarketsTab onPick={pickCoin} activeCoin={coin} />
       ) : (
         <>
           <SubTabs active={view} onChange={setView} tabs={[

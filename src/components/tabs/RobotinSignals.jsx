@@ -31,7 +31,7 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
 
   const candles = useMemo(() => coinCandles(coin), [coin]);
   const signals = useMemo(() => coinSignals(coin, candles), [coin, candles]);
-  const markers = useMemo(() => signalMarkers(signals), [signals]);
+  const markers = useMemo(() => signalMarkers(onlyTrades ? signals.filter((s) => s.approved) : signals), [signals, onlyTrades]);
 
   const sel = signals.find((s) => s.id === open) || null;
   const priceLines = sel
@@ -43,6 +43,7 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
     : [];
 
   const approved = signals.filter((s) => s.approved).length;
+  const visibleList = onlyTrades ? signals.filter((s) => s.approved) : signals;
 
   // Per-coin meta (price + 24-period change) for the shared CoinSelector
   const coinMeta = useMemo(() => {
@@ -90,7 +91,13 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
 
       {/* Signals / Trades list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {(onlyTrades ? signals.filter((s) => s.approved) : signals).map((s) => {
+        {visibleList.length === 0 && (
+          <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{onlyTrades ? "No trades executed on " + coin + " yet" : "No signals on " + coin + " yet"}</div>
+            <div style={{ fontSize: 11 }}>{onlyTrades ? "Robotín hasn't approved and executed any signal on this asset in the current window." : "No trader has published a signal on this asset in the current window."}</div>
+          </div>
+        )}
+        {visibleList.map((s) => {
           const st = STATUS[statusKey(s)] || STATUS.pending;
           const isOpen = open === s.id;
           return (

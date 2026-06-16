@@ -43,6 +43,10 @@ export function coinCandles(coin) {
     out.push({ time: start + i * STEP, open: round(open), high: round(high), low: round(low), close: round(close) });
     price = close;
   }
+  // Anchor the series so its last close equals the quoted price — keeps the chart's
+  // right-edge price identical to the header/selector (single source of truth).
+  const delta = base - out[out.length - 1].close;
+  if (delta) out.forEach((c) => { c.open = round(c.open + delta); c.high = round(c.high + delta); c.low = round(c.low + delta); c.close = round(c.close + delta); });
   return out;
 }
 
