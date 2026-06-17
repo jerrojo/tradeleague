@@ -27,7 +27,7 @@ const fmtPx = (p) => {
   if (a >= 0.0001) return p.toFixed(6);
   return p.toPrecision(3);
 };
-const usd = (v) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
+const usd = (v) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const usdPlain = (v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
 const fmtTime = (t) =>

@@ -18,7 +18,7 @@ import { C, cardStyle, mono } from "../../theme";
 
 const STARTING_BALANCE = 50000;
 
-const usd = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usdPlain = (v) => `$${Math.round(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
 

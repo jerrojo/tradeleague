@@ -19,7 +19,7 @@ import { C, cardStyle, mono } from "../../theme";
 const STARTING_BALANCE = 50000;
 
 const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString());
-const usd = (v) => `${v >= 0 ? "+" : "-"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usdPlain = (v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
 /* Status → label + color (mirrors RobotinSignals STATUS map) */
