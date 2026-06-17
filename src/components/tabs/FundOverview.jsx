@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import {
   Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
   Activity, BarChart3, CheckCircle2, Cpu, Gauge, Percent, Radio,
@@ -201,6 +201,7 @@ const FundOverview = () => {
               labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
               formatter={(v, name) => [usdPlain(Number(v)), name === "fund" ? "Fund (net)" : "BTC buy & hold"]}
             />
+            <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
             <Area type="monotone" dataKey="fund" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="fund" isAnimationActive={false} />
             <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
           </ComposedChart>

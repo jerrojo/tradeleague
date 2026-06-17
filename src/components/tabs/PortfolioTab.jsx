@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Activity, AlertTriangle, Download, Scale, Target, TrendingDown, TrendingUp } from "lucide-react";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../../theme";
@@ -242,6 +242,7 @@ const PortfolioTab = () => {
             <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} tickFormatter={v => `D${v}`} />
             <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `${v}%`} />
             <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [`${Number(v).toFixed(1)}%`, name === "system" ? "Fund" : name === "btc" ? "BTC hold" : name === "drawdown" ? "Drawdown" : name]} />
+            <ReferenceLine y={0} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
             <Area type="monotone" dataKey="system" stroke={C.purple} strokeWidth={2.5} fill="url(#sysEq)" dot={false} name="system" isAnimationActive={false} />
             <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
             {mockTraders.map((t, i) => overlay[t.name] && (

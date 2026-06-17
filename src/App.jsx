@@ -314,93 +314,8 @@ const App = () => {
                 </span>
               </div>
 
-              {/* Right: Unified date range selector + icons */}
+              {/* Right: utility icons (date scoping removed — data isn't time-scoped yet) */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div ref={dateDropdownRef} style={{ position: "relative" }}>
-                  <button onClick={() => setShowDateDropdown(!showDateDropdown)} style={{
-                    display: "flex", alignItems: "center", gap: "8px", padding: "6px 14px",
-                    backgroundColor: C.bg, border: `1px solid ${showDateDropdown ? C.purple : C.border}`, borderRadius: "6px",
-                    color: C.text, fontSize: "12px", fontWeight: "600", cursor: "pointer",
-                    transition: "border-color 0.15s"
-                  }}>
-                    <Calendar size={14} color={C.purple} />
-                    <span style={{ ...mono }}>{dateLabel}</span>
-                    <ChevronDown size={14} color={C.textMuted} style={{ transform: showDateDropdown ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
-                  </button>
-                  {showDateDropdown && (
-                    <div style={{
-                      position: "absolute", top: "calc(100% + 6px)", right: 0, backgroundColor: C.card,
-                      border: `1px solid ${C.border}`, borderRadius: "10px", padding: "16px",
-                      minWidth: "340px", zIndex: 300, boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
-                      display: "flex", flexDirection: "column", gap: "14px"
-                    }}>
-                      {/* Presets grid */}
-                      <div>
-                        <div style={{ fontSize: "10px", color: C.textMuted, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Quick Select</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
-                          {dateRanges.map(dr => (
-                            <button key={dr.id} onClick={() => { handlePresetClick(dr.id); setShowDateDropdown(false); }} style={{
-                              padding: "8px 0", textAlign: "center",
-                              backgroundColor: dateRange === dr.id ? C.purpleBg : C.bg,
-                              border: `1px solid ${dateRange === dr.id ? C.purple : C.border}`,
-                              borderRadius: "6px", cursor: "pointer",
-                              color: dateRange === dr.id ? C.purple : C.text,
-                              fontSize: "12px", fontWeight: dateRange === dr.id ? "700" : "500",
-                              transition: "all 0.15s", ...mono
-                            }}>{dr.label}</button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Separator */}
-                      <div style={{ height: "1px", backgroundColor: C.border }} />
-
-                      {/* Custom range */}
-                      <div>
-                        <div style={{ fontSize: "10px", color: C.textMuted, fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Custom Range</div>
-                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>From</div>
-                            <input
-                              type="date"
-                              value={dateFrom}
-                              onChange={(e) => handleCustomDate(e.target.value, dateTo)}
-                              style={{
-                                width: "100%", padding: "8px 10px", borderRadius: "6px",
-                                border: `1px solid ${dateRange === "custom" ? C.purple + "60" : C.border}`,
-                                backgroundColor: C.bg, color: C.text, fontSize: "12px",
-                                fontFamily: "inherit", cursor: "pointer", outline: "none",
-                              }}
-                            />
-                          </div>
-                          <div style={{ color: C.textFaint, marginTop: "16px", fontSize: "14px" }}>→</div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "4px" }}>To</div>
-                            <input
-                              type="date"
-                              value={dateTo}
-                              onChange={(e) => handleCustomDate(dateFrom, e.target.value)}
-                              style={{
-                                width: "100%", padding: "8px 10px", borderRadius: "6px",
-                                border: `1px solid ${dateRange === "custom" ? C.purple + "60" : C.border}`,
-                                backgroundColor: C.bg, color: C.text, fontSize: "12px",
-                                fontFamily: "inherit", cursor: "pointer", outline: "none",
-                              }}
-                            />
-                          </div>
-                        </div>
-                        {dateRange === "custom" && dateFrom && dateTo && (
-                          <button onClick={() => setShowDateDropdown(false)} style={{
-                            width: "100%", marginTop: "10px", padding: "8px", borderRadius: "6px",
-                            backgroundColor: C.purpleBg, border: `1px solid ${C.purple}`,
-                            color: C.purple, fontSize: "12px", fontWeight: "600", cursor: "pointer",
-                          }}>Apply</button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Notifications bell with count */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
@@ -637,8 +552,8 @@ const App = () => {
                 ) : (
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Star size={14} color={C.amber} />
-                      <span style={{ fontSize: "12px", fontWeight: "700", whiteSpace: "nowrap" }}>Quick Access</span>
+                      <Eye size={14} color={C.cyan} />
+                      <span style={{ fontSize: "12px", fontWeight: "700", whiteSpace: "nowrap" }}>Watchlist</span>
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button onClick={() => setRightPanelCollapsed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px", display: "flex" }}>
@@ -652,10 +567,8 @@ const App = () => {
               {/* Nav items */}
               <nav style={{ flex: 1, padding: "8px 4px", display: "flex", flexDirection: "column", gap: "2px" }}>
                 {[
-                  { id: "traders", label: "Traders", icon: Users, color: C.purple, action: () => { setShowWatchlist(true); setRightPanelTab("traders"); } },
-                  { id: "bots", label: "Bots", icon: Bot, color: C.cyan, action: () => { setShowWatchlist(true); setWatchlistCategory("bot"); setRightPanelTab("bots"); } },
-                  { id: "alarms", label: "Alarms", icon: Bell, color: C.amber, action: () => { setShowAlerts(true); setRightPanelTab("alarms"); } },
-                  { id: "lists", label: "Lists", icon: Layers, color: C.green, action: () => setRightPanelTab(rightPanelTab === "lists" ? null : "lists") },
+                  { id: "traders", label: "Watch traders", icon: Users, color: C.purple, action: () => { setShowWatchlist(true); setWatchlistCategory("all"); setRightPanelTab("traders"); } },
+                  { id: "bots", label: "Watch bots", icon: Bot, color: C.cyan, action: () => { setShowWatchlist(true); setWatchlistCategory("bot"); setRightPanelTab("bots"); } },
                 ].map(item => {
                   const isActive = rightPanelTab === item.id;
                   return (

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
   Activity, Award, ChevronDown, Clock, Cpu, Flame, Percent, Scale,
@@ -203,6 +203,7 @@ const RobotinWallet = () => {
                 labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
                 formatter={(v) => [usdPlain(Math.round(Number(v))), "Balance"]}
               />
+              <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
               <Area type="monotone" dataKey="balance" stroke={C.purple} strokeWidth={2.5} fill="url(#robotinEq)" dot={false} name="balance" isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>

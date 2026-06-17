@@ -164,21 +164,25 @@ const ActivityFeed = () => {
         {/* asset filter — distinct coins present in the tape + "All assets" */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, letterSpacing: "0.4px", ...mono }}>ASSET</span>
-          <select
-            value={coinFilter}
-            onChange={(e) => { setCoinFilter(e.target.value); setOpen(null); }}
-            style={{
-              padding: "5px 9px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              border: `1px solid ${coinFilter !== "all" ? C.purple : C.border}`,
-              backgroundColor: coinFilter !== "all" ? C.purpleBg : "transparent",
-              color: coinFilter !== "all" ? C.purple : C.textMuted, ...mono, outline: "none",
-            }}
-          >
-            <option value="all" style={{ backgroundColor: C.bg, color: C.text }}>All assets</option>
-            {coinOptions.map((c) => (
-              <option key={c} value={c} style={{ backgroundColor: C.bg, color: C.text }}>{c}</option>
-            ))}
-          </select>
+          <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <select
+              value={coinFilter}
+              onChange={(e) => { setCoinFilter(e.target.value); setOpen(null); }}
+              style={{
+                appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
+                padding: "5px 26px 5px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
+                border: `1px solid ${coinFilter !== "all" ? C.purple : C.border}`,
+                backgroundColor: coinFilter !== "all" ? C.purpleBg : "transparent",
+                color: coinFilter !== "all" ? C.purple : C.textMuted, ...mono, outline: "none",
+              }}
+            >
+              <option value="all" style={{ backgroundColor: C.card, color: C.text }}>All assets</option>
+              {coinOptions.map((c) => (
+                <option key={c} value={c} style={{ backgroundColor: C.card, color: C.text }}>{c}</option>
+              ))}
+            </select>
+            <ChevronDown size={13} color={coinFilter !== "all" ? C.purple : C.textMuted} style={{ position: "absolute", right: 8, pointerEvents: "none" }} />
+          </div>
         </div>
       </div>
 
