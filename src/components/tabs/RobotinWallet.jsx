@@ -79,6 +79,10 @@ const RobotinWallet = () => {
 
     const balance = STARTING_BALANCE + netPnl;
     const returnPct = (netPnl / STARTING_BALANCE) * 100;
+    // Current drawdown = how far below the peak we sit right now (risk manager's first question)
+    const currentDrawdown = bal - peak; // ≤ 0
+    const currentDrawdownPct = peak ? (currentDrawdown / peak) * 100 : 0;
+    const maxDrawdownPct = peak ? (maxDrawdown / peak) * 100 : 0;
 
     /* ── "Today" subset: Robotín's most recently OPENED closed trades (clearly
        simulated). Ordered by entry time so it reflects recent activity rather
@@ -102,7 +106,7 @@ const RobotinWallet = () => {
     return {
       trades, closed, pending, active, wins, losses,
       netPnl, grossWin, grossLoss, winRate, avgWin, avgLoss, profitFactor,
-      expectancy, best, worst, avgConfidence, maxDrawdown,
+      expectancy, best, worst, avgConfidence, maxDrawdown, maxDrawdownPct, currentDrawdown, currentDrawdownPct,
       equity, balance, returnPct,
       today, todayPnl, todayWins, todayLosses, streak,
     };
@@ -160,8 +164,8 @@ const RobotinWallet = () => {
           sub={data.avgLoss > 0 ? `ratio ${(data.avgWin / data.avgLoss).toFixed(2)}x` : "—"}
         />
         <StatCard
-          label="Max Drawdown" value={usd(data.maxDrawdown)} icon={TrendingDown}
-          color={C.red} tip="maxDD" sub="peak-to-trough equity"
+          label="Max Drawdown" value={`${data.maxDrawdownPct.toFixed(1)}%`} icon={TrendingDown}
+          color={C.red} tip="maxDD" sub={`${usd(data.maxDrawdown)} max · now ${data.currentDrawdownPct.toFixed(1)}%`}
         />
       </div>
 

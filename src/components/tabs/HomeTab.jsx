@@ -1,9 +1,10 @@
-import { Avatar } from "../common";
+import { Avatar, BotTag } from "../common";
 import { TraderSelector } from "../TraderSelector";
-import { Flame, Trophy } from "lucide-react";
+import { Check, Cpu, Trophy, X } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TraderLink, useProfile } from "../../contexts";
-import { feedItems, mockTraders, traderColors, traderEquity } from "../../data/mockData";
+import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
 import { useMemo, useState } from "react";
 
@@ -36,9 +37,11 @@ const HomeTab = () => {
   });
   const watchedNames = Object.keys(watching).filter(k => watching[k]);
 
-  const highlights = useMemo(() => feedItems
-    .filter(f => (f.kind === "trade" && Math.abs(f.pnl) > 3000) || f.kind === "achievement" || f.kind === "whale")
-    .slice(0, 4), []);
+  // Latest Robotín decisions — the useful signal feed (approved/rejected), not social bait
+  const recentDecisions = useMemo(() => ROBOTIN_COINS
+    .flatMap(c => coinSignals(c, coinCandles(c)))
+    .sort((a, b) => b.time - a.time)
+    .slice(0, 6), []);
 
   const leader = useMemo(() => {
     const last = traderEquity[traderEquity.length - 1];
@@ -116,34 +119,27 @@ const HomeTab = () => {
         </div>
       </div>
 
-      {/* Highlight Moments — live big plays */}
+      {/* Latest Robotín decisions — approved/rejected signal feed (the useful signal, not social bait) */}
       <div style={{ ...cardStyle, padding: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-          <Flame size={12} color={C.amber} />
-          <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Highlight Moments</span>
+          <Cpu size={12} color={C.purple} />
+          <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Latest Robotín decisions</span>
           <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", marginLeft: "4px" }} />
           <span style={{ fontSize: "8px", color: C.green, fontWeight: "600" }}>LIVE</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
-          {highlights.map((h, i) => (
-            <div key={h.id || i} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", backgroundColor: i === 0 ? `${C.amber}10` : "transparent", borderRadius: "6px", border: `1px solid ${i === 0 ? C.amber + "30" : C.border}`, fontSize: "11px" }}>
-              {h.trader ? <Avatar name={h.trader} size={22} /> : <span style={{ fontSize: "16px" }}>{h.kind === "whale" ? "🐋" : "⚡"}</span>}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {h.kind === "trade" && (
-                  <span>
-                    <TraderLink name={h.trader}><span style={{ fontWeight: "700" }}>{h.trader}</span></TraderLink>{" "}
-                    <span style={{ color: h.pnl >= 0 ? C.green : C.red, fontWeight: "800", ...mono }}>{h.pnl >= 0 ? "+" : ""}${Math.abs(h.pnl).toLocaleString()}</span>{" "}
-                    <span style={{ color: C.textMuted }}>on {h.pair} {h.type}</span>
-                  </span>
-                )}
-                {h.kind === "achievement" && (
-                  <span><TraderLink name={h.trader}><span style={{ fontWeight: "700" }}>{h.trader}</span></TraderLink> <span style={{ color: C.amber }}>unlocked {h.achievement.name}</span></span>
-                )}
-                {(h.kind === "whale" || h.kind === "liquidation") && (
-                  <span style={{ color: C.cyan, fontWeight: "600" }}>{h.text}</span>
-                )}
+          {recentDecisions.map((s) => (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", backgroundColor: "transparent", borderRadius: "6px", border: `1px solid ${C.border}`, fontSize: "11px" }}>
+              <Avatar name={s.trader} size={22} />
+              <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                <TraderLink name={s.trader}><span style={{ fontWeight: "700" }}>{s.trader}</span></TraderLink>
+                <BotTag isBot={s.isBot} size={12} />
+                <span style={{ fontWeight: "800", color: s.dir === "LONG" ? C.green : C.red, ...mono }}>{s.dir}</span>
+                <span style={{ fontWeight: "700", ...mono }}>{s.coin}</span>
               </div>
-              <span style={{ fontSize: "9px", color: C.textFaint, ...mono }}>{h.time}</span>
+              {s.approved
+                ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 800, color: C.green, ...mono }}><Check size={11} />{s.confidence}%</span>
+                : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 800, color: C.textFaint }}><X size={11} />Rejected</span>}
             </div>
           ))}
         </div>
