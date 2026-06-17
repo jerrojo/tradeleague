@@ -1,7 +1,6 @@
 import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
-import { LivePnLTicker } from "./components/widgets";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
 import { SocialsTab } from "./components/tabs/SocialsTab";
@@ -220,9 +219,6 @@ const App = () => {
             }
           `}</style>
 
-          {/* ── Top Ticker (fixed, full width, above everything) ── */}
-          <LivePnLTicker />
-          <div style={{ height: 32, flexShrink: 0 }} /> {/* spacer for fixed ticker */}
 
           {/* ── Main Layout ── */}
           <div style={{ display: "flex", flex: 1 }}>

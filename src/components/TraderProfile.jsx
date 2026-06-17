@@ -4,6 +4,7 @@ import { TradeLab } from "./TradeLab";
 import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Heart, MessageCircle, RefreshCw, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData, traderSocials } from "../data/mockData";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
@@ -24,6 +25,15 @@ const TraderProfile = ({ trader, onClose }) => {
   const t = trader;
   const deep = traderDeepData[t.name];
   const histMetrics = computeMetrics(deep.history); // Calmar / compound from the real trade list
+
+  // Robotín filtering stats for this trader — how many of their signals R1 approved
+  const robotinStats = useMemo(() => {
+    let total = 0, approved = 0;
+    ROBOTIN_COINS.forEach((c) => coinSignals(c, coinCandles(c)).forEach((s) => {
+      if (s.trader === t.name) { total++; if (s.approved) approved++; }
+    }));
+    return { total, approved, rate: total ? Math.round((approved / total) * 100) : 0 };
+  }, [t.name]);
 
   // Trading Journal — crypto-journal KPIs derived from the trader's own trade history.
   // Reuses computeMetrics for the heavy lifting (winRate / profitFactor / maxDD / expectancyR)
@@ -75,49 +85,22 @@ const TraderProfile = ({ trader, onClose }) => {
 
         <div style={{ flex: 1 }} />
 
-        {/* ★ Follow */}
-        <button onClick={() => { setIsFollowing(!isFollowing); addToast(isFollowing ? `Unfollowed ${t.name}` : `Following ${t.name}`, isFollowing ? "info" : "success"); }} style={{
+        {/* Institutional actions — under-review queue + allocation flag (no retail copy/follow) */}
+        <button onClick={() => { setIsFollowing(!isFollowing); addToast(isFollowing ? `Removed ${t.name} from review` : `Added ${t.name} to review`, isFollowing ? "info" : "success"); }} style={{
           display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
-          border: `1px solid ${isFollowing ? C.amber : C.border}`,
-          backgroundColor: isFollowing ? C.amberBg : "transparent",
-          color: isFollowing ? C.amber : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
+          border: `1px solid ${isFollowing ? C.cyan : C.border}`,
+          backgroundColor: isFollowing ? `${C.cyan}14` : "transparent",
+          color: isFollowing ? C.cyan : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
         }}>
-          <Star size={13} fill={isFollowing ? C.amber : "none"} /> {isFollowing ? "Following" : "Follow"}
+          <Eye size={13} /> {isFollowing ? "Under Review" : "Add to Review"}
         </button>
 
-        {/* 🔔 Alerts */}
-        <button onClick={() => { setAlertsOn(!alertsOn); addToast(alertsOn ? `Alerts disabled for ${t.name}` : `Alerts enabled for ${t.name}`, alertsOn ? "info" : "success"); }} style={{
-          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
-          border: `1px solid ${alertsOn ? C.blue : C.border}`,
-          backgroundColor: alertsOn ? C.blueBg : "transparent",
-          color: alertsOn ? C.blue : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
-        }}>
-          {alertsOn ? <BellRing size={13} /> : <Bell size={13} />} {alertsOn ? "Alerts ON" : "Alerts"}
-        </button>
-
-        {/* Copy — the core action: mirror this trader's trades */}
-        <button onClick={() => addToast(`Copying ${t.name}'s trades`, "success")} style={{
+        <button onClick={() => addToast(`Flagged ${t.name} for allocation`, "success")} style={{
           display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "6px",
           border: "none", backgroundColor: C.green, color: C.bg, fontSize: "12px", fontWeight: "800", cursor: "pointer"
         }}>
-          <Copy size={14} /> Copy
+          <Crosshair size={14} /> Flag for Allocation
         </button>
-
-        {/* Social media quick links — these open the trader's real profiles */}
-        {Object.keys(socials).map(platform => {
-          const sm = socialMeta[platform];
-          if (!sm) return null;
-          return (
-            <button key={platform} title={`${sm.label}: ${socials[platform]}`} onClick={() => addToast(`Opening ${t.name}'s ${sm.label}`, "info")} style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 32, height: 32, borderRadius: "6px",
-              border: `1px solid ${sm.color}30`, backgroundColor: `${sm.color}10`,
-              color: sm.color, fontSize: "10px", fontWeight: "800", cursor: "pointer"
-            }}>
-              {sm.icon}
-            </button>
-          );
-        })}
       </div>
 
       {/* Profile Header Card — redesigned */}
@@ -159,35 +142,19 @@ const TraderProfile = ({ trader, onClose }) => {
               ))}
             </div>
 
-            {/* Follower stats row */}
-            <div style={{ display: "flex", gap: "16px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, marginBottom: "12px" }}>
-              {[["Followers", t.followers, null], ["Following", t.following, null], ["Copiers", t.copiers, "copiers"], ["Trades", t.trades, null]].map(([l, v, tip]) => (
+            {/* Institutional stats row — Robotín filtering, not social vanity metrics */}
+            <div style={{ display: "flex", gap: "20px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, marginBottom: "12px" }}>
+              {[
+                ["Trades", t.trades.toLocaleString()],
+                ["Signals approved", `${robotinStats.approved}/${robotinStats.total}`],
+                ["Robotín approval", `${robotinStats.rate}%`],
+              ].map(([l, v]) => (
                 <div key={l}>
-                  <span style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{v.toLocaleString()}</span>
-                  <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "4px" }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</span>
+                  <span style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{v}</span>
+                  <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "5px" }}>{l}</span>
                 </div>
               ))}
             </div>
-
-            {/* ── Social links — compact row with handles ── */}
-            {Object.keys(socials).length > 0 && (
-              <div style={{ display: "flex", gap: "5px", marginTop: "10px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, flexWrap: "wrap", alignItems: "center" }}>
-                {Object.keys(socials).map(platform => {
-                  const sm = socialMeta[platform];
-                  if (!sm) return null;
-                  return (
-                    <button key={platform} title={`${sm.label}: ${socials[platform]}`} onClick={() => addToast(`Opening ${sm.label}`, "info")} style={{
-                      display: "flex", alignItems: "center", gap: "4px", padding: "3px 8px",
-                      borderRadius: "5px", border: `1px solid ${sm.color}25`, cursor: "pointer",
-                      backgroundColor: `${sm.color}08`, color: sm.color, fontSize: "9px", fontWeight: "700"
-                    }}>
-                      <span style={{ fontWeight: "900" }}>{sm.icon}</span>
-                      <span style={{ color: C.textMuted, fontWeight: "500", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{socials[platform]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
           {/* ── RIGHT: KPI Stats column with colored accents ── */}

@@ -114,14 +114,6 @@ const ActivityFeed = () => {
             }}>{c.label}</button>
           );
         })}
-        {hasFollowing && (
-          <button onClick={() => { setFollowingOnly((v) => !v); setOpen(null); }} style={{
-            marginLeft: "auto", padding: "5px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
-            border: `1px solid ${followingOnly ? C.cyan : C.border}`,
-            backgroundColor: followingOnly ? `${C.cyan}1c` : "transparent",
-            color: followingOnly ? C.cyan : C.textMuted, ...mono, whiteSpace: "nowrap",
-          }}>{followingOnly ? "★ Following" : "Following"}</button>
-        )}
       </div>
 
       {/* ─────────── EVENT TAPE ─────────── */}
@@ -160,14 +152,13 @@ const ActivityFeed = () => {
                   <BotTag isBot={s.isBot} size={14} />
                 </div>
 
-                {/* event line */}
-                <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: C.textMuted, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                  <span>published a</span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: dirColor }}>
+                {/* event line — dense, institutional: DIR · COIN · setup tag */}
+                <div style={{ flex: 1, minWidth: 0, fontSize: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: dirColor, ...mono }}>
                     <DirIcon size={12} />{s.dir}
                   </span>
-                  <span>signal on</span>
                   <span style={{ fontWeight: 800, color: C.text, ...mono }}>{s.coin}</span>
+                  {s.tag && <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...mono }}>{s.tag.split("_").slice(0, 3).join("·")}</span>}
                 </div>
 
                 {/* Robotín verdict */}

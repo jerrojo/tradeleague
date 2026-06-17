@@ -7,7 +7,8 @@ import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, trade
 import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
 import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
-import { useState } from "react";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { useMemo, useState } from "react";
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
   const [view, setView] = useState("leaderboard");
@@ -16,6 +17,17 @@ const TradersTab = () => {
   const [sortField, setSortField] = useState("pnl");
   const [search, setSearch] = useState("");
   const { openProfile } = useProfile();
+
+  // Robotín approval per trader (how many of their signals R1 passed) — replaces "Copiers"
+  const robotinByTrader = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => coinSignals(c, coinCandles(c)).forEach((s) => {
+      const r = m[s.trader] || (m[s.trader] = { total: 0, approved: 0 });
+      r.total++; if (s.approved) r.approved++;
+    }));
+    Object.values(m).forEach((r) => { r.rate = r.total ? Math.round((r.approved / r.total) * 100) : 0; });
+    return m;
+  }, []);
   const proMode = useProMode(); // Simple hides secondary columns (Trend, Expectancy)
   const { followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts } = useWatchlist();
   const [visibleTraders, setVisibleTraders] = useState(() => {
@@ -58,7 +70,7 @@ const TradersTab = () => {
             { id: "all", label: "All", icon: Users },
             { id: "human", label: "Traders", icon: Activity },
             { id: "bot", label: "Bots", icon: Bot },
-            { id: "followed", label: "Following", icon: Star },
+            { id: "followed", label: "Watchlist", icon: Eye },
           ].map(cat => (
             <button key={cat.id} onClick={() => setTraderFilter(cat.id)} style={{
               display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
@@ -81,7 +93,7 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Robotín approval",null],["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
                 {(() => {
@@ -157,22 +169,22 @@ const TradersTab = () => {
                     </td>
                     )}
                     <td style={{ ...tdStyle }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", ...mono }}>
-                        <Users size={12} color={C.textMuted} /> {t.copiers}
-                      </div>
+                      {(() => { const r = robotinByTrader[t.name] || { rate: 0, approved: 0, total: 0 }; return (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "1px", ...mono }}>
+                          <span style={{ fontWeight: "800", fontSize: "12px", color: r.rate >= 70 ? C.green : r.rate >= 50 ? C.amber : C.red }}>{r.rate}%</span>
+                          <span style={{ fontSize: "9px", color: C.textFaint }}>{r.approved}/{r.total} signals</span>
+                        </div>
+                      ); })()}
                     </td>
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        <button title="Follow" onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.amber + "20" : "transparent", color: followedTraders[t.name] ? C.amber : C.textFaint }}>
-                          <Star size={13} fill={followedTraders[t.name] ? C.amber : "none"} />
-                        </button>
-                        <button title="Alerts" onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: traderAlerts[t.name] ? C.blue + "20" : "transparent", color: traderAlerts[t.name] ? C.blue : C.textFaint }}>
-                          <BellRing size={13} />
+                        <button title={followedTraders[t.name] ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.cyan + "20" : "transparent", color: followedTraders[t.name] ? C.cyan : C.textFaint }}>
+                          <Eye size={13} />
                         </button>
                         <button onClick={() => openProfile(t)} style={{
-                          padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
-                          backgroundColor: C.green, color: C.bg, border: "none", display: "flex", alignItems: "center", gap: "3px"
-                        }}><Copy size={10} /> Copy</button>
+                          padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
+                          backgroundColor: "transparent", color: C.purple, border: `1px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "3px"
+                        }}>Open</button>
                       </div>
                     </td>
                   </tr>

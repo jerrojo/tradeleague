@@ -52,8 +52,8 @@ const PositioningMap = ({ coin, currentPrice }) => {
     <div style={cardStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px", flexWrap: "wrap", gap: "8px" }}>
         <div>
-          <div style={{ fontSize: "13px", fontWeight: "700" }}>Positioning Map — {coin}</div>
-          <div style={{ fontSize: "10px", color: C.textFaint }}>Where the crowd is positioned vs the current price. {total} open positions.</div>
+          <div style={{ fontSize: "13px", fontWeight: "700" }}>Active Positions — System Overview · {coin}</div>
+          <div style={{ fontSize: "10px", color: C.textFaint }}>Every open trade and live signal vs the current price. {total} open positions.</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "800", color: leanColor, padding: "4px 12px", borderRadius: "8px", backgroundColor: `${leanColor}14`, border: `1px solid ${leanColor}30` }}>
