@@ -1,9 +1,9 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
-import { SocialsTab } from "./components/tabs/SocialsTab";
+import { FundOverview } from "./components/tabs/FundOverview";
 import { MarketsSection, ActivitySection, TradersSection, RobotinSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -22,7 +22,7 @@ const dateRanges = [
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("traders");
+  const [activeTab, setActiveTab] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -89,7 +89,7 @@ const App = () => {
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
       { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
       { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
-      { id: "socials", label: "Socials", desc: "What traders post across X, Telegram, Discord" },
+      { id: "overview", label: "Fund Overview", desc: "The investor tear-sheet — capital, return, risk and system state" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
     return { traders, pairs, tabs };
@@ -158,31 +158,31 @@ const App = () => {
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard, accent: C.purple },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
-    { id: "socials", label: "Socials", icon: MessageCircle, accent: C.cyan },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
+    overview: "The fund at a glance — capital, return, risk and system state on one page",
     traders: "Who's winning, and everyone you can follow — the live race plus the searchable directory",
     markets: "One coin, everything at once — chart, signals, the trades they became, structure and positioning",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
     robotin: "Robotín's wallet and analytics — every trade the bot executed and how the system performs",
-    socials: "What traders are posting across X, Telegram, Discord and more",
   };
 
   // Section → component mapping
   const tabContent = {
-    traders: TradersSection,   // Traders = the home: live overview/race + searchable directory + profiles
+    overview: FundOverview,    // Overview = the investor tear-sheet / fund summary
+    traders: TradersSection,   // Traders = live race + searchable directory + profiles
     markets: MarketsSection,   // Markets = one coin, everything on one page
     activity: ActivitySection, // Activity = the global Robotín lifecycle tape
     robotin: RobotinSection,   // Robotín = the bot's Wallet + system Analytics
-    socials: SocialsTab,       // Socials = cross-platform curated feed
   };
-  const ActiveComponent = tabContent[activeTab] || TradersSection;
+  const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
   const rightPanelW = rightPanelCollapsed ? 48 : 220;
   const rightW = (showWatchlist ? 340 : 0) + rightPanelW;
@@ -440,12 +440,11 @@ const App = () => {
                   </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {[
-                      { icon: Radio, color: C.purple, t: "Pulse", d: "The live pulse — who's winning right now and the market mood.", go: "pulse" },
-                      { icon: Globe, color: C.cyan, t: "Markets", d: "Where the crowd is positioned on every coin, and the structure behind it.", go: "markets" },
+                      { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
+                      { icon: Globe, color: C.cyan, t: "Markets", d: "One coin, everything at once — chart, signals, structure and positioning.", go: "markets" },
                       { icon: Wallet, color: C.amber, t: "Robotín", d: "The bot's execution wallet and the system's performance analytics.", go: "robotin" },
-                      { icon: Activity, color: C.green, t: "Activity", d: "Trades and signals across all traders — one live stream.", go: "activity" },
-                      { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles, legends and awards.", go: "traders" },
-                      { icon: MessageCircle, color: C.cyan, t: "Socials", d: "What traders are posting across X, Telegram, Discord and more.", go: "socials" },
+                      { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
+                      { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
@@ -773,30 +772,12 @@ const App = () => {
                             <span style={{ color: C.green }}>+${(t.pnl / 1000).toFixed(0)}K</span>
                             <span>{t.style}</span>
                           </div>
-                          {/* Actions row */}
-                          <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
-                            <button title={isFollowed ? "Unfollow" : "Follow"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.amber + "20" : "transparent", color: isFollowed ? C.amber : C.textFaint }}>
-                              <Star size={10} fill={isFollowed ? C.amber : "none"} />
+                          {/* Actions row — review queue + open (no retail copy/social) */}
+                          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                            <button title={isFollowed ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.cyan + "20" : "transparent", color: isFollowed ? C.cyan : C.textFaint }}>
+                              <Eye size={11} />
                             </button>
-                            <button title={hasAlert ? "Remove alerts" : "Alerts"} onClick={e => { e.stopPropagation(); setTraderAlerts(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: hasAlert ? C.blue + "20" : "transparent", color: hasAlert ? C.blue : C.textFaint }}>
-                              <BellRing size={10} />
-                            </button>
-                            <button title="Copy trade" onClick={e => { e.stopPropagation(); setActiveTab("traders"); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: "transparent", color: C.textFaint }}>
-                              <Copy size={10} />
-                            </button>
-                            <button title="Chat (coming soon)" onClick={e => { e.stopPropagation(); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "not-allowed", backgroundColor: "transparent", color: C.textFaint, opacity: 0.5 }}>
-                              <MessageCircle size={10} />
-                            </button>
-                            <div style={{ width: "1px", height: 12, backgroundColor: C.border, margin: "0 1px" }} />
-                            {(() => {
-                              const socials = traderSocials[t.name] || {};
-                              const si = { twitter: { l: "X", c: "#1DA1F2" }, discord: { l: "DC", c: "#5865F2" }, telegram: { l: "TG", c: "#0088cc" }, youtube: { l: "YT", c: "#FF0000" } };
-                              return Object.keys(socials).filter(p => si[p]).map(p => (
-                                <button key={p} title={`${si[p].l}: ${socials[p]}`} onClick={e => e.stopPropagation()} style={{ height: 18, padding: "0 4px", display: "flex", alignItems: "center", borderRadius: "2px", border: "none", cursor: "pointer", backgroundColor: `${si[p].c}15`, color: si[p].c, fontSize: "7px", fontWeight: "700" }}>
-                                  {si[p].l}
-                                </button>
-                              ));
-                            })()}
+                            <button title="Open profile" onClick={e => { e.stopPropagation(); openProfile(t); }} style={{ height: 24, padding: "0 10px", borderRadius: "4px", border: `1px solid ${C.purple}`, backgroundColor: "transparent", color: C.purple, fontSize: "9px", fontWeight: "700", cursor: "pointer" }}>Open</button>
                           </div>
                         </div>
                       </div>

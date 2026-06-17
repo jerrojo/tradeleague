@@ -37,6 +37,32 @@ const relTime = (sec) => {
   return `${w}w`;
 };
 
+/* ── format a candle-count duration (1h candles) into "14h" / "2.1d" ── */
+const fmtDuration = (candles) => {
+  const h = Math.max(0, Math.round(candles));
+  if (h < 24) return `${h}h`;
+  const d = h / 24;
+  return `${d < 10 ? d.toFixed(1) : Math.round(d)}d`;
+};
+
+/* ── realized R multiple + duration for a CLOSED signal ── */
+const closedResult = (s) => {
+  const sign = s.dir === "LONG" ? 1 : -1;
+  const exit = s.exit ?? (s.hit === "TP" ? s.tp1 : s.sl);
+  const risk = s.entry - s.sl; // signed by direction (long: +, short: −)
+  const r = risk !== 0 ? (sign * (exit - s.entry)) / Math.abs(risk) : 0;
+  const dur = s.exitIdx != null && s.entryIdx != null ? s.exitIdx - s.entryIdx : null;
+  return { r, dur };
+};
+
+/* ── unrealized read for an ACTIVE signal vs latest candle close ── */
+const unrealized = (s, lastClose) => {
+  const sign = s.dir === "LONG" ? 1 : -1;
+  const distPct = sign * ((lastClose - s.entry) / s.entry) * 100;
+  const toTpPct = Math.abs(((s.tp1 - s.entry) / s.entry) * 100);
+  return { distPct, toTpPct };
+};
+
 /* ── filter chip definitions (id, label, predicate) ── */
 const CHIPS = [
   { id: "all", label: "All", test: () => true },
@@ -55,22 +81,42 @@ const ActivityFeed = () => {
   const hasFollowing = followedTraders != null;
 
   const [filter, setFilter] = useState("all");
+  const [coinFilter, setCoinFilter] = useState("all");
   const [followingOnly, setFollowingOnly] = useState(false);
   const [open, setOpen] = useState(null); // expanded signal id
+
+  /* ── memoized per-coin candle lookups (built once; reused for unrealized calc) ── */
+  const candlesByCoin = useMemo(() => {
+    const map = {};
+    ROBOTIN_COINS.forEach((c) => { map[c] = coinCandles(c); });
+    return map;
+  }, []);
+  const lastClose = (coin) => {
+    const cs = candlesByCoin[coin];
+    return cs && cs.length ? cs[cs.length - 1].close : null;
+  };
 
   /* ── single flat tape: every signal across every coin, newest first ── */
   const allSignals = useMemo(
     () =>
-      ROBOTIN_COINS.flatMap((c) => coinSignals(c, coinCandles(c))).sort((a, b) => b.time - a.time),
-    []
+      ROBOTIN_COINS.flatMap((c) => coinSignals(c, candlesByCoin[c])).sort((a, b) => b.time - a.time),
+    [candlesByCoin]
   );
+
+  /* ── distinct coins present in the tape (for the asset filter) ── */
+  const coinOptions = useMemo(() => {
+    const seen = [];
+    allSignals.forEach((s) => { if (!seen.includes(s.coin)) seen.push(s.coin); });
+    return seen;
+  }, [allSignals]);
 
   const chip = CHIPS.find((x) => x.id === filter) || CHIPS[0];
   const visible = useMemo(() => {
     let list = allSignals.filter(chip.test);
+    if (coinFilter !== "all") list = list.filter((s) => s.coin === coinFilter);
     if (followingOnly && hasFollowing) list = list.filter((s) => followedTraders[s.trader]);
     return list;
-  }, [allSignals, chip, followingOnly, hasFollowing, followedTraders]);
+  }, [allSignals, chip, coinFilter, followingOnly, hasFollowing, followedTraders]);
 
   /* ── header summary counts (over the full tape, not the filtered view) ── */
   const totalN = allSignals.length;
@@ -114,6 +160,26 @@ const ActivityFeed = () => {
             }}>{c.label}</button>
           );
         })}
+
+        {/* asset filter — distinct coins present in the tape + "All assets" */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, letterSpacing: "0.4px", ...mono }}>ASSET</span>
+          <select
+            value={coinFilter}
+            onChange={(e) => { setCoinFilter(e.target.value); setOpen(null); }}
+            style={{
+              padding: "5px 9px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
+              border: `1px solid ${coinFilter !== "all" ? C.purple : C.border}`,
+              backgroundColor: coinFilter !== "all" ? C.purpleBg : "transparent",
+              color: coinFilter !== "all" ? C.purple : C.textMuted, ...mono, outline: "none",
+            }}
+          >
+            <option value="all" style={{ backgroundColor: C.bg, color: C.text }}>All assets</option>
+            {coinOptions.map((c) => (
+              <option key={c} value={c} style={{ backgroundColor: C.bg, color: C.text }}>{c}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ─────────── EVENT TAPE ─────────── */}
@@ -175,11 +241,38 @@ const ActivityFeed = () => {
                   </span>
                 </div>
 
-                {/* pnl when closed */}
-                <div style={{ flexShrink: 0, minWidth: 74, textAlign: "right" }}>
-                  {s.status === "closed"
-                    ? <span style={{ fontSize: 12, fontWeight: 800, color: (s.pnl ?? 0) >= 0 ? C.green : C.red, ...mono }}>{(s.pnl ?? 0) >= 0 ? "+" : "−"}${Math.abs(s.pnl ?? 0).toFixed(2)}</span>
-                    : <span style={{ fontSize: 11, color: C.textFaint, ...mono }}>—</span>}
+                {/* right zone: realized result (closed) · unrealized (active) · awaiting (pending) */}
+                <div style={{ flexShrink: 0, minWidth: 116, textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                  {(() => {
+                    if (s.status === "closed") {
+                      const { r, dur } = closedResult(s);
+                      const pos = (s.pnl ?? 0) >= 0;
+                      return (
+                        <>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: pos ? C.green : C.red, ...mono }}>{pos ? "+" : "−"}${Math.abs(s.pnl ?? 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>
+                            {`${r >= 0 ? "+" : ""}${r.toFixed(1)}R`}{dur != null ? ` · ${fmtDuration(dur)}` : ""}
+                          </span>
+                        </>
+                      );
+                    }
+                    if (s.status === "active") {
+                      const lc = lastClose(s.coin);
+                      if (lc == null) return <span style={{ fontSize: 11, color: C.textFaint, ...mono }}>—</span>;
+                      const { distPct, toTpPct } = unrealized(s, lc);
+                      const pos = distPct >= 0;
+                      return (
+                        <>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: pos ? C.green : C.red, ...mono }}>{`${pos ? "+" : "−"}${Math.abs(distPct).toFixed(1)}%`}</span>
+                          <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>{`to TP ${toTpPct.toFixed(1)}%`}</span>
+                        </>
+                      );
+                    }
+                    if (s.status === "pending") {
+                      return <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>awaiting entry</span>;
+                    }
+                    return <span style={{ fontSize: 11, color: C.textFaint, ...mono }}>—</span>;
+                  })()}
                 </div>
 
                 {/* relative time + chevron */}

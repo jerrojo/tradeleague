@@ -76,7 +76,7 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
-            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} trades executed from approved signals · click a row for full detail` : `${signals.length} signals · ${approved} approved by Robotín · click a row to plot its levels`}</div>
+            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} executed · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row for full detail` : `${signals.length} signals · ${approved} approved · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row to plot levels`}</div>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {[["candles", "Candles", CandlestickChart], ["line", "Line", LineChart]].map(([m, label, Icon]) => (
