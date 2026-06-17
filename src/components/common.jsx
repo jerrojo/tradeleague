@@ -47,6 +47,7 @@ const GLOSSARY = {
   // Trader metrics
   alpha:          "Overall performance score (0-100). Combines win rate, consistency and risk management",
   sharpe:         "Sharpe Ratio — risk-adjusted returns. Above 2.0 = excellent, below 1.0 = mediocre",
+  sortino:        "Sortino Ratio — like Sharpe but only penalises downside volatility. Above 2.0 = strong loss-adjusted return",
   maxDD:          "Max Drawdown — worst losing streak in percentage. Lower = better",
   profitFactor:   "For every $1 lost, how much was gained. 2.0 = earned double what was lost",
   winRate:        "Percentage of winning trades. 70%+ = very good",

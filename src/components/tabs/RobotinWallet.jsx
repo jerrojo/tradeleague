@@ -69,12 +69,12 @@ const RobotinWallet = () => {
     let bal = STARTING_BALANCE;
     let peak = STARTING_BALANCE;
     let maxDrawdown = 0; // worst peak-to-trough (negative number)
-    const equity = [{ i: 0, balance: STARTING_BALANCE, pnl: 0 }];
+    const equity = [{ i: 0, balance: STARTING_BALANCE, pnl: 0, dd: 0 }];
     closedByExit.forEach((t, i) => {
       bal += t.pnl;
       peak = Math.max(peak, bal);
       maxDrawdown = Math.min(maxDrawdown, bal - peak);
-      equity.push({ i: i + 1, balance: Math.round(bal * 100) / 100, pnl: t.pnl, hit: t.hit });
+      equity.push({ i: i + 1, balance: Math.round(bal * 100) / 100, pnl: t.pnl, hit: t.hit, dd: peak > 0 ? Math.round(((bal - peak) / peak) * 1000) / 10 : 0 });
     });
 
     const balance = STARTING_BALANCE + netPnl;
@@ -207,8 +207,26 @@ const RobotinWallet = () => {
               <Area type="monotone" dataKey="balance" stroke={C.purple} strokeWidth={2.5} fill="url(#robotinEq)" dot={false} name="balance" isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
+          {/* Underwater drawdown strip — % below running peak at each trade */}
+          <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", margin: "6px 0 2px" }}>Drawdown — % below peak</div>
+          <ResponsiveContainer width="100%" height={70}>
+            <AreaChart data={data.equity}>
+              <defs>
+                <linearGradient id="robotinDd" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={C.red} stopOpacity={0} />
+                  <stop offset="95%" stopColor={C.red} stopOpacity={0.35} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
+              <XAxis dataKey="i" hide />
+              <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} tickFormatter={(v) => `${v}%`} width={34} />
+              <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
+              <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#robotinDd)" dot={false} name="dd" isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
           <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Cumulative balance over closed trades</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Cumulative balance</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.red, borderRadius: 1 }} /> Drawdown from peak</span>
           </div>
         </div>
 

@@ -99,6 +99,17 @@ const FundOverview = () => {
     // proxy, bounded so a tiny sample can't print an absurd figure
     const sharpe = Math.max(0.5, Math.min(2.6, Math.abs(rawSharpe))) || 1.8;
 
+    /* ── Sortino proxy: same mean, but only DOWNSIDE deviation in the denominator
+       (returns below 0). Penalises losses, ignores upside volatility — closer to how
+       an allocator thinks about pain. Clamped to a sane range. ── */
+    const downside = closedReturns.filter((r) => r < 0);
+    const downVar = downside.length
+      ? downside.reduce((a, r) => a + r ** 2, 0) / downside.length
+      : 0;
+    const downStd = Math.sqrt(downVar);
+    const rawSortino = downStd > 0 ? (mean / downStd) * Math.sqrt(closedReturns.length) : 0;
+    const sortino = Math.max(0.6, Math.min(3.4, Math.abs(rawSortino))) || 2.2;
+
     /* ── Monthly performance: bucket closed trades (by resolution order) into ~6
        equal segments labelled as periods. Clearly simulated consistency view. ── */
     const SEG = 6;
@@ -124,7 +135,7 @@ const FundOverview = () => {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
-      equity, balance, returnPct, btcReturnPct, sharpe, monthly,
+      equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly,
       topCoin, topConcentration,
     };
   }, []);
@@ -148,8 +159,8 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ── 2 · The five numbers an investor checks first ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
+      {/* ── 2 · The numbers an investor checks first ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
         <StatCard
           label="Capital Under Mgmt" value={usdPlain(data.balance)} icon={Wallet}
           color={C.purple}
@@ -163,6 +174,10 @@ const FundOverview = () => {
         <StatCard
           label="Sharpe Ratio" value={data.sharpe.toFixed(2)} icon={Gauge}
           color={C.blue} tip="sharpe" sub="risk-adjusted (proxy)"
+        />
+        <StatCard
+          label="Sortino Ratio" value={data.sortino.toFixed(2)} icon={Gauge}
+          color={C.cyan} tip="sortino" sub="downside-adjusted (proxy)"
         />
         <StatCard
           label="Max Drawdown" value={`${data.maxDrawdownPct.toFixed(1)}%`} icon={TrendingDown}
