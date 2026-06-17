@@ -225,8 +225,8 @@ const App = () => {
 
           {/* ── Left Sidebar ── */}
           <aside style={{
-            width: sideW, minHeight: "calc(100vh - 32px)", backgroundColor: C.card, borderRight: `1px solid ${C.border}`,
-            display: "flex", flexDirection: "column", position: "fixed", top: 32, left: 0, zIndex: 200,
+            width: sideW, minHeight: "100vh", backgroundColor: C.card, borderRight: `1px solid ${C.border}`,
+            display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, zIndex: 200,
             transition: "width 0.2s ease", overflow: "hidden"
           }}>
             {/* Logo + collapse toggle */}
@@ -294,10 +294,10 @@ const App = () => {
           </aside>
 
           {/* ── Main Area ── */}
-          <div style={{ flex: 1, marginLeft: sideW, marginRight: rightW, transition: "margin-left 0.2s ease, margin-right 0.2s ease", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 32px)" }}>
+          <div style={{ flex: 1, marginLeft: sideW, marginRight: rightW, transition: "margin-left 0.2s ease, margin-right 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
 
             {/* Top Bar */}
-            <header style={{ height: 56, position: "sticky", top: 32, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
+            <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
               {/* Left: Tab title + one-line orientation (LukeW: say what the screen is for) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -623,7 +623,7 @@ const App = () => {
 
             {/* ── Right Utility Panel ── */}
             <aside style={{
-              width: rightPanelW, position: "fixed", top: 32, right: 0, bottom: 0, zIndex: 201,
+              width: rightPanelW, position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
               backgroundColor: C.card, borderLeft: `1px solid ${C.border}`,
               display: "flex", flexDirection: "column",
               transition: "width 0.2s ease", overflow: "hidden"
@@ -654,7 +654,6 @@ const App = () => {
                 {[
                   { id: "traders", label: "Traders", icon: Users, color: C.purple, action: () => { setShowWatchlist(true); setRightPanelTab("traders"); } },
                   { id: "bots", label: "Bots", icon: Bot, color: C.cyan, action: () => { setShowWatchlist(true); setWatchlistCategory("bot"); setRightPanelTab("bots"); } },
-                  { id: "chat", label: "Chat", icon: MessageCircle, color: C.blue, action: () => setRightPanelTab(rightPanelTab === "chat" ? null : "chat") },
                   { id: "alarms", label: "Alarms", icon: Bell, color: C.amber, action: () => { setShowAlerts(true); setRightPanelTab("alarms"); } },
                   { id: "lists", label: "Lists", icon: Layers, color: C.green, action: () => setRightPanelTab(rightPanelTab === "lists" ? null : "lists") },
                 ].map(item => {
@@ -700,7 +699,7 @@ const App = () => {
 
             {/* ── Right Sidebar: Trader Watchlist (persistent, TradingView-style) ── */}
             <aside style={{
-              width: 340, position: "fixed", top: 32, right: rightPanelW, bottom: 0, zIndex: 200,
+              width: 340, position: "fixed", top: 0, right: rightPanelW, bottom: 0, zIndex: 200,
               backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`,
               display: "flex", flexDirection: "column",
               transform: showWatchlist ? "translateX(0)" : "translateX(100%)",
