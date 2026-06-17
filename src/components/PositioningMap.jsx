@@ -23,11 +23,11 @@ const PositioningMap = ({ coin, currentPrice }) => {
       if (!deep) return;
       (deep.history || []).forEach((h) => {
         if (coinOf(h.pair) !== coin) return;
-        positions.push({ kind: "trade", trader: t.name, type: h.type, target: h.tp1 ?? h.tp ?? h.entry, lev: levNum(h.leverage) });
+        positions.push({ kind: "trade", trader: t.name, isBot: t.isBot, type: h.type, target: h.tp1 ?? h.tp ?? h.entry, lev: levNum(h.leverage) });
       });
       (deep.signals || []).forEach((s) => {
         if (coinOf(s.pair) !== coin) return;
-        positions.push({ kind: "signal", trader: t.name, type: s.type, target: s.tp ?? s.entry, lev: levNum(s.leverage) });
+        positions.push({ kind: "signal", trader: t.name, isBot: t.isBot, type: s.type, target: s.tp ?? s.entry, lev: levNum(s.leverage) });
       });
     });
     const longs = positions.filter((p) => p.type === "LONG").length;
@@ -39,7 +39,7 @@ const PositioningMap = ({ coin, currentPrice }) => {
 
   if (!currentPrice || !data.positions.length) return null;
 
-  const { positions, longs, shorts, netPct, related } = data;
+  const { positions, longs, shorts, netPct } = data;
   const total = positions.length;
   const longPct = Math.round((longs / total) * 100);
   const xOf = (pct) => 50 + Math.max(-RANGE, Math.min(RANGE, pct)) / RANGE * 46;
@@ -86,10 +86,10 @@ const PositioningMap = ({ coin, currentPrice }) => {
           const r = 4 + Math.min(4, p.lev / 2);
           const top = 30 + ((i * 53) % 70); // deterministic vertical spread
           return (
-            <div key={i} title={`${p.trader} — ${p.type} ${p.kind} · target ${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
+            <div key={i} title={`${p.trader} (${p.isBot ? "bot" : "human"}) — ${p.type} ${p.kind} · target ${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
               style={{
                 position: "absolute", left: `${xOf(pct)}%`, top, transform: "translate(-50%,-50%)",
-                width: r * 2, height: r * 2, borderRadius: "50%",
+                width: r * 2, height: r * 2, borderRadius: p.isBot ? "2px" : "50%",
                 backgroundColor: p.kind === "trade" ? `${clr}cc` : "transparent",
                 border: `1.5px solid ${clr}`, boxShadow: `0 0 6px ${clr}40`,
               }} />
@@ -101,6 +101,8 @@ const PositioningMap = ({ coin, currentPrice }) => {
       <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: `${C.green}cc`, border: `1.5px solid ${C.green}` }} /> trade</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "transparent", border: `1.5px solid ${C.blue}` }} /> signal</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: C.textFaint }} /> human</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "2px", backgroundColor: C.textFaint }} /> bot</span>
         <span style={{ color: C.textFaint }}>larger dot = more leverage</span>
       </div>
     </div>

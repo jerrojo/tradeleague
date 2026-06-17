@@ -60,7 +60,10 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
             <span style={{ fontSize: "16px", fontWeight: "700", color: C.text, ...mono }}>{m.price}</span></>}
           {m.change != null && <span style={{ fontSize: "13px", fontWeight: "700", color: changeColor(m.change), ...mono }}>{m.change}</span>}
           {m.bias && <><div style={{ width: 1, height: 22, backgroundColor: C.border }} />
-            <span style={{ fontSize: "11px", fontWeight: "700", color: m.bias === "BULLISH" ? C.green : C.red, textTransform: "uppercase" }}>{m.bias}</span></>}
+            <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.1 }}>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px" }}>Model bias</span>
+              <span style={{ fontSize: "11px", fontWeight: "700", color: m.bias === "BULLISH" ? C.green : C.red, textTransform: "uppercase" }}>{m.bias}</span>
+            </span></>}
           <ChevronDown size={16} color={C.textMuted} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s", marginLeft: 2 }} />
         </button>
 

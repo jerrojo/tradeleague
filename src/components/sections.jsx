@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, Wallet } from "lucide-react";
+import { BarChart3, ShieldCheck, Wallet } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
@@ -10,6 +10,7 @@ import { TradersTab } from "./tabs/TradersTab";
 import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { RobotinWallet } from "./tabs/RobotinWallet";
+import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { smcCoins } from "../data/mockData";
 import { ROBOTIN_COINS } from "../data/robotin";
 
@@ -69,7 +70,7 @@ const TradersSection = () => (
   </div>
 );
 
-/* ── ROBOTÍN: the bot's execution Wallet + system Analytics. ── */
+/* ── ROBOTÍN: the bot's execution Wallet + system Analytics + Execution Audit. ── */
 const RobotinSection = () => {
   const [sub, setSub] = useState("wallet");
   return (
@@ -77,8 +78,9 @@ const RobotinSection = () => {
       <SubTabs active={sub} onChange={setSub} tabs={[
         { id: "wallet", label: "Wallet", icon: Wallet },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
+        { id: "audit", label: "Audit", icon: ShieldCheck },
       ]} />
-      {sub === "wallet" ? <RobotinWallet /> : <PortfolioTab />}
+      {sub === "wallet" ? <RobotinWallet /> : sub === "analytics" ? <PortfolioTab /> : <ExecutionAudit />}
     </div>
   );
 };

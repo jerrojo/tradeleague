@@ -1,10 +1,11 @@
 import { CoinSelector } from "../CoinSelector";
 import { InfoTip, StatCard, Tag } from "../common";
 import { useProMode } from "../../contexts";
-import { smcCoins } from "../../data/mockData";
+import { smcCoins, mockTraders } from "../../data/mockData";
+import { coinCandles, coinSignals } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
-import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle, Target } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle, Target, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 /* ═══════════════════════ COIN STRUCTURE (SMC) ═══════════════════════ */
 const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
   const [coinState, setSelectedCoin] = useState("BTC");
@@ -24,6 +25,12 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
   const riskColor = coin.risk === "LOW" ? C.green : coin.risk === "MEDIUM" ? C.amber : C.red;
   const biasColor = coin.bias === "BULLISH" ? C.green : C.red;
 
+  // Consensus source count — how many distinct traders' approved signals back this synthesis
+  const sourceCount = useMemo(() => {
+    const sigs = coinSignals(selectedCoin, coinCandles(selectedCoin)).filter((s) => s.approved);
+    return { traders: new Set(sigs.map((s) => s.trader)).size, total: mockTraders.length };
+  }, [selectedCoin]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* ── Coin Selector — hidden when the Coin Hub owns the coin ── */}
@@ -42,8 +49,11 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
       {/* Ideal Entry */}
       <div>
         <div style={cardStyle}>
-          <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Ideal Entry — {selectedCoin}</div>
-          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Where to enter, how much you can gain, and where to cut losses</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: "4px" }}>
+            <div style={{ fontSize: "13px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>Consensus Signal — {selectedCoin}</div>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "2px 8px", borderRadius: 5 }}><Users size={11} /> {sourceCount.traders}/{sourceCount.total} traders</span>
+          </div>
+          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Robotín synthesis from {sourceCount.traders} traders' approved signals — where to enter, the targets, and the stop</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
               ["Entry Zone", coin.entry.zone, C.text, "entryZone"],
