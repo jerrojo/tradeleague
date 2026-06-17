@@ -4,7 +4,7 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, BarChart3, CheckCircle2, Cpu, Gauge, Percent, Radio,
+  Activity, BarChart3, CheckCircle2, Cpu, Gauge, Layers, Percent, Radio,
   Scale, TrendingDown, Wallet,
 } from "lucide-react";
 import { StatCard } from "../common";
@@ -45,6 +45,13 @@ const FundOverview = () => {
     const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
     const profitFactor = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : 0);
 
+    /* ── Concentration: is the edge over-reliant on one asset? (risk lens) ── */
+    const byCoinCount = {};
+    trades.forEach((t) => { byCoinCount[t.coin] = (byCoinCount[t.coin] || 0) + 1; });
+    const top = Object.entries(byCoinCount).sort((a, b) => b[1] - a[1])[0] || ["—", 0];
+    const topCoin = top[0];
+    const topConcentration = trades.length ? Math.round((top[1] / trades.length) * 100) : 0;
+
     /* ── Equity curve over closed trades, ordered by exit (fallback entry) time ── */
     const closedByExit = [...closed].sort(
       (a, b) => (a.exitIdx ?? 0) - (b.exitIdx ?? 0) || a.time - b.time
@@ -53,14 +60,14 @@ const FundOverview = () => {
     let peak = STARTING_BALANCE;
     let maxDrawdown = 0; // worst peak-to-trough (negative number, $)
     const closedReturns = []; // per-trade % return on running balance, for the Sharpe proxy
-    const equity = [{ i: 0, fund: STARTING_BALANCE, btc: STARTING_BALANCE }];
+    const equity = [{ i: 0, fund: STARTING_BALANCE, btc: STARTING_BALANCE, dd: 0 }];
     closedByExit.forEach((t, i) => {
       const prev = bal;
       bal += t.pnl;
       if (prev > 0) closedReturns.push(t.pnl / prev);
       peak = Math.max(peak, bal);
       maxDrawdown = Math.min(maxDrawdown, bal - peak);
-      equity.push({ i: i + 1, fund: Math.round(bal * 100) / 100 });
+      equity.push({ i: i + 1, fund: Math.round(bal * 100) / 100, dd: peak > 0 ? Math.round(((bal - peak) / peak) * 1000) / 10 : 0 });
     });
 
     const balance = STARTING_BALANCE + netPnl;
@@ -118,6 +125,7 @@ const FundOverview = () => {
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
       equity, balance, returnPct, btcReturnPct, sharpe, monthly,
+      topCoin, topConcentration,
     };
   }, []);
 
@@ -206,9 +214,27 @@ const FundOverview = () => {
             <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
+        {/* Underwater drawdown — risk beneath the return (drawdown is king) */}
+        <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", margin: "8px 0 2px" }}>Drawdown — % below peak</div>
+        <ResponsiveContainer width="100%" height={86}>
+          <ComposedChart data={data.equity}>
+            <defs>
+              <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={C.red} stopOpacity={0.06} />
+                <stop offset="100%" stopColor={C.red} stopOpacity={0.4} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
+            <XAxis dataKey="i" hide />
+            <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} width={38} tickFormatter={(v) => `${v}%`} />
+            <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
+            <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
+          </ComposedChart>
+        </ResponsiveContainer>
         <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Fund (net)</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown</span>
         </div>
       </div>
 
@@ -220,13 +246,14 @@ const FundOverview = () => {
         <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "12px" }}>
           Robotín screens every published signal and executes only what it approves — the live state of that pipeline.
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px" }}>
           {[
             { l: "Signals Processed", v: data.allSignalsCount.toLocaleString(), c: C.text, icon: BarChart3, s: `${data.trades.length} executed` },
             { l: "Approval Rate", v: `${data.approvalRate.toFixed(0)}%`, c: C.cyan, icon: CheckCircle2, s: `${data.approvedCount} of ${data.allSignalsCount} approved` },
             { l: "Active Now", v: data.active.length.toLocaleString(), c: C.blue, icon: Radio, s: "open positions" },
             { l: "Trades Closed", v: data.closed.length.toLocaleString(), c: C.purple, icon: Scale, s: `${data.wins.length} W / ${data.losses.length} L` },
             { l: "Win Rate", v: `${data.winRate.toFixed(1)}%`, c: data.winRate >= 50 ? C.green : C.red, icon: Percent, s: "on closed trades" },
+            { l: "Top-asset Concentration", v: `${data.topConcentration}%`, c: data.topConcentration >= 40 ? C.red : data.topConcentration >= 25 ? C.amber : C.green, icon: Layers, s: `${data.topCoin} — edge ${data.topConcentration >= 40 ? "concentrated" : "diversified"}` },
           ].map((m) => (
             <div key={m.l} style={{ ...cardStyle, padding: "12px 14px", backgroundColor: C.cardElev }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "10px", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>
