@@ -201,8 +201,8 @@ const FundOverview = () => {
               labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
               formatter={(v, name) => [usdPlain(Number(v)), name === "fund" ? "Fund (net)" : "BTC buy & hold"]}
             />
-            <Area type="monotone" dataKey="fund" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="fund" />
-            <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" />
+            <Area type="monotone" dataKey="fund" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="fund" isAnimationActive={false} />
+            <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
         <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
@@ -261,7 +261,7 @@ const FundOverview = () => {
               cursor={{ fill: `${C.border}40` }}
               formatter={(v) => [usd(Number(v)), "P&L"]}
             />
-            <Bar dataKey="pnl" radius={[3, 3, 0, 0]} barSize={32}>
+            <Bar dataKey="pnl" radius={[3, 3, 0, 0]} barSize={32} isAnimationActive={false}>
               {data.monthly.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
             </Bar>
           </BarChart>

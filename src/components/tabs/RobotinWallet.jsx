@@ -203,7 +203,7 @@ const RobotinWallet = () => {
                 labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
                 formatter={(v) => [usdPlain(Math.round(Number(v))), "Balance"]}
               />
-              <Area type="monotone" dataKey="balance" stroke={C.purple} strokeWidth={2.5} fill="url(#robotinEq)" dot={false} name="balance" />
+              <Area type="monotone" dataKey="balance" stroke={C.purple} strokeWidth={2.5} fill="url(#robotinEq)" dot={false} name="balance" isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
           <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>

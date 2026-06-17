@@ -242,10 +242,10 @@ const PortfolioTab = () => {
             <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} tickFormatter={v => `D${v}`} />
             <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `${v}%`} />
             <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [`${Number(v).toFixed(1)}%`, name === "system" ? "Fund" : name === "btc" ? "BTC hold" : name === "drawdown" ? "Drawdown" : name]} />
-            <Area type="monotone" dataKey="system" stroke={C.purple} strokeWidth={2.5} fill="url(#sysEq)" dot={false} name="system" />
-            <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" />
+            <Area type="monotone" dataKey="system" stroke={C.purple} strokeWidth={2.5} fill="url(#sysEq)" dot={false} name="system" isAnimationActive={false} />
+            <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
             {mockTraders.map((t, i) => overlay[t.name] && (
-              <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={1.5} dot={false} connectNulls={false} />
+              <Line key={t.name} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={1.5} dot={false} connectNulls={false} isAnimationActive={false} />
             ))}
           </ComposedChart>
         </ResponsiveContainer>
@@ -282,7 +282,7 @@ const PortfolioTab = () => {
               <XAxis type="number" stroke={C.textMuted} fontSize={9} allowDecimals={false} />
               <YAxis type="category" dataKey="name" stroke={C.textMuted} fontSize={9} width={70} />
               <Tooltip contentStyle={tooltipStyle} formatter={v => [v, "trades"]} cursor={{ fill: `${C.border}40` }} />
-              <Bar dataKey="count" radius={[0, 3, 3, 0]} barSize={12}>
+              <Bar dataKey="count" radius={[0, 3, 3, 0]} barSize={12} isAnimationActive={false}>
                 {bySetup.map((e, i) => <Cell key={i} fill={e.fill} />)}
               </Bar>
             </BarChart>
@@ -335,7 +335,7 @@ const PortfolioTab = () => {
             <XAxis dataKey="day" stroke={C.textMuted} fontSize={10} tickFormatter={v => `D${v}`} />
             <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `${v}%`} />
             <Tooltip contentStyle={tooltipStyle} formatter={v => [`${Number(v).toFixed(1)}%`, "Drawdown"]} cursor={{ fill: `${C.border}40` }} />
-            <Bar dataKey="dd" fill={C.red} radius={[0, 0, 2, 2]} barSize={6} />
+            <Bar dataKey="dd" fill={C.red} radius={[0, 0, 2, 2]} barSize={6} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
         <div style={{ fontSize: "9px", color: C.textFaint, marginTop: "2px" }}>
