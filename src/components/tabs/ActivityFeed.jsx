@@ -215,7 +215,7 @@ const ActivityFeed = () => {
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                   <span
                     onClick={(e) => { e.stopPropagation(); const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }}
-                    style={{ fontSize: 12.5, fontWeight: 700, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40` }}
+                    style={{ fontSize: 12.5, fontWeight: 700, color: C.text, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40` }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = C.purple; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = C.text; }}
                   >{s.trader}</span>

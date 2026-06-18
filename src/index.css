@@ -8,6 +8,11 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
+  /* Base text + surface colors so ANY element that forgets an explicit color
+     inherits light text on the dark surface instead of the browser default (black). */
+  color: #e9eff5;
+  background-color: #0b0f15;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

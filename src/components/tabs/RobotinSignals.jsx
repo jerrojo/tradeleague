@@ -113,7 +113,7 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
                 <Avatar name={s.trader} size={30} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700 }}>{s.trader}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{s.trader}</span>
                     <BotTag isBot={s.isBot} size={14} />
                     <span style={{ fontSize: 9, fontWeight: 800, color: s.dir === "LONG" ? C.green : C.red, backgroundColor: `${s.dir === "LONG" ? C.green : C.red}18`, padding: "1px 6px", borderRadius: 3 }}>{s.dir}</span>
                     <span style={{ fontSize: 9, color: C.purple, ...mono }}>{s.tag.split("_").slice(0, 3).join("·")}</span>

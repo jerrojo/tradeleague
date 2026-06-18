@@ -297,7 +297,7 @@ const RobotinWallet = () => {
                 <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
                   <Avatar name={s.trader} size={26} />
                   <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.trader}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.trader}</span>
                     <BotTag isBot={s.isBot} size={14} />
                   </div>
                 </div>
