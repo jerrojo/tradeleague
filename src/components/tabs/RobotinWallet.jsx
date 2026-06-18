@@ -269,6 +269,25 @@ const RobotinWallet = () => {
               </div>
             </div>
           </div>
+
+          {/* Risk Snapshot — fills the column and answers the allocator's first questions */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <TrendingDown size={11} color={C.red} /> Risk Snapshot
+            </div>
+            {[
+              ["Current drawdown", `${data.currentDrawdownPct.toFixed(1)}%`, data.currentDrawdownPct < -0.05 ? C.amber : C.green],
+              ["Max drawdown", `${data.maxDrawdownPct.toFixed(1)}% · ${usd(data.maxDrawdown)}`, C.red],
+              ["Expectancy / trade", usd(data.expectancy), data.expectancy >= 0 ? C.green : C.red],
+              ["Avg signal confidence", `${data.avgConfidence.toFixed(0)}%`, data.avgConfidence >= 75 ? C.green : C.amber],
+              ["Best / worst trade", `${usd(data.best)} / ${usd(data.worst)}`, C.text],
+            ].map(([l, v, clr]) => (
+              <div key={l} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", fontSize: 11 }}>
+                <span style={{ color: C.textMuted }}>{l}</span>
+                <span style={{ color: clr, fontWeight: 700, ...mono }}>{v}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
