@@ -160,9 +160,9 @@ const App = () => {
   // "Analyze" is the Pro workbench and only appears in Pro mode.
   const tabs = [
     { id: "overview", label: "Overview", icon: LayoutDashboard, accent: C.purple },
+    { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
-    { id: "activity", label: "Activity", icon: Activity, accent: C.green },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
