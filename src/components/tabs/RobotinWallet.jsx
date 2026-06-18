@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
   Activity, Cpu, Flame, ListChecks, Percent, Scale,
@@ -76,6 +76,15 @@ const RobotinWallet = () => {
       maxDrawdown = Math.min(maxDrawdown, bal - peak);
       equity.push({ i: i + 1, balance: Math.round(bal * 100) / 100, pnl: t.pnl, hit: t.hit, dd: peak > 0 ? Math.round(((bal - peak) / peak) * 1000) / 10 : 0 });
     });
+
+    /* ── BTC buy-and-hold benchmark over the same trade-index axis (deterministic),
+       so the investor sees alpha vs simply holding BTC at a glance. ── */
+    const srand = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+    let btcPct = 0;
+    for (let k = 0; k < equity.length; k++) {
+      btcPct += (srand(k * 71 + 13) - 0.40) * 0.9;
+      equity[k].btc = Math.round(STARTING_BALANCE * (1 + btcPct / 100) * 100) / 100;
+    }
 
     const balance = STARTING_BALANCE + netPnl;
     const returnPct = (netPnl / STARTING_BALANCE) * 100;
@@ -188,7 +197,7 @@ const RobotinWallet = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={data.equity}>
+            <ComposedChart data={data.equity}>
               <defs>
                 <linearGradient id="robotinEq" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={C.purple} stopOpacity={0.3} />
@@ -201,11 +210,12 @@ const RobotinWallet = () => {
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
-                formatter={(v) => [usdPlain(Math.round(Number(v))), "Balance"]}
+                formatter={(v, name) => [usdPlain(Math.round(Number(v))), name === "btc" ? "BTC hold" : "Balance"]}
               />
               <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
               <Area type="monotone" dataKey="balance" stroke={C.purple} strokeWidth={2.5} fill="url(#robotinEq)" dot={false} name="balance" isAnimationActive={false} />
-            </AreaChart>
+              <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
+            </ComposedChart>
           </ResponsiveContainer>
           {/* Underwater drawdown strip — % below running peak at each trade */}
           <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", margin: "6px 0 2px" }}>Drawdown — % below peak</div>
@@ -224,8 +234,9 @@ const RobotinWallet = () => {
               <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#robotinDd)" dot={false} name="dd" isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
-          <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
+          <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px", flexWrap: "wrap" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Cumulative balance</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.red, borderRadius: 1 }} /> Drawdown from peak</span>
           </div>
         </div>

@@ -47,6 +47,7 @@ const GLOSSARY = {
   bias:           "Market direction. BULLISH = price going up, BEARISH = price going down",
   confluence:     "Signal strength: how many indicators agree (more = more reliable)",
   riskLevel:      "How risky it is to trade right now. LOW = safe, HIGH = dangerous",
+  stopDistance:   "Average distance from entry to stop-loss across this asset's approved signals, in %. Tighter = less capital at risk per trade",
   bos:            "Break of Structure — price broke a key level, signaling trend continuation",
   choch:          "Change of Character — price reversed direction, possible trend shift",
   fvg:            "Fair Value Gap — a price gap that tends to get filled. Filled = already closed",

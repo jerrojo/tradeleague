@@ -31,6 +31,16 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
     return { traders: new Set(sigs.map((s) => s.trader)).size, total: mockTraders.length };
   }, [selectedCoin]);
 
+  // Concrete risk: average entry→stop distance (%) across this asset's approved signals —
+  // replaces the subjective "MEDIUM" label with a measurable, data-driven number.
+  const stopDist = useMemo(() => {
+    const sigs = coinSignals(selectedCoin, coinCandles(selectedCoin)).filter((s) => s.approved && s.entry && s.sl);
+    if (!sigs.length) return null;
+    const avg = sigs.reduce((a, s) => a + (Math.abs(s.entry - s.sl) / s.entry) * 100, 0) / sigs.length;
+    return Math.round(avg * 100) / 100;
+  }, [selectedCoin]);
+  const stopColor = stopDist == null ? C.textMuted : stopDist <= 1.2 ? C.green : stopDist <= 2.5 ? C.amber : C.red;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* ── Coin Selector — hidden when the Coin Hub owns the coin ── */}
@@ -42,7 +52,7 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
         <StatCard label="Direction" value={coin.bias === "BULLISH" ? "↑ UP" : "↓ DOWN"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
         <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
-        <StatCard label="Risk Level" value={coin.risk === "LOW" ? "LOW" : coin.risk === "MEDIUM" ? "MEDIUM" : "HIGH"} icon={AlertTriangle} color={riskColor} tip="riskLevel" />
+        <StatCard label="Avg Stop Distance" value={stopDist == null ? "—" : `${stopDist.toFixed(2)}%`} icon={AlertTriangle} color={stopColor} tip="stopDistance" sub="entry → stop, per signal" />
       </div>
 
 

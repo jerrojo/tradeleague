@@ -27,6 +27,16 @@ const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 const usd = (v) =>
   `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+/* ── price: adaptive precision so meme/sub-cent coins don't collapse to "$0.00" ── */
+const fmtPrice = (p) => {
+  if (p == null) return "—";
+  const a = Math.abs(p);
+  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (a >= 0.01) return p.toFixed(4);
+  if (a >= 0.0001) return p.toFixed(6);
+  return p.toPrecision(3);
+};
+
 /* ── relative timestamp from unix seconds (deterministic) ── */
 const relTime = (sec) => {
   const diff = Math.max(0, Math.floor(Date.now() / 1000) - sec);
@@ -147,9 +157,14 @@ const SignalRow = ({ signal: s, isOpen, onToggle, onTrader, showTime = false, la
             >{s.trader}</span>
             <BotTag isBot={s.isBot} size={14} />
           </div>
-          {tag && (
-            <span style={{ display: "inline-block", marginTop: 4, fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...mono }}>{tag}</span>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+            {tag && (
+              <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...mono }}>{tag}</span>
+            )}
+            <span style={{ fontSize: 10, color: C.textMuted, ...mono, whiteSpace: "nowrap" }}>
+              E <b style={{ color: C.text }}>{fmtPrice(s.entry)}</b> <span style={{ color: C.textFaint }}>·</span> TP <b style={{ color: C.green }}>{fmtPrice(s.tp1)}</b> <span style={{ color: C.textFaint }}>·</span> SL <b style={{ color: C.red }}>{fmtPrice(s.sl)}</b>
+            </span>
+          </div>
         </div>
 
         {/* Robotín verdict */}

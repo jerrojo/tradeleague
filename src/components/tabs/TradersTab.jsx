@@ -4,11 +4,29 @@ import { ArrowDown, BellRing, CheckCircle, Circle, Copy, Eye, Flame, Pause, Play
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useWatchlist, useProMode } from "../../contexts";
 import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
-import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, titleByLevel } from "../../lib/scoring";
+import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, srand, titleByLevel } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
 import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { useMemo, useState } from "react";
+/* ── Deterministic bot metadata (version · active config · backtest vs live) ──
+   Per the VARIV brief, the Bots view must expose what a human trader row can't:
+   which build is running, its active configuration, and how live performance
+   compares to the backtest (the overfit/degradation check an allocator makes). */
+const BOT_SETUPS = ["FVG", "LIQ", "OB", "BOS", "CHOCH"];
+const BOT_TFS = ["M5", "M15", "H1", "H4"];
+const botMeta = (name) => {
+  const seed = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const r = (k) => srand(seed * k + k);
+  const major = 1 + Math.floor(r(7) * 3);
+  const minor = Math.floor(r(11) * 10);
+  const lev = [3, 5, 10][Math.floor(r(13) * 3)];
+  const config = `${BOT_SETUPS[Math.floor(r(17) * BOT_SETUPS.length)]}·${BOT_TFS[Math.floor(r(19) * BOT_TFS.length)]}·${lev}x`;
+  const btPF = 1.9 + r(23) * 1.5;                 // backtest profit factor 1.9–3.4
+  const livePF = btPF * (0.62 + r(29) * 0.3);     // live always degrades vs backtest
+  return { version: `v${major}.${minor}`, config, btPF: btPF.toFixed(1), livePF: livePF.toFixed(1) };
+};
+
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
   const [view, setView] = useState("leaderboard");
@@ -93,7 +111,7 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Robotín approval",null],["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Robotín approval",null],...(traderFilter === "bot" ? [["Version",null],["Config",null],["Backtest → Live",null]] : []),["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
               </tr></thead>
               <tbody>
                 {(() => {
@@ -176,6 +194,17 @@ const TradersTab = () => {
                         </div>
                       ); })()}
                     </td>
+                    {traderFilter === "bot" && (() => { const b = botMeta(t.name); const degraded = Number(b.livePF) < Number(b.btPF) * 0.8; return (
+                      <>
+                        <td style={{ ...tdStyle, ...mono, color: C.textMuted, fontSize: "11px" }}>{b.version}</td>
+                        <td style={{ ...tdStyle, ...mono, color: C.text, fontSize: "11px" }}>{b.config}</td>
+                        <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>
+                          <span style={{ color: C.textMuted }}>BT {b.btPF}</span>
+                          <span style={{ color: C.textFaint }}> → </span>
+                          <span style={{ color: degraded ? C.red : C.green, fontWeight: 700 }}>Live {b.livePF}</span>
+                        </td>
+                      </>
+                    ); })()}
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                         <button title={followedTraders[t.name] ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.cyan + "20" : "transparent", color: followedTraders[t.name] ? C.cyan : C.textFaint }}>
