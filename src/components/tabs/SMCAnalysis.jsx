@@ -1,10 +1,10 @@
 import { CoinSelector } from "../CoinSelector";
-import { InfoTip, StatCard, Tag } from "../common";
+import { InfoTip, SectionHeader, StatCard, Tag } from "../common";
 import { useProMode } from "../../contexts";
 import { smcCoins, mockTraders } from "../../data/mockData";
 import { coinCandles, coinSignals } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
-import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle, Target, Users } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle, Crosshair, Target, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 /* ═══════════════════════ COIN STRUCTURE (SMC) ═══════════════════════ */
 const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
@@ -49,11 +49,14 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
       {/* Ideal Entry */}
       <div>
         <div style={cardStyle}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: "4px" }}>
-            <div style={{ fontSize: "13px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>Consensus Signal — {selectedCoin}</div>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "2px 8px", borderRadius: 5 }}><Users size={11} /> {sourceCount.traders}/{sourceCount.total} traders</span>
+          <div style={{ marginBottom: "14px" }}>
+            <SectionHeader
+              icon={Crosshair}
+              title={`Consensus signal — ${selectedCoin}`}
+              subtitle={`Robotín synthesis from ${sourceCount.traders} traders' approved signals — where to enter, the targets, and the stop`}
+              right={<span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "2px 8px", borderRadius: 5 }}><Users size={11} /> {sourceCount.traders}/{sourceCount.total} traders</span>}
+            />
           </div>
-          <div style={{ fontSize: "11px", color: C.textFaint, marginBottom: "14px" }}>Robotín synthesis from {sourceCount.traders} traders' approved signals — where to enter, the targets, and the stop</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             {[
               ["Entry Zone", coin.entry.zone, C.text, "entryZone"],

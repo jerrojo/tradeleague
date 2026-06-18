@@ -1,6 +1,7 @@
 import { useMemo } from "react";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
 import { mockTraders, traderDeepData } from "../data/mockData";
+import { SectionHeader } from "./common";
 import { C, cardStyle, mono } from "../theme";
 
 /* ═══════════════════════ POSITIONING MAP ═══════════════════════
@@ -50,18 +51,19 @@ const PositioningMap = ({ coin, currentPrice }) => {
 
   return (
     <div style={cardStyle}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px", flexWrap: "wrap", gap: "8px" }}>
-        <div>
-          <div style={{ fontSize: "13px", fontWeight: "700" }}>Active Positions — System Overview · {coin}</div>
-          <div style={{ fontSize: "10px", color: C.textFaint }}>Every open trade and live signal vs the current price. {total} open positions.</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "800", color: leanColor, padding: "4px 12px", borderRadius: "8px", backgroundColor: `${leanColor}14`, border: `1px solid ${leanColor}30` }}>
-            <LeanIcon size={14} /> {leaning}
-          </span>
-          <span style={{ fontSize: "11px", ...mono }}><span style={{ color: C.green, fontWeight: 700 }}>{longPct}% long</span> <span style={{ color: C.textFaint }}>·</span> <span style={{ color: C.red, fontWeight: 700 }}>{100 - longPct}% short</span></span>
-        </div>
-      </div>
+      <SectionHeader
+        icon={Crosshair}
+        title={`Active positions — system overview · ${coin}`}
+        subtitle={`Every open trade and live signal vs the current price. ${total} open positions.`}
+        right={
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "800", color: leanColor, padding: "4px 12px", borderRadius: "8px", backgroundColor: `${leanColor}14`, border: `1px solid ${leanColor}30` }}>
+              <LeanIcon size={14} /> {leaning}
+            </span>
+            <span style={{ fontSize: "11px", ...mono }}><span style={{ color: C.green, fontWeight: 700 }}>{longPct}% long</span> <span style={{ color: C.textFaint }}>·</span> <span style={{ color: C.red, fontWeight: 700 }}>{100 - longPct}% short</span></span>
+          </div>
+        }
+      />
 
       {/* The map */}
       <div style={{ position: "relative", height: 132, marginTop: "12px" }}>
