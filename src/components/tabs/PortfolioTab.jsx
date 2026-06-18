@@ -54,7 +54,9 @@ const PortfolioTab = () => {
     const profitFactor = grossLoss > 0 ? grossWin / grossLoss : Infinity;
     const expectancyR = allTrades.reduce((a, t) => a + t.rMultiple, 0) / Math.max(1, allTrades.length);
     const totalTrades = allTrades.length;
-    const sharpe = mockTraders.reduce((a, t) => a + (t.sharpe || 0) * t.trades, 0) / Math.max(1, totalTrades);
+    // Trade-weighted average Sharpe across providers (own weight basis — independent of totalTrades)
+    const sharpeWeight = mockTraders.reduce((a, t) => a + t.trades, 0);
+    const sharpe = mockTraders.reduce((a, t) => a + (t.sharpe || 0) * t.trades, 0) / Math.max(1, sharpeWeight);
     // Real fund drawdown from the per-trade equity path (the aggregate daily curve barely
     // dips because traders' drawdowns happen at different times and net out).
     const maxDD = computeMetrics(allTrades, mockTraders.length * INITIAL_CAPITAL_PER_TRADER).maxDrawdownPct;
