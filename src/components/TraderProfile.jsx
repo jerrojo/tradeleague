@@ -1,9 +1,10 @@
-import { Avatar, BotTag, InfoTip, StatCard, Tag } from "./common";
+import { Avatar, BotTag, InfoTip, SectionHeader, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
-import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Heart, MessageCircle, RefreshCw, Scale } from "lucide-react";
+import { SignalRow } from "./SignalRow";
+import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { traderDeepData, traderSocials } from "../data/mockData";
+import { traderDeepData } from "../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
@@ -12,10 +13,21 @@ import { C, cardStyle, mono, tdStyle, thStyle } from "../theme";
 import { ToastContext } from "./common";
 import { Activity, BarChart3, Clock, DollarSign, Flame, Lightbulb, Star, Target, TrendingDown, TrendingUp, Trophy, Users, Zap } from "lucide-react";
 import { Fragment, useContext, useMemo, useState } from "react";
+/* Skill Radar axes — quant-leaning labels per the VARIV brief
+   ("Precision" → "Signal Accuracy", "Attack" → "Return Aggression", …). */
+const RADAR_LABELS = {
+  Attack: "Return Aggression",
+  "Risk Ctrl": "Risk Control",
+  Precision: "Signal Accuracy",
+  Speed: "Execution Speed",
+  Consistency: "Consistency",
+  Discipline: "Discipline",
+};
+
 /* ═══════════════════════ TRADER PROFILE (standalone) ═══════════════════════ */
 const TraderProfile = ({ trader, onClose }) => {
   const [profileTab, setProfileTab] = useState("overview");
-  const [socialFilter, setSocialFilter] = useState("all");
+  const [openSig, setOpenSig] = useState(null); // expanded signal row in the Signal Log
   const [isFollowing, setIsFollowing] = useState(false);
   const [alertsOn, setAlertsOn] = useState(false);
   const [eqPeriod, setEqPeriod] = useState(90); // 7 / 30 / 90 days — VARIV A.2: toggles, not dropdown
@@ -34,6 +46,17 @@ const TraderProfile = ({ trader, onClose }) => {
     }));
     return { total, approved, rate: total ? Math.round((approved / total) * 100) : 0 };
   }, [t.name]);
+
+  // This trader's signals across all assets + their post-Robotín lifecycle — the Signal Log.
+  const traderSignals = useMemo(() => ROBOTIN_COINS
+    .flatMap((c) => coinSignals(c, coinCandles(c)))
+    .filter((s) => s.trader === t.name)
+    .sort((a, b) => b.time - a.time), [t.name]);
+  const lastCloseByCoin = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
+    return m;
+  }, []);
 
   // Trading Journal — crypto-journal KPIs derived from the trader's own trade history.
   // Reuses computeMetrics for the heavy lifting (winRate / profitFactor / maxDD / expectancyR)
@@ -66,14 +89,12 @@ const TraderProfile = ({ trader, onClose }) => {
   }, [deep.history, histMetrics]);
 
   // Simple hides the Pro-only sub-tabs (Trade Lab, Risk DNA, Journal)
-  const allProfileTabs = ["overview","trade_lab","signals","trades","social","pnl","risk_dna","journal"];
+  const allProfileTabs = ["overview","trade_lab","signals","trades","signal_log","pnl","risk_dna","journal"];
   const proOnlyTabs = ["trade_lab", "risk_dna", "journal"];
   const profileTabs = proMode ? allProfileTabs : allProfileTabs.filter(pt => !proOnlyTabs.includes(pt));
-  const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", social: "Social", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
+  const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", signal_log: "Signal Log", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };
 
   const moodColors = { Confident: C.green, Frustrated: C.red, Focused: C.blue, Excited: C.amber, Neutral: C.textMuted };
-  const socials = traderSocials[t.name] || {};
-  const socialMeta = { twitter: { label: "X / Twitter", color: "#1DA1F2", icon: "𝕏", url: "https://x.com/" }, discord: { label: "Discord", color: "#5865F2", icon: "DC", url: "https://discord.gg/" }, telegram: { label: "Telegram", color: "#0088cc", icon: "TG", url: "https://t.me/" }, youtube: { label: "YouTube", color: "#FF0000", icon: "YT", url: "https://youtube.com/@" }, website: { label: "Website", color: C.textMuted, icon: "WEB", url: "" } };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -286,7 +307,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Skill Radar</div>
               <ResponsiveContainer width="100%" height={220}>
-                <RadarChart data={t.radarData.map(r => ({ subject: r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
+                <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
               </ResponsiveContainer>
             </div>
             <div style={cardStyle}>
@@ -298,23 +319,26 @@ const TraderProfile = ({ trader, onClose }) => {
               </ResponsiveContainer>
             </div>
           </div>
-          {/* Recent social post preview */}
-          <div style={cardStyle}>
-            <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Latest Activity</div>
-            {deep.socialPosts.slice(0, 2).map(post => (
-              <div key={post.id} style={{ padding: "10px 0", borderBottom: `1px solid ${C.border}`, display: "flex", gap: "10px" }}>
-                <span style={{ fontSize: "16px" }}>{deep.platIcons[post.platform]}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: "600" }}>{post.handle}</span>
-                    <span style={{ fontSize: "9px", color: deep.platColors[post.platform], fontWeight: "700", textTransform: "uppercase" }}>{post.platform}</span>
-                    <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto" }}>{post.time}</span>
-                  </div>
-                  <div style={{ fontSize: "12px", color: C.text, lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{post.text.slice(0, 150)}{post.text.length > 150 ? "..." : ""}</div>
-                  <div style={{ display: "flex", gap: "12px", marginTop: "6px" }}><span style={{ fontSize: "10px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><Heart size={9} /> {post.likes}</span><span style={{ fontSize: "10px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><MessageCircle size={9} /> {post.replies}</span></div>
-                </div>
-              </div>
+          {/* Latest signals — this trader's most recent calls and what Robotín did with them */}
+          <SectionHeader
+            icon={Activity}
+            title="Latest signals"
+            subtitle={`${t.name}'s most recent calls and Robotín's verdict on each`}
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {traderSignals.slice(0, 4).map((s) => (
+              <SignalRow
+                key={s.id}
+                signal={s}
+                isOpen={openSig === s.id}
+                onToggle={() => setOpenSig(openSig === s.id ? null : s.id)}
+                lastClose={lastCloseByCoin[s.coin] ?? null}
+                showTime
+              />
             ))}
+            {traderSignals.length === 0 && (
+              <div style={{ ...cardStyle, textAlign: "center", padding: "24px", color: C.textMuted, fontSize: 12 }}>No signals from {t.name} in the current window.</div>
+            )}
           </div>
         </div>
       )}
@@ -493,54 +517,38 @@ const TraderProfile = ({ trader, onClose }) => {
         </div>
       )}
 
-      {/* ═══ SOCIAL ═══ */}
-      {profileTab === "social" && (
+      {/* ═══ SIGNAL LOG ═══ (replaces the retail "Social" tab per the VARIV brief) */}
+      {profileTab === "signal_log" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-            <StatCard label="𝕏 Followers" value={deep.socialStats.twitterFollowers.toLocaleString()} icon={Users} color={"#1DA1F2"} />
-            <StatCard label="Discord Messages" value={deep.socialStats.discordMessages.toLocaleString()} icon={Activity} color={"#5865F2"} />
-            <StatCard label="Reddit Karma" value={deep.socialStats.redditKarma.toLocaleString()} icon={Star} color={"#FF4500"} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+            <StatCard label="Signals Emitted" value={robotinStats.total} icon={Zap} color={C.purple} />
+            <StatCard label="Approved by Robotín" value={robotinStats.approved} icon={Activity} color={C.green} />
+            <StatCard label="Approval Rate" value={`${robotinStats.rate}%`} icon={Target} color={robotinStats.rate >= 70 ? C.green : robotinStats.rate >= 50 ? C.amber : C.red} />
+            <StatCard label="Rejected" value={robotinStats.total - robotinStats.approved} icon={TrendingDown} color={C.textMuted} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-            <StatCard label="Telegram Members" value={deep.socialStats.telegramMembers.toLocaleString()} icon={Users} color={"#0088cc"} />
-            <StatCard label="WhatsApp Groups" value={deep.socialStats.whatsappGroups} icon={Users} color={"#25D366"} />
-            <StatCard label="Avg Engagement" value={`${deep.socialStats.avgEngagement}%`} sub={`Top: ${deep.socialStats.topPlatform}`} icon={TrendingUp} color={C.green} />
-          </div>
-          {/* Platform filter */}
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {["all","twitter","discord","telegram","whatsapp","reddit","tradehub"].map(p => (
-              <button key={p} onClick={() => setSocialFilter(p)} style={{
-                padding: "6px 14px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer",
-                border: `1px solid ${socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.border}`,
-                backgroundColor: socialFilter === p ? (p === "all" ? C.purpleBg : deep.platColors[p] + "18") : "transparent",
-                color: socialFilter === p ? (p === "all" ? C.purple : deep.platColors[p]) : C.textMuted, textTransform: "capitalize"
-              }}>{p === "all" ? "All" : p === "tradehub" ? "Tradethlon" : p === "twitter" ? "𝕏 Twitter" : p === "telegram" ? "Telegram" : p === "whatsapp" ? "WhatsApp" : p.charAt(0).toUpperCase() + p.slice(1)}</button>
+          <SectionHeader
+            icon={Activity}
+            title="Signal log"
+            subtitle="Every signal this trader emitted and its lifecycle after the Robotín filter — newest first"
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {traderSignals.map((s) => (
+              <SignalRow
+                key={s.id}
+                signal={s}
+                isOpen={openSig === s.id}
+                onToggle={() => setOpenSig(openSig === s.id ? null : s.id)}
+                lastClose={lastCloseByCoin[s.coin] ?? null}
+                showTime
+              />
             ))}
-          </div>
-          {/* Posts */}
-          {deep.socialPosts.filter(p => socialFilter === "all" || p.platform === socialFilter).map(post => (
-            <div key={post.id} style={{ ...cardStyle, borderLeft: `3px solid ${deep.platColors[post.platform]}` }}>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <div style={{ fontSize: "20px", width: 32, textAlign: "center" }}>{deep.platIcons[post.platform]}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "700" }}>{post.handle}</span>
-                    <span style={{ fontSize: "10px", color: deep.platColors[post.platform], fontWeight: "700", textTransform: "uppercase", padding: "2px 6px", borderRadius: "3px", backgroundColor: deep.platColors[post.platform] + "18" }}>{post.platform}</span>
-                    {post.channel && <span style={{ fontSize: "10px", color: C.textMuted }}>{post.channel}</span>}
-                    {post.subreddit && <span style={{ fontSize: "10px", color: C.textMuted }}>{post.subreddit}</span>}
-                    <span style={{ fontSize: "10px", color: C.textFaint, marginLeft: "auto" }}>{post.time}</span>
-                  </div>
-                  <div style={{ fontSize: "13px", color: C.text, lineHeight: "1.6", marginBottom: "10px", whiteSpace: "pre-wrap" }}>{post.text}</div>
-                  <div style={{ display: "flex", gap: "16px", paddingTop: "8px", borderTop: `1px solid ${C.border}` }}>
-                    <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><Heart size={10} /> {post.likes.toLocaleString()}</span>
-                    {post.retweets > 0 && <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><RefreshCw size={10} /> {post.retweets}</span>}
-                    <span style={{ fontSize: "11px", color: C.textMuted, display: "inline-flex", alignItems: "center", gap: "3px" }}><MessageCircle size={10} /> {post.replies}</span>
-                    {post.impressions > 0 && <span style={{ fontSize: "11px", color: C.textMuted }}><Eye size={10} /> {(post.impressions / 1000).toFixed(1)}K</span>}
-                  </div>
-                </div>
+            {traderSignals.length === 0 && (
+              <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>No signals in the current window</div>
+                <div style={{ fontSize: 11 }}>{t.name} hasn't emitted a signal Robotín has processed yet.</div>
               </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       )}
 
@@ -674,7 +682,7 @@ const TraderProfile = ({ trader, onClose }) => {
           <div style={cardStyle}>
             <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "8px" }}>Skill Radar</div>
             <ResponsiveContainer width="100%" height={260}>
-              <RadarChart data={t.radarData.map(r => ({ subject: r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
+              <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
             </ResponsiveContainer>
           </div>
         </div>

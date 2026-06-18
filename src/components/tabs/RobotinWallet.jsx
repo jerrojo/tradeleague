@@ -131,14 +131,14 @@ const RobotinWallet = () => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{ fontSize: "15px", fontWeight: "800" }}>Robotín Wallet</div>
-            <span style={{
+            <span title="The fund's own book: every position Robotín opened by executing the trader signals it approved. Not a copy-trading account — these are the system's own trades." style={{
               display: "inline-flex", alignItems: "center", gap: 4, fontSize: 9, fontWeight: 800,
               color: C.cyan, backgroundColor: `${C.cyan}1c`, padding: "2px 8px", borderRadius: 4,
-              textTransform: "uppercase", letterSpacing: "0.5px",
+              textTransform: "uppercase", letterSpacing: "0.5px", cursor: "help",
             }}><Cpu size={10} /> AI Execution Account</span>
           </div>
           <div style={{ fontSize: "11px", color: C.textMuted, marginTop: 2 }}>
-            Every trade Robotín executed from approved signals · {data.trades.length} executed · {data.closed.length} closed · simulated
+            The fund's own trading book — every position Robotín opened from approved signals · {data.trades.length} executed · {data.closed.length} closed · simulated
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
