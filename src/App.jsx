@@ -4,7 +4,7 @@ import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
-import { MarketsSection, ActivitySection, TradersSection, RobotinSection } from "./components/sections";
+import { MarketsSection, ActivitySection, TradersSection, OverviewSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
@@ -83,8 +83,9 @@ const App = () => {
     const tabList = [
       { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
       { id: "markets", label: "Markets", desc: "One coin at a time — signals, trades, structure, positioning" },
-      { id: "robotin", label: "Robotín Wallet", desc: "Every trade the bot executed from approved signals" },
-      { id: "robotin", label: "Robotín Analytics", desc: "System fund-level KPIs, equity curve, drawdown and segmentation" },
+      { id: "overview", label: "Robotín Wallet", desc: "Every trade the bot executed from approved signals" },
+      { id: "overview", label: "Robotín Analytics", desc: "System fund-level KPIs, equity curve, drawdown and segmentation" },
+      { id: "overview", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
       { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
       { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
@@ -162,25 +163,22 @@ const App = () => {
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
-    { id: "robotin", label: "Robotín", icon: Wallet, accent: C.green },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
-    overview: "The fund at a glance — capital, return, risk and system state on one page",
+    overview: "The fund in one place — tear-sheet, the bot's wallet, system analytics and execution audit",
     traders: "Who's winning, and everyone you can follow — the live race plus the searchable directory",
     markets: "One coin, everything at once — chart, signals, the trades they became, structure and positioning",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
-    robotin: "Robotín's wallet and analytics — every trade the bot executed and how the system performs",
   };
 
   // Section → component mapping
   const tabContent = {
-    overview: FundOverview,    // Overview = the investor tear-sheet / fund summary
+    overview: OverviewSection, // Overview = tear-sheet + Wallet + Analytics + Audit sub-tabs
     traders: TradersSection,   // Traders = live race + searchable directory + profiles
     markets: MarketsSection,   // Markets = one coin, everything on one page
     activity: ActivitySection, // Activity = the global Robotín lifecycle tape
-    robotin: RobotinSection,   // Robotín = the bot's Wallet + system Analytics
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
@@ -355,9 +353,8 @@ const App = () => {
                   </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {[
-                      { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
+                      { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund in one place — tear-sheet, wallet, analytics and audit.", go: "overview" },
                       { icon: Globe, color: C.cyan, t: "Markets", d: "One coin, everything at once — chart, signals, structure and positioning.", go: "markets" },
-                      { icon: Wallet, color: C.amber, t: "Robotín", d: "The bot's execution wallet and the system's performance analytics.", go: "robotin" },
                       { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
                     ].map(card => (

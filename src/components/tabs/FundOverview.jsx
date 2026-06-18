@@ -131,11 +131,33 @@ const FundOverview = () => {
       }
     }
 
+    /* ── Outcome distribution: realized R-multiple per closed trade, bucketed.
+       The "shape of the edge" — a fat right tail and a thin left tail is what a
+       healthy asymmetric system looks like (inspired by the probability-lattice view). ── */
+    const rBuckets = [
+      { label: "≤ −2R", min: -Infinity, max: -2 },
+      { label: "−2…−1R", min: -2, max: -1 },
+      { label: "−1…0R", min: -1, max: 0 },
+      { label: "0…1R", min: 0, max: 1 },
+      { label: "1…2R", min: 1, max: 2 },
+      { label: "2…3R", min: 2, max: 3 },
+      { label: "≥ 3R", min: 3, max: Infinity },
+    ].map((b) => ({ ...b, count: 0 }));
+    closed.forEach((t) => {
+      const sign = t.dir === "LONG" ? 1 : -1;
+      const exit = t.exit ?? (t.hit === "TP" ? t.tp1 : t.sl);
+      const risk = Math.abs(t.entry - t.sl);
+      const r = risk > 0 ? (sign * (exit - t.entry)) / risk : 0;
+      const b = rBuckets.find((x) => r > x.min && r <= x.max) || rBuckets[rBuckets.length - 1];
+      b.count++;
+    });
+    const rDist = rBuckets.map((b) => ({ label: b.label, count: b.count, fill: b.max <= 0 ? C.red : C.green }));
+
     return {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
-      equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly,
+      equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly, rDist,
       topCoin, topConcentration,
     };
   }, []);
@@ -317,6 +339,37 @@ const FundOverview = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── 6 · Outcome distribution — realized R per closed trade (the shape of the edge) ── */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600" }}>
+              <BarChart3 size={14} color={C.cyan} /> Outcome Distribution
+            </div>
+            <div style={{ fontSize: "10px", color: C.textFaint }}>
+              Realized R-multiple per closed trade · {data.closed.length} trades — losses capped near −1R, wins run to the right (asymmetric edge)
+            </div>
+          </div>
+          <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
+        </div>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={data.rDist}>
+            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
+            <XAxis dataKey="label" stroke={C.textMuted} fontSize={10} />
+            <YAxis stroke={C.textMuted} fontSize={10} allowDecimals={false} />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ fill: `${C.border}40` }}
+              formatter={(v) => [`${v} trades`, "Count"]}
+            />
+            <ReferenceLine x="−1…0R" stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.6} />
+            <Bar dataKey="count" radius={[3, 3, 0, 0]} barSize={38} isAnimationActive={false}>
+              {data.rDist.map((b, i) => <Cell key={i} fill={b.fill} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

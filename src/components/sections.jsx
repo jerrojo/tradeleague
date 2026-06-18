@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, ShieldCheck, Wallet } from "lucide-react";
+import { BarChart3, LayoutDashboard, ShieldCheck, Wallet } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
@@ -8,6 +8,7 @@ import { CoinPositioning } from "./tabs/CoinPositioning";
 import { HomeTab } from "./tabs/HomeTab";
 import { TradersTab } from "./tabs/TradersTab";
 import { ActivityFeed } from "./tabs/ActivityFeed";
+import { FundOverview } from "./tabs/FundOverview";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { RobotinWallet } from "./tabs/RobotinWallet";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
@@ -70,19 +71,22 @@ const TradersSection = () => (
   </div>
 );
 
-/* ── ROBOTÍN: the bot's execution Wallet + system Analytics + Execution Audit. ── */
-const RobotinSection = () => {
-  const [sub, setSub] = useState("wallet");
+/* ── OVERVIEW: the fund's home. The investor tear-sheet up front, then the bot's
+   execution Wallet, system Analytics and Execution Audit as sub-tabs — everything
+   about the fund in one place (Overview now absorbs the old Robotín section). ── */
+const OverviewSection = () => {
+  const [sub, setSub] = useState("overview");
   return (
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
+        { id: "overview", label: "Overview", icon: LayoutDashboard },
         { id: "wallet", label: "Wallet", icon: Wallet },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
         { id: "audit", label: "Audit", icon: ShieldCheck },
       ]} />
-      {sub === "wallet" ? <RobotinWallet /> : sub === "analytics" ? <PortfolioTab /> : <ExecutionAudit />}
+      {sub === "overview" ? <FundOverview /> : sub === "wallet" ? <RobotinWallet /> : sub === "analytics" ? <PortfolioTab /> : <ExecutionAudit />}
     </div>
   );
 };
 
-export { MarketsSection, ActivitySection, TradersSection, RobotinSection };
+export { MarketsSection, ActivitySection, TradersSection, OverviewSection };
