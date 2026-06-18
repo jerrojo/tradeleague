@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { CandlestickChart, LineChart, ListChecks } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
-import { SignalRow } from "../SignalRow";
+import { SignalTable } from "../SignalTable";
 import { SectionHeader } from "../common";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
@@ -91,25 +91,14 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
         title={onlyTrades ? "Executed trades" : "Signals & executions"}
         subtitle={`${coin}/USDT · ${onlyTrades ? `${approved} executed` : `${visibleList.length} signals · ${approved} approved`} · click a row for full detail`}
       />
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {visibleList.length === 0 && (
-          <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{onlyTrades ? "No trades executed on " + coin + " yet" : "No signals on " + coin + " yet"}</div>
-            <div style={{ fontSize: 11 }}>{onlyTrades ? "Robotín hasn't approved and executed any signal on this asset in the current window." : "No trader has published a signal on this asset in the current window."}</div>
-          </div>
-        )}
-        {visibleList.map((s) => (
-          <SignalRow
-            key={s.id}
-            signal={s}
-            isOpen={open === s.id}
-            onToggle={() => setOpen(open === s.id ? null : s.id)}
-            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
-            lastClose={candles.length ? candles[candles.length - 1].close : null}
-            candles={candles}
-          />
-        ))}
-      </div>
+      <SignalTable
+        signals={visibleList}
+        openId={open}
+        onToggle={(id) => setOpen(open === id ? null : id)}
+        onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+        lastCloseFor={() => (candles.length ? candles[candles.length - 1].close : null)}
+        candlesFor={() => candles}
+      />
     </div>
   );
 };

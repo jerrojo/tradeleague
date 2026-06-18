@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { SignalRow } from "../SignalRow";
+import { SignalTable } from "../SignalTable";
 import { useProfile, useWatchlist } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
@@ -134,27 +134,14 @@ const ActivityFeed = () => {
         </div>
       </div>
 
-      {/* ─────────── EVENT TAPE ─────────── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {visible.length === 0 && (
-          <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>No events match this filter</div>
-            <div style={{ fontSize: 11 }}>Try a different chip{followingOnly ? " or turn off Following" : ""}.</div>
-          </div>
-        )}
-
-        {visible.map((s) => (
-          <SignalRow
-            key={s.id}
-            signal={s}
-            isOpen={open === s.id}
-            onToggle={() => setOpen(open === s.id ? null : s.id)}
-            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
-            lastClose={lastClose(s.coin)}
-            showTime
-          />
-        ))}
-      </div>
+      {/* ─────────── EVENT TAPE (dense table) ─────────── */}
+      <SignalTable
+        signals={visible}
+        openId={open}
+        onToggle={(id) => setOpen(open === id ? null : id)}
+        onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+        lastCloseFor={(s) => lastClose(s.coin)}
+      />
     </div>
   );
 };

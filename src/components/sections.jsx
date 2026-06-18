@@ -80,11 +80,10 @@ const OverviewSection = () => {
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
         { id: "overview", label: "Overview", icon: LayoutDashboard },
-        { id: "wallet", label: "Wallet", icon: Wallet },
+        { id: "executions", label: "Executions", icon: ShieldCheck },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
-        { id: "audit", label: "Audit", icon: ShieldCheck },
       ]} />
-      {sub === "overview" ? <FundOverview /> : sub === "wallet" ? <RobotinWallet /> : sub === "analytics" ? <PortfolioTab /> : <ExecutionAudit />}
+      {sub === "overview" ? <FundOverview /> : sub === "executions" ? <ExecutionAudit /> : <PortfolioTab />}
     </div>
   );
 };

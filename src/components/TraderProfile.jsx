@@ -1,7 +1,7 @@
 import { Avatar, BotTag, InfoTip, SectionHeader, StatCard, Tag } from "./common";
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
-import { SignalRow } from "./SignalRow";
+import { SignalTable } from "./SignalTable";
 import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData } from "../data/mockData";
@@ -325,21 +325,13 @@ const TraderProfile = ({ trader, onClose }) => {
             title="Latest signals"
             subtitle={`${t.name}'s most recent calls and Robotín's verdict on each`}
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {traderSignals.slice(0, 4).map((s) => (
-              <SignalRow
-                key={s.id}
-                signal={s}
-                isOpen={openSig === s.id}
-                onToggle={() => setOpenSig(openSig === s.id ? null : s.id)}
-                lastClose={lastCloseByCoin[s.coin] ?? null}
-                showTime
-              />
-            ))}
-            {traderSignals.length === 0 && (
-              <div style={{ ...cardStyle, textAlign: "center", padding: "24px", color: C.textMuted, fontSize: 12 }}>No signals from {t.name} in the current window.</div>
-            )}
-          </div>
+          <SignalTable
+            signals={traderSignals.slice(0, 6)}
+            openId={openSig}
+            onToggle={(id) => setOpenSig(openSig === id ? null : id)}
+            lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+            showTrader={false}
+          />
         </div>
       )}
 
@@ -531,24 +523,13 @@ const TraderProfile = ({ trader, onClose }) => {
             title="Signal log"
             subtitle="Every signal this trader emitted and its lifecycle after the Robotín filter — newest first"
           />
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {traderSignals.map((s) => (
-              <SignalRow
-                key={s.id}
-                signal={s}
-                isOpen={openSig === s.id}
-                onToggle={() => setOpenSig(openSig === s.id ? null : s.id)}
-                lastClose={lastCloseByCoin[s.coin] ?? null}
-                showTime
-              />
-            ))}
-            {traderSignals.length === 0 && (
-              <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>No signals in the current window</div>
-                <div style={{ fontSize: 11 }}>{t.name} hasn't emitted a signal Robotín has processed yet.</div>
-              </div>
-            )}
-          </div>
+          <SignalTable
+            signals={traderSignals}
+            openId={openSig}
+            onToggle={(id) => setOpenSig(openSig === id ? null : id)}
+            lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+            showTrader={false}
+          />
         </div>
       )}
 

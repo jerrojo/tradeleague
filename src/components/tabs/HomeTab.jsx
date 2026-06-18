@@ -1,5 +1,5 @@
 import { Avatar, SectionHeader } from "../common";
-import { SignalRow } from "../SignalRow";
+import { SignalTable } from "../SignalTable";
 import { TraderSelector } from "../TraderSelector";
 import { Cpu, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -135,19 +135,13 @@ const HomeTab = () => {
         subtitle="Newest signals across all assets and what Robotín did with each"
         right={<span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, fontWeight: 800, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "2px 8px", borderRadius: 999, letterSpacing: "0.6px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green }} /> LIVE</span>}
       />
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {recentDecisions.map((s) => (
-          <SignalRow
-            key={s.id}
-            signal={s}
-            isOpen={open === s.id}
-            onToggle={() => setOpen(open === s.id ? null : s.id)}
-            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
-            lastClose={lastCloseByCoin[s.coin] ?? null}
-            showTime
-          />
-        ))}
-      </div>
+      <SignalTable
+        signals={recentDecisions}
+        openId={open}
+        onToggle={(id) => setOpen(open === id ? null : id)}
+        onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+        lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+      />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import {
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { StatCard } from "../common";
-import { TradeDetail } from "../TradeDetail";
+import { SignalTable } from "../SignalTable";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
@@ -150,7 +150,14 @@ const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
 
 const ExecutionAudit = () => {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [openIds, setOpenIds] = useState(() => new Set());
+  const [openId, setOpenId] = useState(null);
+
+  // latest close per coin → lets the table read unrealized P&L on active executions
+  const lastCloseByCoin = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
+    return m;
+  }, []);
 
   // filters
   const [asset, setAsset] = useState("All");
@@ -290,15 +297,6 @@ const ExecutionAudit = () => {
     return list;
   }, [executed, asset, dir, auditStatus, match, sort, dateStart, dateEnd]);
 
-  const toggleRow = (id) =>
-    setOpenIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  const expandAll = () => setOpenIds(new Set(filtered.map((s) => s.id)));
-  const collapseAll = () => setOpenIds(new Set());
-
   const btnStyle = {
     display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 7,
     border: `1px solid ${C.border}`, backgroundColor: C.cardElev, color: C.textMuted,
@@ -314,9 +312,9 @@ const ExecutionAudit = () => {
             <Shield size={20} color={C.purple} />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.4px" }}>Execution Audit</div>
+            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.4px" }}>Executions</div>
             <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2, maxWidth: 560 }}>
-              Detailed monitoring of order fills, slippage, fees, and real vs. theoretical net PNL.
+              The bot's executed-trade journal &amp; audit — order fills, fees, slippage and real vs. theoretical net PNL.
             </div>
           </div>
         </div>
@@ -441,78 +439,19 @@ const ExecutionAudit = () => {
         </div>
       </div>
 
-      {/* ─────────── 6) OPERATION DETAILS ─────────── */}
+      {/* ─────────── 6) OPERATION DETAILS — dense executions journal ─────────── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>Operation Details</span>
-            <span style={{ fontSize: 11, color: C.textMuted }}>{filtered.length} signals</span>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={expandAll} style={btnStyle}><ChevronDown size={13} /> Expand all</button>
-            <button onClick={collapseAll} style={btnStyle}><TrendingDown size={13} /> Collapse all</button>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>Operation Details</span>
+          <span style={{ fontSize: 11, color: C.textMuted }}>{filtered.length} signals · click a row for the full audit</span>
         </div>
-
-        {filtered.map((s) => {
-          const a = s.audit;
-          const isOpen = openIds.has(s.id);
-          const dirColor = s.dir === "LONG" ? C.green : C.red;
-          const exitTime = s.exitTime;
-          const netPnlDisplay = a.isClosed ? usd(s.pnl) : a.isOpen ? "Open" : "—";
-          const netPnlColor = a.isClosed ? (s.pnl >= 0 ? C.green : C.red) : a.isOpen ? C.blue : C.textFaint;
-          return (
-            <div key={s.id} className="card-hover" style={{ ...cardStyle, padding: 0, overflow: "hidden", borderLeft: `3px solid ${dirColor}` }}>
-              <button
-                onClick={() => toggleRow(s.id)}
-                style={{ width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: "12px 14px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}
-              >
-                {/* left: coin + meta */}
-                <div style={{ flex: 1, minWidth: 220 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.3px", color: C.text }}>{s.coin}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: C.textMuted }}>/USDT</span>
-                    <span style={{ fontSize: 9, fontWeight: 900, color: dirColor, backgroundColor: `${dirColor}18`, border: `1px solid ${dirColor}40`, padding: "1px 8px", borderRadius: 999, letterSpacing: "0.5px" }}>{s.dir}</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: C.textMuted, marginTop: 4, ...mono, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span>{fmtTime(s.time)}</span>
-                    <span style={{ color: C.textFaint }}>·</span>
-                    <span>{fmtTime(exitTime)}</span>
-                  </div>
-                  <div style={{ fontSize: 10, marginTop: 3, ...mono }}>
-                    <span style={{ color: C.textMuted }}>EP: </span><span style={{ color: C.text, fontWeight: 700 }}>{fmtPx(s.entry)}</span>
-                    <span style={{ color: C.textFaint }}> · </span>
-                    <span style={{ color: C.textMuted }}>SL: </span><span style={{ color: C.red, fontWeight: 700 }}>{fmtPx(s.sl)}</span>
-                    <span style={{ color: C.textFaint }}> · </span>
-                    <span style={{ color: C.textMuted }}>TP: </span><span style={{ color: C.green, fontWeight: 700 }}>{fmtPx(s.tp1)}</span>
-                  </div>
-                </div>
-
-                {/* right: four stacked stats */}
-                <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-                  <RowStat label="Signal Status" value={a.signalStatus.label} color={a.signalStatus.color} />
-                  <RowStat label="Audit Status" value={a.auditLabel} color={a.auditColor} />
-                  <RowStat label="Match" value={a.matchLabel} color={a.matchColor} />
-                  <RowStat label="Net PNL" value={netPnlDisplay} color={netPnlColor} />
-                </div>
-
-                <ChevronDown size={16} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-              </button>
-
-              {isOpen && (
-                <div style={{ borderTop: `1px solid ${C.border}`, padding: 14 }}>
-                  <TradeDetail trade={s} />
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div style={{ ...cardStyle, color: C.textMuted, fontSize: 12, textAlign: "center", padding: "24px" }}>
-            No operations match the current filters.
-          </div>
-        )}
+        <SignalTable
+          signals={filtered}
+          openId={openId}
+          onToggle={(id) => setOpenId(openId === id ? null : id)}
+          lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+          audit
+        />
       </div>
     </div>
   );
