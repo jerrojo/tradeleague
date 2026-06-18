@@ -3,10 +3,10 @@ import {
   Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, Award, ChevronDown, Clock, Cpu, Flame, Percent, Scale,
-  Target, TrendingDown, TrendingUp, Wallet,
+  Activity, Cpu, Flame, ListChecks, Percent, Scale,
+  TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { InfoTip, StatCard } from "../common";
+import { InfoTip, SectionHeader, StatCard } from "../common";
 import { SignalRow } from "../SignalRow";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
@@ -292,11 +292,12 @@ const RobotinWallet = () => {
       </div>
 
       {/* ── Executed Trades list ── */}
+      <SectionHeader
+        icon={ListChecks}
+        title="Executed trades"
+        subtitle={`${data.trades.length} trades · ${data.active.length} active · ${data.closed.length} closed · click a row for Robotín's reasoning & audit`}
+      />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ fontSize: "13px", fontWeight: "700" }}>Executed Trades</div>
-          <div style={{ fontSize: "10px", color: C.textMuted }}>{data.trades.length} trades · click a row for Robotín's reasoning &amp; audit</div>
-        </div>
 
         {data.trades.map((s) => (
           <SignalRow

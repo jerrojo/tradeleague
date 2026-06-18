@@ -124,11 +124,11 @@ const SignalRow = ({ signal: s, isOpen, onToggle, onTrader, showTime = false, la
         {/* Avatar */}
         <Avatar name={s.trader} size={30} />
 
-        {/* Instrument: coin/pair + direction pill */}
+        {/* Instrument: coin / quote + direction pill */}
         <div style={COL.instrument}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
             <span style={{ fontSize: 13, fontWeight: 800, color: C.text }}>{s.coin}</span>
-            <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{s.pair || "USDT"}</span>
+            <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>/{s.pair && s.pair.includes("/") ? s.pair.split("/")[1] : (s.pair || "USDT")}</span>
           </div>
           <span style={{ display: "inline-block", marginTop: 4, fontSize: 9, fontWeight: 800, color: dirColor, backgroundColor: `${dirColor}18`, padding: "1px 6px", borderRadius: 3, letterSpacing: "0.3px" }}>{s.dir}</span>
         </div>

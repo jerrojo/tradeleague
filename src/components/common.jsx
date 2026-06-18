@@ -26,6 +26,21 @@ const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
 
 const Tag = ({ text, color = C.purple }) => <span style={pillStyle(color)}>{text}</span>;
 
+/* ── SectionHeader — ONE pattern for every section title across the app
+   (icon · title · subtitle on the left, optional controls on the right). Keeps
+   typographic hierarchy and spacing identical everywhere a section begins. ── */
+const SectionHeader = ({ icon: Icon, title, subtitle, right, color = C.purple }) => (
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "14px", fontWeight: 800, letterSpacing: "-0.2px", color: C.text }}>
+        {Icon ? <Icon size={15} color={color} /> : null}{title}
+      </div>
+      {subtitle && <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px" }}>{subtitle}</div>}
+    </div>
+    {right != null && <div style={{ flexShrink: 0 }}>{right}</div>}
+  </div>
+);
+
 /* ── InfoTip: hover tooltip explaining jargon in plain language ── */
 const GLOSSARY = {
   // SMC Analysis
@@ -284,6 +299,7 @@ export {
   AnimatedValue,
   Avatar,
   StatCard,
+  SectionHeader,
   Tag,
   GLOSSARY,
   InfoTip,

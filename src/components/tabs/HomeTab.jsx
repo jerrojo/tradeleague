@@ -1,8 +1,9 @@
-import { Avatar, BotTag } from "../common";
+import { Avatar, SectionHeader } from "../common";
+import { SignalRow } from "../SignalRow";
 import { TraderSelector } from "../TraderSelector";
-import { Check, Cpu, Trophy, X } from "lucide-react";
+import { Cpu, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { TraderLink, useProfile } from "../../contexts";
+import { useProfile } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
@@ -36,12 +37,20 @@ const HomeTab = () => {
     return m;
   });
   const watchedNames = Object.keys(watching).filter(k => watching[k]);
+  const [open, setOpen] = useState(null); // expanded decision id
 
   // Latest Robotín decisions — the useful signal feed (approved/rejected), not social bait
   const recentDecisions = useMemo(() => ROBOTIN_COINS
     .flatMap(c => coinSignals(c, coinCandles(c)))
     .sort((a, b) => b.time - a.time)
     .slice(0, 6), []);
+
+  // Latest close per coin — lets SignalRow read unrealized P&L on active decisions
+  const lastCloseByCoin = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
+    return m;
+  }, []);
 
   const leader = useMemo(() => {
     const last = traderEquity[traderEquity.length - 1];
@@ -119,30 +128,25 @@ const HomeTab = () => {
         </div>
       </div>
 
-      {/* Latest Robotín decisions — approved/rejected signal feed (the useful signal, not social bait) */}
-      <div style={{ ...cardStyle, padding: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
-          <Cpu size={12} color={C.purple} />
-          <span style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>Latest Robotín decisions</span>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", marginLeft: "4px" }} />
-          <span style={{ fontSize: "8px", color: C.green, fontWeight: "600" }}>LIVE</span>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "6px" }}>
-          {recentDecisions.map((s) => (
-            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", backgroundColor: "transparent", borderRadius: "6px", border: `1px solid ${C.border}`, fontSize: "11px" }}>
-              <Avatar name={s.trader} size={22} />
-              <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                <TraderLink name={s.trader}><span style={{ fontWeight: "700" }}>{s.trader}</span></TraderLink>
-                <BotTag isBot={s.isBot} size={12} />
-                <span style={{ fontWeight: "800", color: s.dir === "LONG" ? C.green : C.red, ...mono }}>{s.dir}</span>
-                <span style={{ fontWeight: "700", ...mono }}>{s.coin}</span>
-              </div>
-              {s.approved
-                ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 800, color: C.green, ...mono }}><Check size={11} />{s.confidence}%</span>
-                : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 800, color: C.textFaint }}><X size={11} />Rejected</span>}
-            </div>
-          ))}
-        </div>
+      {/* Latest Robotín decisions — same canonical SignalRow used everywhere */}
+      <SectionHeader
+        icon={Cpu}
+        title="Latest Robotín decisions"
+        subtitle="Newest signals across all assets and what Robotín did with each"
+        right={<span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, fontWeight: 800, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "2px 8px", borderRadius: 999, letterSpacing: "0.6px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green }} /> LIVE</span>}
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {recentDecisions.map((s) => (
+          <SignalRow
+            key={s.id}
+            signal={s}
+            isOpen={open === s.id}
+            onToggle={() => setOpen(open === s.id ? null : s.id)}
+            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+            lastClose={lastCloseByCoin[s.coin] ?? null}
+            showTime
+          />
+        ))}
       </div>
     </div>
   );

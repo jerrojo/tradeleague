@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { CandlestickChart, LineChart } from "lucide-react";
+import { CandlestickChart, LineChart, ListChecks } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
 import { SignalRow } from "../SignalRow";
+import { SectionHeader } from "../common";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
@@ -85,6 +86,11 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
       </div>
 
       {/* Signals / Trades list */}
+      <SectionHeader
+        icon={ListChecks}
+        title={onlyTrades ? "Executed trades" : "Signals & executions"}
+        subtitle={`${coin}/USDT · ${onlyTrades ? `${approved} executed` : `${visibleList.length} signals · ${approved} approved`} · click a row for full detail`}
+      />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {visibleList.length === 0 && (
           <div style={{ ...cardStyle, textAlign: "center", padding: "32px", color: C.textMuted }}>
