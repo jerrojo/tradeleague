@@ -16,7 +16,7 @@ import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
      realized (gross of accounting) = pnl + fees   →   net pnl = pnl
      per-trade fee ~ $0.1–0.4, derived deterministically from the trade id. */
 
-const STARTING_BALANCE = 1000;
+const STARTING_BALANCE = 50000;
 
 /* ── formatting (mirrors TradeDetail) ── */
 const fmtPx = (p) => {

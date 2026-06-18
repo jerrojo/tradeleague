@@ -20,7 +20,7 @@ const INITIAL_CAPITAL_PER_TRADER = 10000;
 const PortfolioTab = () => {
   const [overlay, setOverlay] = useState({});
   const [ddScope, setDdScope] = useState("System");
-  const [leveraged, setLeveraged] = useState(true);   // ROI apalancado vs ROI normal (metrics catalog)
+  const [leveraged, setLeveraged] = useState(false);  // default to un-leveraged ROI (credible headline; toggle exposes leverage)
   const [granularity, setGranularity] = useState("daily"); // time as a combinable axis
 
   /* ── Aggregate every trade from every trader (single source: Vista D schema) ── */
@@ -53,7 +53,7 @@ const PortfolioTab = () => {
     const grossLoss = Math.abs(allTrades.filter(t => t.pnl < 0).reduce((a, t) => a + t.pnl, 0));
     const profitFactor = grossLoss > 0 ? grossWin / grossLoss : Infinity;
     const expectancyR = allTrades.reduce((a, t) => a + t.rMultiple, 0) / Math.max(1, allTrades.length);
-    const totalTrades = mockTraders.reduce((a, t) => a + t.trades, 0);
+    const totalTrades = allTrades.length;
     const sharpe = mockTraders.reduce((a, t) => a + (t.sharpe || 0) * t.trades, 0) / Math.max(1, totalTrades);
     // Real fund drawdown from the per-trade equity path (the aggregate daily curve barely
     // dips because traders' drawdowns happen at different times and net out).
@@ -145,8 +145,8 @@ const PortfolioTab = () => {
       {/* Title + global export */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
         <div>
-          <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund / System Performance</div>
-          <div style={{ fontSize: "11px", color: C.textMuted }}>Aggregated across {mockTraders.length} traders · {allTrades.length} trades · {allTrades.filter(t => !t.setupTag).length} unlabeled</div>
+          <div style={{ fontSize: "15px", fontWeight: "800" }}>Signal-Provider Performance</div>
+          <div style={{ fontSize: "11px", color: C.textMuted }}>Raw edge of the {mockTraders.length} traders feeding Robotín — before the filter. Robotín's executed results live in Wallet &amp; Audit. · {allTrades.length} trades · {allTrades.filter(t => !t.setupTag).length} unlabeled</div>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
           <button onClick={() => exportTrades(allTrades, { name: "tradethlon-fund", format: "csv" })}
@@ -206,7 +206,7 @@ const PortfolioTab = () => {
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <div style={{ fontSize: "13px", fontWeight: "600" }}>Fund Equity Curve — % return on initial capital</div>
+            <div style={{ fontSize: "13px", fontWeight: "600" }}>Signal-Provider Equity Curve — % return on initial capital</div>
             <div style={{ display: "flex", gap: "3px" }}>
               {[["daily", "D"], ["weekly", "W"], ["monthly", "M"], ["quarterly", "Q"]].map(([g, label]) => (
                 <button key={g} onClick={() => setGranularity(g)} title={`${g} buckets`} style={{
