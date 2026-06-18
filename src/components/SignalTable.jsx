@@ -88,7 +88,8 @@ const SignalTable = ({
               const cr = isClosed ? closedResult(s) : null;
               const lc = lastCloseFor ? lastCloseFor(s) : null;
               const ur = s.status === "active" && lc != null ? unrealized(s, lc) : null;
-              const fee = audit ? (Math.round((0.1 + ((s.id || 0) % 30) / 30 * 0.3 + (s.confidence || 0) / 1000) * 100) / 100) : 0;
+              const feeSeed = String(s.id ?? s.coin ?? "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+              const fee = audit ? Math.round((0.1 + (feeSeed % 30) / 30 * 0.3) * 100) / 100 : 0;
               return (
                 <Fragment key={s.id}>
                   <tr className="hoverable" onClick={() => onToggle(s.id)}
