@@ -6,9 +6,11 @@ import {
   Activity, Award, ChevronDown, Clock, Cpu, Flame, Percent, Scale,
   Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { Avatar, BotTag, InfoTip, StatCard } from "../common";
-import { TradeDetail } from "../TradeDetail";
+import { InfoTip, StatCard } from "../common";
+import { SignalRow } from "../SignalRow";
+import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: ROBOTÍN WALLET (trade journal, simulated) ═══════════════════════
@@ -22,18 +24,16 @@ const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString(
 const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usdPlain = (v) => `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
-/* Status → label + color (mirrors RobotinSignals STATUS map) */
-const STATUS = {
-  pending: { label: "Pending", color: C.amber },
-  active: { label: "Active", color: C.blue },
-  closed_TP: { label: "Take Profit", color: C.green },
-  closed_SL: { label: "Stop Loss", color: C.red },
-  expired: { label: "No entry", color: C.textFaint },
-};
-const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
-
 const RobotinWallet = () => {
+  const { openProfile } = useProfile();
   const [open, setOpen] = useState(null); // expanded trade id
+
+  /* Latest close per coin — lets SignalRow read the unrealized P&L on active trades */
+  const lastCloseByCoin = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
+    return m;
+  }, []);
 
   /* ── Every approved signal across all coins = Robotín's executed trades ── */
   const data = useMemo(() => {
@@ -298,51 +298,16 @@ const RobotinWallet = () => {
           <div style={{ fontSize: "10px", color: C.textMuted }}>{data.trades.length} trades · click a row for Robotín's reasoning &amp; audit</div>
         </div>
 
-        {data.trades.map((s) => {
-          const st = STATUS[statusKey(s)] || STATUS.pending;
-          const isOpen = open === s.id;
-          return (
-            <div key={s.id} className="card-hover" style={{ ...cardStyle, padding: 0, overflow: "hidden", borderLeft: `3px solid ${s.dir === "LONG" ? C.green : C.red}` }}>
-              <button onClick={() => setOpen(isOpen ? null : s.id)} style={{ width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-                {/* Coin / pair + dir */}
-                <div style={{ minWidth: 120 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800 }}>{s.coin}</span>
-                    <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{s.pair}</span>
-                  </div>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: s.dir === "LONG" ? C.green : C.red, backgroundColor: `${s.dir === "LONG" ? C.green : C.red}18`, padding: "1px 6px", borderRadius: 3 }}>{s.dir}</span>
-                </div>
-                {/* Trader */}
-                <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  <Avatar name={s.trader} size={26} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.trader}</span>
-                    <BotTag isBot={s.isBot} size={14} />
-                  </div>
-                </div>
-                {/* Robotín confidence */}
-                <div style={{ textAlign: "center", minWidth: 78 }}>
-                  <div style={{ fontSize: 8, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}><Cpu size={9} /> Robotín</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: s.confidence >= 75 ? C.green : C.amber, ...mono }}>{s.confidence}%</div>
-                </div>
-                {/* Status + pnl */}
-                <div style={{ textAlign: "right", minWidth: 96 }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: st.color }}>
-                    {s.status === "pending" ? <Clock size={11} /> : s.status === "active" ? <Activity size={11} /> : null}{st.label}
-                  </div>
-                  {s.status === "closed" && <div style={{ fontSize: 12, fontWeight: 800, color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(s.pnl)}</div>}
-                </div>
-                <ChevronDown size={16} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-              </button>
-
-              {isOpen && (
-                <div style={{ borderTop: `1px solid ${C.border}`, padding: "14px" }}>
-                  <TradeDetail trade={s} />
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {data.trades.map((s) => (
+          <SignalRow
+            key={s.id}
+            signal={s}
+            isOpen={open === s.id}
+            onToggle={() => setOpen(open === s.id ? null : s.id)}
+            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+            lastClose={lastCloseByCoin[s.coin] ?? null}
+          />
+        ))}
       </div>
     </div>
   );

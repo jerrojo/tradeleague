@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { CandlestickChart, LineChart, Check, X, Clock, Activity, ChevronDown, Cpu } from "lucide-react";
+import { CandlestickChart, LineChart } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
-import { TradeDetail } from "../TradeDetail";
-import { Avatar, BotTag } from "../common";
+import { SignalRow } from "../SignalRow";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
-import { C, cardStyle, mono } from "../../theme";
+import { C, cardStyle } from "../../theme";
 
 const fmt = (p) => {
   if (p == null) return "—";
@@ -17,17 +16,6 @@ const fmt = (p) => {
   if (a >= 0.0001) return p.toFixed(6);
   return p.toPrecision(3);
 };
-
-/* Status → label + color */
-const STATUS = {
-  pending: { label: "Pending", color: C.amber },
-  active: { label: "Active", color: C.blue },
-  closed_TP: { label: "Take Profit", color: C.green },
-  closed_SL: { label: "Stop Loss", color: C.red },
-  expired: { label: "No entry", color: C.textFaint },
-  rejected: { label: "Rejected", color: C.textFaint },
-};
-const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 
 const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false } = {}) => {
   const { openProfile } = useProfile();
@@ -104,57 +92,17 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
             <div style={{ fontSize: 11 }}>{onlyTrades ? "Robotín hasn't approved and executed any signal on this asset in the current window." : "No trader has published a signal on this asset in the current window."}</div>
           </div>
         )}
-        {visibleList.map((s) => {
-          const st = STATUS[statusKey(s)] || STATUS.pending;
-          const isOpen = open === s.id;
-          return (
-            <div key={s.id} className="card-hover" style={{ ...cardStyle, padding: 0, overflow: "hidden", borderLeft: `3px solid ${s.dir === "LONG" ? C.green : C.red}` }}>
-              <button onClick={() => setOpen(isOpen ? null : s.id)} style={{ width: "100%", textAlign: "left", background: "transparent", border: "none", cursor: "pointer", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-                <Avatar name={s.trader} size={30} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{s.trader}</span>
-                    <BotTag isBot={s.isBot} size={14} />
-                    <span style={{ fontSize: 9, fontWeight: 800, color: s.dir === "LONG" ? C.green : C.red, backgroundColor: `${s.dir === "LONG" ? C.green : C.red}18`, padding: "1px 6px", borderRadius: 3 }}>{s.dir}</span>
-                    <span style={{ fontSize: 9, color: C.purple, ...mono }}>{s.tag.split("_").slice(0, 3).join("·")}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 12, fontSize: 10, color: C.textMuted, ...mono, marginTop: 3 }}>
-                    <span>Entry <b style={{ color: C.text }}>{fmt(s.entry)}</b></span>
-                    <span>TP <b style={{ color: C.green }}>{fmt(s.tp1)}</b></span>
-                    <span>SL <b style={{ color: C.red }}>{fmt(s.sl)}</b></span>
-                  </div>
-                </div>
-                {/* Robotín decision */}
-                <div style={{ textAlign: "center", minWidth: 92 }}>
-                  <div style={{ fontSize: 8, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}><Cpu size={9} /> Robotín</div>
-                  {s.approved
-                    ? <div style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 800, color: C.green }}><Check size={12} /> {s.confidence}%</div>
-                    : <div style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 800, color: C.textFaint }}><X size={12} /> Rejected</div>}
-                </div>
-                {/* Status */}
-                <div style={{ textAlign: "right", minWidth: 90 }}>
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: st.color }}>
-                    {s.status === "pending" ? <Clock size={11} /> : s.status === "active" ? <Activity size={11} /> : null}{st.label}
-                  </div>
-                  {s.status === "closed" && <div style={{ fontSize: 12, fontWeight: 800, color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{s.pnl >= 0 ? "+" : ""}${Math.abs(s.pnl).toFixed(2)}</div>}
-                </div>
-                <ChevronDown size={16} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-              </button>
-
-              {isOpen && (
-                <div style={{ borderTop: `1px solid ${C.border}`, padding: "14px" }}>
-                  {!s.approved && (
-                    <div style={{ marginBottom: 12, fontSize: 12, color: C.red, display: "flex", alignItems: "center", gap: 6 }}>
-                      <X size={13} /> Robotín rejected this signal — {s.rejectReason}. Not executed.
-                    </div>
-                  )}
-                  <TradeDetail trade={s} candles={candles} />
-                  <button onClick={() => { const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }} style={{ marginTop: 10, fontSize: 11, color: C.purple, background: "none", border: "none", cursor: "pointer", padding: 0 }}>View {s.trader}'s profile →</button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {visibleList.map((s) => (
+          <SignalRow
+            key={s.id}
+            signal={s}
+            isOpen={open === s.id}
+            onToggle={() => setOpen(open === s.id ? null : s.id)}
+            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+            lastClose={candles.length ? candles[candles.length - 1].close : null}
+            candles={candles}
+          />
+        ))}
       </div>
     </div>
   );

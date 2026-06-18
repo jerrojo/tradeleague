@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { Activity, Check, X, Clock, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
-import { TradeDetail } from "../TradeDetail";
-import { Avatar, BotTag } from "../common";
+import { ChevronDown } from "lucide-react";
+import { SignalRow } from "../SignalRow";
 import { useProfile, useWatchlist } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
@@ -9,59 +8,8 @@ import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ ACTIVITY FEED ═══════════════════════
    The GLOBAL LIVE TAPE of Robotín's signal → trade lifecycle across ALL coins.
-   One chronological stream (newest first), terminal-style, scannable. Distinct
-   from the per-coin Robotín view: this is every asset, the platform's heartbeat. */
-
-/* ── status → label + color + icon (mirrors the per-coin view's vocabulary) ── */
-const STATUS = {
-  pending: { label: "Pending", color: C.amber, Icon: Clock },
-  active: { label: "Active", color: C.blue, Icon: Activity },
-  closed_TP: { label: "Take Profit", color: C.green, Icon: null },
-  closed_SL: { label: "Stop Loss", color: C.red, Icon: null },
-  expired: { label: "No entry", color: C.textFaint, Icon: null },
-  rejected: { label: "Rejected", color: C.textFaint, Icon: null },
-};
-const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
-
-/* ── relative timestamp from unix seconds (deterministic vs Date.now()) ── */
-const relTime = (sec) => {
-  const diff = Math.max(0, Math.floor(Date.now() / 1000) - sec);
-  if (diff < 60) return `${diff}s`;
-  const m = Math.floor(diff / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  const w = Math.floor(d / 7);
-  return `${w}w`;
-};
-
-/* ── format a candle-count duration (1h candles) into "14h" / "2.1d" ── */
-const fmtDuration = (candles) => {
-  const h = Math.max(0, Math.round(candles));
-  if (h < 24) return `${h}h`;
-  const d = h / 24;
-  return `${d < 10 ? d.toFixed(1) : Math.round(d)}d`;
-};
-
-/* ── realized R multiple + duration for a CLOSED signal ── */
-const closedResult = (s) => {
-  const sign = s.dir === "LONG" ? 1 : -1;
-  const exit = s.exit ?? (s.hit === "TP" ? s.tp1 : s.sl);
-  const risk = s.entry - s.sl; // signed by direction (long: +, short: −)
-  const r = risk !== 0 ? (sign * (exit - s.entry)) / Math.abs(risk) : 0;
-  const dur = s.exitIdx != null && s.entryIdx != null ? s.exitIdx - s.entryIdx : null;
-  return { r, dur };
-};
-
-/* ── unrealized read for an ACTIVE signal vs latest candle close ── */
-const unrealized = (s, lastClose) => {
-  const sign = s.dir === "LONG" ? 1 : -1;
-  const distPct = sign * ((lastClose - s.entry) / s.entry) * 100;
-  const toTpPct = Math.abs(((s.tp1 - s.entry) / s.entry) * 100);
-  return { distPct, toTpPct };
-};
+   One chronological stream (newest first), scannable. Rows render through the
+   shared SignalRow so the tape matches Markets and the Wallet exactly. */
 
 /* ── filter chip definitions (id, label, predicate) ── */
 const CHIPS = [
@@ -195,111 +143,17 @@ const ActivityFeed = () => {
           </div>
         )}
 
-        {visible.map((s) => {
-          const st = STATUS[statusKey(s)] || STATUS.pending;
-          const isOpen = open === s.id;
-          const isLong = s.dir === "LONG";
-          const dirColor = isLong ? C.green : C.red;
-          const DirIcon = isLong ? TrendingUp : TrendingDown;
-          return (
-            <div key={s.id} className="card-hover" style={{ ...cardStyle, padding: 0, overflow: "hidden", borderLeft: `3px solid ${s.approved ? dirColor : C.textFaint}` }}>
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => setOpen(isOpen ? null : s.id)}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(isOpen ? null : s.id); } }}
-                style={{ width: "100%", cursor: "pointer", padding: "10px 13px", display: "flex", alignItems: "center", gap: 11 }}
-              >
-                {/* actor */}
-                <Avatar name={s.trader} size={28} />
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  <span
-                    onClick={(e) => { e.stopPropagation(); const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }}
-                    style={{ fontSize: 12.5, fontWeight: 700, color: C.text, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40` }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = C.purple; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = C.text; }}
-                  >{s.trader}</span>
-                  <BotTag isBot={s.isBot} size={14} />
-                </div>
-
-                {/* event line — dense, institutional: DIR · COIN · setup tag */}
-                <div style={{ flex: 1, minWidth: 0, fontSize: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: dirColor, ...mono }}>
-                    <DirIcon size={12} />{s.dir}
-                  </span>
-                  <span style={{ fontWeight: 800, color: C.text, ...mono }}>{s.coin}</span>
-                  {s.tag && <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...mono }}>{s.tag.split("_").slice(0, 3).join("·")}</span>}
-                </div>
-
-                {/* Robotín verdict */}
-                <div style={{ flexShrink: 0 }}>
-                  {s.approved
-                    ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 800, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "2px 8px", borderRadius: 5, ...mono }}><Check size={11} /> {s.confidence}%</span>
-                    : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 800, color: C.textFaint, backgroundColor: `${C.textFaint}14`, border: `1px solid ${C.textFaint}40`, padding: "2px 8px", borderRadius: 5 }}><X size={11} /> Rejected</span>}
-                </div>
-
-                {/* status pill */}
-                <div style={{ flexShrink: 0, minWidth: 96, textAlign: "right" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: st.color }}>
-                    {st.Icon ? <st.Icon size={11} /> : null}{st.label}
-                  </span>
-                </div>
-
-                {/* right zone: realized result (closed) · unrealized (active) · awaiting (pending) */}
-                <div style={{ flexShrink: 0, minWidth: 116, textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-                  {(() => {
-                    if (s.status === "closed") {
-                      const { r, dur } = closedResult(s);
-                      const pos = (s.pnl ?? 0) >= 0;
-                      return (
-                        <>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: pos ? C.green : C.red, ...mono }}>{pos ? "+" : "−"}${Math.abs(s.pnl ?? 0).toFixed(2)}</span>
-                          <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>
-                            {`${r >= 0 ? "+" : ""}${r.toFixed(1)}R`}{dur != null ? ` · ${fmtDuration(dur)}` : ""}
-                          </span>
-                        </>
-                      );
-                    }
-                    if (s.status === "active") {
-                      const lc = lastClose(s.coin);
-                      if (lc == null) return <span style={{ fontSize: 11, color: C.textFaint, ...mono }}>—</span>;
-                      const { distPct, toTpPct } = unrealized(s, lc);
-                      const pos = distPct >= 0;
-                      return (
-                        <>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: pos ? C.green : C.red, ...mono }}>{`${pos ? "+" : "−"}${Math.abs(distPct).toFixed(1)}%`}</span>
-                          <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>{`to TP ${toTpPct.toFixed(1)}%`}</span>
-                        </>
-                      );
-                    }
-                    if (s.status === "pending") {
-                      return <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>awaiting entry</span>;
-                    }
-                    return <span style={{ fontSize: 11, color: C.textFaint, ...mono }}>—</span>;
-                  })()}
-                </div>
-
-                {/* relative time + chevron */}
-                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 7 }}>
-                  <span title={new Date(s.time * 1000).toLocaleString()} style={{ fontSize: 11, color: C.textFaint, ...mono, minWidth: 28, textAlign: "right" }}>{relTime(s.time)}</span>
-                  <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                </div>
-              </div>
-
-              {isOpen && (
-                <div style={{ borderTop: `1px solid ${C.border}`, padding: 14 }}>
-                  {!s.approved && (
-                    <div style={{ marginBottom: 12, fontSize: 12, color: C.red, display: "flex", alignItems: "center", gap: 6 }}>
-                      <X size={13} /> Robotín rejected this signal — {s.rejectReason}. Not executed.
-                    </div>
-                  )}
-                  <TradeDetail trade={s} />
-                  <button onClick={() => { const tr = mockTraders.find((x) => x.name === s.trader); if (tr) openProfile(tr); }} style={{ marginTop: 10, fontSize: 11, color: C.purple, background: "none", border: "none", cursor: "pointer", padding: 0 }}>View {s.trader}'s profile →</button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {visible.map((s) => (
+          <SignalRow
+            key={s.id}
+            signal={s}
+            isOpen={open === s.id}
+            onToggle={() => setOpen(open === s.id ? null : s.id)}
+            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+            lastClose={lastClose(s.coin)}
+            showTime
+          />
+        ))}
       </div>
     </div>
   );
