@@ -21,6 +21,15 @@ body {
   width: 100%;
 }
 
+/* Form/control elements reset their text color to a UA default (often black) and
+   do NOT inherit from <body>. Force inheritance so any text inside a button/input
+   that forgets an explicit color stays light instead of rendering black. This is
+   the real fix for "black text inside buttons" across the app. */
+button, input, select, textarea, optgroup {
+  color: inherit;
+  font-family: inherit;
+}
+
 /* ── Accessibility: visible keyboard focus (LukeW/WCAG) without mouse-click rings ── */
 :focus-visible {
   outline: 2px solid #8b5cf6;

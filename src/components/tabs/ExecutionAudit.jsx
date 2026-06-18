@@ -470,7 +470,7 @@ const ExecutionAudit = () => {
                 {/* left: coin + meta */}
                 <div style={{ flex: 1, minWidth: 220 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.3px" }}>{s.coin}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.3px", color: C.text }}>{s.coin}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, color: C.textMuted }}>/USDT</span>
                     <span style={{ fontSize: 9, fontWeight: 900, color: dirColor, backgroundColor: `${dirColor}18`, border: `1px solid ${dirColor}40`, padding: "1px 8px", borderRadius: 999, letterSpacing: "0.5px" }}>{s.dir}</span>
                   </div>

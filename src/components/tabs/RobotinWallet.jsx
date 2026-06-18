@@ -124,6 +124,20 @@ const RobotinWallet = () => {
   const tooltipStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" };
   const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
 
+  /* Clean, evenly-spaced axes (round $5k Y steps, every-20 X ticks) + a fixed
+     Y-axis width so the balance curve and the drawdown strip line up exactly. */
+  const Y_STEP = 5000, AXIS_W = 52;
+  const yTicks = (() => {
+    const vals = data.equity.flatMap((e) => [e.balance, e.btc]).filter((v) => v != null);
+    const lo = Math.floor(Math.min(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
+    const hi = Math.ceil(Math.max(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
+    const out = []; for (let v = lo; v <= hi; v += Y_STEP) out.push(v); return out;
+  })();
+  const xTicks = (() => {
+    const out = []; const max = (data.equity.length || 1) - 1;
+    for (let v = 0; v <= max; v += 20) out.push(v); return out;
+  })();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* ── Header ── */}
@@ -205,8 +219,8 @@ const RobotinWallet = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-              <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} tickFormatter={(v) => `#${v}`} />
-              <YAxis stroke={C.textMuted} fontSize={10} domain={["auto", "auto"]} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+              <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
+              <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
@@ -229,7 +243,7 @@ const RobotinWallet = () => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
               <XAxis dataKey="i" hide />
-              <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} tickFormatter={(v) => `${v}%`} width={34} />
+              <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} tickFormatter={(v) => `${v}%`} width={AXIS_W} />
               <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
               <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#robotinDd)" dot={false} name="dd" isAnimationActive={false} />
             </AreaChart>

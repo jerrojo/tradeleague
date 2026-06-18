@@ -164,6 +164,20 @@ const FundOverview = () => {
 
   const tooltipStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" };
 
+  /* Clean, evenly-spaced axes: round $5k steps on Y, every-20 ticks on X.
+     A fixed Y-axis width keeps the equity curve and the drawdown strip aligned. */
+  const Y_STEP = 5000, AXIS_W = 52;
+  const yTicks = (() => {
+    const vals = data.equity.flatMap((e) => [e.fund, e.btc]).filter((v) => v != null);
+    const lo = Math.floor(Math.min(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
+    const hi = Math.ceil(Math.max(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
+    const out = []; for (let v = lo; v <= hi; v += Y_STEP) out.push(v); return out;
+  })();
+  const xTicks = (() => {
+    const out = []; const max = (data.equity.length || 1) - 1;
+    for (let v = 0; v <= max; v += 20) out.push(v); return out;
+  })();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* ── 1 · Title ── */}
@@ -239,8 +253,8 @@ const FundOverview = () => {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-            <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} tickFormatter={(v) => `#${v}`} />
-            <YAxis stroke={C.textMuted} fontSize={10} domain={["auto", "auto"]} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
+            <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
             <Tooltip
               contentStyle={tooltipStyle}
               labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
@@ -263,7 +277,7 @@ const FundOverview = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
             <XAxis dataKey="i" hide />
-            <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} width={38} tickFormatter={(v) => `${v}%`} />
+            <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} width={AXIS_W} tickFormatter={(v) => `${v}%`} />
             <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
             <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
           </ComposedChart>
@@ -326,7 +340,7 @@ const FundOverview = () => {
               cursor={{ fill: `${C.border}40` }}
               formatter={(v) => [usd(Number(v)), "P&L"]}
             />
-            <Bar dataKey="pnl" radius={[3, 3, 0, 0]} barSize={32} isAnimationActive={false}>
+            <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={54} isAnimationActive={false}>
               {data.monthly.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
             </Bar>
           </BarChart>
@@ -354,19 +368,18 @@ const FundOverview = () => {
           </div>
           <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
         </div>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data.rDist}>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data.rDist.filter((b) => b.count > 0)} barCategoryGap="22%">
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
-            <XAxis dataKey="label" stroke={C.textMuted} fontSize={10} />
+            <XAxis dataKey="label" stroke={C.textMuted} fontSize={11} />
             <YAxis stroke={C.textMuted} fontSize={10} allowDecimals={false} />
             <Tooltip
               contentStyle={tooltipStyle}
               cursor={{ fill: `${C.border}40` }}
               formatter={(v) => [`${v} trades`, "Count"]}
             />
-            <ReferenceLine x="−1…0R" stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.6} />
-            <Bar dataKey="count" radius={[3, 3, 0, 0]} barSize={38} isAnimationActive={false}>
-              {data.rDist.map((b, i) => <Cell key={i} fill={b.fill} />)}
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+              {data.rDist.filter((b) => b.count > 0).map((b, i) => <Cell key={i} fill={b.fill} />)}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
