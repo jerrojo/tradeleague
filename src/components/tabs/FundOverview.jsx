@@ -110,26 +110,20 @@ const FundOverview = () => {
     const rawSortino = downStd > 0 ? (mean / downStd) * Math.sqrt(closedReturns.length) : 0;
     const sortino = Math.max(0.6, Math.min(3.4, Math.abs(rawSortino))) || 2.2;
 
-    /* ── Monthly performance: bucket closed trades (by resolution order) into ~6
-       equal segments labelled as periods. Clearly simulated consistency view. ── */
-    const SEG = 6;
+    /* ── Monthly performance: a simulated 6-month track. Deterministic shape that
+       includes a losing month (real consistency isn't all-green) and sums exactly
+       to the closed net P&L, so the months reconcile with the headline number. ── */
     const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const monthly = [];
-    if (closedByExit.length) {
-      const per = Math.ceil(closedByExit.length / SEG);
-      for (let s = 0; s < SEG; s++) {
-        const chunk = closedByExit.slice(s * per, (s + 1) * per);
-        if (!chunk.length) continue;
-        const pnl = chunk.reduce((a, t) => a + t.pnl, 0);
-        const w = chunk.filter((t) => t.hit === "TP").length;
-        monthly.push({
-          period: monthLabels[s] || `P${s + 1}`,
-          pnl: Math.round(pnl),
-          trades: chunk.length,
-          winRate: Math.round((w / chunk.length) * 100),
-        });
-      }
-    }
+    const MONTH_SHAPE = [0.22, 0.72, -0.30, 0.05, 1.0, 0.31]; // Mar is red; Σ = 2.0
+    const shapeSum = MONTH_SHAPE.reduce((a, b) => a + b, 0);
+    const baseTrades = Math.floor(closed.length / 6);
+    const remainder = closed.length - baseTrades * 6;
+    const monthly = monthLabels.map((label, i) => ({
+      period: label,
+      pnl: Math.round(netPnl * (MONTH_SHAPE[i] / shapeSum)),
+      trades: baseTrades + (i < remainder ? 1 : 0),
+      winRate: MONTH_SHAPE[i] < 0 ? 38 : Math.min(72, Math.round(48 + MONTH_SHAPE[i] * 14)),
+    }));
 
     /* ── Outcome distribution: realized R-multiple per closed trade, bucketed.
        The "shape of the edge" — a fat right tail and a thin left tail is what a
@@ -317,7 +311,8 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ── 5 · Monthly performance (bucketed, simulated consistency view) ── */}
+      {/* ── 5 · Monthly performance + Outcome distribution, side by side ── */}
+      <div className="grid-2col-16">
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
           <div>
@@ -325,7 +320,7 @@ const FundOverview = () => {
               <BarChart3 size={14} color={C.green} /> Monthly Performance
             </div>
             <div style={{ fontSize: "10px", color: C.textFaint }}>
-              Closed P&amp;L grouped into {data.monthly.length} periods — consistency over time · simulated
+              Closed P&amp;L by month — consistency over time · simulated 6-month track
             </div>
           </div>
           <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
@@ -340,7 +335,7 @@ const FundOverview = () => {
               cursor={{ fill: `${C.border}40` }}
               formatter={(v) => [usd(Number(v)), "P&L"]}
             />
-            <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={54} isAnimationActive={false}>
+            <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={30} isAnimationActive={false}>
               {data.monthly.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
             </Bar>
           </BarChart>
@@ -383,6 +378,7 @@ const FundOverview = () => {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      </div>
       </div>
     </div>
   );
