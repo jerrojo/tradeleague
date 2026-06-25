@@ -44,9 +44,11 @@ const PositioningMap = ({ coin, currentPrice }) => {
   const total = positions.length;
   const longPct = Math.round((longs / total) * 100);
   const xOf = (pct) => 50 + Math.max(-RANGE, Math.min(RANGE, pct)) / RANGE * 46;
-  const leaning = netPct > 0.4 ? "Bullish" : netPct < -0.4 ? "Bearish" : "Balanced";
-  const leanColor = netPct > 0.4 ? C.green : netPct < -0.4 ? C.red : C.textMuted;
-  const LeanIcon = netPct > 0.4 ? TrendingUp : netPct < -0.4 ? TrendingDown : Minus;
+  const leanColor = netPct > 0.4 ? C.green : netPct < -0.4 ? C.red : C.textMuted; // weighted center-of-gravity marker
+  const shortPct = 100 - longPct;
+  const verdict = longPct >= 65 ? "Strongly long" : longPct >= 55 ? "Leaning long" : longPct > 45 ? "Balanced" : longPct > 35 ? "Leaning short" : "Strongly short";
+  const vColor = longPct > 55 ? C.green : longPct < 45 ? C.red : C.textMuted;
+  const VIcon = longPct > 55 ? TrendingUp : longPct < 45 ? TrendingDown : Minus;
   const fmtPrice = (p) => (p < 1 ? `$${p.toFixed(4)}` : `$${Math.round(p).toLocaleString()}`);
 
   return (
@@ -55,14 +57,6 @@ const PositioningMap = ({ coin, currentPrice }) => {
         icon={Crosshair}
         title={`Active positions — system overview · ${coin}`}
         subtitle={`Every open trade and live signal vs the current price. ${total} open positions.`}
-        right={
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: "800", color: leanColor, padding: "4px 12px", borderRadius: "8px", backgroundColor: `${leanColor}14`, border: `1px solid ${leanColor}30` }}>
-              <LeanIcon size={14} /> {leaning}
-            </span>
-            <span style={{ fontSize: "11px", ...mono }}><span style={{ color: C.green, fontWeight: 700 }}>{longPct}% long</span> <span style={{ color: C.textFaint }}>·</span> <span style={{ color: C.red, fontWeight: 700 }}>{100 - longPct}% short</span></span>
-          </div>
-        }
       />
 
       {/* The map */}
@@ -99,8 +93,40 @@ const PositioningMap = ({ coin, currentPrice }) => {
         })}
       </div>
 
+      {/* ── COMPASS — the net read at a glance: a needle on the bearish↔bullish axis + the big numbers ── */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+        {/* verdict */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase", color: vColor }}>
+            <VIcon size={16} /> {verdict}
+          </span>
+        </div>
+        {/* needle gauge — same axis as the map: short/bearish left, long/bullish right */}
+        <div style={{ position: "relative", height: 22, margin: "0 2px" }}>
+          <div style={{ position: "absolute", left: 0, right: 0, top: 10, height: 6, borderRadius: 3, background: `linear-gradient(90deg, ${C.red}, ${C.red}66 38%, ${C.textFaint}44 50%, ${C.green}66 62%, ${C.green})` }} />
+          <div style={{ position: "absolute", left: "50%", top: 5, height: 16, width: 2, backgroundColor: C.textFaint, transform: "translateX(-50%)" }} />
+          <div title={`Crowd lean: ${longPct}% long`} style={{ position: "absolute", left: `${longPct}%`, top: -3, transform: "translateX(-50%)" }}>
+            <div style={{ width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderTop: `11px solid ${vColor}`, filter: `drop-shadow(0 0 6px ${vColor}99)` }} />
+          </div>
+        </div>
+        {/* big numbers */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 12 }}>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color: C.red, ...mono, lineHeight: 1, letterSpacing: "-1px" }}>{shortPct}%</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, letterSpacing: "0.6px", marginTop: 4 }}>SHORT · {shorts} pos</div>
+          </div>
+          <div style={{ textAlign: "center", color: C.textFaint, fontSize: 9.5, ...mono, paddingBottom: 4, lineHeight: 1.5 }}>
+            weighted target<br /><span style={{ color: leanColor, fontWeight: 800, fontSize: 13 }}>{netPct >= 0 ? "+" : ""}{netPct.toFixed(2)}% vs now</span>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 36, fontWeight: 900, color: C.green, ...mono, lineHeight: 1, letterSpacing: "-1px" }}>{longPct}%</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, letterSpacing: "0.6px", marginTop: 4 }}>LONG · {longs} pos</div>
+          </div>
+        </div>
+      </div>
+
       {/* legend */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "10px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "14px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: `${C.green}cc`, border: `1.5px solid ${C.green}` }} /> trade</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "transparent", border: `1.5px solid ${C.blue}` }} /> signal</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: C.textFaint }} /> human</span>
