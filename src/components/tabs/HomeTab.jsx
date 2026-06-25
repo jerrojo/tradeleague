@@ -3,7 +3,7 @@ import { SignalTable } from "../SignalTable";
 import { TraderSelector } from "../TraderSelector";
 import { Cpu, Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useProfile } from "../../contexts";
+import { useProfile, useTimeframe } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
@@ -40,10 +40,12 @@ const HomeTab = () => {
   const [open, setOpen] = useState(null); // expanded decision id
 
   // Latest Robotín decisions — the useful signal feed (approved/rejected), not social bait
+  const { within } = useTimeframe();
   const recentDecisions = useMemo(() => ROBOTIN_COINS
     .flatMap(c => coinSignals(c, coinCandles(c)))
+    .filter(s => within(s.time))
     .sort((a, b) => b.time - a.time)
-    .slice(0, 6), []);
+    .slice(0, 6), [within]);
 
   // Latest close per coin — lets SignalRow read unrealized P&L on active decisions
   const lastCloseByCoin = useMemo(() => {

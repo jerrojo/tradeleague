@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SignalTable } from "../SignalTable";
-import { useProfile, useWatchlist } from "../../contexts";
+import { useProfile, useWatchlist, useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
@@ -59,17 +59,21 @@ const ActivityFeed = () => {
   }, [allSignals]);
 
   const chip = CHIPS.find((x) => x.id === filter) || CHIPS[0];
+  /* ── global timeframe filter (header) applies to the whole tape ── */
+  const { within } = useTimeframe();
+  const tfSignals = useMemo(() => allSignals.filter((s) => within(s.time)), [allSignals, within]);
+
   const visible = useMemo(() => {
-    let list = allSignals.filter(chip.test);
+    let list = tfSignals.filter(chip.test);
     if (coinFilter !== "all") list = list.filter((s) => s.coin === coinFilter);
     if (followingOnly && hasFollowing) list = list.filter((s) => followedTraders[s.trader]);
     return list;
-  }, [allSignals, chip, coinFilter, followingOnly, hasFollowing, followedTraders]);
+  }, [tfSignals, chip, coinFilter, followingOnly, hasFollowing, followedTraders]);
 
-  /* ── header summary counts (over the full tape, not the filtered view) ── */
-  const totalN = allSignals.length;
-  const approvedN = useMemo(() => allSignals.filter((s) => s.approved).length, [allSignals]);
-  const activeN = useMemo(() => allSignals.filter((s) => s.status === "active").length, [allSignals]);
+  /* ── header summary counts (over the timeframe-filtered tape) ── */
+  const totalN = tfSignals.length;
+  const approvedN = useMemo(() => tfSignals.filter((s) => s.approved).length, [tfSignals]);
+  const activeN = useMemo(() => tfSignals.filter((s) => s.status === "active").length, [tfSignals]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

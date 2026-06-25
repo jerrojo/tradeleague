@@ -1,7 +1,8 @@
 import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
-import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext } from "./contexts";
+import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext, TimeframeProvider } from "./contexts";
+import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
 import { MarketsSection, ActivitySection, TradersSection, OverviewSection } from "./components/sections";
@@ -192,6 +193,7 @@ const App = () => {
   return (
     <ThemeProvider>
     <ToastProvider>
+      <TimeframeProvider>
       <ProContext.Provider value={{ proMode }}>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
@@ -312,8 +314,9 @@ const App = () => {
                 </span>
               </div>
 
-              {/* Right: utility icons (date scoping removed — data isn't time-scoped yet) */}
+              {/* Right: global time filter + utility icons */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <TimeframeFilter />
                 {/* Notifications bell with count */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
@@ -812,6 +815,7 @@ const App = () => {
         </ProfileContext.Provider>
       </DateContext.Provider>
       </ProContext.Provider>
+      </TimeframeProvider>
     </ToastProvider>
     </ThemeProvider>
   );

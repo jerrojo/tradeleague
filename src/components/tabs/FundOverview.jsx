@@ -8,6 +8,7 @@ import {
   Scale, TrendingDown, Wallet,
 } from "lucide-react";
 import { StatCard } from "../common";
+import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
 
@@ -23,9 +24,10 @@ const usdPlain = (v) => `$${Math.round(v).toLocaleString(undefined, { maximumFra
 const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
 
 const FundOverview = () => {
+  const { within } = useTimeframe();
   const data = useMemo(() => {
     /* ── Every signal across all coins (for the system-wide approval rate) ── */
-    const allSignals = ROBOTIN_COINS.flatMap((coin) => coinSignals(coin, coinCandles(coin)));
+    const allSignals = ROBOTIN_COINS.flatMap((coin) => coinSignals(coin, coinCandles(coin))).filter((s) => within(s.time));
     const approvedCount = allSignals.filter((s) => s.approved === true).length;
     const approvalRate = allSignals.length ? (approvedCount / allSignals.length) * 100 : 0;
 
@@ -154,7 +156,7 @@ const FundOverview = () => {
       equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly, rDist,
       topCoin, topConcentration,
     };
-  }, []);
+  }, [within]);
 
   const tooltipStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" };
 

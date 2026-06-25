@@ -4,7 +4,7 @@ import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
 import { SignalTable } from "../SignalTable";
 import { SectionHeader } from "../common";
-import { useProfile } from "../../contexts";
+import { useProfile, useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle } from "../../theme";
@@ -25,8 +25,10 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
   const [chartMode, setChartMode] = useState("candles");
   const [open, setOpen] = useState(null); // expanded signal id
 
+  const { within } = useTimeframe();
   const candles = useMemo(() => coinCandles(coin), [coin]);
-  const signals = useMemo(() => coinSignals(coin, candles), [coin, candles]);
+  const allSignals = useMemo(() => coinSignals(coin, candles), [coin, candles]);
+  const signals = useMemo(() => allSignals.filter((s) => within(s.time)), [allSignals, within]);
   const markers = useMemo(() => signalMarkers(onlyTrades ? signals.filter((s) => s.approved) : signals), [signals, onlyTrades]);
 
   const sel = signals.find((s) => s.id === open) || null;

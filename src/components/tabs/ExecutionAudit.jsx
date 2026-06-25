@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { StatCard } from "../common";
 import { SignalTable } from "../SignalTable";
+import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
@@ -169,13 +170,14 @@ const ExecutionAudit = () => {
   const [dateEnd, setDateEnd] = useState("");
 
   /* ── DATA UNIVERSE: all approved signals across all coins = executed trades ── */
+  const { within } = useTimeframe();
   const executed = useMemo(() => {
     void refreshKey; // re-key forces recompute on Refresh
     return ROBOTIN_COINS
       .flatMap((coin) => {
         const candles = coinCandles(coin);
         return coinSignals(coin, candles)
-          .filter((s) => s.approved === true)
+          .filter((s) => s.approved === true && within(s.time))
           .map((s) => ({
             ...s,
             audit: deriveAudit(s),
@@ -183,7 +185,7 @@ const ExecutionAudit = () => {
           }));
       })
       .sort((a, b) => a.time - b.time);
-  }, [refreshKey]);
+  }, [refreshKey, within]);
 
   const assetOptions = useMemo(
     () => ["All", ...Array.from(new Set(executed.map((s) => s.coin)))],
