@@ -48,9 +48,9 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
         <CoinSelector coins={Object.keys(smcCoins)} selected={selectedCoin} onSelect={setSelectedCoin} meta={smcCoins} categories={categories} />
       )}
 
-      {/* Stats Row — price lives in the hub header, so structure leads with bias/strength/risk */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-        <StatCard label="Direction" value={coin.bias === "BULLISH" ? "↑ UP" : "↓ DOWN"} icon={coin.biasIcon === "up" ? ArrowUp : ArrowDown} color={biasColor} tip="bias" />
+      {/* Stats Row — direction/sentiment lives in the Positioning compass above, so
+          Structure leads with signal strength + risk (no duplicate direction read) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
         <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
         <StatCard label="Avg Stop Distance" value={stopDist == null ? "—" : `${stopDist.toFixed(2)}%`} icon={AlertTriangle} color={stopColor} tip="stopDistance" sub="entry → stop, per signal" />
       </div>

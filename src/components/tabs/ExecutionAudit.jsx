@@ -339,8 +339,8 @@ const ExecutionAudit = () => {
         <DateInput label="Date End" value={dateEnd} onChange={setDateEnd} />
       </div>
 
-      {/* ─────────── 3) KPI GRID ─────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      {/* ─────────── 3) KPI GRID — audit-specific only (performance/PF/Net PnL live on Overview) ─────────── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
         <StatCard
           label="Total Signals" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
           sub={`${kpi.closed.length} closed · ${kpi.active.length} active · ${kpi.pending.length} pending`}
@@ -356,10 +356,6 @@ const ExecutionAudit = () => {
           sub={`${kpi.realWins.length}/${kpi.closed.length} trades (net)`}
         />
         <StatCard
-          label="Net PNL" value={usd(kpi.netPnl)} icon={DollarSign}
-          color={kpi.netPnl >= 0 ? C.green : C.red} sub="sum over closed trades"
-        />
-        <StatCard
           label="Total Fees" value={`−$${kpi.totalFees.toFixed(2)}`} icon={Percent} color={C.amber}
           sub="sum of per-trade fees"
         />
@@ -367,14 +363,6 @@ const ExecutionAudit = () => {
           label="Match Rate" value={`${kpi.matchRate.toFixed(1)}%`} icon={Scale}
           color={kpi.matchRate >= 80 ? C.green : C.amber}
           sub={`${kpi.matches.length}/${kpi.closed.length} eligible`}
-        />
-        <StatCard
-          label="Profit Factor" value={pfFmt(kpi.profitFactor)} icon={Award} tip="profitFactor"
-          color={kpi.profitFactor >= 1 ? C.green : C.red} sub="gross win / gross loss"
-        />
-        <StatCard
-          label="Wallet Balance" value={usdPlain(Math.round(kpi.balance * 100) / 100)} icon={Wallet} color={C.blue}
-          sub={`${usdPlain(STARTING_BALANCE)} base + net PNL`}
         />
       </div>
 

@@ -1,11 +1,9 @@
-import { Avatar, SectionHeader } from "../common";
-import { SignalTable } from "../SignalTable";
+import { Avatar } from "../common";
 import { TraderSelector } from "../TraderSelector";
-import { Cpu, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useProfile, useTimeframe } from "../../contexts";
+import { useProfile } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { C, cardStyle, mono } from "../../theme";
 import { useMemo, useState } from "react";
 
@@ -37,22 +35,6 @@ const HomeTab = () => {
     return m;
   });
   const watchedNames = Object.keys(watching).filter(k => watching[k]);
-  const [open, setOpen] = useState(null); // expanded decision id
-
-  // Latest Robotín decisions — the useful signal feed (approved/rejected), not social bait
-  const { within } = useTimeframe();
-  const recentDecisions = useMemo(() => ROBOTIN_COINS
-    .flatMap(c => coinSignals(c, coinCandles(c)))
-    .filter(s => within(s.time))
-    .sort((a, b) => b.time - a.time)
-    .slice(0, 6), [within]);
-
-  // Latest close per coin — lets SignalRow read unrealized P&L on active decisions
-  const lastCloseByCoin = useMemo(() => {
-    const m = {};
-    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
-    return m;
-  }, []);
 
   const leader = useMemo(() => {
     const last = traderEquity[traderEquity.length - 1];
@@ -129,23 +111,6 @@ const HomeTab = () => {
           })}
         </div>
       </div>
-
-      {/* Latest Robotín decisions — same canonical SignalRow used everywhere */}
-      <SectionHeader
-        icon={Cpu}
-        title="Latest Robotín decisions"
-        subtitle="Newest signals across all assets and what Robotín did with each"
-        right={<span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 9, fontWeight: 800, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "2px 8px", borderRadius: 999, letterSpacing: "0.6px" }}><span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green }} /> LIVE</span>}
-      />
-      <SignalTable
-        signals={recentDecisions}
-        openId={open}
-        onToggle={(id) => setOpen(open === id ? null : id)}
-        onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
-        lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
-        viewId="home"
-        exportName="tradethlon-latest-decisions"
-      />
     </div>
   );
 };
