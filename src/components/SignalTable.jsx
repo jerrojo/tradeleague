@@ -1,5 +1,5 @@
-import { Fragment } from "react";
-import { Activity, Check, ChevronDown, Clock, Cpu, X } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { Activity, ChevronDown, ChevronUp, Clock, Cpu, X } from "lucide-react";
 import { Avatar, BotTag } from "./common";
 import { TradeDetail } from "./TradeDetail";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
@@ -62,23 +62,75 @@ const unrealized = (s, lastClose) => {
 const num = { ...mono, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" };
 const cell = { ...tdStyle, fontSize: 11.5 };
 
+/* ── column sort accessors (a pro sorts by R, PnL, confidence, time constantly) ── */
+const STATUS_ORDER = { active: 0, pending: 1, closed: 2, expired: 3, rejected: 4 };
+const ACCESSORS = {
+  pair: (s) => s.coin || "",
+  type: (s) => s.dir || "",
+  trader: (s) => s.trader || "",
+  robotin: (s) => (s.approved ? (s.confidence || 0) : -1),
+  entry: (s) => s.entry ?? 0,
+  exit: (s) => (s.status === "closed" ? (s.exit ?? closedResult(s).exit ?? 0) : 0),
+  pnl: (s) => (s.status === "closed" ? (s.pnl ?? 0) : -1e15),
+  r: (s) => (s.status === "closed" ? closedResult(s).r : -1e15),
+  duration: (s) => (s.status === "closed" ? (closedResult(s).dur ?? 0) : -1),
+  status: (s) => STATUS_ORDER[s.status] ?? 9,
+  setup: (s) => s.tag || "",
+  time: (s) => s.time ?? 0,
+};
+
 const SignalTable = ({
   signals, openId, onToggle, onTrader,
   lastCloseFor, candlesFor,
   showTrader = true, audit = false,
 }) => {
+  const [sort, setSort] = useState({ key: "time", dir: "desc" });
+  const onSort = (key) => setSort((p) => (p.key === key ? { key, dir: p.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
+  const sorted = useMemo(() => {
+    const acc = ACCESSORS[sort.key];
+    if (!acc) return signals;
+    const arr = [...signals].sort((a, b) => {
+      const x = acc(a), y = acc(b);
+      return typeof x === "string" ? x.localeCompare(y) : x - y;
+    });
+    return sort.dir === "desc" ? arr.reverse() : arr;
+  }, [signals, sort]);
+
   const cols = [
-    "Pair", "Type", ...(showTrader ? ["Trader"] : []), "Robotín",
-    "Entry", "Exit", "PnL", "R", "Duration", "Status", "Setup", "Time",
-    ...(audit ? ["Fees", "Match"] : []), "",
+    { id: "pair", label: "Pair" },
+    { id: "type", label: "Type" },
+    ...(showTrader ? [{ id: "trader", label: "Trader" }] : []),
+    { id: "robotin", label: "Robotín" },
+    { id: "entry", label: "Entry" },
+    { id: "exit", label: "Exit" },
+    { id: "pnl", label: "PnL" },
+    { id: "r", label: "R" },
+    { id: "duration", label: "Duration" },
+    { id: "status", label: "Status" },
+    { id: "setup", label: "Setup" },
+    { id: "time", label: "Time" },
+    ...(audit ? [{ id: "fees", label: "Fees", noSort: true }, { id: "match", label: "Match", noSort: true }] : []),
+    { id: "_chev", label: "", noSort: true },
   ];
   return (
     <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: audit ? 1240 : 1120 }}>
-          <thead><tr>{cols.map((h, i) => <th key={i} style={{ ...thStyle, fontSize: 10 }}>{h}</th>)}</tr></thead>
+          <thead><tr>{cols.map((c) => {
+            const sortable = !c.noSort && ACCESSORS[c.id];
+            const active = sort.key === c.id;
+            return (
+              <th key={c.id} onClick={sortable ? () => onSort(c.id) : undefined}
+                style={{ ...thStyle, fontSize: 10, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                  {c.label}
+                  {active && (sort.dir === "asc" ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
+                </span>
+              </th>
+            );
+          })}</tr></thead>
           <tbody>
-            {signals.map((s, ri) => {
+            {sorted.map((s, ri) => {
               const st = STATUS[statusKey(s)] || STATUS.pending;
               const isOpen = openId === s.id;
               const dirColor = s.dir === "LONG" ? C.green : C.red;
@@ -176,7 +228,7 @@ const SignalTable = ({
                 </Fragment>
               );
             })}
-            {signals.length === 0 && (
+            {sorted.length === 0 && (
               <tr><td colSpan={cols.length} style={{ ...cell, textAlign: "center", padding: 28, color: C.textMuted }}>No signals match this view.</td></tr>
             )}
           </tbody>
