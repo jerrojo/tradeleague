@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarRange, Clock } from "lucide-react";
 import { useTimeframe } from "../contexts";
 import { C, mono } from "../theme";
@@ -16,6 +16,22 @@ const TimeframeFilter = () => {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  // [ and ] cycle the timeframe presets (pro speed). Ignored while typing.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "[" && e.key !== "]") return;
+      const tag = (e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
+      const keys = presets.map((p) => p.key);
+      let idx = keys.indexOf(key); if (idx < 0) idx = keys.length - 1;
+      idx = e.key === "]" ? Math.min(keys.length - 1, idx + 1) : Math.max(0, idx - 1);
+      setRange(keys[idx]);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [key, presets, setRange]);
 
   const openCustom = () => {
     setFrom(toLocalInput(Number.isFinite(fromMs) ? fromMs : Date.now() - 24 * 3600e3));

@@ -331,6 +331,8 @@ const TraderProfile = ({ trader, onClose }) => {
             onToggle={(id) => setOpenSig(openSig === id ? null : id)}
             lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
             showTrader={false}
+            viewId="profile-latest"
+            exportName={`${t.name}-latest`}
           />
         </div>
       )}
@@ -529,6 +531,8 @@ const TraderProfile = ({ trader, onClose }) => {
             onToggle={(id) => setOpenSig(openSig === id ? null : id)}
             lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
             showTrader={false}
+            viewId="profile-log"
+            exportName={`${t.name}-signal-log`}
           />
         </div>
       )}

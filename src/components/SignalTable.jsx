@@ -1,14 +1,13 @@
-import { Fragment, useMemo, useState } from "react";
-import { Activity, ChevronDown, ChevronUp, Clock, Cpu, X } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizontal, X } from "lucide-react";
 import { Avatar, BotTag } from "./common";
 import { TradeDetail } from "./TradeDetail";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
 /* ═══════════════════════ SignalTable — THE canonical dense trade/signal table ═══════════════════════
-   One table, used everywhere a list of signals/trades appears (Activity · Markets ·
-   Home · profiles · the Executions journal). Rich columns the desk actually scans:
-   Pair · Type · Trader · Robotín · Entry · Exit · PnL · R · Duration · Status · Setup · Time.
-   Any row expands to the full TradeDetail. Audit columns (fees/match) are opt-in via `audit`. */
+   One table everywhere a list of signals/trades appears. Pro features: sortable
+   columns, show/hide columns, CSV/JSON export of the current view, and per-view
+   persistence of sort + hidden columns (pass a stable `viewId`). */
 
 const STATUS = {
   pending: { label: "Pending", color: C.amber, Icon: Clock },
@@ -61,8 +60,12 @@ const unrealized = (s, lastClose) => {
 
 const num = { ...mono, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" };
 const cell = { ...tdStyle, fontSize: 11.5 };
+const toolBtn = {
+  display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 6,
+  border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted,
+  fontSize: 10, fontWeight: 700, cursor: "pointer",
+};
 
-/* ── column sort accessors (a pro sorts by R, PnL, confidence, time constantly) ── */
 const STATUS_ORDER = { active: 0, pending: 1, closed: 2, expired: 3, rejected: 4 };
 const ACCESSORS = {
   pair: (s) => s.coin || "",
@@ -79,13 +82,53 @@ const ACCESSORS = {
   time: (s) => s.time ?? 0,
 };
 
+/* Export the current (sorted + filtered) rows to CSV or JSON. */
+const exportRows = (rows, name, format) => {
+  const recs = rows.map((s) => {
+    const cr = s.status === "closed" ? closedResult(s) : null;
+    return {
+      coin: s.coin, pair: s.pair, type: s.dir, trader: s.trader, isBot: !!s.isBot,
+      approved: !!s.approved, confidence: s.confidence, status: s.status,
+      entry: s.entry, exit: cr ? cr.exit : null, sl: s.sl, tp1: s.tp1,
+      pnl: s.status === "closed" ? s.pnl : null, pnlPct: s.status === "closed" ? s.pnlPct : null,
+      R: cr ? Math.round(cr.r * 100) / 100 : null, durationH: cr ? cr.dur : null,
+      setup: s.tag || "", time: new Date((s.time || 0) * 1000).toISOString(),
+    };
+  });
+  let blob;
+  if (format === "json") {
+    blob = new Blob([JSON.stringify(recs, null, 2)], { type: "application/json" });
+  } else {
+    const keys = Object.keys(recs[0] || { coin: 1 });
+    const esc = (v) => { const x = v == null ? "" : String(v); return /[",\n]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
+    const csv = [keys.join(","), ...recs.map((r) => keys.map((k) => esc(r[k])).join(","))].join("\n");
+    blob = new Blob([csv], { type: "text/csv" });
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `${name}.${format}`; a.click();
+  URL.revokeObjectURL(url);
+};
+
+const load = (k, fallback) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch { return fallback; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
+
 const SignalTable = ({
   signals, openId, onToggle, onTrader,
   lastCloseFor, candlesFor,
   showTrader = true, audit = false,
+  viewId = "default", exportName = "tradethlon-signals",
 }) => {
-  const [sort, setSort] = useState({ key: "time", dir: "desc" });
+  const SK = `st:${viewId}:sort`, HK = `st:${viewId}:hidden`;
+  const [sort, setSort] = useState(() => load(SK, { key: "time", dir: "desc" }));
+  const [hidden, setHidden] = useState(() => new Set(load(HK, [])));
+  const [colMenu, setColMenu] = useState(false);
+  useEffect(() => { save(SK, sort); }, [SK, sort]);
+  useEffect(() => { save(HK, [...hidden]); }, [HK, hidden]);
+
   const onSort = (key) => setSort((p) => (p.key === key ? { key, dir: p.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
+  const toggleCol = (id) => setHidden((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
   const sorted = useMemo(() => {
     const acc = ACCESSORS[sort.key];
     if (!acc) return signals;
@@ -96,8 +139,8 @@ const SignalTable = ({
     return sort.dir === "desc" ? arr.reverse() : arr;
   }, [signals, sort]);
 
-  const cols = [
-    { id: "pair", label: "Pair" },
+  const allCols = [
+    { id: "pair", label: "Pair", fixed: true },
     { id: "type", label: "Type" },
     ...(showTrader ? [{ id: "trader", label: "Trader" }] : []),
     { id: "robotin", label: "Robotín" },
@@ -110,10 +153,37 @@ const SignalTable = ({
     { id: "setup", label: "Setup" },
     { id: "time", label: "Time" },
     ...(audit ? [{ id: "fees", label: "Fees", noSort: true }, { id: "match", label: "Match", noSort: true }] : []),
-    { id: "_chev", label: "", noSort: true },
+    { id: "_chev", label: "", noSort: true, fixed: true },
   ];
+  const show = (id) => id === "pair" || id === "_chev" || !hidden.has(id);
+  const cols = allCols.filter((c) => show(c.id));
+  const sortLabel = (allCols.find((c) => c.id === sort.key) || {}).label || "Time";
+
   return (
-    <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+    <div style={{ ...cardStyle, padding: 0, overflow: "visible" }}>
+      {/* ── toolbar: row count + sort state + columns + export ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", borderBottom: `1px solid ${C.border}`, gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>
+          {sorted.length} rows · sorted by <span style={{ color: C.text, fontWeight: 700 }}>{sortLabel} {sort.dir === "asc" ? "↑" : "↓"}</span>
+        </span>
+        <div style={{ display: "flex", gap: 6, position: "relative" }}>
+          <button onClick={() => setColMenu((v) => !v)} style={{ ...toolBtn, ...(colMenu ? { color: C.purple, borderColor: C.purple } : {}) }}><SlidersHorizontal size={12} /> Columns</button>
+          <button onClick={() => exportRows(sorted, exportName, "csv")} style={toolBtn}><Download size={12} /> CSV</button>
+          <button onClick={() => exportRows(sorted, exportName, "json")} style={toolBtn}><Download size={12} /> JSON</button>
+          {colMenu && (
+            <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 50, backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: 10, boxShadow: C.shadowLg, width: 180 }}>
+              <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700, marginBottom: 6 }}>Columns</div>
+              {allCols.filter((c) => !c.fixed).map((c) => (
+                <label key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px", fontSize: 12, color: C.text, cursor: "pointer" }}>
+                  <input type="checkbox" checked={!hidden.has(c.id)} onChange={() => toggleCol(c.id)} />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: audit ? 1240 : 1120 }}>
           <thead><tr>{cols.map((c) => {
@@ -146,16 +216,15 @@ const SignalTable = ({
                 <Fragment key={s.id}>
                   <tr className="hoverable" onClick={() => onToggle(s.id)}
                     style={{ cursor: "pointer", backgroundColor: isOpen ? C.cardHover : ri % 2 ? `${C.cardElev}55` : "transparent" }}>
-                    {/* Pair */}
                     <td style={{ ...cell, borderLeft: `3px solid ${accent}`, fontWeight: 800 }}>
                       {s.coin}<span style={{ color: C.textMuted, fontWeight: 400 }}> /{s.pair && s.pair.includes("/") ? s.pair.split("/")[1] : "USDT"}</span>
                     </td>
-                    {/* Type */}
-                    <td style={cell}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: dirColor, backgroundColor: `${dirColor}18`, padding: "2px 7px", borderRadius: 4, letterSpacing: "0.3px" }}>{s.dir}</span>
-                    </td>
-                    {/* Trader */}
-                    {showTrader && (
+                    {show("type") && (
+                      <td style={cell}>
+                        <span style={{ fontSize: 9, fontWeight: 800, color: dirColor, backgroundColor: `${dirColor}18`, padding: "2px 7px", borderRadius: 4, letterSpacing: "0.3px" }}>{s.dir}</span>
+                      </td>
+                    )}
+                    {showTrader && show("trader") && (
                       <td style={cell}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                           <Avatar name={s.trader} size={20} />
@@ -167,45 +236,45 @@ const SignalTable = ({
                         </span>
                       </td>
                     )}
-                    {/* Robotín verdict */}
-                    <td style={cell}>
-                      {s.approved
-                        ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: C.green, ...num }}><Cpu size={10} /> {s.confidence}%</span>
-                        : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: C.textFaint }}><X size={10} /> Rej.</span>}
-                    </td>
-                    {/* Entry / Exit */}
-                    <td style={{ ...cell, ...num, color: C.text }}>{fmtPrice(s.entry)}</td>
-                    <td style={{ ...cell, ...num, color: C.text }}>{cr ? fmtPrice(cr.exit) : "—"}</td>
-                    {/* PnL */}
-                    <td style={{ ...cell, ...num }}>
-                      {isClosed
-                        ? <span style={{ fontWeight: 800, color: (s.pnl ?? 0) >= 0 ? C.green : C.red }}>{usd(s.pnl ?? 0)}</span>
-                        : ur
-                          ? <span style={{ fontWeight: 800, color: ur.distPct >= 0 ? C.green : C.red }}>{`${ur.distPct >= 0 ? "+" : "−"}${Math.abs(ur.distPct).toFixed(1)}%`}</span>
-                          : <span style={{ color: C.textFaint }}>{s.status === "pending" ? "awaiting" : "—"}</span>}
-                    </td>
-                    {/* R */}
-                    <td style={{ ...cell, ...num, fontWeight: 700, color: cr ? (cr.r >= 0 ? C.green : C.red) : C.textFaint }}>
-                      {cr ? `${cr.r >= 0 ? "+" : ""}${cr.r.toFixed(1)}R` : "—"}
-                    </td>
-                    {/* Duration */}
-                    <td style={{ ...cell, ...num, color: C.textMuted }}>{cr ? fmtDuration(cr.dur) : "—"}</td>
-                    {/* Status */}
-                    <td style={cell}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: st.color, whiteSpace: "nowrap" }}>
-                        {st.Icon ? <st.Icon size={11} /> : null}{st.label}
-                      </span>
-                    </td>
-                    {/* Setup */}
-                    <td style={cell}>
-                      {tag ? <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...num }}>{tag}</span> : <span style={{ color: C.textFaint }}>—</span>}
-                    </td>
-                    {/* Time */}
-                    <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>
-                    {/* Audit columns (opt-in) */}
-                    {audit && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
-                    {audit && <td style={cell}><span style={{ fontWeight: 700, color: s.approved ? C.green : C.textFaint }}>{s.approved ? "Match" : "—"}</span></td>}
-                    {/* Chevron */}
+                    {show("robotin") && (
+                      <td style={cell}>
+                        {s.approved
+                          ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: C.green, ...num }}><Cpu size={10} /> {s.confidence}%</span>
+                          : <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: C.textFaint }}><X size={10} /> Rej.</span>}
+                      </td>
+                    )}
+                    {show("entry") && <td style={{ ...cell, ...num, color: C.text }}>{fmtPrice(s.entry)}</td>}
+                    {show("exit") && <td style={{ ...cell, ...num, color: C.text }}>{cr ? fmtPrice(cr.exit) : "—"}</td>}
+                    {show("pnl") && (
+                      <td style={{ ...cell, ...num }}>
+                        {isClosed
+                          ? <span style={{ fontWeight: 800, color: (s.pnl ?? 0) >= 0 ? C.green : C.red }}>{usd(s.pnl ?? 0)}</span>
+                          : ur
+                            ? <span style={{ fontWeight: 800, color: ur.distPct >= 0 ? C.green : C.red }}>{`${ur.distPct >= 0 ? "+" : "−"}${Math.abs(ur.distPct).toFixed(1)}%`}</span>
+                            : <span style={{ color: C.textFaint }}>{s.status === "pending" ? "awaiting" : "—"}</span>}
+                      </td>
+                    )}
+                    {show("r") && (
+                      <td style={{ ...cell, ...num, fontWeight: 700, color: cr ? (cr.r >= 0 ? C.green : C.red) : C.textFaint }}>
+                        {cr ? `${cr.r >= 0 ? "+" : ""}${cr.r.toFixed(1)}R` : "—"}
+                      </td>
+                    )}
+                    {show("duration") && <td style={{ ...cell, ...num, color: C.textMuted }}>{cr ? fmtDuration(cr.dur) : "—"}</td>}
+                    {show("status") && (
+                      <td style={cell}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 700, color: st.color, whiteSpace: "nowrap" }}>
+                          {st.Icon ? <st.Icon size={11} /> : null}{st.label}
+                        </span>
+                      </td>
+                    )}
+                    {show("setup") && (
+                      <td style={cell}>
+                        {tag ? <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...num }}>{tag}</span> : <span style={{ color: C.textFaint }}>—</span>}
+                      </td>
+                    )}
+                    {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>}
+                    {audit && show("fees") && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
+                    {audit && show("match") && <td style={cell}><span style={{ fontWeight: 700, color: s.approved ? C.green : C.textFaint }}>{s.approved ? "Match" : "—"}</span></td>}
                     <td style={{ ...cell, textAlign: "right" }}>
                       <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                     </td>

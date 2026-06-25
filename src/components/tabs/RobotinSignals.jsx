@@ -100,6 +100,8 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
         onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
         lastCloseFor={() => (candles.length ? candles[candles.length - 1].close : null)}
         candlesFor={() => candles}
+        viewId="markets"
+        exportName={`tradethlon-${coin}-signals`}
       />
     </div>
   );

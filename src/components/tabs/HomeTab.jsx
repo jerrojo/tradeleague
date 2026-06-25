@@ -143,6 +143,8 @@ const HomeTab = () => {
         onToggle={(id) => setOpen(open === id ? null : id)}
         onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
         lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+        viewId="home"
+        exportName="tradethlon-latest-decisions"
       />
     </div>
   );

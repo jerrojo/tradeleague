@@ -107,6 +107,19 @@ const App = () => {
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
+  // Keyboard nav — 1–4 jump between sections (pro speed). Ignored while typing.
+  useEffect(() => {
+    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets" };
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = (e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
+      if (SECTIONS[e.key]) { setActiveTab(SECTIONS[e.key]); setProfileTrader(null); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   // Mock alerts — patterns, macro, trades, whales
   const alertsList = [
     // Smart pattern alerts

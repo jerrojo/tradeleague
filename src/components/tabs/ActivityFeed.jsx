@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SignalTable } from "../SignalTable";
 import { useProfile, useWatchlist, useTimeframe } from "../../contexts";
@@ -28,10 +28,13 @@ const ActivityFeed = () => {
   const followedTraders = watchlist?.followedTraders || null;
   const hasFollowing = followedTraders != null;
 
-  const [filter, setFilter] = useState("all");
-  const [coinFilter, setCoinFilter] = useState("all");
+  // filters persist so the analyst's view sticks across sessions
+  const [filter, setFilter] = useState(() => { try { return localStorage.getItem("af:chip") || "all"; } catch { return "all"; } });
+  const [coinFilter, setCoinFilter] = useState(() => { try { return localStorage.getItem("af:coin") || "all"; } catch { return "all"; } });
   const [followingOnly, setFollowingOnly] = useState(false);
   const [open, setOpen] = useState(null); // expanded signal id
+  useEffect(() => { try { localStorage.setItem("af:chip", filter); } catch { /* ignore */ } }, [filter]);
+  useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
 
   /* ── memoized per-coin candle lookups (built once; reused for unrealized calc) ── */
   const candlesByCoin = useMemo(() => {
@@ -145,6 +148,8 @@ const ActivityFeed = () => {
         onToggle={(id) => setOpen(open === id ? null : id)}
         onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
         lastCloseFor={(s) => lastClose(s.coin)}
+        viewId="activity"
+        exportName="tradethlon-activity"
       />
     </div>
   );

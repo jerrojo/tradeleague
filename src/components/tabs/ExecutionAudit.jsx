@@ -453,6 +453,8 @@ const ExecutionAudit = () => {
           onToggle={(id) => setOpenId(openId === id ? null : id)}
           lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
           audit
+          viewId="executions"
+          exportName="tradethlon-executions"
         />
       </div>
     </div>
