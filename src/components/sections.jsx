@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, LayoutDashboard, ShieldCheck, Wallet } from "lucide-react";
+import { BarChart3, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
@@ -8,9 +8,7 @@ import { CoinPositioning } from "./tabs/CoinPositioning";
 import { HomeTab } from "./tabs/HomeTab";
 import { TradersTab } from "./tabs/TradersTab";
 import { ActivityFeed } from "./tabs/ActivityFeed";
-import { FundOverview } from "./tabs/FundOverview";
 import { PortfolioTab } from "./tabs/PortfolioTab";
-import { RobotinWallet } from "./tabs/RobotinWallet";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { smcCoins } from "../data/mockData";
 import { ROBOTIN_COINS } from "../data/robotin";
@@ -71,21 +69,20 @@ const TradersSection = () => (
   </div>
 );
 
-/* ── OVERVIEW: the fund's home. The investor tear-sheet up front, then the bot's
-   execution Wallet, system Analytics and Execution Audit as sub-tabs — everything
-   about the fund in one place (Overview now absorbs the old Robotín section). ── */
-const OverviewSection = () => {
-  const [sub, setSub] = useState("overview");
+/* ── AUDIT: the verification layer. Execution Audit (what Robotín executed: fills,
+   fees, slippage, real vs theoretical) + Analytics (the raw signal-provider edge,
+   pre-filter). Together they audit the whole pipeline: raw edge → filter → execution. ── */
+const AuditSection = () => {
+  const [sub, setSub] = useState("execution");
   return (
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
-        { id: "overview", label: "Overview", icon: LayoutDashboard },
-        { id: "executions", label: "Executions", icon: ShieldCheck },
+        { id: "execution", label: "Execution Audit", icon: ShieldCheck },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
       ]} />
-      {sub === "overview" ? <FundOverview /> : sub === "executions" ? <ExecutionAudit /> : <PortfolioTab />}
+      {sub === "execution" ? <ExecutionAudit /> : <PortfolioTab />}
     </div>
   );
 };
 
-export { MarketsSection, ActivitySection, TradersSection, OverviewSection };
+export { MarketsSection, ActivitySection, TradersSection, AuditSection };

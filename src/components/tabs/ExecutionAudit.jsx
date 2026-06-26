@@ -314,7 +314,7 @@ const ExecutionAudit = () => {
             <Shield size={20} color={C.purple} />
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.4px" }}>Executions</div>
+            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.4px" }}>Execution Audit</div>
             <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2, maxWidth: 560 }}>
               The bot's executed-trade journal &amp; audit — order fills, fees, slippage and real vs. theoretical net PNL.
             </div>

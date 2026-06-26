@@ -5,7 +5,7 @@ import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistCo
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
-import { MarketsSection, ActivitySection, TradersSection, OverviewSection } from "./components/sections";
+import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
@@ -84,9 +84,8 @@ const App = () => {
     const tabList = [
       { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
       { id: "markets", label: "Markets", desc: "One coin at a time — signals, trades, structure, positioning" },
-      { id: "overview", label: "Robotín Wallet", desc: "Every trade the bot executed from approved signals" },
-      { id: "overview", label: "Robotín Analytics", desc: "System fund-level KPIs, equity curve, drawdown and segmentation" },
-      { id: "overview", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
+      { id: "audit", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
+      { id: "audit", label: "Analytics", desc: "Signal-provider edge — KPIs, equity, win rate by style, expectancy by pair" },
       { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
       { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
@@ -109,7 +108,7 @@ const App = () => {
 
   // Keyboard nav — 1–4 jump between sections (pro speed). Ignored while typing.
   useEffect(() => {
-    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets" };
+    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets", "5": "audit" };
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
@@ -177,22 +176,25 @@ const App = () => {
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
+    { id: "audit", label: "Audit", icon: Scale, accent: C.amber },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
   const tabMeta = {
-    overview: "The fund in one place — tear-sheet, the bot's wallet, system analytics and execution audit",
+    overview: "The fund at a glance — capital, return, risk and system state on one page",
     traders: "Who's winning, and everyone you can follow — the live race plus the searchable directory",
     markets: "One coin, everything at once — chart, signals, the trades they became, structure and positioning",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
+    audit: "The verification layer — execution audit (fills, fees, real vs theoretical) + signal-provider analytics",
   };
 
   // Section → component mapping
   const tabContent = {
-    overview: OverviewSection, // Overview = tear-sheet + Wallet + Analytics + Audit sub-tabs
+    overview: FundOverview,    // Overview = the investor tear-sheet (synthesis only)
     traders: TradersSection,   // Traders = live race + searchable directory + profiles
     markets: MarketsSection,   // Markets = one coin, everything on one page
     activity: ActivitySection, // Activity = the global Robotín lifecycle tape
+    audit: AuditSection,       // Audit = Execution Audit + Analytics (verification layer)
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
@@ -369,10 +371,11 @@ const App = () => {
                   </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {[
-                      { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund in one place — tear-sheet, wallet, analytics and audit.", go: "overview" },
-                      { icon: Globe, color: C.cyan, t: "Markets", d: "One coin, everything at once — chart, signals, structure and positioning.", go: "markets" },
+                      { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
                       { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
+                      { icon: Globe, color: C.cyan, t: "Markets", d: "One coin, everything at once — chart, signals, structure and positioning.", go: "markets" },
+                      { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
