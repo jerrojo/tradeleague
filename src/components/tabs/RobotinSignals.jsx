@@ -67,7 +67,7 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
-            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} executed · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row for full detail` : `${signals.length} signals · ${approved} approved · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row to plot levels`}</div>
+            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} executed · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row for full detail` : `${signals.length} signals · ${approved} approved · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed${embedded ? " · full execution record in Audit" : " · click a row to plot levels"}`}</div>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {[["candles", "Candles", CandlestickChart], ["line", "Line", LineChart]].map(([m, label, Icon]) => (
@@ -87,22 +87,28 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
         </div>
       </div>
 
-      {/* Signals / Trades list */}
-      <SectionHeader
-        icon={ListChecks}
-        title={onlyTrades ? "Executed trades" : "Signals & executions"}
-        subtitle={`${coin}/USDT · ${onlyTrades ? `${approved} executed` : `${visibleList.length} signals · ${approved} approved`} · click a row for full detail`}
-      />
-      <SignalTable
-        signals={visibleList}
-        openId={open}
-        onToggle={(id) => setOpen(open === id ? null : id)}
-        onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
-        lastCloseFor={() => (candles.length ? candles[candles.length - 1].close : null)}
-        candlesFor={() => candles}
-        viewId="markets"
-        exportName={`tradethlon-${coin}-signals`}
-      />
+      {/* Signals / Trades list — the dense execution table only shows on the
+          standalone view; inside Markets it would duplicate the Audit table, so
+          we keep just the chart + the consensus signal below. */}
+      {!embedded && (
+        <>
+          <SectionHeader
+            icon={ListChecks}
+            title={onlyTrades ? "Executed trades" : "Signals & executions"}
+            subtitle={`${coin}/USDT · ${onlyTrades ? `${approved} executed` : `${visibleList.length} signals · ${approved} approved`} · click a row for full detail`}
+          />
+          <SignalTable
+            signals={visibleList}
+            openId={open}
+            onToggle={(id) => setOpen(open === id ? null : id)}
+            onTrader={(name) => { const tr = mockTraders.find((x) => x.name === name); if (tr) openProfile(tr); }}
+            lastCloseFor={() => (candles.length ? candles[candles.length - 1].close : null)}
+            candlesFor={() => candles}
+            viewId="markets"
+            exportName={`tradethlon-${coin}-signals`}
+          />
+        </>
+      )}
     </div>
   );
 };

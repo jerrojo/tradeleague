@@ -1,5 +1,5 @@
 import { CoinSelector } from "../CoinSelector";
-import { InfoTip, SectionHeader, StatCard, Tag } from "../common";
+import { InfoTip, SectionHeader } from "../common";
 import { useProMode } from "../../contexts";
 import { smcCoins, mockTraders } from "../../data/mockData";
 import { coinCandles, coinSignals } from "../../data/robotin";
@@ -48,15 +48,10 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
         <CoinSelector coins={Object.keys(smcCoins)} selected={selectedCoin} onSelect={setSelectedCoin} meta={smcCoins} categories={categories} />
       )}
 
-      {/* Stats Row — direction/sentiment lives in the Positioning compass above, so
-          Structure leads with signal strength + risk (no duplicate direction read) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-        <StatCard label="Signal Strength" value={`${coin.confluence}/10`} icon={Target} color={C.blue} tip="confluence" />
-        <StatCard label="Avg Stop Distance" value={stopDist == null ? "—" : `${stopDist.toFixed(2)}%`} icon={AlertTriangle} color={stopColor} tip="stopDistance" sub="entry → stop, per signal" />
-      </div>
-
-
-      {/* Ideal Entry */}
+      {/* Consensus signal — direction/sentiment lives in the Positioning compass
+          above; strength + avg stop are folded into this card's header as compact
+          pills (no separate stat cards), keeping this block the single, focused
+          forward-looking read for the coin. */}
       <div>
         <div style={cardStyle}>
           <div style={{ marginBottom: "14px" }}>
@@ -64,7 +59,13 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
               icon={Crosshair}
               title={`Consensus signal — ${selectedCoin}`}
               subtitle={`Robotín synthesis from ${sourceCount.traders} traders' approved signals — where to enter, the targets, and the stop`}
-              right={<span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "2px 8px", borderRadius: 5 }}><Users size={11} /> {sourceCount.traders}/{sourceCount.total} traders</span>}
+              right={(
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.blue, backgroundColor: C.blueBg, border: `1px solid ${C.blue}30`, padding: "2px 8px", borderRadius: 5 }} title="Confluence — how many structure factors line up (out of 10)"><Target size={11} /> {coin.confluence}/10</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: stopColor, backgroundColor: `${stopColor}1c`, border: `1px solid ${stopColor}30`, padding: "2px 8px", borderRadius: 5 }} title="Average entry → stop distance across this coin's approved signals"><AlertTriangle size={11} /> {stopDist == null ? "—" : `${stopDist.toFixed(2)}%`} stop</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "10px", fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "2px 8px", borderRadius: 5 }}><Users size={11} /> {sourceCount.traders}/{sourceCount.total} traders</span>
+                </div>
+              )}
             />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>

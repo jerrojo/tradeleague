@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BarChart3, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
 import { CoinPositioning } from "./tabs/CoinPositioning";
+import { MarketPanorama } from "./tabs/MarketPanorama";
 import { HomeTab } from "./tabs/HomeTab";
 import { TradersTab } from "./tabs/TradersTab";
 import { ActivityFeed } from "./tabs/ActivityFeed";
@@ -42,14 +43,25 @@ const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
    chart since it's just another lens on the same price. ── */
 const MarketsSection = () => {
   const [coin, setCoin] = useState("BTC");
+  const detailRef = useRef(null);
+  // pick from the panorama → load the coin's detail and glide down to it
+  const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      {/* Cross-coin lead: the whole board at a glance */}
+      <MarketPanorama selected={coin} onSelect={pick} />
+      {/* ── Detail for the selected coin ── */}
+      <div ref={detailRef} style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
+        <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
+        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
+        <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
+      </div>
       <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={smcCoins} categories={COIN_CATEGORIES} />
-      {/* Chart + the unified Signal→Trade lifecycle list (Approved/Rejected · Pending/Active/Closed) */}
+      {/* Chart with signals plotted (no execution table — that lives in Audit) */}
       <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
       <CoinPositioning coin={coin} />
-      {/* Structure (SMC) */}
+      {/* Consensus signal — where to enter, the targets, the stop */}
       <SMCAnalysis coin={coin} embedded />
     </div>
   );
