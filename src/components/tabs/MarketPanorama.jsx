@@ -121,8 +121,8 @@ const MarketPanorama = ({ selected, onSelect }) => {
         <rect x={x} y={y} width={width} height={height} fill={fill} stroke={isSel ? C.purple : C.bg} strokeWidth={isSel ? 2.5 : 2} rx={3} />
         {showText && (
           <>
-            <text x={x + 7} y={y + 17} fill="#fff" fontSize={12} fontWeight="800" paintOrder="stroke" stroke="rgba(0,0,0,0.28)" strokeWidth={2.4} style={{ fontFamily: "monospace" }}>{name}</text>
-            <text x={x + 7} y={y + 31} fill="#fff" fontSize={10} fontWeight="700" paintOrder="stroke" stroke="rgba(0,0,0,0.28)" strokeWidth={2} style={{ fontFamily: "monospace" }}>
+            <text x={x + 7} y={y + 17} fill="#fff" stroke="none" fontSize={12} fontWeight="800" style={{ fontFamily: "monospace" }}>{name}</text>
+            <text x={x + 7} y={y + 31} fill="#fff" stroke="none" fontSize={10} fontWeight="700" style={{ fontFamily: "monospace" }}>
               {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}%L`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
             </text>
           </>
