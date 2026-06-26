@@ -1,6 +1,6 @@
 import { TraderLink } from "../../contexts";
 import { Avatar, BotTag, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
-import { ArrowDown, BellRing, CheckCircle, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
+import { ArrowDown, BellRing, CheckCircle, ChevronDown, ChevronUp, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useWatchlist, useProMode } from "../../contexts";
 import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
@@ -31,8 +31,11 @@ const botMeta = (name) => {
 const TradersTab = () => {
   const [view, setView] = useState("leaderboard");
   const [compareMetric, setCompareMetric] = useState("equity");
-  const [traderFilter, setTraderFilter] = useState("all");
-  const [sortField, setSortField] = useState("pnl");
+  const [sort, setSort] = useState({ key: "alpha", dir: "desc" });
+  const [onlyFavs, setOnlyFavs] = useState(false);
+  const [favTraders, setFavTraders] = useState(() => { try { return JSON.parse(localStorage.getItem("tl_fav_traders") || "{}"); } catch { return {}; } });
+  const toggleFav = (name) => setFavTraders((prev) => { const n = { ...prev, [name]: !prev[name] }; try { localStorage.setItem("tl_fav_traders", JSON.stringify(n)); } catch { /* ignore */ } return n; });
+  const setSortKey = (key) => setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
   const [search, setSearch] = useState("");
   const { openProfile } = useProfile();
 
@@ -82,27 +85,26 @@ const TradersTab = () => {
         <span style={{ fontSize: "13px", fontWeight: "800" }}>Directory</span>
         <span style={{ fontSize: "11px", color: C.textMuted }}>{mockTraders.length} traders</span>
         <div style={{ flex: 1 }} />
-        {/* Filter by type + sort */}
+        {/* Quick views — All · Ranking · Approval · Favorites (column headers handle granular sort) */}
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {[
-            { id: "all", label: "All", icon: Users },
-            { id: "human", label: "Traders", icon: Activity },
-            { id: "bot", label: "Bots", icon: Bot },
-            { id: "followed", label: "Watchlist", icon: Eye },
+            { id: "all", label: "All", icon: Users, on: !onlyFavs && sort.key === "alpha" },
+            { id: "ranking", label: "Ranking", icon: Trophy, on: !onlyFavs && sort.key === "pnl" },
+            { id: "approval", label: "Approval", icon: CheckCircle, on: !onlyFavs && sort.key === "approval" },
+            { id: "favorites", label: "Favorites", icon: Star, on: onlyFavs },
           ].map(cat => (
-            <button key={cat.id} onClick={() => setTraderFilter(cat.id)} style={{
+            <button key={cat.id} onClick={() => {
+              if (cat.id === "favorites") { setOnlyFavs(true); }
+              else { setOnlyFavs(false); setSort({ key: cat.id === "all" ? "alpha" : cat.id === "ranking" ? "pnl" : "approval", dir: "desc" }); }
+            }} style={{
               display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-              border: `1px solid ${traderFilter === cat.id ? C.purple : C.border}`,
-              backgroundColor: traderFilter === cat.id ? C.purpleBg : "transparent",
-              color: traderFilter === cat.id ? C.purple : C.textMuted
+              border: `1px solid ${cat.on ? C.purple : C.border}`,
+              backgroundColor: cat.on ? C.purpleBg : "transparent",
+              color: cat.on ? C.purple : C.textMuted
             }}>
-              <cat.icon size={11} /> {cat.label}
+              <cat.icon size={11} fill={cat.id === "favorites" && cat.on ? C.purple : "none"} /> {cat.label}
             </button>
           ))}
-          <div style={{ width: "1px", height: 20, backgroundColor: C.border, margin: "0 4px" }} />
-          <button onClick={() => setSortField(prev => prev === "pnl" ? "winRate" : prev === "winRate" ? "alpha" : "pnl")} title={`Sort by ${sortField}`} style={{ display: "flex", alignItems: "center", gap: "3px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer", border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted }}>
-            <ArrowDown size={11} /> {sortField === "pnl" ? "PnL" : sortField === "winRate" ? "Win%" : "Alpha"}
-          </button>
         </div>
       </div>
 
@@ -111,20 +113,34 @@ const TradersTab = () => {
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
-                {[["Rank",null],["Trader",null],["Alpha","alpha"],["Trend",null],["Streak","streak"],["WR / PF / DD",null],["PnL",null],["Expect.","expectancy"],["Robotín approval",null],...(traderFilter === "bot" ? [["Version",null],["Config",null],["Backtest → Live",null]] : []),["Action",null]].filter(([h]) => proMode || (h !== "Trend" && h !== "Expect.")).map(([h,tip]) => <th key={h} style={thStyle}>{tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}</th>)}
+                {/* [label, tip, sortKey] — numeric columns sort on click */}
+                {[["Rank",null,null],["Trader",null,null],["Alpha","alpha","alpha"],["Trend",null,null],["Streak","streak","streak"],["WR / PF / DD",null,"winRate"],["PnL",null,"pnl"],["Expect.","expectancy","expectancy"],["Robotín approval",null,"approval"],["Action",null,null]]
+                  .filter(([h]) => proMode || (h !== "Trend" && h !== "Expect."))
+                  .map(([h,tip,key]) => {
+                    const active = key && sort.key === key;
+                    return (
+                      <th key={h} onClick={key ? () => setSortKey(key) : undefined}
+                        style={{ ...thStyle, cursor: key ? "pointer" : "default", userSelect: "none", color: active ? C.text : undefined }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          {tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}
+                          {active && (sort.dir === "asc" ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
+                        </span>
+                      </th>
+                    );
+                  })}
               </tr></thead>
               <tbody>
                 {(() => {
                   let filtered = [...mockTraders];
-                  if (traderFilter === "human") filtered = filtered.filter(t => !t.isBot);
-                  else if (traderFilter === "bot") filtered = filtered.filter(t => t.isBot);
-                  else if (traderFilter === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
+                  if (onlyFavs) filtered = filtered.filter(t => favTraders[t.name]);
                   if (search.trim()) filtered = filtered.filter(t => t.name.toLowerCase().includes(search.trim().toLowerCase()));
-                  filtered.sort((a, b) => {
-                    if (sortField === "pnl") return b.pnl - a.pnl;
-                    if (sortField === "winRate") return b.winRate - a.winRate;
-                    return calcAlphaScore(b) - calcAlphaScore(a);
-                  });
+                  const acc = {
+                    alpha: (t) => calcAlphaScore(t), streak: (t) => t.streak, winRate: (t) => t.winRate,
+                    pnl: (t) => t.pnl, expectancy: (t) => Number(calcExpectancy(t)),
+                    approval: (t) => (robotinByTrader[t.name]?.rate || 0),
+                  };
+                  const f = acc[sort.key] || acc.alpha; const d = sort.dir === "asc" ? 1 : -1;
+                  filtered.sort((a, b) => (f(a) - f(b)) * d);
                   return filtered;
                 })().map((t, i) => {
                   const isTop1 = i === 0;
@@ -139,6 +155,9 @@ const TradersTab = () => {
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Avatar name={t.name} size={28} />
+                        <button onClick={(e) => { e.stopPropagation(); toggleFav(t.name); }} title={favTraders[t.name] ? "Remove from favorites" : "Add to favorites"} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: favTraders[t.name] ? C.amber : C.textFaint }}>
+                          <Star size={14} fill={favTraders[t.name] ? C.amber : "none"} />
+                        </button>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <TraderLink name={t.name} />
                           <BotTag isBot={t.isBot} />
@@ -194,17 +213,6 @@ const TradersTab = () => {
                         </div>
                       ); })()}
                     </td>
-                    {traderFilter === "bot" && (() => { const b = botMeta(t.name); const degraded = Number(b.livePF) < Number(b.btPF) * 0.8; return (
-                      <>
-                        <td style={{ ...tdStyle, ...mono, color: C.textMuted, fontSize: "11px" }}>{b.version}</td>
-                        <td style={{ ...tdStyle, ...mono, color: C.text, fontSize: "11px" }}>{b.config}</td>
-                        <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>
-                          <span style={{ color: C.textMuted }}>BT {b.btPF}</span>
-                          <span style={{ color: C.textFaint }}> → </span>
-                          <span style={{ color: degraded ? C.red : C.green, fontWeight: 700 }}>Live {b.livePF}</span>
-                        </td>
-                      </>
-                    ); })()}
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
                         <button title={followedTraders[t.name] ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.cyan + "20" : "transparent", color: followedTraders[t.name] ? C.cyan : C.textFaint }}>
