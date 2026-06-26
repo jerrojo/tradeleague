@@ -62,7 +62,7 @@ const HomeTab = () => {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
           <div>
             <div style={{ fontSize: "14px", fontWeight: "800" }}>Performance Track</div>
-            <div style={{ fontSize: "10px", color: C.textMuted }}>Cumulative P&L — active period (30 days) — {watchedNames.length} traders compared</div>
+            <div style={{ fontSize: "10px", color: C.textMuted }}>Signal providers' own track records (external) — cumulative P&L, 30 days, {watchedNames.length} compared. The fund follows their approved signals at fund scale.</div>
           </div>
           {leader && (
             <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "8px", backgroundColor: C.amberBg, border: `1px solid ${C.amber}30` }}>

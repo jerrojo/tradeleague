@@ -1,4 +1,5 @@
 import { COIN_PX } from "./robotin";
+import { START_CAPITAL } from "./fund";
 
 /* ═══════════════════════ TRADE REPORT LEDGER (v1, simulated) ═══════════════════════
    A dedicated, deterministic per-position ledger for the VARIV trading accounts —
@@ -11,7 +12,7 @@ import { COIN_PX } from "./robotin";
 
 const SYMBOLS = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "ARB", "OP", "SUI", "TON", "NEAR", "INJ"];
 const ACCOUNTS = { LONG: ["VARIV_LONGS", "VARIV_CORE"], SHORT: ["VARIV_SHORTS", "VARIV_CORE"] };
-const INITIAL_BALANCE = 250000;
+const INITIAL_BALANCE = START_CAPITAL; // same capital base as the rest of the fund
 
 const lcg = (seed) => { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; };
 const r2 = (x) => Math.round(x * 100) / 100;
@@ -44,7 +45,7 @@ export function monthLedger(year, month) {
       const side = rnd() < 0.5 ? "LONG" : "SHORT";
       const account = ACCOUNTS[side][rnd() < 0.72 ? 0 : 1];
       const leverage = [3, 4, 5, 5, 8, 10][Math.floor(rnd() * 6)];
-      const margin = r2(4000 + rnd() * 36000);
+      const margin = r2(600 + rnd() * 5400); // sized to the fund's capital base (not a separate $250k account)
       const notional = r2(margin * leverage);
       const win = rnd() < 0.53; // slight positive edge
       const sign = win ? 1 : -1;

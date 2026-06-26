@@ -22,6 +22,16 @@ const dateRanges = [
   { id: "all", label: "All" },
 ];
 
+/* Live "data as-of" — self-contained ticker so the whole app doesn't re-render. */
+const UpdatedAgo = () => {
+  const [secs, setSecs] = useState(3);
+  useEffect(() => {
+    const id = setInterval(() => setSecs((s) => (s >= 59 ? 1 : s + 1)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return <span style={{ color: C.green }}>{secs}s ago</span>;
+};
+
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -826,7 +836,7 @@ const App = () => {
               <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AlertTriangle size={11} color={C.red} /> $4.2M liquidated</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <span style={{ color: C.green }}>12s ago</span></span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <UpdatedAgo /></span>
               </div>
             </footer>
           </div>

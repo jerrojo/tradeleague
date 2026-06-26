@@ -11,6 +11,7 @@ import { SignalRow } from "../SignalRow";
 import { useProfile } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
+import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: ROBOTÍN WALLET (trade journal, simulated) ═══════════════════════
@@ -18,7 +19,7 @@ import { C, cardStyle, mono } from "../../theme";
    Same candle-derived outcomes as RobotinSignals, aggregated into a wallet-style
    P&L journal: account balance, equity curve, win rate and a per-trade audit. */
 
-const STARTING_BALANCE = 50000;
+const STARTING_BALANCE = START_CAPITAL;
 
 const fmt = (p) => (p == null ? "—" : p < 1 ? p.toFixed(4) : p.toLocaleString());
 const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

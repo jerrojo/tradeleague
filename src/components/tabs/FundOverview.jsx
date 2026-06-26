@@ -10,6 +10,7 @@ import {
 import { StatCard } from "../common";
 import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -17,7 +18,7 @@ import { C, cardStyle, mono } from "../../theme";
    Numbers mirror RobotinWallet exactly (same approved-signal universe, same equity
    math from STARTING_BALANCE) so this page and the Wallet never disagree. */
 
-const STARTING_BALANCE = 50000;
+const STARTING_BALANCE = START_CAPITAL;
 
 const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usdPlain = (v) => `$${Math.round(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;

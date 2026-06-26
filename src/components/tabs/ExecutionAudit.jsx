@@ -7,6 +7,7 @@ import { StatCard } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
 /* ═══════════════════════ TAB: EXECUTION AUDIT ═══════════════════════
@@ -17,7 +18,7 @@ import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
      realized (gross of accounting) = pnl + fees   →   net pnl = pnl
      per-trade fee ~ $0.1–0.4, derived deterministically from the trade id. */
 
-const STARTING_BALANCE = 50000;
+const STARTING_BALANCE = START_CAPITAL;
 
 /* ── formatting (mirrors TradeDetail) ── */
 const fmtPx = (p) => {
