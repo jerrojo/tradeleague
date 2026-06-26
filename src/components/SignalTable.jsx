@@ -191,6 +191,7 @@ const SignalTable = ({
             const active = sort.key === c.id;
             return (
               <th key={c.id} onClick={sortable ? () => onSort(c.id) : undefined}
+                aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : (sortable ? "none" : undefined)}
                 style={{ ...thStyle, fontSize: 10, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                   {c.label}

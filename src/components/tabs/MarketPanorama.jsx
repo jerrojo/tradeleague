@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
-import { Globe, ChevronUp, ChevronDown } from "lucide-react";
+import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
+import { Globe, ChevronUp, ChevronDown, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { smcCoins } from "../../data/mockData";
 import { SectionHeader } from "../common";
 import { useTimeframe } from "../../contexts";
 import { C, cardStyle, mono } from "../../theme";
+
+const a2 = (a) => Math.max(0, Math.min(255, Math.round(a * 255))).toString(16).padStart(2, "0");
 
 /* ═══════════════════════ MARKET PANORAMA ═══════════════════════
    The cross-coin lead for Markets: one scannable grid of every coin so you see
@@ -58,6 +61,9 @@ const MarketPanorama = ({ selected, onSelect }) => {
   const { within, isFiltered } = useTimeframe();
   const [sortKey, setSortKey] = useState(null); // null = catalog order (majors first)
   const [sortDir, setSortDir] = useState("desc");
+  const [view, setView] = useState("table");     // "table" | "map"
+  const [sizeBy, setSizeBy] = useState("signals"); // signals | activity | equal
+  const [colorBy, setColorBy] = useState("change"); // change | sentiment
 
   const rows = useMemo(() => ROBOTIN_COINS.map((coin) => {
     const candles = coinCandles(coin);
@@ -99,13 +105,86 @@ const MarketPanorama = ({ selected, onSelect }) => {
   const live = rows.filter((r) => r.active > 0).length;
   const up = rows.filter((r) => r.change >= 0).length;
 
+  // ── treemap (heatmap) data + colour ──
+  const chgColor = (v) => `${v >= 0 ? C.green : C.red}${a2(0.16 + Math.min(1, Math.abs(v || 0) / 6) * 0.6)}`;
+  const sentColor = (lp) => (lp == null ? `${C.textFaint}22` : `${lp >= 55 ? C.green : lp <= 45 ? C.red : C.textMuted}${a2(0.18 + Math.min(1, Math.abs((lp - 50) / 50)) * 0.55)}`);
+  const sizeVal = (r) => (sizeBy === "equal" ? 1 : sizeBy === "activity" ? (r.active || 0.3) : (r.total || 0.5));
+  const treeData = sorted.map((r) => ({ name: r.coin, size: sizeVal(r), change: r.change, longPct: r.longPct, total: r.total, active: r.active }));
+  const renderTile = (props) => {
+    const { x, y, width, height, name, change, longPct } = props;
+    if (width <= 0 || height <= 0 || !name) return null;
+    const fill = colorBy === "sentiment" ? sentColor(longPct) : chgColor(change);
+    const isSel = name === selected;
+    const showText = width > 40 && height > 26;
+    return (
+      <g onClick={() => onSelect(name)} style={{ cursor: "pointer" }}>
+        <rect x={x} y={y} width={width} height={height} fill={fill} stroke={isSel ? C.purple : C.bg} strokeWidth={isSel ? 2.5 : 2} rx={3} />
+        {showText && (
+          <>
+            <text x={x + 7} y={y + 17} fill="#fff" fontSize={12} fontWeight="800" style={{ fontFamily: "monospace" }}>{name}</text>
+            <text x={x + 7} y={y + 31} fill="rgba(255,255,255,0.82)" fontSize={10} style={{ fontFamily: "monospace" }}>
+              {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}%L`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
+            </text>
+          </>
+        )}
+      </g>
+    );
+  };
+  const TileTip = ({ active: on, payload }) => {
+    if (!on || !payload || !payload.length) return null;
+    const d = payload[0].payload;
+    return (
+      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px", fontSize: 11, ...mono }}>
+        <div style={{ fontWeight: 800, color: C.text, marginBottom: 2 }}>{d.name}/USDT</div>
+        <div style={{ color: d.change >= 0 ? C.green : C.red }}>{d.change >= 0 ? "+" : ""}{(d.change || 0).toFixed(1)}% Δ</div>
+        <div style={{ color: C.textMuted }}>{d.longPct == null ? "no signals" : `${d.longPct}% long`} · {d.total} sig{d.active ? ` · ${d.active} live` : ""}</div>
+      </div>
+    );
+  };
+
+  const segBtn = (on) => ({ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: on ? C.purple : "transparent", color: on ? "#fff" : C.textMuted, fontFamily: "inherit" });
+  const miniSel = { backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 11, fontWeight: 600, padding: "5px 8px", cursor: "pointer", outline: "none", fontFamily: "inherit" };
+
+  const controls = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {view === "map" && (
+        <>
+          <select value={sizeBy} onChange={(e) => setSizeBy(e.target.value)} style={miniSel} title="Tile size by" aria-label="Size tiles by">
+            <option value="signals">Size: signals</option>
+            <option value="activity">Size: live signals</option>
+            <option value="equal">Size: equal</option>
+          </select>
+          <select value={colorBy} onChange={(e) => setColorBy(e.target.value)} style={miniSel} title="Tile color by" aria-label="Color tiles by">
+            <option value="change">Color: Δ%</option>
+            <option value="sentiment">Color: sentiment</option>
+          </select>
+        </>
+      )}
+      <div style={{ display: "inline-flex", borderRadius: 7, border: `1px solid ${C.border}`, overflow: "hidden" }}>
+        <button style={segBtn(view === "table")} onClick={() => setView("table")} aria-label="Table view"><TableIcon size={13} /> Table</button>
+        <button style={segBtn(view === "map")} onClick={() => setView("map")} aria-label="Heatmap view"><LayoutGrid size={13} /> Heatmap</button>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <SectionHeader
         icon={Globe}
         title="Market panorama"
         subtitle={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${live} with live signals${isFiltered ? " · in range" : ""} · click a coin for full detail`}
+        right={controls}
       />
+      {view === "map" && (
+        <div style={{ ...cardStyle, padding: 12 }}>
+          <ResponsiveContainer width="100%" height={420}>
+            <Treemap data={treeData} dataKey="size" stroke={C.bg} content={renderTile} isAnimationActive={false}>
+              <Tooltip content={<TileTip />} />
+            </Treemap>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {view === "table" && (
       <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
         {/* header row */}
         <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.bg }}>
@@ -176,6 +255,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
           );
         })}
       </div>
+      )}
       <style>{`.panorama-row:hover { background-color: ${C.cardHover} !important; }`}</style>
     </div>
   );

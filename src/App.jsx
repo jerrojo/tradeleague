@@ -266,13 +266,13 @@ const App = () => {
                 <div style={{ width: 12, height: 12, backgroundColor: C.purple, borderRadius: "50%", flexShrink: 0 }} />
                 {!sidebarCollapsed && <span style={{ fontWeight: "800", fontSize: "16px", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>Tradethlon</span>}
               </div>
-              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0 }}>
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0 }}>
                 <ChevronRight size={16} style={{ transform: sidebarCollapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }} />
               </button>
             </div>
 
             {/* Nav items — 3-zone grouping */}
-            <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "1px", overflowY: "auto" }}>
+            <nav role="tablist" aria-label="Main sections" style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: "1px", overflowY: "auto" }}>
               {tabs.map(tab => {
                 if (tab.zone) return (
                   <div key={tab.id} style={{ padding: sidebarCollapsed ? "8px 0 4px" : "12px 12px 4px", overflow: "hidden" }}>
@@ -284,7 +284,7 @@ const App = () => {
                 const isActive = activeTab === tab.id;
                 const activeColor = tab.accent || C.purple;
                 return (
-                  <button key={tab.id} onClick={() => {
+                  <button key={tab.id} role="tab" aria-selected={isActive} aria-label={tab.label} onClick={() => {
                     setActiveTab(tab.id);
                     setFeedFilter("all");
                     setProfileTrader(null);
@@ -361,7 +361,7 @@ const App = () => {
                   }}>{unreadCount}</div>}
                 </div>
                 {/* Search */}
-                <button onClick={() => setShowSearch(true)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px", gap: "6px" }}>
+                <button onClick={() => setShowSearch(true)} aria-label="Search (Command-K)" style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px", gap: "6px" }}>
                   <Search size={17} />
                   <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>⌘K</span>
                 </button>
@@ -428,7 +428,18 @@ const App = () => {
                     <Search size={16} color={C.textMuted} />
                     <input ref={searchRef} autoFocus value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search traders, pairs, sections..." aria-label="Search traders, pairs, sections" style={{
                       flex: 1, backgroundColor: "transparent", border: "none", outline: "none", color: C.text, fontSize: "14px", fontWeight: "500"
-                    }} onKeyDown={e => { if (e.key === "Escape") setShowSearch(false); }} />
+                    }} onKeyDown={e => {
+                      if (e.key === "Escape") { setShowSearch(false); return; }
+                      if (e.key === "Enter") {
+                        // jump to the top result: traders → pairs → sections
+                        if (searchResults.traders[0]) { openProfile(searchResults.traders[0]); }
+                        else if (searchResults.pairs[0]) { setActiveTab("activity"); setFeedFilter("all"); }
+                        else if (searchResults.tabs[0]) { setActiveTab(searchResults.tabs[0].id); setProfileTrader(null); }
+                        else return;
+                        setShowSearch(false); setSearchQuery("");
+                      }
+                    }} />
+                    <span style={{ fontSize: "10px", color: C.textFaint, padding: "2px 6px", backgroundColor: C.bg, borderRadius: "4px", ...mono }}>↵ open top</span>
                     <span style={{ fontSize: "10px", color: C.textFaint, padding: "2px 6px", backgroundColor: C.bg, borderRadius: "4px", ...mono }}>ESC</span>
                   </div>
                   <div style={{ maxHeight: "360px", overflowY: "auto", padding: "8px" }}>
