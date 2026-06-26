@@ -1,4 +1,5 @@
 import { Bot, ChevronDown, ThumbsDown, ThumbsUp, User, Users } from "lucide-react";
+import { createPortal } from "react-dom";
 import { srand } from "../lib/scoring";
 import { C, cardStyle, mono, pillStyle } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -105,14 +106,25 @@ const GLOSSARY = {
 };
 
 const InfoTip = ({ k, children, inline = false }) => {
-  const [show, setShow] = useState(false);
+  // The tooltip is rendered in a portal to <body> with fixed positioning so it can
+  // NEVER be clipped by an ancestor's overflow:hidden (cards, tables, sticky headers).
+  const [pos, setPos] = useState(null); // { x, y, below } in viewport coords
+  const ref = useRef(null);
   const text = GLOSSARY[k];
   if (!text) return children || null;
+  const place = () => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = Math.min(Math.max(r.left + r.width / 2, 150), window.innerWidth - 150);
+    const below = r.top < 130; // not enough room above → flip below
+    setPos({ x, y: below ? r.bottom + 8 : r.top - 8, below });
+  };
   return (
     <span
-      style={{ position: "relative", display: inline ? "inline-flex" : "inline-flex", alignItems: "center", gap: "3px", cursor: "help" }}
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
+      ref={ref}
+      style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "3px", cursor: "help" }}
+      onMouseEnter={place}
+      onMouseLeave={() => setPos(null)}
     >
       {children}
       <span style={{
@@ -120,15 +132,17 @@ const InfoTip = ({ k, children, inline = false }) => {
         fontSize: "9px", fontWeight: "700", display: "inline-flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0
       }}>?</span>
-      {show && (
+      {pos && createPortal(
         <span style={{
-          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          position: "fixed", left: pos.x, top: pos.y,
+          transform: `translate(-50%, ${pos.below ? "0" : "-100%"})`,
           backgroundColor: "#1c2129", border: `1px solid ${C.borderLight}`, borderRadius: "8px",
           padding: "10px 14px", fontSize: "12px", color: C.text, lineHeight: "1.5",
-          width: "260px", zIndex: 999, boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          width: "260px", maxWidth: "calc(100vw - 24px)", zIndex: 100000, boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
           pointerEvents: "none", fontWeight: "400", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-          textTransform: "none", letterSpacing: "0"
-        }}>{text}</span>
+          textTransform: "none", letterSpacing: "0", whiteSpace: "normal",
+        }}>{text}</span>,
+        document.body
       )}
     </span>
   );
