@@ -58,21 +58,26 @@ const FundOverview = () => {
        chronological order). "Executed" steps only when a Robotín-approved trade
        closes; "All signals" steps on every signal — so the gap between the lines is
        exactly the value Robotín's filter added (or the upside it left on the table). ── */
-    const allClosed = allSignals
-      .filter((s) => s.hypoClosed)
-      .sort((a, b) => a.time - b.time || (a.hypoExitIdx ?? 0) - (b.hypoExitIdx ?? 0));
+    // Apples-to-apples: both lines count realized closes. They share every approved
+    // close; the ONLY divergence is the rejected signals (counted in "all" via their
+    // hypothetical close). So the gap isolates exactly what Robotín's filter changed.
+    const events = allSignals
+      .filter((s) => (s.approved && s.status === "closed") || (!s.approved && s.hypoClosed))
+      .sort((a, b) => a.time - b.time || (a.exitIdx ?? a.hypoExitIdx ?? 0) - (b.exitIdx ?? b.hypoExitIdx ?? 0));
     let execBal = STARTING_BALANCE, allBal = STARTING_BALANCE;
     let peak = STARTING_BALANCE, maxDrawdown = 0;
     const closedReturns = []; // executed per-trade % returns, for the Sharpe proxy
     const equity = [{ i: 0, exec: STARTING_BALANCE, all: STARTING_BALANCE, dd: 0 }];
-    allClosed.forEach((s, i) => {
-      allBal += s.hypoPnl;
+    events.forEach((s, i) => {
       if (s.approved && s.status === "closed") {
         const prev = execBal;
         execBal += s.pnl;
+        allBal += s.pnl;
         if (prev > 0) closedReturns.push(s.pnl / prev);
         peak = Math.max(peak, execBal);
         maxDrawdown = Math.min(maxDrawdown, execBal - peak);
+      } else {
+        allBal += s.hypoPnl; // rejected signal — only the all-signals book takes it
       }
       equity.push({
         i: i + 1,

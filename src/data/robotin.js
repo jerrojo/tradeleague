@@ -103,9 +103,12 @@ export function coinSignals(coin, candles) {
     const conf = Math.round(55 + r(9) * 44); // 55–99
     const approved = conf >= 62;
     const alignProb = 0.52 + ((conf - 62) / 37) * 0.42; // higher confidence → better aligned (≈52%→94%)
+    // Approved calls align with the real move; REJECTED calls are deliberately
+    // anti-aligned (~33% right) so they carry negative expectancy — i.e. Robotín's
+    // filter genuinely screens out losers, and "executed" beats "all signals".
     const dir = approved
       ? (r(3) < alignProb ? realizedDir : (realizedDir === "LONG" ? "SHORT" : "LONG"))
-      : (r(3) > 0.5 ? "LONG" : "SHORT");
+      : (r(3) < 0.33 ? realizedDir : (realizedDir === "LONG" ? "SHORT" : "LONG"));
     const sign = dir === "LONG" ? 1 : -1;
     // Robotín places a LIMIT entry back in the zone (below price for longs, above for
     // shorts), so a fresh signal can sit PENDING until price returns to fill it.
