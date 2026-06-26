@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
 import { coinCandles, coinSignals } from "../data/robotin";
 import { SectionHeader } from "./common";
@@ -14,6 +14,7 @@ import { C, cardStyle, mono } from "../theme";
 const RANGE = 6; // ± % of price shown across the axis
 
 const PositioningMap = ({ coin, currentPrice }) => {
+  const [hover, setHover] = useState(null);
   const data = useMemo(() => {
     // Every published signal on this coin is a position: approved → executed trade,
     // the rest → live/pending signals. Plotted at its first target vs the current
@@ -22,8 +23,10 @@ const PositioningMap = ({ coin, currentPrice }) => {
     const sigs = coinSignals(coin, coinCandles(coin));
     const positions = sigs.map((s) => ({
       kind: s.approved ? "trade" : "signal",
+      approved: s.approved, status: s.status,
       trader: s.trader, isBot: s.isBot, type: s.dir,
-      target: s.tp1 ?? s.entry, lev: s.lev || 3,
+      entry: s.entry, target: s.tp1 ?? s.entry, lev: s.lev || 3,
+      conf: s.confidence, pnlPct: s.pnlPct,
     }));
     const longs = positions.filter((p) => p.type === "LONG").length;
     const shorts = positions.filter((p) => p.type === "SHORT").length;
@@ -75,16 +78,58 @@ const PositioningMap = ({ coin, currentPrice }) => {
           const clr = p.type === "LONG" ? C.green : C.red;
           const r = 4 + Math.min(4, p.lev / 2);
           const top = 30 + ((i * 53) % 70); // deterministic vertical spread
+          const left = xOf(pct);
+          const on = hover?.i === i;
           return (
-            <div key={i} title={`${p.trader} (${p.isBot ? "bot" : "human"}) — ${p.type} ${p.kind} · target ${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
+            <div key={i}
+              onMouseEnter={() => setHover({ i, left, top, p, pct })}
+              onMouseLeave={() => setHover((h) => (h?.i === i ? null : h))}
               style={{
-                position: "absolute", left: `${xOf(pct)}%`, top, transform: "translate(-50%,-50%)",
+                position: "absolute", left: `${left}%`, top, transform: `translate(-50%,-50%) scale(${on ? 1.5 : 1})`,
                 width: r * 2, height: r * 2, borderRadius: p.isBot ? "2px" : "50%",
-                backgroundColor: p.kind === "trade" ? `${clr}cc` : "transparent",
-                border: `1.5px solid ${clr}`, boxShadow: `0 0 6px ${clr}40`,
+                backgroundColor: p.kind === "trade" ? `${clr}${on ? "ff" : "cc"}` : (on ? `${clr}66` : "transparent"),
+                border: `1.5px solid ${clr}`, boxShadow: `0 0 ${on ? 14 : 6}px ${clr}${on ? "aa" : "40"}`,
+                cursor: "pointer", zIndex: on ? 7 : 3, transition: "transform 0.12s, box-shadow 0.12s",
               }} />
           );
         })}
+
+        {/* custom tooltip — richer than the native title, styled */}
+        {hover && (() => {
+          const { p, pct, left, top } = hover;
+          const clr = p.type === "LONG" ? C.green : C.red;
+          const label = !p.approved ? "Signal — not executed"
+            : p.status === "active" ? "Active trade"
+            : p.status === "pending" ? "Pending order"
+            : p.status === "closed" ? "Closed trade" : "Executed trade";
+          const onRight = left > 55;
+          return (
+            <div style={{
+              position: "absolute", left: `${left}%`, top: top - 12, zIndex: 12, pointerEvents: "none",
+              transform: `translate(${onRight ? "-100%" : "0"}, -100%)`, marginLeft: onRight ? -8 : 8,
+              backgroundColor: C.cardElev, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: "8px 10px",
+              boxShadow: C.shadowLg, whiteSpace: "nowrap", minWidth: 168,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: C.text }}>{p.trader}</span>
+                <span style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: "0.5px", color: p.isBot ? C.cyan : C.textMuted, backgroundColor: p.isBot ? `${C.cyan}1c` : C.card, border: `1px solid ${C.border}`, padding: "1px 5px", borderRadius: 3 }}>{p.isBot ? "BOT" : "HUMAN"}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontWeight: 800, color: clr }}>
+                  {p.type === "LONG" ? <TrendingUp size={11} /> : <TrendingDown size={11} />}{p.type}
+                </span>
+                <span style={{ color: C.textMuted }}>· {label} · {p.lev}x</span>
+              </div>
+              <div style={{ fontSize: 10.5, ...mono, marginTop: 5, color: C.textMuted }}>
+                target <span style={{ color: clr, fontWeight: 700 }}>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>
+                {p.approved && p.status === "closed" && p.pnlPct != null && (
+                  <> · pnl <span style={{ color: p.pnlPct >= 0 ? C.green : C.red, fontWeight: 700 }}>{p.pnlPct >= 0 ? "+" : ""}{p.pnlPct.toFixed(1)}%</span></>
+                )}
+              </div>
+              <div style={{ fontSize: 9.5, color: C.textFaint, marginTop: 3 }}>Robotín confidence {p.conf}%</div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── COMPASS — the net read at a glance: a needle on the bearish↔bullish axis + the big numbers ── */}
@@ -119,13 +164,14 @@ const PositioningMap = ({ coin, currentPrice }) => {
         </div>
       </div>
 
-      {/* legend */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "14px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: `${C.green}cc`, border: `1.5px solid ${C.green}` }} /> trade</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "transparent", border: `1.5px solid ${C.blue}` }} /> signal</span>
+      {/* legend — color = side · fill = executed vs signal · shape = bot vs human */}
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "14px", flexWrap: "wrap", fontSize: 10, color: C.textMuted }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: `${C.textMuted}cc`, border: `1.5px solid ${C.textMuted}` }} /> executed trade</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "transparent", border: `1.5px solid ${C.textMuted}` }} /> signal (not taken)</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: C.textFaint }} /> human</span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "2px", backgroundColor: C.textFaint }} /> bot</span>
-        <span style={{ color: C.textFaint }}>larger dot = more leverage</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: C.green }} /> long <span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: C.red, marginLeft: 4 }} /> short</span>
+        <span style={{ color: C.textFaint }}>larger = more leverage</span>
       </div>
     </div>
   );
