@@ -88,6 +88,7 @@ const App = () => {
       { id: "audit", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
       { id: "audit", label: "Analytics", desc: "Signal-provider edge — KPIs, equity, win rate by style, expectancy by pair" },
       { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
+      { id: "report", label: "Trade Report", desc: "Executed positions by day — per-position breakdown across the VARIV accounts" },
       { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
       { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
       { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
@@ -107,9 +108,9 @@ const App = () => {
     return () => document.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Keyboard nav — 1–4 jump between sections (pro speed). Ignored while typing.
+  // Keyboard nav — 1–6 jump between sections in sidebar order (pro speed). Ignored while typing.
   useEffect(() => {
-    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets", "5": "audit", "6": "report" };
+    const SECTIONS = { "1": "overview", "2": "activity", "3": "report", "4": "audit", "5": "traders", "6": "markets" };
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
@@ -172,13 +173,17 @@ const App = () => {
 
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
+  // Two groups: "Fund" = the fund's own performance & operations (summary → live →
+  // ledger → verification); "Research" = the inputs behind the edge (people + assets).
   const tabs = [
+    { zone: true, id: "z-fund", label: "Fund" },
     { id: "overview", label: "Overview", icon: LayoutDashboard, accent: C.purple },
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
+    { id: "report", label: "Trade Report", icon: Calendar, accent: C.cyan },
+    { id: "audit", label: "Audit", icon: Scale, accent: C.amber },
+    { zone: true, id: "z-research", label: "Research" },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
-    { id: "audit", label: "Audit", icon: Scale, accent: C.amber },
-    { id: "report", label: "Trade Report", icon: Calendar, accent: C.cyan },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
@@ -377,10 +382,10 @@ const App = () => {
                     {[
                       { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
                       { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
+                      { icon: Calendar, color: C.cyan, t: "Trade Report", d: "Executed positions by day — pick a date for the full breakdown.", go: "report" },
+                      { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
                       { icon: Globe, color: C.cyan, t: "Markets", d: "The whole board at a glance, then drill into any coin's detail.", go: "markets" },
-                      { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
-                      { icon: Calendar, color: C.cyan, t: "Trade Report", d: "Executed positions by day — pick a date for the full breakdown.", go: "report" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
