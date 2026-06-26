@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { BarChart3, ShieldCheck } from "lucide-react";
+import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
@@ -11,6 +11,7 @@ import { TradersTab } from "./tabs/TradersTab";
 import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
+import { FilterEdge } from "./tabs/FilterEdge";
 import { smcCoins } from "../data/mockData";
 import { ROBOTIN_COINS } from "../data/robotin";
 
@@ -90,9 +91,10 @@ const AuditSection = () => {
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[
         { id: "execution", label: "Execution Audit", icon: ShieldCheck },
+        { id: "edge", label: "Filter Edge", icon: GitBranch },
         { id: "analytics", label: "Analytics", icon: BarChart3 },
       ]} />
-      {sub === "execution" ? <ExecutionAudit /> : <PortfolioTab />}
+      {sub === "execution" ? <ExecutionAudit /> : sub === "edge" ? <FilterEdge /> : <PortfolioTab />}
     </div>
   );
 };

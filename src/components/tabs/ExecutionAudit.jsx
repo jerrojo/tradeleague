@@ -39,6 +39,11 @@ const fmtTime = (t) =>
 const seedFrom = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1e9; const x = Math.sin(h) * 10000; return x - Math.floor(x); };
 const feeOf = (s) => Math.round((0.1 + seedFrom(s.id || s.coin) * 0.3) * 100) / 100;
 
+/* Arrival slippage (TCA): realized fill vs. the price at AI approval. Deterministic
+   execution noise per trade, slightly skewed adverse (you usually pay a touch).
+   Convention (Talos): negative bps = beat arrival (good), positive = underperformed. */
+const slipBps = (s) => Math.round(((seedFrom((s.id || s.coin) + "slip") - 0.46) * 7) * 10) / 10;
+
 /* ── derived audit fields for a single signal (mirrors TradeDetail's logic) ── */
 const deriveAudit = (s) => {
   const isClosed = s.status === "closed";
@@ -239,6 +244,19 @@ const ExecutionAudit = () => {
     };
   }, [executed]);
 
+  /* ── TCA: arrival slippage over executed closed trades ── */
+  const tca = useMemo(() => {
+    const closed = executed.filter((s) => s.status === "closed");
+    const rows = closed.map((s) => ({ bps: slipBps(s), cost: (s.audit.notional || 0) * (slipBps(s) / 1e4) }));
+    const nn = rows.length;
+    const avg = nn ? rows.reduce((a, r) => a + r.bps, 0) / nn : 0;
+    const beat = nn ? (rows.filter((r) => r.bps < 0).length / nn) * 100 : 0;
+    const best = nn ? Math.min(...rows.map((r) => r.bps)) : 0;
+    const worst = nn ? Math.max(...rows.map((r) => r.bps)) : 0;
+    const cost = rows.reduce((a, r) => a + r.cost, 0);
+    return { nn, avg, beat, best, worst, cost };
+  }, [executed]);
+
   /* ── breakdown by asset ── */
   const byAsset = useMemo(() => {
     const map = new Map();
@@ -358,6 +376,22 @@ const ExecutionAudit = () => {
           <MiniStat label="Avg Fees / Notional" value={`${kpi.feeNotionalPct.toFixed(3)}%`} color={C.amber} />
           <MiniStat label="LONG Win Rate" value={`${kpi.longWinRate.toFixed(1)}%`} color={kpi.longWinRate >= 50 ? C.green : C.red} sub={`${kpi.longWins.length}/${kpi.longClosed.length}`} />
           <MiniStat label="SHORT Win Rate" value={`${kpi.shortWinRate.toFixed(1)}%`} color={kpi.shortWinRate >= 50 ? C.green : C.red} sub={`${kpi.shortWins.length}/${kpi.shortClosed.length}`} />
+        </div>
+      </div>
+
+      {/* ─────────── 4b) EXECUTION QUALITY — TCA ─────────── */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
+          Execution Quality — TCA
+        </div>
+        <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 8 }}>
+          Realized fill vs. the signal's approval price (arrival). Negative = beat arrival · {tca.nn} closed fills
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+          <MiniStat label="Avg Arrival Slippage" value={`${tca.avg > 0 ? "+" : tca.avg < 0 ? "−" : ""}${Math.abs(tca.avg).toFixed(1)} bps`} color={tca.avg <= 0 ? C.green : C.red} sub={`est. cost ${usd(-Math.abs(tca.cost))}`} />
+          <MiniStat label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
+          <MiniStat label="Best Fill" value={`−${Math.abs(tca.best).toFixed(1)} bps`} color={C.green} />
+          <MiniStat label="Worst Fill" value={`+${Math.abs(tca.worst).toFixed(1)} bps`} color={C.red} />
         </div>
       </div>
 

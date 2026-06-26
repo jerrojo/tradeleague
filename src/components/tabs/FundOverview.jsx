@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import {
   Activity, BarChart3, CheckCircle2, Cpu, Gauge, Layers, Percent, Radio,
-  Scale, TrendingDown, Wallet,
+  Scale, Sparkles, TrendingDown, Wallet,
 } from "lucide-react";
 import { StatCard } from "../common";
 import { useTimeframe } from "../../contexts";
@@ -23,6 +23,34 @@ const STARTING_BALANCE = START_CAPITAL;
 const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const usdPlain = (v) => `$${Math.round(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
+
+/* AI commentary — a plain-English read generated deterministically from the
+   period's metrics (Bloomberg PORT pattern). It re-writes itself as the timeframe
+   changes; honest framing — it's narrated from the numbers, not invented. */
+const Em = ({ c, children }) => <span style={{ color: c, fontWeight: 700 }}>{children}</span>;
+const AICommentary = ({ data }) => {
+  const edge = data.balance - data.allBalance;
+  const beat = data.returnPct - data.btcReturnPct;
+  const pct1 = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
+  return (
+    <div style={{ ...cardStyle, borderColor: `${C.purple}40`, backgroundColor: `${C.purple}0d`, display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Sparkles size={16} color={C.purple} />
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.4px" }}>Robotín's read</span>
+          <span style={{ fontSize: 8, fontWeight: 800, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>AI commentary</span>
+        </div>
+        <p style={{ fontSize: 12.5, lineHeight: 1.65, color: C.textMuted, margin: 0 }}>
+          The fund stands at <Em c={C.text}>{usdPlain(data.balance)}</Em>, <Em c={data.returnPct >= 0 ? C.green : C.red}>{pct1(data.returnPct)}</Em> for the period versus <Em c={data.btcReturnPct >= 0 ? C.green : C.red}>{pct1(data.btcReturnPct)}</Em> for BTC buy-and-hold — {beat >= 0 ? "ahead of" : "behind"} the benchmark by <Em c={beat >= 0 ? C.green : C.red}>{Math.abs(beat).toFixed(1)} pts</Em>.
+          {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({data.approvalRate}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
+          {" "}Win rate is <Em c={C.text}>{data.winRate}%</Em> at a <Em c={data.profitFactor >= 1 ? C.green : C.red}>{pfFmt(data.profitFactor)}</Em> profit factor, with the worst drawdown reaching <Em c={C.red}>{data.maxDrawdownPct.toFixed(1)}%</Em>{data.topCoin ? <> · most active in <Em c={C.text}>{data.topCoin}</Em> ({data.topConcentration}% of trades)</> : null}.
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const FundOverview = () => {
   const { within } = useTimeframe();
@@ -253,6 +281,9 @@ const FundOverview = () => {
           sub="gross win / gross loss"
         />
       </div>
+
+      {/* ── 2b · AI commentary — the period in plain English ── */}
+      <AICommentary data={data} />
 
       {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
       <div style={cardStyle}>
