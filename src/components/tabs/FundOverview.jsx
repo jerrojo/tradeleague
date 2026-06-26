@@ -54,27 +54,39 @@ const FundOverview = () => {
     const topCoin = top[0];
     const topConcentration = trades.length ? Math.round((top[1] / trades.length) * 100) : 0;
 
-    /* ── Equity curve over closed trades, ordered by exit (fallback entry) time ── */
-    const closedByExit = [...closed].sort(
-      (a, b) => (a.exitIdx ?? 0) - (b.exitIdx ?? 0) || a.time - b.time
-    );
-    let bal = STARTING_BALANCE;
-    let peak = STARTING_BALANCE;
-    let maxDrawdown = 0; // worst peak-to-trough (negative number, $)
-    const closedReturns = []; // per-trade % return on running balance, for the Sharpe proxy
-    const equity = [{ i: 0, fund: STARTING_BALANCE, btc: STARTING_BALANCE, dd: 0 }];
-    closedByExit.forEach((t, i) => {
-      const prev = bal;
-      bal += t.pnl;
-      if (prev > 0) closedReturns.push(t.pnl / prev);
-      peak = Math.max(peak, bal);
-      maxDrawdown = Math.min(maxDrawdown, bal - peak);
-      equity.push({ i: i + 1, fund: Math.round(bal * 100) / 100, dd: peak > 0 ? Math.round(((bal - peak) / peak) * 1000) / 10 : 0 });
+    /* ── Two equity curves on ONE timeline (every hypothetically-closed signal, in
+       chronological order). "Executed" steps only when a Robotín-approved trade
+       closes; "All signals" steps on every signal — so the gap between the lines is
+       exactly the value Robotín's filter added (or the upside it left on the table). ── */
+    const allClosed = allSignals
+      .filter((s) => s.hypoClosed)
+      .sort((a, b) => a.time - b.time || (a.hypoExitIdx ?? 0) - (b.hypoExitIdx ?? 0));
+    let execBal = STARTING_BALANCE, allBal = STARTING_BALANCE;
+    let peak = STARTING_BALANCE, maxDrawdown = 0;
+    const closedReturns = []; // executed per-trade % returns, for the Sharpe proxy
+    const equity = [{ i: 0, exec: STARTING_BALANCE, all: STARTING_BALANCE, dd: 0 }];
+    allClosed.forEach((s, i) => {
+      allBal += s.hypoPnl;
+      if (s.approved && s.status === "closed") {
+        const prev = execBal;
+        execBal += s.pnl;
+        if (prev > 0) closedReturns.push(s.pnl / prev);
+        peak = Math.max(peak, execBal);
+        maxDrawdown = Math.min(maxDrawdown, execBal - peak);
+      }
+      equity.push({
+        i: i + 1,
+        exec: Math.round(execBal * 100) / 100,
+        all: Math.round(allBal * 100) / 100,
+        dd: peak > 0 ? Math.round(((execBal - peak) / peak) * 1000) / 10 : 0,
+      });
     });
 
     const balance = STARTING_BALANCE + netPnl;
     const returnPct = (netPnl / STARTING_BALANCE) * 100;
     const maxDrawdownPct = peak > 0 ? (maxDrawdown / STARTING_BALANCE) * 100 : 0;
+    const allBalance = allBal;
+    const allReturnPct = ((allBal - STARTING_BALANCE) / STARTING_BALANCE) * 100;
 
     /* ── BTC buy-and-hold benchmark, synthesized deterministically to the same start ──
        A mild upward drift with mean-reverting swings, sampled to the same number of
@@ -154,6 +166,7 @@ const FundOverview = () => {
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
       equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly, rDist,
+      allBalance, allReturnPct,
       topCoin, topConcentration,
     };
   }, [within]);
@@ -172,7 +185,7 @@ const FundOverview = () => {
     return 10 * pow;
   };
   const yTicks = (() => {
-    const vals = data.equity.flatMap((e) => [e.fund, e.btc]).filter((v) => v != null);
+    const vals = data.equity.flatMap((e) => [e.exec, e.all, e.btc]).filter((v) => v != null);
     const dmin = Math.min(...vals, STARTING_BALANCE), dmax = Math.max(...vals, STARTING_BALANCE);
     const step = niceStep(dmax - dmin);
     const lo = Math.floor(dmin / step) * step, hi = Math.ceil(dmax / step) * step;
@@ -243,13 +256,15 @@ const FundOverview = () => {
               <Activity size={14} color={C.purple} /> Fund Equity Curve
             </div>
             <div style={{ fontSize: "10px", color: C.textFaint }}>
-              Starting {usdPlain(STARTING_BALANCE)} · cumulative balance over closed trades vs a BTC buy-and-hold benchmark · simulated
+              Starting {usdPlain(STARTING_BALANCE)} · executed (Robotín) vs every signal if executed, and BTC buy-and-hold · the gap is the filter's value-add · simulated
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, ...mono }}>{usdPlain(data.balance)}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: data.netPnl >= 0 ? C.green : C.red, ...mono }}>
-              {usd(data.netPnl)} · {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(2)}%
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, ...mono }}>{usdPlain(data.balance)}</div>
+            <div style={{ fontSize: 10, color: C.textMuted, ...mono }}>Executed · {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(1)}%</div>
+            <div style={{ fontSize: 11, color: C.amber, ...mono, marginTop: 3 }}>All signals {usdPlain(data.allBalance)} · {data.allReturnPct >= 0 ? "+" : ""}{data.allReturnPct.toFixed(1)}%</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: data.balance >= data.allBalance ? C.green : C.red, ...mono }}>
+              Filter edge {usd(data.balance - data.allBalance)}
             </div>
           </div>
         </div>
@@ -266,11 +281,12 @@ const FundOverview = () => {
             <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`} />
             <Tooltip
               contentStyle={tooltipStyle}
-              labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
-              formatter={(v, name) => [usdPlain(Number(v)), name === "fund" ? "Fund (net)" : "BTC buy & hold"]}
+              labelFormatter={(v) => (v === 0 ? "Start" : `Signal #${v}`)}
+              formatter={(v, name) => [usdPlain(Number(v)), name === "exec" ? "Executed (Robotín)" : name === "all" ? "All signals (if executed)" : "BTC buy & hold"]}
             />
             <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
-            <Area type="monotone" dataKey="fund" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="fund" isAnimationActive={false} />
+            <Area type="monotone" dataKey="exec" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="exec" isAnimationActive={false} />
+            <Line type="monotone" dataKey="all" stroke={C.amber} strokeWidth={1.8} dot={false} name="all" isAnimationActive={false} />
             <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
@@ -291,10 +307,11 @@ const FundOverview = () => {
             <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
-        <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Fund (net)</span>
+        <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px", flexWrap: "wrap" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Executed (Robotín)</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.amber, borderRadius: 1 }} /> All signals (if executed)</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown (executed)</span>
         </div>
       </div>
 

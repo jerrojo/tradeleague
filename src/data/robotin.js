@@ -125,13 +125,21 @@ export function coinSignals(coin, candles) {
     const rejectReason = !approved ? ["Risk:Reward below threshold", "Conflicts with higher-timeframe bias", "Entry already invalidated by price", "Liquidity sweep not confirmed"][Math.floor(r(10) * 4)] : null;
     const reasoning = `Price tagged the ${tf} ${setup === "OB" ? "order block" : setup === "FVG" ? "fair-value gap" : setup} near ${entryFmt(entry)}. ${dir === "LONG" ? "Bullish" : "Bearish"} rejection with volume confirms the zone; ${tf} is the structural timeframe anchoring the ${round((slDist / entry) * 100)}% stop.`;
 
-    let res = approved ? resolve(candles, ei, dir, entry, tp1, sl) : null;
+    // Deterministic sizing for this signal (used for both real & hypothetical P&L)
+    const lev = [3, 4, 5][Math.floor(r(11) * 3)];
+    const notional = 2500 + r(12) * 5500; // $2.5k–8k position
+    // Hypothetical resolution for EVERY signal — "what if we executed it" — so we can
+    // compare the full signal book vs only what Robotín approved.
+    const hres = resolve(candles, ei, dir, entry, tp1, sl);
+    const hypoClosed = !!(hres && hres.status === "closed");
+    const hypoPnl = hypoClosed ? round(sign * ((hres.exit - entry) / entry) * lev * notional) : 0;
+
+    // Actual execution path (only if approved)
+    let res = approved ? hres : null;
     // a fresh, still-unfilled limit order is PENDING (order live); an old one EXPIRED
     if (res && res.status === "expired" && recent) res = { ...res, status: "pending", activeIdx: null };
     let pnlPct = 0, pnl = 0;
     if (res && res.status === "closed") {
-      const lev = [3, 4, 5][Math.floor(r(11) * 3)];
-      const notional = 2500 + r(12) * 5500; // $2.5k–8k position
       pnlPct = round(sign * ((res.exit - entry) / entry) * 100 * lev);
       pnl = round(sign * ((res.exit - entry) / entry) * lev * notional);
     }
@@ -146,6 +154,8 @@ export function coinSignals(coin, candles) {
       status: approved ? res.status : "rejected",
       activeIdx: res?.activeIdx ?? null, exitIdx: res?.exitIdx ?? null, exit: res?.exit ?? null, hit: res?.hit ?? "NONE",
       pnlPct, pnl,
+      // hypothetical "if executed" outcome for EVERY signal (full-book vs executed comparison)
+      hypoClosed, hypoPnl, hypoExitIdx: hres?.exitIdx ?? null,
       // audit: what the signal implied vs what happened
       signalOutcome: "TP", // a published signal always claims it will hit TP
       auditOutcome: res ? (res.status === "closed" ? (res.hit === "TP" ? "TP" : "SL") : res.status === "active" ? "OPEN" : res.status === "pending" ? "PENDING" : "NO ENTRY") : null,
