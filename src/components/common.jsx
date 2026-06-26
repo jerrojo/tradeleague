@@ -296,9 +296,27 @@ const Avatar = ({ name = "", size = 32, photoUrl = null, ring = null, style = {}
   );
 };
 
+/* EmptyState — a friendly dead-end that points to the next action (Geist/Linear
+   rule: an empty view should explain why it's empty and what to do, never blank). */
+const EmptyState = ({ icon: Icon, title = "Nothing here yet", hint, compact = false }) => (
+  <div style={{
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center",
+    gap: 8, padding: compact ? "28px 16px" : "48px 16px", color: C.textMuted,
+  }}>
+    {Icon && (
+      <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: C.card, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 2 }}>
+        <Icon size={20} color={C.textFaint} />
+      </div>
+    )}
+    <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{title}</div>
+    {hint && <div style={{ fontSize: 11.5, color: C.textMuted, maxWidth: 320, lineHeight: 1.5 }}>{hint}</div>}
+  </div>
+);
+
 export {
   AnimatedValue,
   Avatar,
+  EmptyState,
   StatCard,
   SectionHeader,
   Tag,

@@ -43,6 +43,20 @@ select:focus:not(:focus-visible) { outline: none; }
 
 ::selection { background: rgba(139, 92, 246, 0.32); }
 
+/* ── Tabular figures: align every financial number digit-for-digit (Linear/Stripe/Geist rule) ── */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Respect reduced-motion: a money tool should never force motion on users who opt out ── */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Dark, unobtrusive scrollbars (polish) ── */
 * { scrollbar-width: thin; scrollbar-color: #2d3540 transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }

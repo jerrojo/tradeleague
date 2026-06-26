@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizontal, X } from "lucide-react";
-import { Avatar, BotTag } from "./common";
+import { Avatar, BotTag, EmptyState } from "./common";
 import { TradeDetail } from "./TradeDetail";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
@@ -298,7 +298,9 @@ const SignalTable = ({
               );
             })}
             {sorted.length === 0 && (
-              <tr><td colSpan={cols.length} style={{ ...cell, textAlign: "center", padding: 28, color: C.textMuted }}>No signals match this view.</td></tr>
+              <tr><td colSpan={cols.length} style={{ ...cell, padding: 0 }}>
+                <EmptyState icon={Activity} title="No signals in view" hint="Nothing matches the current filters and timeframe. Widen the date range or clear filters to see signals here." compact />
+              </td></tr>
             )}
           </tbody>
         </table>

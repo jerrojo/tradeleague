@@ -114,22 +114,6 @@ const Select = ({ label, value, onChange, options }) => (
   </label>
 );
 
-const DateInput = ({ label, value, onChange }) => (
-  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-    <span style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
-    <input
-      type="date"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 6,
-        color: C.text, fontSize: 12, fontWeight: 600, padding: "6px 9px", outline: "none",
-        colorScheme: "dark", ...mono,
-      }}
-    />
-  </label>
-);
-
 /* ── small advanced-stat card ── */
 const MiniStat = ({ label, value, color, sub }) => (
   <div style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
@@ -166,8 +150,6 @@ const ExecutionAudit = () => {
   const [auditStatus, setAuditStatus] = useState("All");
   const [match, setMatch] = useState("All");
   const [sort, setSort] = useState("Newest");
-  const [dateStart, setDateStart] = useState("");
-  const [dateEnd, setDateEnd] = useState("");
 
   /* ── DATA UNIVERSE: all approved signals across all coins = executed trades ── */
   const { within } = useTimeframe();
@@ -282,22 +264,18 @@ const ExecutionAudit = () => {
 
   /* ── filtered + sorted operation list ── */
   const filtered = useMemo(() => {
-    const startTs = dateStart ? new Date(dateStart).getTime() / 1000 : null;
-    const endTs = dateEnd ? new Date(dateEnd).getTime() / 1000 + 86400 : null;
     let list = executed.filter((s) => {
       if (asset !== "All" && s.coin !== asset) return false;
       if (dir !== "All" && s.dir !== dir) return false;
       if (auditStatus !== "All" && s.audit.auditLabel !== auditStatus) return false;
       if (match !== "All" && s.audit.matchLabel !== match) return false;
-      if (startTs != null && s.time < startTs) return false;
-      if (endTs != null && s.time > endTs) return false;
       return true;
     });
     if (sort === "Newest") list = [...list].sort((a, b) => b.time - a.time);
     else if (sort === "Oldest") list = [...list].sort((a, b) => a.time - b.time);
     else if (sort === "Net PNL") list = [...list].sort((a, b) => (b.pnl ?? -Infinity) - (a.pnl ?? -Infinity));
     return list;
-  }, [executed, asset, dir, auditStatus, match, sort, dateStart, dateEnd]);
+  }, [executed, asset, dir, auditStatus, match, sort]);
 
   const btnStyle = {
     display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 7,
@@ -335,8 +313,7 @@ const ExecutionAudit = () => {
         <Select label="Audit Status" value={auditStatus} onChange={setAuditStatus} options={AUDIT_STATUSES} />
         <Select label="Audit Match" value={match} onChange={setMatch} options={MATCHES} />
         <Select label="Sort By" value={sort} onChange={setSort} options={SORTS} />
-        <DateInput label="Date Start" value={dateStart} onChange={setDateStart} />
-        <DateInput label="Date End" value={dateEnd} onChange={setDateEnd} />
+        <span style={{ marginLeft: "auto", alignSelf: "center", fontSize: 10, color: C.textFaint }}>Date range follows the global timeframe filter ↑</span>
       </div>
 
       {/* ─────────── 3) KPI GRID — audit-specific only (performance/PF/Net PnL live on Overview) ─────────── */}
