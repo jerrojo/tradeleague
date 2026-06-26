@@ -3,9 +3,9 @@ import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
 import { Globe, ChevronUp, ChevronDown, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { smcCoins } from "../../data/mockData";
-import { SectionHeader } from "../common";
+import { CollapsibleSection } from "../common";
 import { useTimeframe } from "../../contexts";
-import { C, cardStyle, mono } from "../../theme";
+import { C, mono } from "../../theme";
 
 const a2 = (a) => Math.max(0, Math.min(255, Math.round(a * 255))).toString(16).padStart(2, "0");
 
@@ -168,15 +168,17 @@ const MarketPanorama = ({ selected, onSelect }) => {
   );
 
   return (
-    <div>
-      <SectionHeader
-        icon={Globe}
-        title="Market panorama"
-        subtitle={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${live} with live signals${isFiltered ? " · in range" : ""} · click a coin for full detail`}
-        right={controls}
-      />
+    <CollapsibleSection
+      icon={Globe}
+      title="Market panorama"
+      summary={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${live} with live signals${isFiltered ? " · in range" : ""} · click a coin for detail`}
+      right={controls}
+      accent={C.cyan}
+      persistKey="markets-panorama"
+      maxBody={view === "table" ? 520 : undefined}
+    >
       {view === "map" && (
-        <div style={{ ...cardStyle, padding: 12 }}>
+        <div style={{ padding: 12 }}>
           <ResponsiveContainer width="100%" height={420}>
             <Treemap data={treeData} dataKey="size" stroke={C.bg} content={renderTile} isAnimationActive={false}>
               <Tooltip content={<TileTip />} />
@@ -185,9 +187,9 @@ const MarketPanorama = ({ selected, onSelect }) => {
         </div>
       )}
       {view === "table" && (
-      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        {/* header row */}
-        <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.bg }}>
+      <div>
+        {/* header row (sticky inside the scroll body) */}
+        <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.card, position: "sticky", top: 0, zIndex: 2 }}>
           <HeaderCell label="Coin" k="coin" sortKey={sortKey} sortDir={sortDir} onSort={() => { setSortKey(null); }} />
           <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>Trend</span>
           <HeaderCell label="Price" k="price" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="right" />
@@ -257,7 +259,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
       </div>
       )}
       <style>{`.panorama-row:hover { background-color: ${C.cardHover} !important; }`}</style>
-    </div>
+    </CollapsibleSection>
   );
 };
 

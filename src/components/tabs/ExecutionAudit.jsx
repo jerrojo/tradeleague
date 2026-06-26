@@ -3,7 +3,7 @@ import {
   Activity, Award, ChevronDown, Coins, DollarSign, Percent, RefreshCw,
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { StatCard } from "../common";
+import { StatCard, CollapsibleSection } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
@@ -142,6 +142,7 @@ const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
 const ExecutionAudit = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [openId, setOpenId] = useState(null);
+  const [opsOpen, setOpsOpen] = useState(true);
 
   // latest close per coin → lets the table read unrealized P&L on active executions
   const lastCloseByCoin = useMemo(() => {
@@ -396,24 +397,19 @@ const ExecutionAudit = () => {
       </div>
 
       {/* ─────────── 5) BREAKDOWN BY ASSET ─────────── */}
-      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
-          <Coins size={14} color={C.purple} />
-          <span style={{ fontSize: 13, fontWeight: 700 }}>Breakdown by Asset</span>
-          <span style={{ fontSize: 10, color: C.textMuted }}>{byAsset.length} assets · sorted by net PNL</span>
-        </div>
-        <div style={{ overflowX: "auto" }}>
+      <CollapsibleSection icon={Coins} title="Breakdown by Asset" summary={`${byAsset.length} assets · sorted by net PNL`} persistKey="audit-breakdown">
+        <div style={{ overflowX: "auto", maxHeight: 340, overflowY: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={thStyle}>Asset</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Signals</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>W/L</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Win Rate</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Net PNL</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Avg PNL</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>PF</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>Fees</th>
+                <th style={stickyTh}>Asset</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Signals</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>W/L</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Win Rate</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Net PNL</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Avg PNL</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>PF</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Fees</th>
               </tr>
             </thead>
             <tbody>
@@ -439,26 +435,34 @@ const ExecutionAudit = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* ─────────── 6) OPERATION DETAILS — dense executions journal ─────────── */}
+      {/* ─────────── 6) OPERATION DETAILS — dense executions journal (collapsible + internal scroll) ─────────── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div onClick={() => setOpsOpen((o) => !o)} role="button" tabIndex={0} aria-expanded={opsOpen}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpsOpen((o) => !o); } }}
+          style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <ChevronDown size={15} color={C.textMuted} style={{ transform: opsOpen ? "none" : "rotate(-90deg)", transition: "transform 0.15s" }} />
           <span style={{ fontSize: 13, fontWeight: 700 }}>Operation Details</span>
           <span style={{ fontSize: 11, color: C.textMuted }}>{filtered.length} signals · click a row for the full audit</span>
         </div>
-        <SignalTable
-          signals={filtered}
-          openId={openId}
-          onToggle={(id) => setOpenId(openId === id ? null : id)}
-          lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
-          audit
-          viewId="executions"
-          exportName="tradethlon-executions"
-        />
+        {opsOpen && (
+          <SignalTable
+            signals={filtered}
+            openId={openId}
+            onToggle={(id) => setOpenId(openId === id ? null : id)}
+            lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
+            audit
+            viewId="executions"
+            exportName="tradethlon-executions"
+            maxHeight={560}
+          />
+        )}
       </div>
     </div>
   );
 };
+
+const stickyTh = { ...thStyle, position: "sticky", top: 0, backgroundColor: C.card, zIndex: 1 };
 
 export { ExecutionAudit };

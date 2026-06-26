@@ -1,4 +1,4 @@
-import { Bot, ThumbsDown, ThumbsUp, User, Users } from "lucide-react";
+import { Bot, ChevronDown, ThumbsDown, ThumbsUp, User, Users } from "lucide-react";
 import { srand } from "../lib/scoring";
 import { C, cardStyle, mono, pillStyle } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
@@ -313,9 +313,43 @@ const EmptyState = ({ icon: Icon, title = "Nothing here yet", hint, compact = fa
   </div>
 );
 
+/* CollapsibleSection — a self-contained panel that (a) folds to a one-line header
+   with a live summary, and (b) optionally caps its body height with internal scroll
+   (terminal pattern: the panel scrolls inside instead of growing the whole page).
+   Open/closed state persists per `persistKey`. The header `right` controls don't
+   toggle the panel. */
+const CollapsibleSection = ({ icon: Icon, title, summary, right, defaultOpen = true, persistKey, maxBody, accent = C.purple, children }) => {
+  const [open, setOpen] = useState(() => {
+    if (!persistKey) return defaultOpen;
+    try { const v = localStorage.getItem(`collapse:${persistKey}`); return v === null ? defaultOpen : v === "1"; } catch { return defaultOpen; }
+  });
+  const toggle = () => setOpen((o) => {
+    const n = !o;
+    if (persistKey) { try { localStorage.setItem(`collapse:${persistKey}`, n ? "1" : "0"); } catch { /* ignore */ } }
+    return n;
+  });
+  return (
+    <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+      <div onClick={toggle} role="button" tabIndex={0} aria-expanded={open}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } }}
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer", borderBottom: open ? `1px solid ${C.border}` : "none" }}>
+        <ChevronDown size={16} style={{ color: C.textMuted, transform: open ? "none" : "rotate(-90deg)", transition: "transform 0.15s", flexShrink: 0 }} />
+        {Icon && <Icon size={15} color={accent} style={{ flexShrink: 0 }} />}
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{title}</span>
+          {summary && <span style={{ fontSize: 10.5, color: C.textMuted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{summary}</span>}
+        </div>
+        {right && <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>{right}</div>}
+      </div>
+      {open && <div style={maxBody ? { maxHeight: maxBody, overflowY: "auto" } : undefined}>{children}</div>}
+    </div>
+  );
+};
+
 export {
   AnimatedValue,
   Avatar,
+  CollapsibleSection,
   EmptyState,
   StatCard,
   SectionHeader,

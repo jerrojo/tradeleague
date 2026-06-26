@@ -117,7 +117,7 @@ const SignalTable = ({
   signals, openId, onToggle, onTrader,
   lastCloseFor, candlesFor,
   showTrader = true, audit = false,
-  viewId = "default", exportName = "tradethlon-signals",
+  viewId = "default", exportName = "tradethlon-signals", maxHeight,
 }) => {
   const SK = `st:${viewId}:sort`, HK = `st:${viewId}:hidden`;
   const [sort, setSort] = useState(() => load(SK, { key: "time", dir: "desc" }));
@@ -184,7 +184,7 @@ const SignalTable = ({
         </div>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <div style={{ overflowX: "auto", ...(maxHeight ? { maxHeight, overflowY: "auto" } : {}) }}>
         <table style={{ width: "100%", borderCollapse: "collapse", minWidth: audit ? 1240 : 1120 }}>
           <thead><tr>{cols.map((c) => {
             const sortable = !c.noSort && ACCESSORS[c.id];
@@ -192,7 +192,7 @@ const SignalTable = ({
             return (
               <th key={c.id} onClick={sortable ? () => onSort(c.id) : undefined}
                 aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : (sortable ? "none" : undefined)}
-                style={{ ...thStyle, fontSize: 10, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none" }}>
+                style={{ ...thStyle, fontSize: 10, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none", ...(maxHeight ? { position: "sticky", top: 0, backgroundColor: C.card, zIndex: 2 } : {}) }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                   {c.label}
                   {active && (sort.dir === "asc" ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
