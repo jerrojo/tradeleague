@@ -5,6 +5,7 @@ import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistCo
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
+import { TradeReport } from "./components/tabs/TradeReport";
 import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -108,7 +109,7 @@ const App = () => {
 
   // Keyboard nav — 1–4 jump between sections (pro speed). Ignored while typing.
   useEffect(() => {
-    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets", "5": "audit" };
+    const SECTIONS = { "1": "overview", "2": "activity", "3": "traders", "4": "markets", "5": "audit", "6": "report" };
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
@@ -177,6 +178,7 @@ const App = () => {
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
     { id: "audit", label: "Audit", icon: Scale, accent: C.amber },
+    { id: "report", label: "Trade Report", icon: Calendar, accent: C.cyan },
   ];
 
   // One-line orientation per section (LukeW: every screen should say what it's for).
@@ -186,6 +188,7 @@ const App = () => {
     markets: "The whole board at a glance, then drill into any coin — chart, signals, positioning and the consensus call",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
     audit: "The verification layer — execution audit (fills, fees, real vs theoretical) + signal-provider analytics",
+    report: "Executed positions by day — pick a date for the full position-by-position breakdown across the VARIV accounts",
   };
 
   // Section → component mapping
@@ -195,6 +198,7 @@ const App = () => {
     markets: MarketsSection,   // Markets = one coin, everything on one page
     activity: ActivitySection, // Activity = the global Robotín lifecycle tape
     audit: AuditSection,       // Audit = Execution Audit + Analytics (verification layer)
+    report: TradeReport,       // Trade Report = per-day executed-positions ledger
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
@@ -376,6 +380,7 @@ const App = () => {
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
                       { icon: Globe, color: C.cyan, t: "Markets", d: "The whole board at a glance, then drill into any coin's detail.", go: "markets" },
                       { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
+                      { icon: Calendar, color: C.cyan, t: "Trade Report", d: "Executed positions by day — pick a date for the full breakdown.", go: "report" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
                         textAlign: "left", display: "flex", gap: "10px", padding: "14px", borderRadius: "10px", cursor: "pointer",
