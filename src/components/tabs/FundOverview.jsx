@@ -195,12 +195,41 @@ const FundOverview = () => {
     });
     const rDist = rBuckets.map((b) => ({ label: b.label, count: b.count, fill: b.max <= 0 ? C.red : C.green }));
 
+    /* ── Top-5 deepest drawdowns from the executed equity curve (QuantConnect pattern:
+       mark and tabulate the worst episodes, not just the single max). ── */
+    const dds = [];
+    let ddPeak = STARTING_BALANCE, ddStart = 0, inDD = false, ddTrough = STARTING_BALANCE, ddTroughI = 0;
+    equity.forEach((p, i) => {
+      const v = p.exec;
+      if (v >= ddPeak) {
+        if (inDD) { dds.push({ depthPct: ((ddTrough - ddPeak) / ddPeak) * 100, startI: ddStart, troughI: ddTroughI, recoverI: i, recovered: true }); inDD = false; }
+        ddPeak = v;
+      } else {
+        if (!inDD) { inDD = true; ddStart = Math.max(0, i - 1); ddTrough = v; ddTroughI = i; }
+        else if (v < ddTrough) { ddTrough = v; ddTroughI = i; }
+      }
+    });
+    if (inDD) dds.push({ depthPct: ((ddTrough - ddPeak) / ddPeak) * 100, startI: ddStart, troughI: ddTroughI, recoverI: null, recovered: false });
+    const topDrawdowns = dds.sort((a, b) => a.depthPct - b.depthPct).slice(0, 5);
+
+    /* ── Rolling Sharpe over the closed-trade return series (rolling > point estimate;
+       a wobbly line flags regime-dependent edge a single Sharpe hides). ── */
+    const W = Math.min(12, Math.max(4, Math.floor(closedReturns.length / 4) || 4));
+    const rolling = [];
+    for (let i = W - 1; i < closedReturns.length; i++) {
+      const w = closedReturns.slice(i - W + 1, i + 1);
+      const m = w.reduce((a, r) => a + r, 0) / W;
+      const sd = Math.sqrt(w.reduce((a, r) => a + (r - m) ** 2, 0) / W);
+      const sh = sd > 0 ? Math.max(-1, Math.min(3.5, (m / sd) * Math.sqrt(W))) : 0;
+      rolling.push({ i: i + 1, sharpe: Math.round(sh * 100) / 100 });
+    }
+
     return {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
       equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly, rDist,
-      allBalance, allReturnPct,
+      allBalance, allReturnPct, topDrawdowns, rolling, rollWindow: W,
       topCoin, topConcentration,
     };
   }, [within]);
@@ -448,6 +477,65 @@ const FundOverview = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      </div>
+
+      {/* ── 7 · Deepest drawdowns + Rolling Sharpe, side by side ── */}
+      <div className="grid-2col-16">
+        {/* Deepest drawdowns */}
+        <div style={cardStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600", marginBottom: 2 }}>
+            <TrendingDown size={14} color={C.red} /> Deepest Drawdowns
+          </div>
+          <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: 10 }}>The five worst peak-to-trough episodes on the executed curve</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {[["#", "left"], ["Depth", "right"], ["Span (trades)", "right"], ["Status", "right"]].map(([h, al]) => (
+                  <th key={h} style={{ textAlign: al, padding: "7px 8px", fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.topDrawdowns.map((d, i) => (
+                <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "8px", color: C.textMuted, ...mono }}>{i + 1}</td>
+                  <td style={{ padding: "8px", textAlign: "right", fontWeight: 800, color: C.red, ...mono }}>{d.depthPct.toFixed(1)}%</td>
+                  <td style={{ padding: "8px", textAlign: "right", color: C.textMuted, ...mono }}>#{d.startI}→#{d.troughI} ({Math.max(1, d.troughI - d.startI)})</td>
+                  <td style={{ padding: "8px", textAlign: "right", ...mono }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: d.recovered ? C.green : C.amber, backgroundColor: `${d.recovered ? C.green : C.amber}1c`, padding: "2px 7px", borderRadius: 4 }}>{d.recovered ? "Recovered" : "Ongoing"}</span>
+                  </td>
+                </tr>
+              ))}
+              {data.topDrawdowns.length === 0 && (
+                <tr><td colSpan={4} style={{ padding: 16, textAlign: "center", color: C.textMuted }}>No drawdowns in this window.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Rolling Sharpe */}
+        <div style={cardStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600", marginBottom: 2 }}>
+            <Gauge size={14} color={C.blue} /> Rolling Sharpe
+          </div>
+          <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: 10 }}>
+            {data.rollWindow}-trade rolling window — consistency of the edge, not just the headline {data.sharpe.toFixed(2)}
+          </div>
+          {data.rolling.length > 1 ? (
+            <ResponsiveContainer width="100%" height={188}>
+              <ComposedChart data={data.rolling}>
+                <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
+                <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
+                <YAxis stroke={C.textMuted} fontSize={10} width={32} />
+                <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [Number(v).toFixed(2), "Rolling Sharpe"]} />
+                <ReferenceLine y={1} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "1.0", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
+                <Line type="monotone" dataKey="sharpe" stroke={C.blue} strokeWidth={2} dot={false} isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ height: 188, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: C.textMuted }}>Not enough closed trades in this window for a rolling estimate.</div>
+          )}
+        </div>
       </div>
     </div>
   );
