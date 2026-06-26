@@ -68,7 +68,7 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
         </button>
 
         {open && (
-          <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", width: "440px", boxShadow: C.shadowLg, overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", width: "520px", maxWidth: "92vw", boxShadow: C.shadowLg, overflow: "hidden" }}>
             <div style={{ padding: "12px 12px 8px", position: "relative" }}>
               <Search size={14} style={{ position: "absolute", left: 22, top: 22, color: C.textMuted }} />
               <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search coins…  ·  ★ to pin to quick access" style={{ width: "100%", padding: "8px 10px 8px 32px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none" }} />
@@ -95,7 +95,17 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
                         <span style={{ fontSize: 13, fontWeight: 700, color: isSel ? C.purple : C.text }}>{c}</span>
                         {cm.category && <span style={{ fontSize: 10, color: C.textMuted, marginLeft: 8 }}>{cm.category}</span>}
                       </span>
-                      {cm.price != null && <span style={{ fontSize: 12, fontWeight: 600, color: C.text, ...mono, minWidth: 80, textAlign: "right" }}>{cm.price}</span>}
+                      {cm.longPct != null && (
+                        <span title={`${cm.longPct}% long / ${100 - cm.longPct}% short`} style={{ display: "inline-flex", alignItems: "center", gap: 5, minWidth: 78, justifyContent: "flex-end" }}>
+                          <span style={{ width: 32, height: 5, borderRadius: 3, overflow: "hidden", display: "flex", backgroundColor: C.bg }}>
+                            <span style={{ width: `${cm.longPct}%`, backgroundColor: C.green }} />
+                            <span style={{ width: `${100 - cm.longPct}%`, backgroundColor: C.red }} />
+                          </span>
+                          <span style={{ fontSize: 9.5, color: C.textMuted, ...mono }}>{cm.active ? `${cm.active}•` : ""}{cm.signals}s</span>
+                        </span>
+                      )}
+                      {cm.bias && <span title={`Model bias: ${cm.bias}`} style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: cm.bias === "BULLISH" ? C.green : C.red, flexShrink: 0 }} />}
+                      {cm.price != null && <span style={{ fontSize: 12, fontWeight: 600, color: C.text, ...mono, minWidth: 72, textAlign: "right" }}>{cm.price}</span>}
                       {cm.change != null && <span style={{ fontSize: 11, fontWeight: 700, ...mono, minWidth: 50, textAlign: "right", color: changeColor(cm.change) }}>{cm.change}</span>}
                     </button>
                   </div>

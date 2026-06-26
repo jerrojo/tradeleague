@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
@@ -13,7 +13,7 @@ import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
 import { smcCoins } from "../data/mockData";
-import { ROBOTIN_COINS } from "../data/robotin";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 
 /* ═══════════════════════ SECTION SUB-NAV ═══════════════════════ */
 const SubTabs = ({ tabs, active, onChange }) => (
@@ -47,6 +47,32 @@ const MarketsSection = () => {
   const detailRef = useRef(null);
   // pick from the panorama → load the coin's detail and glide down to it
   const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
+  // Enriched coin meta so the selector dropdown carries cross-coin context
+  // (sentiment, live/total signals, model bias) — the panorama's signal, inline
+  // where you pick a coin. Computed once from the same engine.
+  const coinMeta = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => {
+      const cs = coinCandles(c);
+      const last = cs[cs.length - 1].close, first = cs[0].close;
+      const change = ((last - first) / first) * 100;
+      const sigs = coinSignals(c, cs);
+      const appr = sigs.filter((s) => s.approved);
+      const longs = appr.filter((s) => s.dir === "LONG").length;
+      const tot = appr.length;
+      const meta = smcCoins[c] || {};
+      m[c] = {
+        pair: "USDT",
+        price: last >= 1 ? last.toLocaleString(undefined, { maximumFractionDigits: 2 }) : last.toFixed(4),
+        change: `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`,
+        category: meta.category, bias: meta.bias,
+        longPct: tot ? Math.round((longs / tot) * 100) : null,
+        signals: sigs.length,
+        active: sigs.filter((s) => s.status === "active" || s.status === "pending").length,
+      };
+    });
+    return m;
+  }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       {/* Cross-coin lead: the whole board at a glance */}
@@ -57,7 +83,7 @@ const MarketsSection = () => {
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
       </div>
-      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={smcCoins} categories={COIN_CATEGORIES} />
+      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={coinMeta} categories={COIN_CATEGORIES} />
       {/* Chart with signals plotted (no execution table — that lives in Audit) */}
       <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
