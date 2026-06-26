@@ -83,7 +83,7 @@ const App = () => {
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
       { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
-      { id: "markets", label: "Markets", desc: "One coin at a time — signals, trades, structure, positioning" },
+      { id: "markets", label: "Markets", desc: "The cross-coin panorama, then drill into any coin's detail" },
       { id: "audit", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
       { id: "audit", label: "Analytics", desc: "Signal-provider edge — KPIs, equity, win rate by style, expectancy by pair" },
       { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
@@ -183,7 +183,7 @@ const App = () => {
   const tabMeta = {
     overview: "The fund at a glance — capital, return, risk and system state on one page",
     traders: "Who's winning, and everyone you can follow — the live race plus the searchable directory",
-    markets: "One coin, everything at once — chart, signals, the trades they became, structure and positioning",
+    markets: "The whole board at a glance, then drill into any coin — chart, signals, positioning and the consensus call",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
     audit: "The verification layer — execution audit (fills, fees, real vs theoretical) + signal-provider analytics",
   };
@@ -374,7 +374,7 @@ const App = () => {
                       { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
                       { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
-                      { icon: Globe, color: C.cyan, t: "Markets", d: "One coin, everything at once — chart, signals, structure and positioning.", go: "markets" },
+                      { icon: Globe, color: C.cyan, t: "Markets", d: "The whole board at a glance, then drill into any coin's detail.", go: "markets" },
                       { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
                     ].map(card => (
                       <button key={card.t} onClick={() => { if (card.go) { setActiveTab(card.go); setProfileTrader(null); } dismissWelcome(); }} style={{
