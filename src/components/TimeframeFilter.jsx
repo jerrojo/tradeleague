@@ -1,33 +1,19 @@
 import { useEffect, useState } from "react";
 import { CalendarRange, ChevronDown, Clock, Star, X } from "lucide-react";
 import { useTimeframe } from "../contexts";
+import { RangeCalendar } from "./RangeCalendar";
 import { C, mono } from "../theme";
 
 /* Global header time filter — TradingView-style: pin any range to the quick bar
    (star), pick the rest from a grouped "Range" dropdown (Minutes/Hours/Days/…),
-   favorite custom ranges as chips, and the resolved window is always visible. */
-const toLocalInput = (ms) => {
-  if (!Number.isFinite(ms)) return "";
-  const d = new Date(ms - new Date().getTimezoneOffset() * 60000);
-  return d.toISOString().slice(0, 16);
-};
+   favorite custom ranges as chips, and the resolved window is always visible.
+   The custom range opens a best-practice dual-calendar picker (RangeCalendar). */
 const GROUPS = ["Minutes", "Hours", "Days", "Weeks", "Months", "Other"];
-const fmtDur = (ms) => {
-  const m = Math.round(ms / 60000);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60), rm = m % 60;
-  if (h < 24) return rm ? `${h}h ${rm}m` : `${h}h`;
-  const d = Math.floor(h / 24), rh = h % 24;
-  return rh ? `${d}d ${rh}h` : `${d}d`;
-};
 
 const TimeframeFilter = () => {
   const { key, label, presets, pinned, pinnedRanges, togglePin, setRange, setCustomRange, isFiltered, fromMs, toMs, favorites, addFavorite, removeFavorite, activeFavId } = useTimeframe();
   const [open, setOpen] = useState(false);       // custom range popover
   const [menu, setMenu] = useState(false);       // grouped range dropdown
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [saveFav, setSaveFav] = useState(false);
 
   // [ and ] cycle the PINNED ranges (pro speed). Ignored while typing.
   useEffect(() => {
@@ -46,26 +32,7 @@ const TimeframeFilter = () => {
     return () => document.removeEventListener("keydown", onKey);
   }, [key, pinnedRanges, setRange]);
 
-  const openCustom = () => {
-    setFrom(toLocalInput(Number.isFinite(fromMs) ? fromMs : Date.now() - 24 * 3600e3));
-    setTo(toLocalInput(Number.isFinite(toMs) ? toMs : Date.now()));
-    setSaveFav(false); setMenu(false); setOpen((v) => !v);
-  };
-  // Live validation (LukeW: prevent errors, explain why) + resolved duration
-  const nowMs = Date.now();
-  const fMs = from ? new Date(from).getTime() : NaN;
-  const tMs = to ? new Date(to).getTime() : NaN;
-  const bothSet = Number.isFinite(fMs) && Number.isFinite(tMs);
-  const ordered = fMs < tMs;
-  const future = tMs > nowMs + 60000;
-  const valid = bothSet && ordered && !future;
-  const errMsg = !bothSet ? "Pick both a start and end." : !ordered ? "“From” must be before “To”." : future ? "Range can’t be in the future." : null;
-  const setShortcut = (fromMsV) => { setFrom(toLocalInput(fromMsV)); setTo(toLocalInput(nowMs)); };
-  const SHORTCUTS = [["24h", nowMs - 24 * 3600e3], ["3d", nowMs - 3 * 86400e3], ["7d", nowMs - 7 * 86400e3], ["30d", nowMs - 30 * 86400e3]];
-  const apply = () => {
-    if (!valid) return;
-    setCustomRange(fMs, tMs); if (saveFav) addFavorite(fMs, tMs); setOpen(false);
-  };
+  const openCustom = () => { setMenu(false); setOpen((v) => !v); };
 
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8 }}>
@@ -149,41 +116,18 @@ const TimeframeFilter = () => {
         </div>
       )}
 
-      {/* custom range popover */}
+      {/* custom range — best-practice dual-calendar picker with preset rail */}
       {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 50, backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: 14, boxShadow: C.shadowLg, width: 268 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: C.text, marginBottom: 10, letterSpacing: "0.3px" }}>Custom range</div>
-          {/* quick shortcuts — the common path first (LukeW) */}
-          <div style={{ display: "flex", gap: 5, marginBottom: 12, flexWrap: "wrap" }}>
-            {SHORTCUTS.map(([lbl, f]) => (
-              <button key={lbl} onClick={() => setShortcut(f)} style={{ padding: "4px 9px", borderRadius: 999, border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, fontSize: 10, fontWeight: 700, cursor: "pointer", ...mono }}>Last {lbl}</button>
-            ))}
-          </div>
-          <label style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>From</label>
-          <input type="datetime-local" max={toLocalInput(nowMs)} value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
-          <label style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700, marginTop: 8, display: "block" }}>To</label>
-          <input type="datetime-local" min={from || undefined} max={toLocalInput(nowMs)} value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
-          {/* resolved span / inline error (LukeW: explain, don't just block) */}
-          <div style={{ marginTop: 8, fontSize: 10, ...mono, color: valid ? C.textMuted : C.red, minHeight: 14 }}>
-            {valid ? `Span: ${fmtDur(tMs - fMs)}` : errMsg}
-          </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10, fontSize: 11, color: C.text, cursor: "pointer" }}>
-            <input type="checkbox" checked={saveFav} onChange={(e) => setSaveFav(e.target.checked)} />
-            <Star size={12} color={C.amber} /> Save as a favorite chip
-          </label>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button onClick={() => setOpen(false)} style={{ flex: 1, padding: "7px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-            <button onClick={apply} disabled={!valid} style={{ flex: 1, padding: "7px", borderRadius: 6, border: "none", backgroundColor: valid ? C.purple : C.border, color: valid ? "#fff" : C.textFaint, fontSize: 11, fontWeight: 800, cursor: valid ? "pointer" : "not-allowed" }}>Apply</button>
-          </div>
-        </div>
+        <RangeCalendar
+          fromMs={Number.isFinite(fromMs) ? fromMs : null}
+          toMs={Number.isFinite(toMs) ? toMs : null}
+          onApplyRange={(f, t, fav) => { setCustomRange(f, t); if (fav) addFavorite(f, t); setOpen(false); }}
+          onApplyAll={() => { setRange("all"); setOpen(false); }}
+          onClose={() => setOpen(false)}
+        />
       )}
     </div>
   );
-};
-
-const inputStyle = {
-  width: "100%", marginTop: 4, padding: "7px 9px", borderRadius: 6, border: `1px solid ${C.border}`,
-  backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box",
 };
 
 export { TimeframeFilter };
