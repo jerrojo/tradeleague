@@ -7,13 +7,28 @@ import { createContext, useContext, useState, useMemo, useCallback } from "react
    `within(timeSec)` and filters its data, so changing the range updates the whole
    dashboard at once. Data spans ~1 week of 1h candles, so windows are relative
    (LukeW: presets for the common case + a custom range + the resolved span shown). */
+/* Full range catalog, grouped by unit (TradingView-style). Pin any of these to the
+   quick bar; the rest live in the grouped "Range ▾" dropdown. */
 const TIMEFRAMES = [
-  { key: "6h", label: "6H", ms: 6 * 3600e3 },
-  { key: "24h", label: "24H", ms: 24 * 3600e3 },
-  { key: "3d", label: "3D", ms: 3 * 86400e3 },
-  { key: "7d", label: "7D", ms: 7 * 86400e3 },
-  { key: "all", label: "All", ms: Infinity },
+  { key: "15m", label: "15m", ms: 15 * 60e3, group: "Minutes" },
+  { key: "30m", label: "30m", ms: 30 * 60e3, group: "Minutes" },
+  { key: "45m", label: "45m", ms: 45 * 60e3, group: "Minutes" },
+  { key: "1h", label: "1H", ms: 3600e3, group: "Hours" },
+  { key: "2h", label: "2H", ms: 2 * 3600e3, group: "Hours" },
+  { key: "4h", label: "4H", ms: 4 * 3600e3, group: "Hours" },
+  { key: "6h", label: "6H", ms: 6 * 3600e3, group: "Hours" },
+  { key: "12h", label: "12H", ms: 12 * 3600e3, group: "Hours" },
+  { key: "1d", label: "1D", ms: 86400e3, group: "Days" },
+  { key: "3d", label: "3D", ms: 3 * 86400e3, group: "Days" },
+  { key: "7d", label: "7D", ms: 7 * 86400e3, group: "Days" },
+  { key: "14d", label: "14D", ms: 14 * 86400e3, group: "Days" },
+  { key: "2w", label: "2W", ms: 14 * 86400e3, group: "Weeks" },
+  { key: "4w", label: "4W", ms: 28 * 86400e3, group: "Weeks" },
+  { key: "3mo", label: "3M", ms: 90 * 86400e3, group: "Months" },
+  { key: "6mo", label: "6M", ms: 180 * 86400e3, group: "Months" },
+  { key: "all", label: "All", ms: Infinity, group: "Other" },
 ];
+const DEFAULT_PINNED = ["6h", "1d", "3d", "7d", "all"];
 const fmtShort = (ms) => new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const TimeframeContext = createContext();
@@ -24,6 +39,12 @@ const TimeframeProvider = ({ children }) => {
   const [key, setKey] = useState(() => { try { return localStorage.getItem("tf") || "all"; } catch { return "all"; } });
   const [custom, setCustom] = useState(null); // { from, to } in ms when key === "custom"
   const [favorites, setFavorites] = useState(() => { try { return JSON.parse(localStorage.getItem("tf:favs") || "[]"); } catch { return []; } });
+  const [pinned, setPinned] = useState(() => { try { const v = JSON.parse(localStorage.getItem("tf:pinned") || "null"); return Array.isArray(v) && v.length ? v : DEFAULT_PINNED; } catch { return DEFAULT_PINNED; } });
+  const togglePin = useCallback((k) => setPinned((prev) => {
+    const next = prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k];
+    try { localStorage.setItem("tf:pinned", JSON.stringify(next)); } catch { /* ignore */ }
+    return next;
+  }), []);
   const setRange = useCallback((k) => { setKey(k); if (k !== "custom") { setCustom(null); try { localStorage.setItem("tf", k); } catch { /* ignore */ } } }, []);
   const setCustomRange = useCallback((from, to) => { if (from && to && from < to) { setCustom({ from, to }); setKey("custom"); } }, []);
   const persistFavs = (next) => { try { localStorage.setItem("tf:favs", JSON.stringify(next)); } catch { /* ignore */ } };
@@ -49,8 +70,9 @@ const TimeframeProvider = ({ children }) => {
     }
     const within = (timeSec) => { const ms = (timeSec || 0) * 1000; return ms >= fromMs && ms <= toMs; };
     const activeFavId = key === "custom" && custom ? `${custom.from}-${custom.to}` : null;
-    return { key, label, fromMs, toMs, within, setRange, setCustomRange, presets: TIMEFRAMES, isFiltered: key !== "all", custom, favorites, addFavorite, removeFavorite, activeFavId };
-  }, [key, custom, setRange, setCustomRange, favorites, addFavorite, removeFavorite]);
+    const pinnedRanges = TIMEFRAMES.filter((t) => pinned.includes(t.key));
+    return { key, label, fromMs, toMs, within, setRange, setCustomRange, presets: TIMEFRAMES, pinned, pinnedRanges, togglePin, isFiltered: key !== "all", custom, favorites, addFavorite, removeFavorite, activeFavId };
+  }, [key, custom, setRange, setCustomRange, favorites, addFavorite, removeFavorite, pinned, togglePin]);
   return <TimeframeContext.Provider value={value}>{children}</TimeframeContext.Provider>;
 };
 /* ═══════════════════════ PROFILE CONTEXT ═══════════════════════ */
