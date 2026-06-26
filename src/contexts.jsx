@@ -18,11 +18,25 @@ const fmtShort = (ms) => new Date(ms).toLocaleString(undefined, { month: "short"
 
 const TimeframeContext = createContext();
 const useTimeframe = () => useContext(TimeframeContext);
+const fmtChip = (ms) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
 const TimeframeProvider = ({ children }) => {
   const [key, setKey] = useState(() => { try { return localStorage.getItem("tf") || "all"; } catch { return "all"; } });
   const [custom, setCustom] = useState(null); // { from, to } in ms when key === "custom"
+  const [favorites, setFavorites] = useState(() => { try { return JSON.parse(localStorage.getItem("tf:favs") || "[]"); } catch { return []; } });
   const setRange = useCallback((k) => { setKey(k); if (k !== "custom") { setCustom(null); try { localStorage.setItem("tf", k); } catch { /* ignore */ } } }, []);
   const setCustomRange = useCallback((from, to) => { if (from && to && from < to) { setCustom({ from, to }); setKey("custom"); } }, []);
+  const persistFavs = (next) => { try { localStorage.setItem("tf:favs", JSON.stringify(next)); } catch { /* ignore */ } };
+  const addFavorite = useCallback((from, to) => {
+    if (!(from && to && from < to)) return;
+    setFavorites((prev) => {
+      if (prev.some((f) => f.from === from && f.to === to)) return prev;
+      const fav = { id: `${from}-${to}`, from, to, label: `${fmtChip(from)}–${fmtChip(to)}` };
+      const next = [...prev, fav].slice(-6); // keep the 6 most recent
+      persistFavs(next); return next;
+    });
+  }, []);
+  const removeFavorite = useCallback((id) => setFavorites((prev) => { const n = prev.filter((f) => f.id !== id); persistFavs(n); return n; }), []);
   const value = useMemo(() => {
     const now = Date.now();
     let fromMs, toMs, label;
@@ -34,8 +48,9 @@ const TimeframeProvider = ({ children }) => {
       label = tf.key === "all" ? "All time" : `Last ${tf.label.toLowerCase()}`;
     }
     const within = (timeSec) => { const ms = (timeSec || 0) * 1000; return ms >= fromMs && ms <= toMs; };
-    return { key, label, fromMs, toMs, within, setRange, setCustomRange, presets: TIMEFRAMES, isFiltered: key !== "all", custom };
-  }, [key, custom, setRange, setCustomRange]);
+    const activeFavId = key === "custom" && custom ? `${custom.from}-${custom.to}` : null;
+    return { key, label, fromMs, toMs, within, setRange, setCustomRange, presets: TIMEFRAMES, isFiltered: key !== "all", custom, favorites, addFavorite, removeFavorite, activeFavId };
+  }, [key, custom, setRange, setCustomRange, favorites, addFavorite, removeFavorite]);
   return <TimeframeContext.Provider value={value}>{children}</TimeframeContext.Provider>;
 };
 /* ═══════════════════════ PROFILE CONTEXT ═══════════════════════ */

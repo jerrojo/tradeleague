@@ -209,15 +209,23 @@ const PortfolioTab = () => {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
             <div style={{ fontSize: "13px", fontWeight: "600" }}>Signal-Provider Equity Curve — % return on initial capital</div>
-            <div style={{ display: "flex", gap: "3px" }}>
-              {[["daily", "D"], ["weekly", "W"], ["monthly", "M"], ["quarterly", "Q"]].map(([g, label]) => (
-                <button key={g} onClick={() => setGranularity(g)} title={`${g} buckets`} style={{
-                  padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer", ...mono,
-                  border: `1px solid ${granularity === g ? C.cyan : C.border}`,
-                  backgroundColor: granularity === g ? `${C.cyan}15` : "transparent",
-                  color: granularity === g ? C.cyan : C.textMuted,
-                }}>{label}</button>
-              ))}
+            {/* Granularity — contextual to this chart. Buckets that would collapse to
+               fewer than 2 groups for the current data are disabled (LukeW: never
+               offer a control that does nothing). */}
+            <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
+              <span style={{ fontSize: 8, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700, marginRight: 2 }}>Bucket</span>
+              {[["daily", "D", 1], ["weekly", "W", 7], ["monthly", "M", 30], ["quarterly", "Q", 90]].map(([g, label, size]) => {
+                const enabled = systemSeries.length / size >= 2;
+                const on = granularity === g;
+                return (
+                  <button key={g} onClick={() => enabled && setGranularity(g)} disabled={!enabled} title={enabled ? `${g} buckets` : `Not enough data for ${g} buckets in this range`} style={{
+                    padding: "2px 8px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: enabled ? "pointer" : "not-allowed", ...mono,
+                    border: `1px solid ${on ? C.cyan : C.border}`,
+                    backgroundColor: on ? `${C.cyan}15` : "transparent",
+                    color: on ? C.cyan : enabled ? C.textMuted : C.textFaint, opacity: enabled ? 1 : 0.4,
+                  }}>{label}</button>
+                );
+              })}
             </div>
           </div>
           <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>

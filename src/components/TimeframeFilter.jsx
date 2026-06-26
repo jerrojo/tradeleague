@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CalendarRange, Clock } from "lucide-react";
+import { CalendarRange, Clock, Star, X } from "lucide-react";
 import { useTimeframe } from "../contexts";
 import { C, mono } from "../theme";
 
@@ -12,10 +12,11 @@ const toLocalInput = (ms) => {
 };
 
 const TimeframeFilter = () => {
-  const { key, label, presets, setRange, setCustomRange, isFiltered, fromMs, toMs } = useTimeframe();
+  const { key, label, presets, setRange, setCustomRange, isFiltered, fromMs, toMs, favorites, addFavorite, removeFavorite, activeFavId } = useTimeframe();
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [saveFav, setSaveFav] = useState(false);
 
   // [ and ] cycle the timeframe presets (pro speed). Ignored while typing.
   useEffect(() => {
@@ -36,11 +37,12 @@ const TimeframeFilter = () => {
   const openCustom = () => {
     setFrom(toLocalInput(Number.isFinite(fromMs) ? fromMs : Date.now() - 24 * 3600e3));
     setTo(toLocalInput(Number.isFinite(toMs) ? toMs : Date.now()));
+    setSaveFav(false);
     setOpen((v) => !v);
   };
   const apply = () => {
     const f = new Date(from).getTime(), t = new Date(to).getTime();
-    if (f && t && f < t) { setCustomRange(f, t); setOpen(false); }
+    if (f && t && f < t) { setCustomRange(f, t); if (saveFav) addFavorite(f, t); setOpen(false); }
   };
 
   return (
@@ -49,6 +51,20 @@ const TimeframeFilter = () => {
       <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: isFiltered ? C.purple : C.textMuted, ...mono, whiteSpace: "nowrap" }}>
         <Clock size={12} /> {label}
       </span>
+      {/* favorited custom ranges — quick chips, like starred assets/traders */}
+      {favorites.map((f) => {
+        const on = activeFavId === f.id;
+        return (
+          <span key={f.id} style={{
+            display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 6px 4px 9px", borderRadius: 999, fontSize: 10, fontWeight: 700, ...mono, whiteSpace: "nowrap",
+            border: `1px solid ${on ? C.amber : C.border}`, backgroundColor: on ? `${C.amber}1c` : "transparent", color: on ? C.amber : C.textMuted,
+          }}>
+            <Star size={10} fill={C.amber} color={C.amber} style={{ cursor: "pointer" }} onClick={() => setCustomRange(f.from, f.to)} />
+            <span style={{ cursor: "pointer" }} onClick={() => setCustomRange(f.from, f.to)}>{f.label}</span>
+            <X size={11} style={{ cursor: "pointer", opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); removeFavorite(f.id); }} />
+          </span>
+        );
+      })}
       {/* segmented presets */}
       <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${C.border}`, overflow: "hidden" }}>
         {presets.map((p) => {
@@ -77,6 +93,10 @@ const TimeframeFilter = () => {
           <input type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} style={inputStyle} />
           <label style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700, marginTop: 8, display: "block" }}>To</label>
           <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} style={inputStyle} />
+          <label style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 12, fontSize: 11, color: C.text, cursor: "pointer" }}>
+            <input type="checkbox" checked={saveFav} onChange={(e) => setSaveFav(e.target.checked)} />
+            <Star size={12} color={C.amber} /> Save as a favorite chip
+          </label>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button onClick={() => setOpen(false)} style={{ flex: 1, padding: "7px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: "transparent", color: C.textMuted, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
             <button onClick={apply} style={{ flex: 1, padding: "7px", borderRadius: 6, border: "none", backgroundColor: C.purple, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>Apply</button>
