@@ -122,7 +122,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
         {showText && (
           <>
             <text x={x + 7} y={y + 17} fill="#fff" fontSize={12} fontWeight="800" style={{ fontFamily: "monospace" }}>{name}</text>
-            <text x={x + 7} y={y + 31} fill="rgba(255,255,255,0.82)" fontSize={10} style={{ fontFamily: "monospace" }}>
+            <text x={x + 7} y={y + 31} fill="#fff" fontSize={10} style={{ fontFamily: "monospace" }}>
               {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}%L`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
             </text>
           </>
