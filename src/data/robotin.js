@@ -151,6 +151,7 @@ export function coinSignals(coin, candles) {
       id: `${coin}-${k}`, coin, pair: `${coin}/USDT`, trader: trader.name, isBot: trader.isBot,
       time: candles[ei].time, entryIdx: ei,
       dir, entry, signalPx: px, sl, tp1, tp2, tp3, tf, setup, tag,
+      lev, notional: round(notional), // position sizing (used by Positioning map / detail)
       // Robotín
       approved, confidence: conf, reasoning, rejectReason,
       // execution (only if approved)

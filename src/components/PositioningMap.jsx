@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
-import { mockTraders, traderDeepData } from "../data/mockData";
+import { coinCandles, coinSignals } from "../data/robotin";
 import { SectionHeader } from "./common";
 import { C, cardStyle, mono } from "../theme";
 
@@ -11,26 +11,20 @@ import { C, cardStyle, mono } from "../theme";
    (bearish) to the left. At a glance you see which way the crowd is leaning and
    where conviction clusters. Beginner-obvious, yet it's real positioning data. */
 
-const coinOf = (pair) => String(pair || "").split("/")[0].toUpperCase();
-const levNum = (l) => { const n = parseInt(String(l), 10); return Number.isFinite(n) && n > 0 ? n : 1; };
-
 const RANGE = 6; // ± % of price shown across the axis
 
 const PositioningMap = ({ coin, currentPrice }) => {
   const data = useMemo(() => {
-    const positions = [];
-    mockTraders.forEach((t) => {
-      const deep = traderDeepData[t.name];
-      if (!deep) return;
-      (deep.history || []).forEach((h) => {
-        if (coinOf(h.pair) !== coin) return;
-        positions.push({ kind: "trade", trader: t.name, isBot: t.isBot, type: h.type, target: h.tp1 ?? h.tp ?? h.entry, lev: levNum(h.leverage) });
-      });
-      (deep.signals || []).forEach((s) => {
-        if (coinOf(s.pair) !== coin) return;
-        positions.push({ kind: "signal", trader: t.name, isBot: t.isBot, type: s.type, target: s.tp ?? s.entry, lev: levNum(s.leverage) });
-      });
-    });
+    // Every published signal on this coin is a position: approved → executed trade,
+    // the rest → live/pending signals. Plotted at its first target vs the current
+    // price. Sourced from the same engine as the rest of Markets, so EVERY coin is
+    // populated (not just the few with legacy trader histories).
+    const sigs = coinSignals(coin, coinCandles(coin));
+    const positions = sigs.map((s) => ({
+      kind: s.approved ? "trade" : "signal",
+      trader: s.trader, isBot: s.isBot, type: s.dir,
+      target: s.tp1 ?? s.entry, lev: s.lev || 3,
+    }));
     const longs = positions.filter((p) => p.type === "LONG").length;
     const shorts = positions.filter((p) => p.type === "SHORT").length;
     const wsum = positions.reduce((a, p) => a + p.lev, 0) || 1;
