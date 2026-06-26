@@ -110,7 +110,7 @@ const TradersTab = () => {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
                 {/* [label, tip, sortKey] — numeric columns sort on click */}
-                {[["Rank",null,null],["Trader",null,null],["Alpha","alpha","alpha"],["Trend",null,null],["Streak","streak","streak"],["WR / PF / DD",null,"winRate"],["PnL",null,"pnl"],["Expect.","expectancy","expectancy"],["Robotín approval",null,"approval"],["Action",null,null]]
+                {[["Rank",null,null],["Trader",null,null],["Alpha","alpha","alpha"],["Trend",null,null],["Streak","streak","streak"],["WR / PF / DD",null,"winRate"],["PnL",null,"pnl"],["Expect.","expectancy","expectancy"],["Robotín approval",null,"approval"]]
                   .filter(([h]) => proMode || (h !== "Trend" && h !== "Expect."))
                   .map(([h,tip,key]) => {
                     const active = key && sort.key === key;
@@ -208,17 +208,6 @@ const TradersTab = () => {
                           <span style={{ fontSize: "9px", color: C.textFaint }}>{r.approved}/{r.total} signals</span>
                         </div>
                       ); })()}
-                    </td>
-                    <td style={{ ...tdStyle }}>
-                      <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                        <button title={followedTraders[t.name] ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: "none", cursor: "pointer", backgroundColor: followedTraders[t.name] ? C.cyan + "20" : "transparent", color: followedTraders[t.name] ? C.cyan : C.textFaint }}>
-                          <Eye size={13} />
-                        </button>
-                        <button onClick={() => openProfile(t)} style={{
-                          padding: "4px 12px", borderRadius: "4px", fontSize: "10px", fontWeight: "700", cursor: "pointer",
-                          backgroundColor: "transparent", color: C.purple, border: `1px solid ${C.purple}`, display: "flex", alignItems: "center", gap: "3px"
-                        }}>Open</button>
-                      </div>
                     </td>
                   </tr>
                 );})}
