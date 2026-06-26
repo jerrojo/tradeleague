@@ -160,19 +160,32 @@ const FundOverview = () => {
 
   const tooltipStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" };
 
-  /* Clean, evenly-spaced axes: round $5k steps on Y, every-20 ticks on X.
-     A fixed Y-axis width keeps the equity curve and the drawdown strip aligned. */
-  const Y_STEP = 5000, AXIS_W = 52;
+  /* Clean, evenly-spaced axes that ADAPT to the data range — so a short window
+     (e.g. 6H with a ~$700 range) isn't squished under fixed $5k steps. A "nice"
+     step keeps the numbers round; a fixed Y-axis width keeps the curve and the
+     drawdown strip aligned. */
+  const AXIS_W = 52;
+  const niceStep = (range) => {
+    const rough = (range || 1) / 5;
+    const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+    for (const m of [1, 2, 2.5, 5, 10]) if (m * pow >= rough) return m * pow;
+    return 10 * pow;
+  };
   const yTicks = (() => {
     const vals = data.equity.flatMap((e) => [e.fund, e.btc]).filter((v) => v != null);
-    const lo = Math.floor(Math.min(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
-    const hi = Math.ceil(Math.max(...vals, STARTING_BALANCE) / Y_STEP) * Y_STEP;
-    const out = []; for (let v = lo; v <= hi; v += Y_STEP) out.push(v); return out;
+    const dmin = Math.min(...vals, STARTING_BALANCE), dmax = Math.max(...vals, STARTING_BALANCE);
+    const step = niceStep(dmax - dmin);
+    const lo = Math.floor(dmin / step) * step, hi = Math.ceil(dmax / step) * step;
+    const out = []; for (let v = lo; v <= hi + step / 2; v += step) out.push(Math.round(v)); return out;
   })();
   const xTicks = (() => {
-    const out = []; const max = (data.equity.length || 1) - 1;
-    for (let v = 0; v <= max; v += 20) out.push(v); return out;
+    const max = (data.equity.length || 1) - 1;
+    const step = Math.max(1, Math.ceil(max / 7));
+    const out = []; for (let v = 0; v <= max; v += step) out.push(v); return out;
   })();
+  // Drawdown strip floor — always keep the axis negative so a flat (0%) window
+  // doesn't render bogus positive ticks.
+  const ddFloor = Math.min(-0.5, ...data.equity.map((e) => e.dd ?? 0));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -250,7 +263,7 @@ const FundOverview = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
             <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
-            <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`} />
             <Tooltip
               contentStyle={tooltipStyle}
               labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)}
@@ -273,7 +286,7 @@ const FundOverview = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
             <XAxis dataKey="i" hide />
-            <YAxis stroke={C.textMuted} fontSize={9} domain={["auto", 0]} width={AXIS_W} tickFormatter={(v) => `${v}%`} />
+            <YAxis stroke={C.textMuted} fontSize={9} domain={[ddFloor, 0]} width={AXIS_W} tickFormatter={(v) => `${v}%`} />
             <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
             <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
           </ComposedChart>
