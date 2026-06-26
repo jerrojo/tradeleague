@@ -44,8 +44,8 @@ const AICommentary = ({ data }) => {
         </div>
         <p style={{ fontSize: 12.5, lineHeight: 1.65, color: C.textMuted, margin: 0 }}>
           The fund stands at <Em c={C.text}>{usdPlain(data.balance)}</Em>, <Em c={data.returnPct >= 0 ? C.green : C.red}>{pct1(data.returnPct)}</Em> for the period versus <Em c={data.btcReturnPct >= 0 ? C.green : C.red}>{pct1(data.btcReturnPct)}</Em> for BTC buy-and-hold — {beat >= 0 ? "ahead of" : "behind"} the benchmark by <Em c={beat >= 0 ? C.green : C.red}>{Math.abs(beat).toFixed(1)} pts</Em>.
-          {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({data.approvalRate}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
-          {" "}Win rate is <Em c={C.text}>{data.winRate}%</Em> at a <Em c={data.profitFactor >= 1 ? C.green : C.red}>{pfFmt(data.profitFactor)}</Em> profit factor, with the worst drawdown reaching <Em c={C.red}>{data.maxDrawdownPct.toFixed(1)}%</Em>{data.topCoin ? <> · most active in <Em c={C.text}>{data.topCoin}</Em> ({data.topConcentration}% of trades)</> : null}.
+          {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({Math.round(data.approvalRate)}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
+          {" "}Win rate is <Em c={C.text}>{Number(data.winRate).toFixed(1)}%</Em> at a <Em c={data.profitFactor >= 1 ? C.green : C.red}>{pfFmt(data.profitFactor)}</Em> profit factor, with the worst drawdown reaching <Em c={C.red}>{data.maxDrawdownPct.toFixed(1)}%</Em>{data.topCoin ? <> · most active in <Em c={C.text}>{data.topCoin}</Em> ({data.topConcentration}% of trades)</> : null}.
         </p>
       </div>
     </div>
