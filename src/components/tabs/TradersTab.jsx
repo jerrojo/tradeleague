@@ -85,18 +85,13 @@ const TradersTab = () => {
         <span style={{ fontSize: "13px", fontWeight: "800" }}>Directory</span>
         <span style={{ fontSize: "11px", color: C.textMuted }}>{mockTraders.length} traders</span>
         <div style={{ flex: 1 }} />
-        {/* Quick views — All · Ranking · Approval · Favorites (column headers handle granular sort) */}
+        {/* Quick views — All · Favorites (column headers handle sorting) */}
         <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           {[
-            { id: "all", label: "All", icon: Users, on: !onlyFavs && sort.key === "alpha" },
-            { id: "ranking", label: "Ranking", icon: Trophy, on: !onlyFavs && sort.key === "pnl" },
-            { id: "approval", label: "Approval", icon: CheckCircle, on: !onlyFavs && sort.key === "approval" },
+            { id: "all", label: "All", icon: Users, on: !onlyFavs },
             { id: "favorites", label: "Favorites", icon: Star, on: onlyFavs },
           ].map(cat => (
-            <button key={cat.id} onClick={() => {
-              if (cat.id === "favorites") { setOnlyFavs(true); }
-              else { setOnlyFavs(false); setSort({ key: cat.id === "all" ? "alpha" : cat.id === "ranking" ? "pnl" : "approval", dir: "desc" }); }
-            }} style={{
+            <button key={cat.id} onClick={() => setOnlyFavs(cat.id === "favorites")} style={{
               display: "flex", alignItems: "center", gap: "4px", padding: "5px 10px", borderRadius: "6px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
               border: `1px solid ${cat.on ? C.purple : C.border}`,
               backgroundColor: cat.on ? C.purpleBg : "transparent",
@@ -110,7 +105,8 @@ const TradersTab = () => {
 
       {view === "leaderboard" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+          {/* min-height keeps the page from shrinking (and jumping the scroll up) when Favorites filters to a few rows */}
+          <div style={{ ...cardStyle, padding: 0, overflow: "hidden", minHeight: 44 + mockTraders.length * 56 }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
                 {/* [label, tip, sortKey] — numeric columns sort on click */}
