@@ -83,16 +83,13 @@ const App = () => {
     const allPairs = ["BTC/USDT","ETH/USDT","SOL/USDT","BNB/USDT","XRP/USDT","AVAX/USDT","DOGE/USDT","ADA/USDT"];
     const pairs = allPairs.filter(p => p.toLowerCase().includes(q));
     const tabList = [
-      { id: "pulse", label: "Pulse", desc: "The live overview — who's winning and the market mood" },
-      { id: "markets", label: "Markets", desc: "The cross-coin panorama, then drill into any coin's detail" },
+      { id: "overview", label: "Overview", desc: "The investor tear-sheet — capital, return, risk and system state" },
+      { id: "activity", label: "Activity", desc: "The live tape — every signal and what Robotín did with it" },
+      { id: "report", label: "Trade Report", desc: "Executed positions by day — per-position breakdown across the VARIV accounts" },
       { id: "audit", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
       { id: "audit", label: "Analytics", desc: "Signal-provider edge — KPIs, equity, win rate by style, expectancy by pair" },
-      { id: "activity", label: "Activity", desc: "Trades and signals across all traders — one live stream" },
-      { id: "report", label: "Trade Report", desc: "Executed positions by day — per-position breakdown across the VARIV accounts" },
-      { id: "traders", label: "Traders", desc: "Leaderboard, profiles, copy trading" },
-      { id: "traders", label: "Top Trades", desc: "Best and worst plays across all traders, explained" },
-      { id: "traders", label: "Legends & Awards", desc: "Hall of Fame and season awards" },
-      { id: "overview", label: "Fund Overview", desc: "The investor tear-sheet — capital, return, risk and system state" },
+      { id: "traders", label: "Traders", desc: "Signal-provider leaderboard, profiles and attribution" },
+      { id: "markets", label: "Markets", desc: "The cross-coin panorama, then drill into any coin's detail" },
     ];
     const tabs = tabList.filter(t => t.label.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
     return { traders, pairs, tabs };
