@@ -29,7 +29,7 @@ const Funnel = ({ stages }) => (
 );
 
 const HeroStat = ({ label, value, color, hint }) => (
-  <div style={{ ...cardStyle, flex: "1 1 0", minWidth: 180 }}>
+  <div className="tl-card" style={{ ...cardStyle, flex: "1 1 0", minWidth: 180 }}>
     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>{label}</div>
     <div style={{ fontSize: 26, fontWeight: 900, color, ...mono, marginTop: 3 }}>{value}</div>
     {hint && <div style={{ fontSize: 10.5, color: C.textMuted, marginTop: 3, lineHeight: 1.4 }}>{hint}</div>}

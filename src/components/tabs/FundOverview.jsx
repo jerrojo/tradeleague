@@ -54,7 +54,7 @@ const AICommentary = ({ data }) => {
 
 /* ── Friendly KPI card (one metric per card, scannable dashboard grid) ── */
 const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
-  <div style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
+  <div className="tl-card" style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
       <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 600 }}>
         {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
@@ -68,7 +68,7 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
 
 /* ── Account balance card with an equity sparkline (the friendly hero, right rail) ── */
 const AccountBalanceCard = ({ balance, netPnl, returnPct, equity }) => (
-  <div style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+  <div className="tl-card" style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Wallet size={14} /> Account Balance</div>
     <div style={{ fontSize: 30, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
     <div style={{ fontSize: 13, fontWeight: 700, color: netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(netPnl)} ({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</div>
@@ -99,7 +99,7 @@ const TodayCard = ({ dash }) => {
     </div>
   );
   return (
-    <div style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+    <div className="tl-card" style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Calendar size={14} /> Today's Performance</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: dash.todayPnl >= 0 ? C.green : C.red, ...mono, lineHeight: 1 }}>{usd(dash.todayPnl)}</div>
       <div style={{ fontSize: 11, color: C.textFaint }}>{dash.todayCount} trade{dash.todayCount === 1 ? "" : "s"} today</div>

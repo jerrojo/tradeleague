@@ -122,7 +122,7 @@ const Select = ({ label, value, onChange, options }) => (
 
 /* ── small advanced-stat card ── */
 const MiniStat = ({ label, value, color, sub }) => (
-  <div style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
+  <div className="tl-card" style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
     <span style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
     <span style={{ fontSize: 16, fontWeight: 800, color: color || C.text, ...mono, letterSpacing: "-0.3px" }}>{value}</span>
     {sub && <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{sub}</span>}

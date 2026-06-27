@@ -57,6 +57,22 @@ select:focus:not(:focus-visible) { outline: none; }
   }
 }
 
+/* ── Shine: smooth, tactile interactions across the whole app ── */
+button, [role="button"], a, select, input, textarea,
+.tl-card, .card-hover, .panorama-row, .rc-rail {
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease,
+              box-shadow .15s ease, transform .12s ease, opacity .15s ease;
+}
+/* tactile press feedback on buttons */
+button:not(:disabled):active { transform: translateY(0.5px); }
+
+/* Subtle hover for card surfaces — brightens the border so the UI feels alive
+   without implying every card is clickable. */
+.tl-card:hover { border-color: #3a414c !important; }
+/* Clickable cards lift slightly. */
+.tl-card-int { cursor: pointer; }
+.tl-card-int:hover { border-color: #3a414c !important; transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,0.30); }
+
 /* ── Dark, unobtrusive scrollbars (polish) ── */
 * { scrollbar-width: thin; scrollbar-color: #2d3540 transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
