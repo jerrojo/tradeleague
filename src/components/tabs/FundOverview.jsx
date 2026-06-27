@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import {
-  Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, BarChart3, CheckCircle2, Cpu, Gauge, Layers, Percent, Radio,
-  Scale, Sparkles, TrendingDown, Wallet,
+  Activity, BarChart3, Calendar, CheckCircle2, Clock, Cpu, Flame, Gauge, Layers, Percent, Radio,
+  Scale, Sparkles, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { StatCard } from "../common";
+import { InfoTip, StatCard } from "../common";
 import { useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { START_CAPITAL } from "../../data/fund";
@@ -47,6 +47,74 @@ const AICommentary = ({ data }) => {
           {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({Math.round(data.approvalRate)}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
           {" "}Win rate is <Em c={C.text}>{Number(data.winRate).toFixed(1)}%</Em> at a <Em c={data.profitFactor >= 1 ? C.green : C.red}>{pfFmt(data.profitFactor)}</Em> profit factor, with the worst drawdown reaching <Em c={C.red}>{data.maxDrawdownPct.toFixed(1)}%</Em>{data.topCoin ? <> · most active in <Em c={C.text}>{data.topCoin}</Em> ({data.topConcentration}% of trades)</> : null}.
         </p>
+      </div>
+    </div>
+  );
+};
+
+/* ── Friendly KPI card (one metric per card, scannable dashboard grid) ── */
+const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
+  <div style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 600 }}>
+        {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
+      </span>
+      {Icon && <Icon size={14} color={accent} style={{ flexShrink: 0 }} />}
+    </div>
+    <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
+    {sub && <div style={{ fontSize: 10, color: C.textFaint }}>{sub}</div>}
+  </div>
+);
+
+/* ── Account balance card with an equity sparkline (the friendly hero, right rail) ── */
+const AccountBalanceCard = ({ balance, netPnl, returnPct, equity }) => (
+  <div style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Wallet size={14} /> Account Balance</div>
+    <div style={{ fontSize: 30, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
+    <div style={{ fontSize: 13, fontWeight: 700, color: netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(netPnl)} ({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</div>
+    <div style={{ height: 96, marginTop: 4 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={equity} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={C.green} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={C.green} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area type="monotone" dataKey="exec" stroke={C.green} strokeWidth={2} fill="url(#balGrad)" dot={false} isAnimationActive={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+    <div style={{ fontSize: 11, color: C.textMuted }}>Starting balance <span style={{ color: C.text, ...mono }}>{usdPlain(START_CAPITAL)}</span></div>
+  </div>
+);
+
+/* ── Today's performance card (right rail) ── */
+const TodayCard = ({ dash }) => {
+  const wr = dash.todayW + dash.todayL ? Math.round((dash.todayW / (dash.todayW + dash.todayL)) * 100) : 0;
+  const Row = ({ label, value, color }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
+      <span style={{ color: C.textMuted }}>{label}</span>
+      <span style={{ fontWeight: 700, color: color || C.text, ...mono }}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Calendar size={14} /> Today's Performance</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: dash.todayPnl >= 0 ? C.green : C.red, ...mono, lineHeight: 1 }}>{usd(dash.todayPnl)}</div>
+      <div style={{ fontSize: 11, color: C.textFaint }}>{dash.todayCount} trade{dash.todayCount === 1 ? "" : "s"} today</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, ...mono, marginTop: 2 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: C.green }}><TrendingUp size={13} /> {dash.todayW}W</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, color: C.red }}><TrendingDown size={13} /> {dash.todayL}L</span>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, color: C.text, fontWeight: 700 }}><Target size={12} color={C.cyan} /> {wr}% WR</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11.5, paddingTop: 2 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}><Flame size={12} color={C.amber} /> Current streak</span>
+        <span style={{ fontWeight: 700, color: dash.curWin ? C.green : C.red, ...mono }}>{dash.curStreak} {dash.curWin ? "Wins" : "Losses"}</span>
+      </div>
+      <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+        <Row label="This week" value={usd(dash.weekPnl)} color={dash.weekPnl >= 0 ? C.green : C.red} />
+        <Row label="This month" value={usd(dash.monthPnl)} color={dash.monthPnl >= 0 ? C.green : C.red} />
       </div>
     </div>
   );
@@ -263,6 +331,51 @@ const FundOverview = () => {
   // doesn't render bogus positive ticks.
   const ddFloor = Math.min(-0.5, ...data.equity.map((e) => e.dd ?? 0));
 
+  // ── Friendly dashboard KPIs, derived from the same closed-trade set ──
+  const dash = (() => {
+    const closed = data.closed;
+    const winners = closed.filter((s) => s.pnl > 0);
+    const losers = closed.filter((s) => s.pnl < 0);
+    const avgWin = winners.length ? winners.reduce((a, s) => a + s.pnl, 0) / winners.length : 0;
+    const avgLoss = losers.length ? Math.abs(losers.reduce((a, s) => a + s.pnl, 0) / losers.length) : 0;
+    const largestWin = closed.length ? Math.max(...closed.map((s) => s.pnl)) : 0;
+    const largestLoss = closed.length ? Math.min(...closed.map((s) => s.pnl)) : 0;
+    const byTime = [...closed].sort((a, b) => a.time - b.time);
+    let bw = 0, bl = 0, cw = 0, cl = 0;
+    byTime.forEach((s) => { if (s.pnl >= 0) { cw++; cl = 0; bw = Math.max(bw, cw); } else { cl++; cw = 0; bl = Math.max(bl, cl); } });
+    const holds = closed.filter((s) => s.exitIdx != null).map((s) => s.exitIdx - (s.activeIdx ?? s.entryIdx));
+    const avgHold = holds.length ? holds.reduce((a, h) => a + h, 0) / holds.length : 0;
+    const dayMap = {};
+    closed.forEach((s) => { const d = new Date(s.time * 1000); const k = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`; dayMap[k] = (dayMap[k] || 0) + s.pnl; });
+    const de = Object.entries(dayMap);
+    const bestDay = de.length ? de.reduce((a, b) => (b[1] > a[1] ? b : a)) : ["—", 0];
+    const worstDay = de.length ? de.reduce((a, b) => (b[1] < a[1] ? b : a)) : ["—", 0];
+    const rs = closed.map((s) => { const sign = s.dir === "LONG" ? 1 : -1; const risk = Math.abs(s.entry - s.sl); const exit = s.exit ?? (s.hit === "TP" ? s.tp1 : s.sl); return risk > 0 ? (sign * (exit - s.entry)) / risk : 0; });
+    const avgR = rs.length ? rs.reduce((a, r) => a + r, 0) / rs.length : 0;
+    const expectancy = closed.length ? data.netPnl / closed.length : 0;
+    const times = closed.map((s) => s.time);
+    const spanDays = times.length ? Math.max(1, (Math.max(...times) - Math.min(...times)) / 86400) : 1;
+    const perDay = closed.length / spanDays;
+    const nowS = Date.now() / 1000;
+    const dStart = new Date(); dStart.setHours(0, 0, 0, 0); const dStartS = dStart.getTime() / 1000;
+    const todayT = closed.filter((s) => s.time >= dStartS);
+    const todayW = todayT.filter((s) => s.pnl >= 0).length;
+    let curStreak = 0, curWin = true;
+    for (let i = byTime.length - 1; i >= 0; i--) { const w = byTime[i].pnl >= 0; if (i === byTime.length - 1) { curWin = w; curStreak = 1; } else if (w === curWin) curStreak++; else break; }
+    const mth = data.monthly || [];
+    const lastM = mth[mth.length - 1] || { pnl: 0, trades: 0, winRate: 0 };
+    const prevM = mth[mth.length - 2] || { pnl: 0, trades: 0, winRate: 0 };
+    const mWins = (m) => Math.round((m.trades * m.winRate) / 100);
+    return {
+      avgWin, avgLoss, largestWin, largestLoss, bestWinStreak: bw, bestLossStreak: bl,
+      avgHold, bestDay, worstDay, avgR, expectancy, perDay, perWeek: perDay * 7, perMonth: perDay * 30,
+      todayPnl: todayT.reduce((a, s) => a + s.pnl, 0), todayW, todayL: todayT.length - todayW, todayCount: todayT.length,
+      weekPnl: closed.filter((s) => s.time >= nowS - 7 * 86400).reduce((a, s) => a + s.pnl, 0), monthPnl: data.netPnl, curStreak, curWin,
+      lastM, prevM, lastMWins: mWins(lastM), lastMLosses: lastM.trades - mWins(lastM), prevMWins: mWins(prevM), prevMLosses: prevM.trades - mWins(prevM),
+      thisMonthPnl: lastM.pnl, lastMonthPnl: prevM.pnl,
+    };
+  })();
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* ── 1 · Title ── */}
@@ -280,35 +393,40 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ── 2 · The numbers an investor checks first ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
-        <StatCard
-          label="Capital Under Mgmt" value={usdPlain(data.balance)} icon={Wallet}
-          color={C.purple}
-          sub={`${usd(data.netPnl)} net P&L`}
-        />
-        <StatCard
-          label="Period Return" value={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(2)}%`}
-          icon={TrendingDown} color={data.returnPct >= 0 ? C.green : C.red}
-          sub={`vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC hold`}
-        />
-        <StatCard
-          label="Sharpe Ratio" value={data.sharpe.toFixed(2)} icon={Gauge}
-          color={C.blue} tip="sharpe" sub="risk-adjusted (proxy)"
-        />
-        <StatCard
-          label="Sortino Ratio" value={data.sortino.toFixed(2)} icon={Gauge}
-          color={C.cyan} tip="sortino" sub="downside-adjusted (proxy)"
-        />
-        <StatCard
-          label="Max Drawdown" value={`${data.maxDrawdownPct.toFixed(1)}%`} icon={TrendingDown}
-          color={C.red} tip="maxDD" sub={usd(data.maxDrawdown)}
-        />
-        <StatCard
-          label="Profit Factor" value={pfFmt(data.profitFactor)} icon={Scale}
-          color={data.profitFactor >= 1 ? C.green : C.red} tip="profitFactor"
-          sub="gross win / gross loss"
-        />
+      {/* ── 2 · Friendly KPI dashboard — scannable cards + balance & today rail ── */}
+      <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {/* row 1 */}
+          <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`this month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} />
+          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(2)}/day · ${dash.perWeek.toFixed(1)}/wk`} />
+          <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this month ${dash.lastM.winRate}% · last ${dash.prevM.winRate}%`} />
+          <Kpi label="Wins vs Losses" icon={Target} value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} />
+          {/* row 2 */}
+          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" />
+          <Kpi label="Best Streaks" icon={Flame} accent={C.amber} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streak" />
+          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best & worst single trade" />
+          <Kpi label="Last Month W/L" icon={Target} value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} />
+          {/* row 3 */}
+          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" />
+          <Kpi label="Trades / Month" icon={BarChart3} value={dash.perMonth.toFixed(1)} sub={`this month ${dash.lastM.trades} · last ${dash.prevM.trades}`} />
+          <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" />
+          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} />
+          {/* row 4 */}
+          <Kpi label="Avg Profit" icon={TrendingUp} accent={C.green} value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="average per trade" />
+          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" />
+          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" />
+          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" />
+          {/* row 5 — risk-adjusted + Robotín pipeline (fund identity) */}
+          <Kpi label="Sharpe" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted (proxy)" />
+          <Kpi label="Sortino" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted (proxy)" />
+          <Kpi label="Signals Processed" icon={Cpu} accent={C.purple} value={data.allSignalsCount} sub={`${data.approvedCount} approved · ${data.active.length} active`} />
+          <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub="Robotín-approved signals" />
+        </div>
+        {/* right rail */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} />
+          <TodayCard dash={dash} />
+        </div>
       </div>
 
       {/* ── 2b · AI commentary — the period in plain English ── */}
@@ -378,34 +496,6 @@ const FundOverview = () => {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.amber, borderRadius: 1 }} /> All signals (if executed)</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown (executed)</span>
-        </div>
-      </div>
-
-      {/* ── 4 · System State ── */}
-      <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600", marginBottom: "4px" }}>
-          <Cpu size={14} color={C.cyan} /> System State
-        </div>
-        <div style={{ fontSize: "10px", color: C.textFaint, marginBottom: "12px" }}>
-          Robotín screens every published signal and executes only what it approves — the live state of that pipeline.
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px" }}>
-          {[
-            { l: "Signals Processed", v: data.allSignalsCount.toLocaleString(), c: C.text, icon: BarChart3, s: `${data.trades.length} executed` },
-            { l: "Approval Rate", v: `${data.approvalRate.toFixed(0)}%`, c: C.cyan, icon: CheckCircle2, s: `${data.approvedCount} of ${data.allSignalsCount} approved` },
-            { l: "Active Now", v: data.active.length.toLocaleString(), c: C.blue, icon: Radio, s: "open positions" },
-            { l: "Trades Closed", v: data.closed.length.toLocaleString(), c: C.purple, icon: Scale, s: `${data.wins.length} W / ${data.losses.length} L` },
-            { l: "Win Rate", v: `${data.winRate.toFixed(1)}%`, c: data.winRate >= 50 ? C.green : C.red, icon: Percent, s: "on closed trades" },
-            { l: "Top-asset Concentration", v: `${data.topConcentration}%`, c: data.topConcentration >= 40 ? C.red : data.topConcentration >= 25 ? C.amber : C.green, icon: Layers, s: `${data.topCoin} — edge ${data.topConcentration >= 40 ? "concentrated" : "diversified"}` },
-          ].map((m) => (
-            <div key={m.l} style={{ ...cardStyle, padding: "12px 14px", backgroundColor: C.cardElev }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "10px", color: C.textMuted, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>
-                <m.icon size={11} color={m.c} /> {m.l}
-              </div>
-              <div style={{ fontSize: "20px", fontWeight: "800", color: m.c, ...mono }}>{m.v}</div>
-              <div style={{ fontSize: "10px", color: C.textFaint, marginTop: 2 }}>{m.s}</div>
-            </div>
-          ))}
         </div>
       </div>
 
