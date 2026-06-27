@@ -6,6 +6,7 @@ import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
 import { TradeReport } from "./components/tabs/TradeReport";
+import { ExecutionEngine } from "./components/tabs/ExecutionEngine";
 import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
 import { mockTraders, traderSocials } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
@@ -98,6 +99,7 @@ const App = () => {
       { id: "report", label: "Trade Report", desc: "Executed positions by day — per-position breakdown across the VARIV accounts" },
       { id: "audit", label: "Execution Audit", desc: "Order fills, slippage, fees and real vs theoretical net PnL" },
       { id: "audit", label: "Analytics", desc: "Signal-provider edge — KPIs, equity, win rate by style, expectancy by pair" },
+      { id: "engine", label: "Execution Engine", desc: "Re-simulate execution with partials, sizing & costs over historical signals" },
       { id: "traders", label: "Traders", desc: "Signal-provider leaderboard, profiles and attribution" },
       { id: "markets", label: "Markets", desc: "The cross-coin panorama, then drill into any coin's detail" },
     ];
@@ -117,7 +119,7 @@ const App = () => {
 
   // Keyboard nav — 1–6 jump between sections in sidebar order (pro speed). Ignored while typing.
   useEffect(() => {
-    const SECTIONS = { "1": "overview", "2": "activity", "3": "report", "4": "audit", "5": "traders", "6": "markets" };
+    const SECTIONS = { "1": "overview", "2": "activity", "3": "report", "4": "audit", "5": "engine", "6": "traders", "7": "markets" };
     const onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
@@ -188,6 +190,7 @@ const App = () => {
     { id: "activity", label: "Activity", icon: Activity, accent: C.green },
     { id: "report", label: "Trade Report", icon: Calendar, accent: C.cyan },
     { id: "audit", label: "Audit", icon: Scale, accent: C.amber },
+    { id: "engine", label: "Execution Engine", icon: Beaker, accent: C.purple },
     { zone: true, id: "z-research", label: "Research" },
     { id: "traders", label: "Traders", icon: Users, accent: C.blue },
     { id: "markets", label: "Markets", icon: Globe, accent: C.cyan },
@@ -200,6 +203,7 @@ const App = () => {
     markets: "The whole board at a glance, then drill into any coin — chart, signals, positioning and the consensus call",
     activity: "The live tape — every signal and what Robotín did with it, newest first, across all coins",
     audit: "The verification layer — execution audit (fills, fees, real vs theoretical) + signal-provider analytics",
+    engine: "Re-simulate execution over historical signals — partials, sizing, fees and a fixed/compounding account, with a per-signal breakdown",
     report: "Executed positions by day — pick a date for the full position-by-position breakdown across the VARIV accounts",
   };
 
@@ -210,6 +214,7 @@ const App = () => {
     markets: MarketsSection,   // Markets = one coin, everything on one page
     activity: ActivitySection, // Activity = the global Robotín lifecycle tape
     audit: AuditSection,       // Audit = Execution Audit + Analytics (verification layer)
+    engine: ExecutionEngine,   // Execution Engine = configurable re-simulation
     report: TradeReport,       // Trade Report = per-day executed-positions ledger
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
@@ -382,7 +387,7 @@ const App = () => {
                       <span style={{ fontSize: "20px", fontWeight: "900", letterSpacing: "-0.5px" }}>Welcome to Tradethlon</span>
                     </div>
                     <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: 1.5 }}>
-                      An intelligence terminal for traders. Six areas, one job each — start anywhere, every screen tells you what it's for.
+                      An intelligence terminal for traders. Seven areas, one job each — start anywhere, every screen tells you what it's for.
                     </div>
                   </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -391,6 +396,7 @@ const App = () => {
                       { icon: Activity, color: C.green, t: "Activity", d: "Every signal and what Robotín did with it — the live tape.", go: "activity" },
                       { icon: Calendar, color: C.cyan, t: "Trade Report", d: "Executed positions by day — pick a date for the full breakdown.", go: "report" },
                       { icon: Scale, color: C.amber, t: "Audit", d: "Execution audit (fills, fees, real vs theoretical) + signal analytics.", go: "audit" },
+                      { icon: Beaker, color: C.purple, t: "Execution Engine", d: "Re-simulate execution with partials, sizing & costs over signals.", go: "engine" },
                       { icon: Users, color: C.blue, t: "Traders", d: "Leaderboard, best/worst plays, profiles.", go: "traders" },
                       { icon: Globe, color: C.cyan, t: "Markets", d: "The whole board at a glance, then drill into any coin's detail.", go: "markets" },
                     ].map(card => (
