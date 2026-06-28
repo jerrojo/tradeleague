@@ -35,8 +35,12 @@ const UpdatedAgo = () => {
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [auditView, setAuditView] = useState("execution"); // Audit sub-tab (deep-linkable from KPI cards)
+  // last visited section persists across refreshes; we always land at the top of the page
+  const [activeTab, setActiveTab] = useState(() => { try { const t = localStorage.getItem("tl_active_tab"); return ["overview", "activity", "report", "audit", "engine", "traders", "markets"].includes(t) ? t : "overview"; } catch { return "overview"; } });
+  const [auditView, setAuditView] = useState(() => { try { return localStorage.getItem("tl_audit_view") || "execution"; } catch { return "execution"; } }); // Audit sub-tab (deep-linkable from KPI cards)
+  useEffect(() => { try { localStorage.setItem("tl_active_tab", activeTab); } catch { /* ignore */ } }, [activeTab]);
+  useEffect(() => { try { localStorage.setItem("tl_audit_view", auditView); } catch { /* ignore */ } }, [auditView]);
+  useEffect(() => { window.scrollTo({ top: 0 }); }, []); // refresh always starts scrolled to the top
   const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
