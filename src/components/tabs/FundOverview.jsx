@@ -530,9 +530,10 @@ const FundOverview = () => {
         </ResponsiveContainer>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(1, data.monthly.length)}, 1fr)`, gap: "6px", marginTop: "8px" }}>
           {data.monthly.map((m) => (
-            <div key={m.period} style={{ textAlign: "center", fontSize: "9px", color: C.textFaint }}>
-              <div style={{ fontWeight: 700, color: m.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(m.pnl)}</div>
-              <div>{m.trades} trades · {m.winRate}% WR</div>
+            <div key={m.period} style={{ textAlign: "center", fontSize: "9px", color: C.textFaint, lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 700, fontSize: "10px", color: m.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(m.pnl)}</div>
+              <div>{m.trades} trades</div>
+              <div>{m.winRate}% WR</div>
             </div>
           ))}
         </div>
