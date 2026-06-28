@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SignalTable } from "../SignalTable";
-import { useProfile, useWatchlist, useTimeframe } from "../../contexts";
+import { useProfile, useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
@@ -24,14 +24,10 @@ const CHIPS = [
 
 const ActivityFeed = () => {
   const { openProfile } = useProfile();
-  const watchlist = useWatchlist();
-  const followedTraders = watchlist?.followedTraders || null;
-  const hasFollowing = followedTraders != null;
 
   // filters persist so the analyst's view sticks across sessions
   const [filter, setFilter] = useState(() => { try { return localStorage.getItem("af:chip") || "all"; } catch { return "all"; } });
   const [coinFilter, setCoinFilter] = useState(() => { try { return localStorage.getItem("af:coin") || "all"; } catch { return "all"; } });
-  const [followingOnly, setFollowingOnly] = useState(false);
   const [open, setOpen] = useState(null); // expanded signal id
   useEffect(() => { try { localStorage.setItem("af:chip", filter); } catch { /* ignore */ } }, [filter]);
   useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
@@ -69,9 +65,8 @@ const ActivityFeed = () => {
   const visible = useMemo(() => {
     let list = tfSignals.filter(chip.test);
     if (coinFilter !== "all") list = list.filter((s) => s.coin === coinFilter);
-    if (followingOnly && hasFollowing) list = list.filter((s) => followedTraders[s.trader]);
     return list;
-  }, [tfSignals, chip, coinFilter, followingOnly, hasFollowing, followedTraders]);
+  }, [tfSignals, chip, coinFilter]);
 
   /* ── header summary counts (over the timeframe-filtered tape) ── */
   const totalN = tfSignals.length;

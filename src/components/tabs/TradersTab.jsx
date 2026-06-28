@@ -2,7 +2,7 @@ import { TraderLink } from "../../contexts";
 import { Avatar, BotTag, EmptyState, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
 import { ArrowDown, BellRing, CheckCircle, ChevronDown, ChevronUp, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useProfile, useWatchlist, useProMode } from "../../contexts";
+import { useProfile, useProMode } from "../../contexts";
 import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, srand, titleByLevel } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
@@ -50,7 +50,6 @@ const TradersTab = () => {
     return m;
   }, []);
   const proMode = useProMode(); // Simple hides secondary columns (Trend, Expectancy)
-  const { followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts } = useWatchlist();
   const [visibleTraders, setVisibleTraders] = useState(() => {
     const m = {};
     mockTraders.forEach((t, i) => { m[t.name] = i < 3; });

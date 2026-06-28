@@ -96,10 +96,6 @@ const TraderLink = ({ name, children }) => {
 const FeedFilterContext = createContext();
 const useFeedFilter = () => useContext(FeedFilterContext);
 
-/* ═══════════════════════ WATCHLIST CONTEXT ═══════════════════════ */
-const WatchlistContext = createContext();
-const useWatchlist = () => useContext(WatchlistContext);
-
 /* ═══════════════════════ DATE CONTEXT ═══════════════════════ */
 const DateContext = createContext();
 const useDate = () => useContext(DateContext);
@@ -123,8 +119,6 @@ export {
   TraderLink,
   FeedFilterContext,
   useFeedFilter,
-  WatchlistContext,
-  useWatchlist,
   DateContext,
   useDate,
   TimeframeContext,

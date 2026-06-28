@@ -1,7 +1,7 @@
 import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
-import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext, TimeframeProvider, NavContext } from "./contexts";
+import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext } from "./contexts";
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
@@ -53,18 +53,7 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showWatchlist, setShowWatchlist] = useState(false);
-  const [watchlistSearch, setWatchlistSearch] = useState("");
-  const [watchlistCategory, setWatchlistCategory] = useState("all");
-  const [followedTraders, setFollowedTraders] = useState(() => {
-    const initial = {};
-    mockTraders.slice(0, 4).forEach(t => { initial[t.name] = true; });
-    return initial;
-  });
-  const [traderAlerts, setTraderAlerts] = useState({});
   const proMode = true; // Casual/Pro split removed — always show full Pro detail
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
-  const [rightPanelTab, setRightPanelTab] = useState(null);
   const searchRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(false);
 
@@ -225,8 +214,6 @@ const App = () => {
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
-  const rightPanelW = rightPanelCollapsed ? 48 : 220;
-  const rightW = (showWatchlist ? 340 : 0) + rightPanelW;
 
   // Account level/title (shown in Settings)
   const myLevel = 22;
@@ -239,7 +226,6 @@ const App = () => {
       <ProContext.Provider value={{ proMode }}>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
-        <WatchlistContext.Provider value={{ followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts }}>
         <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter, setActiveTab }}>
         <NavContext.Provider value={{ go, auditView, setAuditView }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -320,7 +306,7 @@ const App = () => {
 
             {/* Bottom section */}
             <div style={{ padding: "8px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: "2px" }}>
-              {[{ icon: Bookmark, label: "Watchlist", action: () => setShowWatchlist(true) }, { icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alerts", action: () => setShowAlerts(true) }].map(item => (
+              {[{ icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alerts", action: () => setShowAlerts(true) }].map(item => (
                 <button key={item.label} onClick={item.action} title={sidebarCollapsed ? item.label : undefined} style={{
                   display: "flex", alignItems: "center", gap: "10px",
                   padding: sidebarCollapsed ? "10px 0" : "10px 12px",
@@ -337,7 +323,7 @@ const App = () => {
           </aside>
 
           {/* ── Main Area ── */}
-          <div style={{ flex: 1, marginLeft: sideW, marginRight: rightW, transition: "margin-left 0.2s ease, margin-right 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          <div style={{ flex: 1, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
@@ -593,176 +579,6 @@ const App = () => {
               </div>
             )}
 
-            {/* ── Right Utility Panel ── */}
-            <aside style={{
-              width: rightPanelW, position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 201,
-              backgroundColor: C.card, borderLeft: `1px solid ${C.border}`,
-              display: "flex", flexDirection: "column",
-              transition: "width 0.2s ease", overflow: "hidden"
-            }}>
-              {/* Top icons */}
-              <div style={{ height: 56, display: "flex", alignItems: rightPanelCollapsed ? "center" : "center", justifyContent: rightPanelCollapsed ? "center" : "space-between", padding: rightPanelCollapsed ? "0" : "0 12px", borderBottom: `1px solid ${C.border}`, gap: "6px" }}>
-                {rightPanelCollapsed ? (
-                  <button onClick={() => setRightPanelCollapsed(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px", display: "flex", alignItems: "center" }}>
-                    <ChevronRight size={14} style={{ transform: "rotate(180deg)" }} />
-                  </button>
-                ) : (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Eye size={14} color={C.cyan} />
-                      <span style={{ fontSize: "12px", fontWeight: "700", whiteSpace: "nowrap" }}>Watchlist</span>
-                    </div>
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      <button onClick={() => setRightPanelCollapsed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px", display: "flex" }}>
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Nav items */}
-              <nav style={{ flex: 1, padding: "8px 4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                {[
-                  { id: "traders", label: "Watch traders", icon: Users, color: C.purple, action: () => { setShowWatchlist(true); setWatchlistCategory("all"); setRightPanelTab("traders"); } },
-                  { id: "bots", label: "Watch bots", icon: Bot, color: C.cyan, action: () => { setShowWatchlist(true); setWatchlistCategory("bot"); setRightPanelTab("bots"); } },
-                ].map(item => {
-                  const isActive = rightPanelTab === item.id;
-                  return (
-                    <button key={item.id} onClick={item.action} title={rightPanelCollapsed ? item.label : undefined} style={{
-                      display: "flex", alignItems: "center", gap: "10px",
-                      padding: rightPanelCollapsed ? "10px 0" : "10px 12px",
-                      justifyContent: rightPanelCollapsed ? "center" : "flex-start",
-                      backgroundColor: isActive ? `${item.color}12` : "transparent",
-                      border: "none", borderRadius: "6px", cursor: "pointer",
-                      color: isActive ? item.color : C.textMuted,
-                      fontSize: "12px", fontWeight: isActive ? "600" : "400",
-                      transition: "all 0.15s", width: "100%"
-                    }}>
-                      <item.icon size={16} />
-                      {!rightPanelCollapsed && <span style={{ whiteSpace: "nowrap" }}>{item.label}</span>}
-                    </button>
-                  );
-                })}
-              </nav>
-
-              {/* Mini content area when expanded */}
-              {!rightPanelCollapsed && rightPanelTab === "chat" && (
-                <div style={{ flex: 1, padding: "8px", borderTop: `1px solid ${C.border}`, overflow: "auto" }}>
-                  <div style={{ fontSize: "10px", color: C.textFaint, textAlign: "center", padding: "20px 8px" }}>
-                    <MessageCircle size={16} style={{ marginBottom: "6px", opacity: 0.4 }} />
-                    <div style={{ fontWeight: "600" }}>Chat coming soon</div>
-                    <div style={{ marginTop: "4px", fontSize: "9px" }}>Connect with traders in real-time</div>
-                  </div>
-                </div>
-              )}
-              {!rightPanelCollapsed && rightPanelTab === "lists" && (
-                <div style={{ flex: 1, padding: "8px", borderTop: `1px solid ${C.border}`, overflow: "auto" }}>
-                  <div style={{ fontSize: "10px", color: C.textFaint, textAlign: "center", padding: "20px 8px" }}>
-                    <Layers size={16} style={{ marginBottom: "6px", opacity: 0.4 }} />
-                    <div style={{ fontWeight: "600" }}>Custom Lists</div>
-                    <div style={{ marginTop: "4px", fontSize: "9px" }}>Create watchlists and groups</div>
-                  </div>
-                </div>
-              )}
-            </aside>
-
-            {/* ── Right Sidebar: Trader Watchlist (persistent, TradingView-style) ── */}
-            <aside style={{
-              width: 340, position: "fixed", top: 0, right: rightPanelW, bottom: 0, zIndex: 200,
-              backgroundColor: C.bg, borderLeft: `1px solid ${C.border}`,
-              display: "flex", flexDirection: "column",
-              transform: showWatchlist ? "translateX(0)" : "translateX(100%)",
-              transition: "transform 0.2s ease"
-            }}>
-              {/* Header */}
-              <div style={{ height: 56, padding: "0 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: "8px" }}>
-                <Users size={15} color={C.purple} />
-                <span style={{ fontSize: "13px", fontWeight: "800", flex: 1 }}>Watchlist</span>
-                <span style={{ fontSize: "9px", color: C.textMuted, ...mono }}>{Object.values(followedTraders).filter(Boolean).length} following</span>
-                <button onClick={() => setShowWatchlist(false)} style={{ background: "none", border: "none", cursor: "pointer", color: C.textMuted, padding: "4px" }}><X size={14} /></button>
-              </div>
-              {/* Search */}
-              <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.border}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: C.card, borderRadius: "6px", padding: "6px 10px", border: `1px solid ${C.border}` }}>
-                  <Search size={12} color={C.textFaint} />
-                  <input value={watchlistSearch} onChange={e => setWatchlistSearch(e.target.value)} placeholder="Search trader..." aria-label="Search trader in watchlist" style={{ background: "none", border: "none", outline: "none", color: C.text, fontSize: "11px", width: "100%", fontFamily: "inherit" }} />
-                  {watchlistSearch && <button onClick={() => setWatchlistSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, padding: "2px" }}><X size={10} /></button>}
-                </div>
-              </div>
-              {/* Category tabs */}
-              <div style={{ display: "flex", gap: "3px", padding: "6px 10px", borderBottom: `1px solid ${C.border}` }}>
-                {[{ id: "all", label: "All", icon: Users }, { id: "human", label: "Traders", icon: Activity }, { id: "bot", label: "Bots", icon: Bot }, { id: "followed", label: "Following", icon: Star }].map(cat => (
-                  <button key={cat.id} onClick={() => setWatchlistCategory(cat.id)} style={{
-                    display: "flex", alignItems: "center", gap: "3px", padding: "4px 8px", borderRadius: "5px", fontSize: "9px", fontWeight: "600", cursor: "pointer",
-                    border: `1px solid ${watchlistCategory === cat.id ? C.purple : C.border}`,
-                    backgroundColor: watchlistCategory === cat.id ? C.purpleBg : "transparent",
-                    color: watchlistCategory === cat.id ? C.purple : C.textMuted
-                  }}>
-                    <cat.icon size={10} />
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-              {/* Trader list */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "6px" }}>
-                {(() => {
-                  let filtered = [...mockTraders];
-                  if (watchlistCategory === "human") filtered = filtered.filter(t => !t.isBot);
-                  else if (watchlistCategory === "bot") filtered = filtered.filter(t => t.isBot);
-                  else if (watchlistCategory === "followed") filtered = filtered.filter(t => followedTraders[t.name]);
-                  if (watchlistSearch.trim()) {
-                    const q = watchlistSearch.toLowerCase();
-                    filtered = filtered.filter(t => t.name.toLowerCase().includes(q) || t.style.toLowerCase().includes(q) || t.favPairs.some(p => p.toLowerCase().includes(q)));
-                  }
-                  if (filtered.length === 0) return (
-                    <div style={{ textAlign: "center", padding: "30px 16px", color: C.textMuted }}>
-                      <Users size={20} style={{ marginBottom: "6px", opacity: 0.4 }} />
-                      <div style={{ fontSize: "11px", fontWeight: "600" }}>No traders found</div>
-                    </div>
-                  );
-                  return filtered.map(t => {
-                    const isFollowed = followedTraders[t.name];
-                    const hasAlert = traderAlerts[t.name];
-                    return (
-                      <div key={t.name} className="card-hover" style={{ display: "flex", alignItems: "flex-start", gap: "8px", padding: "8px 10px", borderRadius: "6px", border: `1px solid ${isFollowed ? C.purple + "30" : C.border}`, backgroundColor: isFollowed ? C.purpleBg + "40" : C.card, marginBottom: "3px", cursor: "pointer", transition: "all 0.15s" }}>
-                        {/* Rank */}
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", minWidth: "18px", paddingTop: "2px" }}>
-                          <span style={{ fontSize: "10px", fontWeight: "800", color: t.rank <= 3 ? C.amber : C.textMuted, ...mono }}>#{t.rank}</span>
-                        </div>
-                        {/* Info + actions */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "2px" }} onClick={() => openProfile(t)}>
-                            <span style={{ fontSize: "11px", fontWeight: "700", cursor: "pointer" }}>{t.name}</span>
-                            <BotTag isBot={t.isBot} />
-                          </div>
-                          <div style={{ display: "flex", gap: "6px", fontSize: "8px", color: C.textMuted, ...mono, marginBottom: "3px" }}>
-                            <span style={{ color: C.green }}>{t.winRate}%</span>
-                            <span style={{ color: C.green }}>+${(t.pnl / 1000).toFixed(0)}K</span>
-                            <span>{t.style}</span>
-                          </div>
-                          {/* Actions row — review queue + open (no retail copy/social) */}
-                          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                            <button title={isFollowed ? "In review" : "Add to review"} onClick={e => { e.stopPropagation(); setFollowedTraders(prev => ({ ...prev, [t.name]: !prev[t.name] })); }} style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "4px", border: "none", cursor: "pointer", backgroundColor: isFollowed ? C.cyan + "20" : "transparent", color: isFollowed ? C.cyan : C.textFaint }}>
-                              <Eye size={11} />
-                            </button>
-                            <button title="Open profile" onClick={e => { e.stopPropagation(); openProfile(t); }} style={{ height: 24, padding: "0 10px", borderRadius: "4px", border: `1px solid ${C.purple}`, backgroundColor: "transparent", color: C.purple, fontSize: "9px", fontWeight: "700", cursor: "pointer" }}>Open</button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-              {/* Footer legend */}
-              <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}`, fontSize: "8px", color: C.textFaint, display: "flex", gap: "10px", alignItems: "center" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><Star size={8} fill={C.amber} color={C.amber} /> Follow</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><BellRing size={8} color={C.blue} /> Alerts</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><Copy size={8} /> Copy</span>
-                <span style={{ display: "flex", alignItems: "center", gap: "2px" }}><MessageCircle size={8} /> Chat</span>
-              </div>
-            </aside>
-
             {/* ── Settings Panel ── */}
             {showSettings && (
               <div onClick={() => setShowSettings(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
@@ -785,7 +601,7 @@ const App = () => {
                         </div>
                         <div>
                           <div style={{ fontSize: "14px", fontWeight: "700" }}>Trader Demo</div>
-                          <div style={{ fontSize: "10px", color: C.textMuted }}>Following {Object.values(followedTraders).filter(Boolean).length} · {mockTraders.length} traders tracked</div>
+                          <div style={{ fontSize: "10px", color: C.textMuted }}>{mockTraders.length} traders tracked</div>
                         </div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
@@ -869,7 +685,6 @@ const App = () => {
         </div>
         </NavContext.Provider>
         </FeedFilterContext.Provider>
-        </WatchlistContext.Provider>
         </ProfileContext.Provider>
       </DateContext.Provider>
       </ProContext.Provider>
