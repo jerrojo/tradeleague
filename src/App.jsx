@@ -1,7 +1,7 @@
 import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
-import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext, TimeframeProvider } from "./contexts";
+import { DateContext, FeedFilterContext, ProfileContext, ProContext, WatchlistContext, TimeframeProvider, NavContext } from "./contexts";
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
@@ -36,6 +36,8 @@ const UpdatedAgo = () => {
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [auditView, setAuditView] = useState("execution"); // Audit sub-tab (deep-linkable from KPI cards)
+  const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
@@ -235,6 +237,7 @@ const App = () => {
         <ProfileContext.Provider value={{ openProfile, closeProfile, profileTrader }}>
         <WatchlistContext.Provider value={{ followedTraders, setFollowedTraders, traderAlerts, setTraderAlerts }}>
         <FeedFilterContext.Provider value={{ feedFilter, setFeedFilter, setActiveTab }}>
+        <NavContext.Provider value={{ go, auditView, setAuditView }}>
         <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <style>{`
             @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -860,6 +863,7 @@ const App = () => {
 
           </div>{/* close Main Layout wrapper */}
         </div>
+        </NavContext.Provider>
         </FeedFilterContext.Provider>
         </WatchlistContext.Provider>
         </ProfileContext.Provider>

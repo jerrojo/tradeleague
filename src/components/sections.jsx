@@ -12,6 +12,7 @@ import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
+import { useNav } from "../contexts";
 import { smcCoins } from "../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 
@@ -112,7 +113,9 @@ const TradersSection = () => (
    fees, slippage, real vs theoretical) + Analytics (the raw signal-provider edge,
    pre-filter). Together they audit the whole pipeline: raw edge → filter → execution. ── */
 const AuditSection = () => {
-  const [sub, setSub] = useState("execution");
+  const { auditView, setAuditView } = useNav();
+  const sub = auditView || "execution";
+  const setSub = setAuditView;
   return (
     <div>
       <SubTabs active={sub} onChange={setSub} tabs={[

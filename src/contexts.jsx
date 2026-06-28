@@ -111,6 +111,12 @@ const useDate = () => useContext(DateContext);
 const ProContext = createContext();
 const useProMode = () => true;
 
+/* ═══════════════════════ NAV CONTEXT ═══════════════════════
+   Lets any deep component jump to another section (and an Audit sub-view) — used
+   to make the Overview KPI cards click through to their underlying detail. */
+const NavContext = createContext({ go: () => {} });
+const useNav = () => useContext(NavContext);
+
 export {
   ProfileContext,
   useProfile,
@@ -125,5 +131,7 @@ export {
   useTimeframe,
   TimeframeProvider,
   ProContext,
-  useProMode
+  useProMode,
+  NavContext,
+  useNav
 };

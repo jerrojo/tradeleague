@@ -8,7 +8,7 @@ import {
   Scale, Sparkles, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { InfoTip, StatCard } from "../common";
-import { useTimeframe } from "../../contexts";
+import { useTimeframe, useNav } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
@@ -53,8 +53,11 @@ const AICommentary = ({ data }) => {
 };
 
 /* ── Friendly KPI card (one metric per card, scannable dashboard grid) ── */
-const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
+const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip, onClick }) => (
+  <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick}
+    role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
       <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 600 }}>
         {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
@@ -67,8 +70,10 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
 );
 
 /* ── Account balance card with an equity sparkline (the friendly hero, right rail) ── */
-const AccountBalanceCard = ({ balance, netPnl, returnPct, equity }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+const AccountBalanceCard = ({ balance, netPnl, returnPct, equity, onClick }) => (
+  <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Wallet size={14} /> Account Balance</div>
     <div style={{ fontSize: 30, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
     <div style={{ fontSize: 13, fontWeight: 700, color: netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(netPnl)} ({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</div>
@@ -90,7 +95,7 @@ const AccountBalanceCard = ({ balance, netPnl, returnPct, equity }) => (
 );
 
 /* ── Today's performance card (right rail) ── */
-const TodayCard = ({ dash }) => {
+const TodayCard = ({ dash, onClick }) => {
   const wr = dash.todayW + dash.todayL ? Math.round((dash.todayW / (dash.todayW + dash.todayL)) * 100) : 0;
   const Row = ({ label, value, color }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
@@ -99,7 +104,9 @@ const TodayCard = ({ dash }) => {
     </div>
   );
   return (
-    <div className="tl-card" style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
+    <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+      style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Calendar size={14} /> Today's Performance</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: dash.todayPnl >= 0 ? C.green : C.red, ...mono, lineHeight: 1 }}>{usd(dash.todayPnl)}</div>
       <div style={{ fontSize: 11, color: C.textFaint }}>{dash.todayCount} trade{dash.todayCount === 1 ? "" : "s"} today</div>
@@ -122,6 +129,7 @@ const TodayCard = ({ dash }) => {
 
 const FundOverview = () => {
   const { within } = useTimeframe();
+  const { go } = useNav();
   const data = useMemo(() => {
     /* ── Every signal across all coins (for the system-wide approval rate) ── */
     const allSignals = ROBOTIN_COINS.flatMap((coin) => coinSignals(coin, coinCandles(coin))).filter((s) => within(s.time));
@@ -397,35 +405,35 @@ const FundOverview = () => {
       <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
           {/* row 1 */}
-          <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`this month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} />
-          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(2)}/day · ${dash.perWeek.toFixed(1)}/wk`} />
-          <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this month ${dash.lastM.winRate}% · last ${dash.prevM.winRate}%`} />
-          <Kpi label="Wins vs Losses" icon={Target} value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} />
+          <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`this month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("audit")} />
+          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(2)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+          <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this month ${dash.lastM.winRate}% · last ${dash.prevM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Wins vs Losses" icon={Target} value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit")} />
           {/* row 2 */}
-          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" />
-          <Kpi label="Best Streaks" icon={Flame} accent={C.amber} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streak" />
-          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best & worst single trade" />
-          <Kpi label="Last Month W/L" icon={Target} value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} />
+          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Best Streaks" icon={Flame} accent={C.amber} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streak" onClick={() => go("activity")} />
+          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best & worst single trade" onClick={() => go("audit")} />
+          <Kpi label="Last Month W/L" icon={Target} value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
           {/* row 3 */}
-          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" />
-          <Kpi label="Trades / Month" icon={BarChart3} value={dash.perMonth.toFixed(1)} sub={`this month ${dash.lastM.trades} · last ${dash.prevM.trades}`} />
-          <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" />
-          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} />
+          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
+          <Kpi label="Trades / Month" icon={BarChart3} value={dash.perMonth.toFixed(1)} sub={`this month ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+          <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
           {/* row 4 */}
-          <Kpi label="Avg Profit" icon={TrendingUp} accent={C.green} value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="average per trade" />
-          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" />
-          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" />
-          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" />
+          <Kpi label="Avg Profit" icon={TrendingUp} accent={C.green} value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="average per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
+          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
           {/* row 5 — risk-adjusted + Robotín pipeline (fund identity) */}
-          <Kpi label="Sharpe" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted (proxy)" />
-          <Kpi label="Sortino" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted (proxy)" />
-          <Kpi label="Signals Processed" icon={Cpu} accent={C.purple} value={data.allSignalsCount} sub={`${data.approvedCount} approved · ${data.active.length} active`} />
-          <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub="Robotín-approved signals" />
+          <Kpi label="Sharpe" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Sortino" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Signals Processed" icon={Cpu} accent={C.purple} value={data.allSignalsCount} sub={`${data.approvedCount} approved · ${data.active.length} active`} onClick={() => go("activity")} />
+          <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub="Robotín-approved signals" onClick={() => go("audit", { auditView: "edge" })} />
         </div>
         {/* right rail */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} />
-          <TodayCard dash={dash} />
+          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} onClick={() => go("engine")} />
+          <TodayCard dash={dash} onClick={() => go("report")} />
         </div>
       </div>
 
