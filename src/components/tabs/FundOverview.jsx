@@ -194,7 +194,8 @@ const FundOverview = () => {
 
     const balance = STARTING_BALANCE + netPnl;
     const returnPct = (netPnl / STARTING_BALANCE) * 100;
-    const maxDrawdownPct = peak > 0 ? (maxDrawdown / STARTING_BALANCE) * 100 : 0;
+    // peak-relative drawdown % (worst point on the equity curve), not vs the starting balance
+    const maxDrawdownPct = Math.min(0, ...equity.map((e) => e.dd ?? 0));
     const allBalance = allBal;
     const allReturnPct = ((allBal - STARTING_BALANCE) / STARTING_BALANCE) * 100;
 
@@ -376,7 +377,9 @@ const FundOverview = () => {
     const mWins = (m) => Math.round((m.trades * m.winRate) / 100);
     return {
       avgWin, avgLoss, largestWin, largestLoss, bestWinStreak: bw, bestLossStreak: bl,
-      avgHold, bestDay, worstDay, avgR, expectancy, perDay, perWeek: perDay * 7, perMonth: perDay * 30,
+      avgHold, bestDay, worstDay, avgR, expectancy, perDay, perWeek: perDay * 7,
+      perMonth: Math.round(closed.length / Math.max(1, (data.monthly || []).length)), // real avg/month, not an extrapolated run-rate
+      payoff: avgLoss > 0 ? avgWin / avgLoss : (avgWin > 0 ? Infinity : 0),
       todayPnl: todayT.reduce((a, s) => a + s.pnl, 0), todayW, todayL: todayT.length - todayW, todayCount: todayT.length,
       weekPnl: closed.filter((s) => s.time >= nowS - 7 * 86400).reduce((a, s) => a + s.pnl, 0), monthPnl: data.netPnl, curStreak, curWin,
       lastM, prevM, lastMWins: mWins(lastM), lastMLosses: lastM.trades - mWins(lastM), prevMWins: mWins(prevM), prevMLosses: prevM.trades - mWins(prevM),
@@ -403,7 +406,7 @@ const FundOverview = () => {
 
       {/* ── 2 · Friendly KPI dashboard — scannable cards + balance & today rail ── */}
       <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
           {/* row 1 */}
           <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`this month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("audit")} />
           <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(2)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
@@ -420,7 +423,7 @@ const FundOverview = () => {
           <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
           {/* row 4 */}
-          <Kpi label="Avg Profit" icon={TrendingUp} accent={C.green} value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="average per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub="avg win / avg loss" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
           <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />

@@ -1,5 +1,5 @@
 import { TraderLink } from "../../contexts";
-import { Avatar, BotTag, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
+import { Avatar, BotTag, EmptyState, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
 import { ArrowDown, BellRing, CheckCircle, ChevronDown, ChevronUp, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useWatchlist, useProMode } from "../../contexts";
@@ -115,7 +115,8 @@ const TradersTab = () => {
                   .map(([h,tip,key]) => {
                     const active = key && sort.key === key;
                     return (
-                      <th key={h} onClick={key ? () => setSortKey(key) : undefined}
+                      <th key={h} scope="col" onClick={key ? () => setSortKey(key) : undefined}
+                        aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : undefined}
                         style={{ ...thStyle, cursor: key ? "pointer" : "default", userSelect: "none", color: active ? C.text : undefined }}>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                           {tip ? <InfoTip k={tip}><span>{h}</span></InfoTip> : h}
@@ -151,7 +152,7 @@ const TradersTab = () => {
                     <td style={{ ...tdStyle }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Avatar name={t.name} size={28} />
-                        <button onClick={(e) => { e.stopPropagation(); toggleFav(t.name); }} title={favTraders[t.name] ? "Remove from favorites" : "Add to favorites"} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: favTraders[t.name] ? C.amber : C.textFaint }}>
+                        <button onClick={(e) => { e.stopPropagation(); toggleFav(t.name); }} title={favTraders[t.name] ? "Remove from favorites" : "Add to favorites"} aria-label={favTraders[t.name] ? `Remove ${t.name} from favorites` : `Add ${t.name} to favorites`} aria-pressed={!!favTraders[t.name]} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: favTraders[t.name] ? C.amber : C.textFaint }}>
                           <Star size={14} fill={favTraders[t.name] ? C.amber : "none"} />
                         </button>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -213,6 +214,9 @@ const TradersTab = () => {
                 );})}
               </tbody>
             </table>
+            {mockTraders.filter(t => (!onlyFavs || favTraders[t.name]) && (!search.trim() || t.name.toLowerCase().includes(search.trim().toLowerCase()))).length === 0 && (
+              <EmptyState icon={onlyFavs ? Star : Search} title={onlyFavs ? "No favorites yet" : "No traders match your search"} hint={onlyFavs ? "Tap the star on any trader to pin them here." : "Try a different name or clear the search."} />
+            )}
           </div>
         </div>
       )}

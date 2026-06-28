@@ -162,7 +162,7 @@ const PortfolioTab = () => {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "12px" }}>
         <StatCard label="Profit Factor" value={kpis.profitFactor === Infinity ? "∞" : kpis.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
         <StatCard label="Sharpe Ratio" value={kpis.sharpe.toFixed(2)} icon={Activity} color={C.blue} tip="sharpe" />
         <StatCard label="Max Drawdown" value={`${kpis.maxDD.toFixed(1)}%`} icon={TrendingDown} color={C.red} tip="maxDD" />
@@ -188,7 +188,7 @@ const PortfolioTab = () => {
             ))}
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "10px" }}>
           {[
             ["Compound ROI", `${returns.compoundRoiPct >= 0 ? "+" : ""}${returns.compoundRoiPct}%`, returns.compoundRoiPct >= 0 ? C.green : C.red, "compoundRoi"],
             ["Total ROI", `${returns.totalRoiPct >= 0 ? "+" : ""}${returns.totalRoiPct}%`, returns.totalRoiPct >= 0 ? C.green : C.red, "totalRoi"],
@@ -350,7 +350,7 @@ const PortfolioTab = () => {
           </BarChart>
         </ResponsiveContainer>
         <div style={{ fontSize: "9px", color: C.textFaint, marginTop: "2px" }}>
-          Max drawdown in scope: <span style={{ color: C.red, fontWeight: "700", ...mono }}>{Math.min(...ddSeries.filter(d => d.dd != null).map(d => d.dd)).toFixed(1)}%</span> — periods of underperformance to correlate with market conditions.
+          Max drawdown in scope: <span style={{ color: C.red, fontWeight: "700", ...mono }}>{(ddSeries.some(d => d.dd != null) ? Math.min(...ddSeries.filter(d => d.dd != null).map(d => d.dd)) : 0).toFixed(1)}%</span> — periods of underperformance to correlate with market conditions.
         </div>
       </div>
     </div>

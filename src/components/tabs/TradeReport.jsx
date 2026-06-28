@@ -52,9 +52,9 @@ const TradeReport = () => {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={goToday} style={{ padding: "6px 12px", borderRadius: 7, border: `1px solid ${isCurrentMonth ? C.purple : C.border}`, backgroundColor: isCurrentMonth ? C.purpleBg : "transparent", color: isCurrentMonth ? C.purple : C.textMuted, fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>TODAY</button>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <button onClick={prev} style={navBtn}><ChevronLeft size={16} /></button>
+            <button onClick={prev} aria-label="Previous month" style={navBtn}><ChevronLeft size={16} /></button>
             <span style={{ fontSize: 14, fontWeight: 800, color: C.text, minWidth: 130, textAlign: "center", ...mono }}>{MONTHS[view.m]} {view.y}</span>
-            <button onClick={next} disabled={!canNext} style={{ ...navBtn, opacity: canNext ? 1 : 0.3, cursor: canNext ? "pointer" : "default" }}><ChevronRight size={16} /></button>
+            <button onClick={next} disabled={!canNext} aria-label="Next month" style={{ ...navBtn, opacity: canNext ? 1 : 0.3, cursor: canNext ? "pointer" : "default" }}><ChevronRight size={16} /></button>
           </div>
         </div>
       </div>

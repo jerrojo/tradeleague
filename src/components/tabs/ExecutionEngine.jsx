@@ -71,7 +71,6 @@ const SignalCard = ({ r, open, onToggle }) => {
     if (candles[r.fromIdx]) markers.push({ time: candles[r.fromIdx].time, position: "belowBar", color: C.blue, shape: "arrowUp", text: "Entry" });
     if (r.exitIdx != null && candles[r.exitIdx]) markers.push({ time: candles[r.exitIdx].time, position: r.dir === "LONG" ? "belowBar" : "aboveBar", color: oc.c, shape: "arrowDown", text: oc.t });
     return { data, priceLines, markers };
-    // eslint-disable-next-line
   }, [open, r.id]);
 
   return (
@@ -100,7 +99,7 @@ const SignalCard = ({ r, open, onToggle }) => {
           {/* Señal Original */}
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Señal original</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
               {[["Dirección", r.dir, dirColor], ["Entrada", px(r.entry), C.text], ["Stop Loss", px(r.sl), C.red], ["Take Profit", px(r.tpFinal), C.green]].map(([l, v, c]) => (
                 <div key={l}><div style={{ fontSize: 9.5, color: C.textMuted, marginBottom: 3 }}>{l}</div><div style={{ fontSize: 14, fontWeight: 700, color: c, ...mono }}>{v}</div></div>
               ))}
@@ -216,7 +215,7 @@ const ExecutionEngine = () => {
       {/* filters */}
       <div style={{ ...cardStyle }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><Layers size={13} color={C.purple} /> Filtros</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
           <Field label="Start date"><input type="date" value={cfg.startDate} onChange={(e) => set({ startDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark", ...mono }} /></Field>
           <Field label="End date"><input type="date" value={cfg.endDate} onChange={(e) => set({ endDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark", ...mono }} /></Field>
           <Field label="Asset"><Sel value={cfg.asset} onChange={(v) => set({ asset: v })} options={ASSETS} /></Field>
@@ -240,7 +239,7 @@ const ExecutionEngine = () => {
             <span style={{ fontSize: 10, fontWeight: 700, color: legSum === 100 ? C.green : C.amber, backgroundColor: `${legSum === 100 ? C.green : C.amber}1c`, border: `1px solid ${(legSum === 100 ? C.green : C.amber)}40`, padding: "2px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>{legSum === 100 ? <CheckCircle size={11} /> : null} Σ {legSum}%</span>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <Field label="# TPs parciales"><Num value={4} onChange={() => {}} w={70} /></Field>
+            <Field label="# TPs parciales"><div style={{ ...inputStyle, width: 70, ...mono, color: C.textMuted, cursor: "default" }}>4</div></Field>
             <div>
               <div style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>% por TP</div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -289,13 +288,13 @@ const ExecutionEngine = () => {
       </div>
 
       {/* KPI grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
         <K label="Net PnL" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Win Rate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
         <K label="Profit Factor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
         <K label="Señales" icon={Activity} value={k.signals} sub={`${k.entries} entradas · ${k.noEntry} sin entry`} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Llegó a L1" icon={Crosshair} value={`${k.reachL1.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL1 / 100)}`} />
         <K label="Llegó a L2" icon={Crosshair} value={`${k.reachL2.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL2 / 100)}`} />
         <K label="Llegó a L3" icon={Crosshair} value={`${k.reachL3.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL3 / 100)}`} />
@@ -303,7 +302,7 @@ const ExecutionEngine = () => {
         <K label="Expectancy" icon={TrendingUp} accent={C.green} value={pct(k.expectancyPct, { signed: true })} valueColor={signColor(k.expectancyPct, C)} sub={`${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Sharpe (trade)" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ neto" />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Total Return" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
         <K label="Max Drawdown" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
         <K label="CAGR" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="anualizado" />
@@ -311,7 +310,7 @@ const ExecutionEngine = () => {
         <K label="Avg R" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="retorno/riesgo" />
         <K label="Concurrencia pico" icon={Layers} value={k.peakConc} sub={`media ${k.avgConc}`} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Exposición" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="tiempo en mercado" />
         <K label="Rechazadas" icon={ShieldX} value={k.rejected} sub="filtradas por Robotín" />
         <K label="Duración media" icon={Clock} value={fmtDur(k.avgDur)} sub="por trade" />

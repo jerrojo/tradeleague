@@ -8,7 +8,7 @@ import { FundOverview } from "./components/tabs/FundOverview";
 import { TradeReport } from "./components/tabs/TradeReport";
 import { ExecutionEngine } from "./components/tabs/ExecutionEngine";
 import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
-import { mockTraders, traderSocials } from "./data/mockData";
+import { mockTraders } from "./data/mockData";
 import { titleByLevel } from "./lib/scoring";
 import { C, cardStyle, mono } from "./theme";
 import { useEffect, useMemo, useRef, useState } from "react";

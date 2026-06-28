@@ -59,7 +59,12 @@ export function simulate(userConfig = {}) {
     const noEntry = s.status === "pending" || s.status === "expired" || !filled;
     const fromIdx = s.activeIdx ?? s.entryIdx;
 
-    const notional = cfg.sizing === "margin" ? cfg.margin * cfg.leverage : cfg.margin * cfg.leverage; // (risk-mode kept equivalent for v1)
+    // Margin sizing: fixed notional = margin × leverage. Risk sizing: size so the
+    // stop-out loses ~1% of capital (notional = 1% capital / stop-distance%).
+    const stopDistPct = Math.abs(entry - sl) / entry;
+    const notional = cfg.sizing === "risk"
+      ? (stopDistPct > 0 ? (cfg.capital * 0.01) / stopDistPct : cfg.margin * cfg.leverage)
+      : cfg.margin * cfg.leverage;
     const legs = ["L1", "L2", "L3", "Runner"].map((name, i) => {
       const target = levels[i];
       const pct = legPctArr[i];
@@ -75,7 +80,7 @@ export function simulate(userConfig = {}) {
     });
 
     const netPnl = noEntry ? 0 : round(legs.reduce((a, l) => a + l.pnl, 0));
-    const grossPct = noEntry ? 0 : round((netPnl / notional) * 100);
+    const grossPct = noEntry || notional <= 0 ? 0 : round((netPnl / notional) * 100);
     const reachedL = [false, false, false]; // L1, L2, L3 reached (price hit target)
     if (!noEntry) {
       legs.forEach((l, i) => { if (i < 3 && (l.hit === "TP")) reachedL[i] = true; });
@@ -85,7 +90,8 @@ export function simulate(userConfig = {}) {
     }
     const runnerTrailed = !noEntry && cfg.trailing && legs[3].hit === "TP";
     const exitIdx = noEntry ? null : Math.max(...legs.map((l) => l.idx ?? 0));
-    const durationH = noEntry ? null : exitIdx - fromIdx;
+    // duration from real candle timestamps (not bar-index delta)
+    const durationH = noEntry || !candles[exitIdx] || !candles[fromIdx] ? null : (candles[exitIdx].time - candles[fromIdx].time) / 3600;
 
     rows.push({
       id: s.id, coin: s.coin, pair: s.pair, dir: s.dir, time: s.time, trader: s.trader, isBot: s.isBot,
@@ -142,7 +148,7 @@ export function simulate(userConfig = {}) {
   const reach = (k) => (closed.length ? (closed.filter((r) => r.reachedL[k]).length / closed.length) * 100 : 0);
   const runnerRate = closed.length ? (closed.filter((r) => r.runnerTrailed).length / closed.length) * 100 : 0;
   const avgDur = closed.length ? closed.reduce((a, r) => a + (r.durationH || 0), 0) / closed.length : 0;
-  const rVals = closed.map((r) => { const risk = Math.abs(r.entry - r.sl); return risk > 0 ? (r.netPnl / r.notional) / (risk / r.entry) : 0; });
+  const rVals = closed.map((r) => { const risk = Math.abs(r.entry - r.sl); return risk > 0 && r.notional > 0 ? (r.netPnl / r.notional) / (risk / r.entry) : 0; });
   const avgR = rVals.length ? rVals.reduce((a, v) => a + v, 0) / rVals.length : 0;
   const mean = retSeries.length ? retSeries.reduce((a, r) => a + r, 0) / retSeries.length : 0;
   const sd = retSeries.length ? Math.sqrt(retSeries.reduce((a, r) => a + (r - mean) ** 2, 0) / retSeries.length) : 0;
