@@ -514,10 +514,10 @@ const FundOverview = () => {
           <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
         </div>
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data.monthly}>
+          <BarChart data={data.monthly} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
             <XAxis dataKey="period" stroke={C.textMuted} fontSize={10} />
-            <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <YAxis stroke={C.textMuted} fontSize={10} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
             <Tooltip
               contentStyle={tooltipStyle}
               cursor={{ fill: `${C.border}40` }}
@@ -528,7 +528,8 @@ const FundOverview = () => {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(1, data.monthly.length)}, 1fr)`, gap: "6px", marginTop: "8px" }}>
+        {/* stats row padded to match the chart's plot area (left margin 8 + Y-axis 44, right margin 8) so each column sits under its bar */}
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(1, data.monthly.length)}, 1fr)`, gap: "6px", marginTop: "8px", paddingLeft: "52px", paddingRight: "8px" }}>
           {data.monthly.map((m) => (
             <div key={m.period} style={{ textAlign: "center", fontSize: "9px", color: C.textFaint, lineHeight: 1.5 }}>
               <div style={{ fontWeight: 700, fontSize: "10px", color: m.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(m.pnl)}</div>
