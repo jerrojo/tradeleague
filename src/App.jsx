@@ -1,5 +1,5 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, ChevronDown, ChevronRight, Copy, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, Trophy, Users, Wallet, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext } from "./contexts";
 import { TimeframeFilter } from "./components/TimeframeFilter";
@@ -9,7 +9,9 @@ import { TradeReport } from "./components/tabs/TradeReport";
 import { ExecutionEngine } from "./components/tabs/ExecutionEngine";
 import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
 import { mockTraders } from "./data/mockData";
-import { titleByLevel } from "./lib/scoring";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "./data/robotin";
+import { START_CAPITAL } from "./data/fund";
+import { usd } from "./lib/format";
 import { C, cardStyle, mono } from "./theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
@@ -52,6 +54,8 @@ const App = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
+  const [alertFilter, setAlertFilter] = useState("all");
+  const [notif, setNotif] = useState({});
   const [showSettings, setShowSettings] = useState(false);
   const proMode = true; // Casual/Pro split removed — always show full Pro detail
   const searchRef = useRef(null);
@@ -125,26 +129,35 @@ const App = () => {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // Mock alerts — patterns, macro, trades, whales
-  const alertsList = [
-    // Smart pattern alerts
-    { id: 1, type: "pattern", text: "3 traders opened BTC LONG in the last 30min — possible bullish trend", time: "1m", read: false, priority: "high" },
-    { id: 2, type: "pattern", text: "Bearish convergence: Scalp King + Crypto Ninja + Smart Money opened ETH SHORT", time: "5m", read: false, priority: "high" },
-    { id: 3, type: "macro", text: "DXY (Dollar) dropped -0.8% today — historically bullish for crypto", time: "12m", read: false, priority: "medium" },
-    // Trade alerts
-    { id: 4, type: "trade", text: "Scalp King opened BTC LONG at $67,850 (5x)", time: "2m", read: false, priority: "normal" },
-    { id: 5, type: "whale", text: "WHALE: $3.2M BTC LONG on Binance", time: "8m", read: false, priority: "high" },
-    // Macro indicators
-    { id: 6, type: "macro", text: "Fed Funds Rate unchanged (5.25%) — market reacts neutral", time: "45m", read: true, priority: "medium" },
-    { id: 7, type: "macro", text: "WTI Crude Oil +2.1% ($78.40) — possible inflationary pressure", time: "1h", read: true, priority: "low" },
-    { id: 8, type: "pattern", text: "4/8 traders are LONG on SOL — strong bullish consensus", time: "1h", read: true, priority: "medium" },
-    { id: 9, type: "macro", text: "M2 Money Supply +0.3% MoM — liquidity expanding", time: "2h", read: true, priority: "low" },
-    { id: 10, type: "signal", text: "New signal: ETH SHORT by Crypto Ninja (85% confidence)", time: "15m", read: true, priority: "normal" },
-    { id: 11, type: "copy", text: "Copy Trading: Scalp King closed +$2,340", time: "2h", read: true, priority: "normal" },
-    { id: 12, type: "macro", text: "BTC Dominance 54.2% (+0.5%) — capital flowing to BTC", time: "3h", read: true, priority: "low" },
-    { id: 13, type: "achievement", text: "Unlocked: Streak Machine (15W)", time: "3h", read: true, priority: "normal" },
-  ];
-  const unreadCount = alertsList.filter(a => !a.read).length;
+  // Every signal across all coins — one source for fund stats + the alerts feed
+  const signalsAll = useMemo(() => ROBOTIN_COINS.flatMap((c) => coinSignals(c, coinCandles(c))), []);
+
+  // Fund identity (VARIV) — derived from the approved/executed book, never hardcoded
+  const fundStats = useMemo(() => {
+    const approved = signalsAll.filter((s) => s.approved);
+    const closed = approved.filter((s) => s.status === "closed");
+    const net = closed.reduce((a, s) => a + s.pnl, 0);
+    return {
+      total: signalsAll.length, approved: approved.length,
+      active: approved.filter((s) => s.status === "active").length,
+      net, balance: START_CAPITAL + net,
+    };
+  }, [signalsAll]);
+
+  // Real alerts — Robotín's recent approve/reject/TP/SL events from the signal tape
+  const alertsList = useMemo(() => {
+    const ago = (t) => { const m = Math.max(1, Math.round(Date.now() / 1000 / 60 - t / 60)); return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
+    return [...signalsAll].sort((a, b) => b.time - a.time).slice(0, 16).map((s, i) => {
+      const cd = `${s.coin} ${s.dir}`;
+      const read = i >= 5;
+      if (!s.approved) return { id: s.id, type: "rejected", text: `Robotín rejected ${s.trader}'s ${cd} — ${s.rejectReason || "below threshold"}`, time: ago(s.time), read, priority: "low" };
+      if (s.status === "closed" && s.hit === "TP") return { id: s.id, type: "win", text: `${s.trader}'s ${cd} closed at target ${usd(s.pnl, { signed: true })}`, time: ago(s.time), read, priority: "normal" };
+      if (s.status === "closed" && s.hit === "SL") return { id: s.id, type: "loss", text: `${s.trader}'s ${cd} stopped out ${usd(s.pnl, { signed: true })}`, time: ago(s.time), read, priority: "normal" };
+      return { id: s.id, type: "approved", text: `Robotín approved ${s.trader}'s ${cd} (${s.confidence}% confidence)`, time: ago(s.time), read, priority: s.confidence >= 90 ? "high" : "normal" };
+    });
+  }, [signalsAll]);
+  const visibleAlerts = alertFilter === "all" ? alertsList : alertsList.filter((a) => a.type === alertFilter);
+  const unreadCount = alertsList.filter((a) => !a.read).length;
 
   const handlePresetClick = (id) => {
     setDateRange(id);
@@ -214,10 +227,6 @@ const App = () => {
   };
   const ActiveComponent = tabContent[activeTab] || FundOverview;
   const sideW = sidebarCollapsed ? 56 : 200;
-
-  // Account level/title (shown in Settings)
-  const myLevel = 22;
-  const myTitle = titleByLevel(myLevel);
 
   return (
     <ThemeProvider>
@@ -511,21 +520,23 @@ const App = () => {
                     <button onClick={() => setShowAlerts(false)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer" }}><ChevronRight size={18} /></button>
                   </div>
 
-                  {/* Alert type filters */}
+                  {/* Alert type filters — real Robotín event categories */}
                   <div style={{ padding: "8px 12px", display: "flex", gap: "4px", borderBottom: `1px solid ${C.border}` }}>
-                    {[["all", "All"], ["pattern", "Patterns"], ["macro", "Macro"], ["trade", "Trades"], ["whale", "Whales"]].map(([type, label]) => (
-                      <button key={type} style={{
-                        padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
-                        border: "none", backgroundColor: C.bg, color: C.textMuted
-                      }}>{label}</button>
-                    ))}
+                    {[["all", "All"], ["approved", "Approved"], ["rejected", "Rejected"], ["win", "Wins"], ["loss", "Losses"]].map(([type, label]) => {
+                      const on = alertFilter === type;
+                      return (
+                        <button key={type} onClick={() => setAlertFilter(type)} style={{
+                          padding: "4px 10px", borderRadius: "4px", fontSize: "10px", fontWeight: "600", cursor: "pointer",
+                          border: `1px solid ${on ? C.purple : "transparent"}`, backgroundColor: on ? C.purpleBg : C.bg, color: on ? C.purple : C.textMuted
+                        }}>{label}</button>
+                      );
+                    })}
                   </div>
 
                   <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
-                    {alertsList.map(a => {
-                      const alertIcons = { trade: Activity, whale: Eye, signal: Lightbulb, prediction: Scale, copy: Copy, achievement: Award, pattern: GitBranch, macro: BarChart3 };
-                      const alertColors = { trade: C.green, whale: C.cyan, signal: C.blue, prediction: C.amber, copy: C.purple, achievement: C.amber, pattern: C.purple, macro: C.blue };
-                      const priorityBorder = a.priority === "high" ? "2px" : "1px";
+                    {visibleAlerts.map(a => {
+                      const alertIcons = { approved: CheckCircle2, rejected: GitBranch, win: TrendingUp, loss: TrendingDown };
+                      const alertColors = { approved: C.cyan, rejected: C.amber, win: C.green, loss: C.red };
                       const AIcon = alertIcons[a.type] || Bell;
                       const aColor = alertColors[a.type] || C.textMuted;
                       return (
@@ -539,41 +550,19 @@ const App = () => {
                             <AIcon size={13} color={aColor} />
                           </div>
                           <div style={{ flex: 1 }}>
-                            {(a.type === "pattern" || a.type === "macro") && (
-                              <div style={{ fontSize: "8px", fontWeight: "800", color: aColor, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>
-                                {a.type === "pattern" ? "PATTERN DETECTED" : "MACRO INDICATOR"}
-                                {a.priority === "high" && <span style={{ marginLeft: "6px", color: C.red }}>IMPORTANT</span>}
-                              </div>
+                            {a.priority === "high" && (
+                              <div style={{ fontSize: "8px", fontWeight: "800", color: aColor, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>High confidence</div>
                             )}
                             <div style={{ fontSize: "12px", color: a.read ? C.textMuted : C.text, lineHeight: 1.4 }}>{a.text}</div>
-                            <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "4px", ...mono }}>{a.time}</div>
+                            <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "4px", ...mono }}>{a.time} ago</div>
                           </div>
                           {!a.read && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: aColor, flexShrink: 0, marginTop: "6px" }} />}
                         </div>
                       );
                     })}
-
-                    {/* Macro Indicators Dashboard */}
-                    <div style={{ marginTop: "12px", padding: "12px", backgroundColor: C.bg, borderRadius: "8px", border: `1px solid ${C.border}` }}>
-                      <div style={{ fontSize: "10px", fontWeight: "700", color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Macro Indicators</div>
-                      {[
-                        ["DXY (Dollar)", "104.2", "-0.8%", C.red],
-                        ["BTC Dominance", "54.2%", "+0.5%", C.green],
-                        ["WTI Crude Oil", "$78.40", "+2.1%", C.green],
-                        ["Fed Funds Rate", "5.25%", "0%", C.textMuted],
-                        ["M2 Supply", "$21.4T", "+0.3%", C.green],
-                        ["Fear & Greed", "68", "Greed", C.amber],
-                        ["Total Crypto MCap", "$2.8T", "+1.2%", C.green],
-                      ].map(([name, val, change, clr]) => (
-                        <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: "11px" }}>
-                          <span style={{ color: C.textMuted }}>{name}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ fontWeight: "700", ...mono }}>{val}</span>
-                            <span style={{ fontWeight: "600", color: clr, ...mono, fontSize: "10px" }}>{change}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {visibleAlerts.length === 0 && (
+                      <div style={{ padding: "30px 16px", textAlign: "center", color: C.textMuted, fontSize: "12px" }}>No {alertFilter} events recently.</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -592,57 +581,50 @@ const App = () => {
                     <button onClick={() => setShowSettings(false)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer" }}><ChevronRight size={18} /></button>
                   </div>
                   <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
-                    {/* My Account */}
+                    {/* Fund */}
                     <div style={{ ...cardStyle, marginBottom: "12px" }}>
-                      <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>My Account</div>
+                      <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Fund</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
                         <div style={{ width: 44, height: 44, borderRadius: "50%", backgroundColor: C.purpleBg, border: `2px solid ${C.purple}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Users size={20} color={C.purple} />
+                          <Cpu size={20} color={C.purple} />
                         </div>
                         <div>
-                          <div style={{ fontSize: "14px", fontWeight: "700" }}>Trader Demo</div>
-                          <div style={{ fontSize: "10px", color: C.textMuted }}>{mockTraders.length} traders tracked</div>
+                          <div style={{ fontSize: "14px", fontWeight: "700" }}>VARIV</div>
+                          <div style={{ fontSize: "10px", color: C.textMuted }}>Allocator · {mockTraders.length} signal providers monitored</div>
                         </div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
                         <span style={{ color: C.textMuted }}>Balance</span>
-                        <span style={{ fontWeight: "700", color: C.green, ...mono }}>$24,680</span>
+                        <span style={{ fontWeight: "700", ...mono }}>{usd(fundStats.balance)}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
-                        <span style={{ color: C.textMuted }}>Monthly PnL</span>
-                        <span style={{ fontWeight: "700", color: C.green, ...mono }}>+$3,420</span>
+                        <span style={{ color: C.textMuted }}>Net P&L</span>
+                        <span style={{ fontWeight: "700", color: fundStats.net >= 0 ? C.green : C.red, ...mono }}>{usd(fundStats.net, { signed: true })}</span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: "11px" }}>
-                        <span style={{ color: C.textMuted }}>Copying to</span>
-                        <span style={{ fontWeight: "600", ...mono }}>2 traders</span>
+                        <span style={{ color: C.textMuted }}>Open positions</span>
+                        <span style={{ fontWeight: "600", ...mono }}>{fundStats.active}</span>
                       </div>
                     </div>
 
-                    {/* Notifications */}
+                    {/* Notifications — real Robotín event categories */}
                     <div style={{ ...cardStyle, marginBottom: "12px" }}>
                       <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Notifications</div>
-                      {[
-                        ["Live Trades", true],
-                        ["Whale alerts", true],
-                        ["New Signals", true],
-                        ["Robotín executions", true],
-                        ["Unlocked Achievements", true],
-                      ].map(([label, on]) => (
-                        <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                          <span style={{ fontSize: "12px" }}>{label}</span>
-                          <span style={{ color: on ? C.green : C.textFaint }}>{on ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
-                        </div>
-                      ))}
+                      {["Signal approvals", "Signal rejections", "Targets hit (TP)", "Stops hit (SL)"].map((label) => {
+                        const on = notif[label] !== false;
+                        return (
+                          <div key={label} onClick={() => setNotif((p) => ({ ...p, [label]: !(p[label] !== false) }))} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
+                            <span style={{ fontSize: "12px" }}>{label}</span>
+                            <span style={{ color: on ? C.green : C.textFaint }}>{on ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Display */}
                     <div style={{ ...cardStyle }}>
                       <div style={{ fontSize: "10px", color: C.textFaint, fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "10px" }}>Display</div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
-                        <span>Live ticker</span>
-                        <span style={{ color: C.green }}><ToggleRight size={20} /></span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}`, fontSize: "12px", cursor: "pointer" }} onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
                         <span>Compact sidebar</span>
                         <span style={{ color: sidebarCollapsed ? C.green : C.textFaint }} onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>{sidebarCollapsed ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
                       </div>
@@ -669,12 +651,12 @@ const App = () => {
                   <span style={{ color: C.green }}>LIVE</span>
                 </div>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} traders</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} providers</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><BarChart3 size={11} /> $2.4M volume</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><BarChart3 size={11} /> {fundStats.total} signals</span>
               </div>
               <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><AlertTriangle size={11} color={C.red} /> $4.2M liquidated</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Activity size={11} color={C.cyan} /> {fundStats.active} open positions</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <UpdatedAgo /></span>
               </div>

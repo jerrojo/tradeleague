@@ -1,31 +1,14 @@
 import { TraderLink } from "../../contexts";
-import { Avatar, BotTag, EmptyState, InfoTip, MiniSparkline, StatCard, Tag } from "../common";
+import { Avatar, BotTag, EmptyState, InfoTip, MiniSparkline, Tag } from "../common";
 import { ArrowDown, BellRing, CheckCircle, ChevronDown, ChevronUp, Circle, Copy, Eye, Flame, Pause, Play, ToggleLeft, ToggleRight } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useProMode } from "../../contexts";
-import { copyPortfolios, heatAssets, mockGroups, mockHeatmap, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
-import { alphaColor, alphaLabel, calcAlphaScore, calcDegenScore, calcExpectancy, degenLabel, expectancyColor, srand, titleByLevel } from "../../lib/scoring";
+import { mockTraders } from "../../data/mockData";
+import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
 import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { useMemo, useState } from "react";
-/* ── Deterministic bot metadata (version · active config · backtest vs live) ──
-   Per the VARIV brief, the Bots view must expose what a human trader row can't:
-   which build is running, its active configuration, and how live performance
-   compares to the backtest (the overfit/degradation check an allocator makes). */
-const BOT_SETUPS = ["FVG", "LIQ", "OB", "BOS", "CHOCH"];
-const BOT_TFS = ["M5", "M15", "H1", "H4"];
-const botMeta = (name) => {
-  const seed = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const r = (k) => srand(seed * k + k);
-  const major = 1 + Math.floor(r(7) * 3);
-  const minor = Math.floor(r(11) * 10);
-  const lev = [3, 5, 10][Math.floor(r(13) * 3)];
-  const config = `${BOT_SETUPS[Math.floor(r(17) * BOT_SETUPS.length)]}·${BOT_TFS[Math.floor(r(19) * BOT_TFS.length)]}·${lev}x`;
-  const btPF = 1.9 + r(23) * 1.5;                 // backtest profit factor 1.9–3.4
-  const livePF = btPF * (0.62 + r(29) * 0.3);     // live always degrades vs backtest
-  return { version: `v${major}.${minor}`, config, btPF: btPF.toFixed(1), livePF: livePF.toFixed(1) };
-};
 
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
 const TradersTab = () => {
