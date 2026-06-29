@@ -193,7 +193,7 @@ const SignalTable = ({
             return (
               <th key={c.id} onClick={sortable ? () => onSort(c.id) : undefined}
                 aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : (sortable ? "none" : undefined)}
-                style={{ ...thStyle, fontSize: 10, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none", ...(maxHeight ? { position: "sticky", top: 0, backgroundColor: C.card, zIndex: 2 } : {}) }}>
+                style={{ ...thStyle, fontSize: 11, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none", ...(maxHeight ? { position: "sticky", top: 0, backgroundColor: C.card, zIndex: 2 } : {}) }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                   {c.label}
                   {active && (sort.dir === "asc" ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}

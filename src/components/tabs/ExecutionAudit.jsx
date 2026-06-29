@@ -101,7 +101,7 @@ const SORTS = ["Newest", "Oldest", "Net PNL"];
 /* ── compact dark select ── */
 const Select = ({ label, value, onChange, options }) => (
   <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-    <span style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -119,7 +119,7 @@ const Select = ({ label, value, onChange, options }) => (
 /* ── small advanced-stat card ── */
 const MiniStat = ({ label, value, color, sub }) => (
   <div className="tl-card" style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
-    <span style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
     <span style={{ fontSize: 16, fontWeight: 800, color: color || C.text, ...mono, letterSpacing: "-0.3px" }}>{value}</span>
     {sub && <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{sub}</span>}
   </div>
@@ -417,7 +417,7 @@ const ExecutionAudit = () => {
                 <div style={{ width: `${b.n ? b.wr : 0}%`, height: "100%", backgroundColor: b.wr >= 50 ? C.green : C.amber, borderRadius: 4, transition: "width .3s" }} />
               </div>
               <span style={{ width: 44, textAlign: "right", fontSize: 12, fontWeight: 800, color: b.n ? (b.wr >= 50 ? C.green : C.amber) : C.textFaint, ...mono }}>{b.n ? `${Math.round(b.wr)}%` : "—"}</span>
-              <span style={{ width: 64, textAlign: "right", fontSize: 9.5, color: C.textFaint, ...mono }}>{b.n} trade{b.n === 1 ? "" : "s"}</span>
+              <span style={{ width: 64, textAlign: "right", fontSize: 11, color: C.textFaint, ...mono }}>{b.n} trade{b.n === 1 ? "" : "s"}</span>
             </div>
           ))}
         </div>
@@ -425,7 +425,7 @@ const ExecutionAudit = () => {
 
       {/* ─────────── 5) BREAKDOWN BY ASSET ─────────── */}
       <CollapsibleSection icon={Coins} title="Breakdown by Asset" summary={`${byAsset.length} assets · sorted by net PNL`} persistKey="audit-breakdown">
-        <div style={{ overflowX: "auto", maxHeight: 340, overflowY: "auto" }}>
+        <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>

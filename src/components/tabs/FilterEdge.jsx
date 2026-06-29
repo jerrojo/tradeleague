@@ -18,7 +18,7 @@ const Funnel = ({ stages }) => (
     {stages.map((s, i) => (
       <div key={s.label} style={{ display: "flex", alignItems: "center", flex: "1 1 0", minWidth: 150 }}>
         <div style={{ ...cardStyle, flex: 1, borderColor: `${s.color}40`, backgroundColor: `${s.color}0d` }}>
-          <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
           <div style={{ fontSize: 24, fontWeight: 900, color: s.color, ...mono, marginTop: 2 }}>{s.value}</div>
           <div style={{ fontSize: 10.5, color: C.textMuted, marginTop: 2 }}>{s.sub}</div>
         </div>
@@ -122,14 +122,14 @@ const FilterEdge = () => {
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                 {[["Provider", "left"], ["Signals", "right"], ["Approved", "right"], ["Approval", "right"], ["Executed P&L", "right"], ["Rejected if exec.", "right"], ["Edge", "right"]].map(([h, al]) => (
-                  <th key={h} style={{ textAlign: al, padding: "9px 12px", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ textAlign: al, padding: "9px 12px", fontSize: 11, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {d.traders.map((t) => (
                 <tr key={t.trader} className="card-hover" style={{ borderBottom: `1px solid ${C.border}` }}>
-                  <td style={{ padding: "9px 12px", fontWeight: 700, color: C.text }}>{t.trader}{t.isBot ? <span style={{ fontSize: 9, color: C.textFaint, marginLeft: 6 }}>BOT</span> : null}</td>
+                  <td style={{ padding: "9px 12px", fontWeight: 700, color: C.text }}>{t.trader}{t.isBot ? <span style={{ fontSize: 11, color: C.textFaint, marginLeft: 6 }}>BOT</span> : null}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.textMuted }}>{t.total}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.text }}>{t.approved}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: t.approvalRate >= 50 ? C.green : C.amber }}>{pct(t.approvalRate)}</td>

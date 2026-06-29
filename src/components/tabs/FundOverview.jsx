@@ -58,15 +58,18 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
   <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick}
     role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-    style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 6 }}>
+    style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 600 }}>
+      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600 }}>
         {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
       </span>
-      {Icon && <Icon size={14} color={accent} style={{ flexShrink: 0 }} />}
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        {Icon && <Icon size={14} color={accent} />}
+        {onClick && <ChevronRight size={13} color={C.textFaint} style={{ opacity: 0.75 }} />}
+      </span>
     </div>
     <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 10, color: C.textFaint }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
   </div>
 );
 
@@ -134,7 +137,7 @@ const Funnel = ({ stages }) => (
     {stages.map((s, i) => (
       <div key={s.label} style={{ display: "flex", alignItems: "center", flex: "1 1 0", minWidth: 120 }}>
         <div className="tl-card" style={{ ...cardStyle, flex: 1, padding: "11px 13px", borderColor: `${s.color}40`, backgroundColor: `${s.color}0d` }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: s.color, ...mono, marginTop: 2, lineHeight: 1.1 }}>{s.value}</div>
           <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>{s.sub}</div>
         </div>
@@ -443,7 +446,7 @@ const FundOverview = () => {
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund Overview</div>
           <span style={{
-            display: "inline-flex", alignItems: "center", gap: 4, fontSize: 9, fontWeight: 800,
+            display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 800,
             color: C.cyan, backgroundColor: `${C.cyan}1c`, padding: "2px 8px", borderRadius: 4,
             textTransform: "uppercase", letterSpacing: "0.5px",
           }}><Cpu size={10} /> Tear Sheet</span>
@@ -533,7 +536,7 @@ const FundOverview = () => {
           </ComposedChart>
         </ResponsiveContainer>
         {/* Underwater drawdown — risk beneath the return (drawdown is king) */}
-        <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", margin: "8px 0 2px" }}>Drawdown — % below peak</div>
+        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", margin: "8px 0 2px" }}>Drawdown — % below peak</div>
         <ResponsiveContainer width="100%" height={86}>
           <ComposedChart data={data.equity}>
             <defs>
@@ -569,7 +572,6 @@ const FundOverview = () => {
               Closed P&amp;L by month — consistency over time · simulated 6-month track
             </div>
           </div>
-          <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
         </div>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={data.monthly} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
@@ -609,7 +611,6 @@ const FundOverview = () => {
               Realized R-multiple per closed trade · {data.closed.length} trades — losses capped near −1R, wins run to the right (asymmetric edge)
             </div>
           </div>
-          <span style={{ fontSize: 8, fontWeight: 800, color: C.amber, backgroundColor: C.amberBg, padding: "2px 6px", borderRadius: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>Simulated</span>
         </div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={data.rDist.filter((b) => b.count > 0)} barCategoryGap="22%">
@@ -641,7 +642,7 @@ const FundOverview = () => {
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                 {[["#", "left"], ["Depth", "right"], ["Span (trades)", "right"], ["Status", "right"]].map(([h, al]) => (
-                  <th key={h} style={{ textAlign: al, padding: "7px 8px", fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{h}</th>
+                  <th key={h} style={{ textAlign: al, padding: "7px 8px", fontSize: 11, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -727,7 +728,7 @@ const FundOverview = () => {
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
               {[["Provider", "left"], ["Signals", "right"], ["Approved", "right"], ["Approval", "right"], ["Executed P&L", "right"]].map(([h, al]) => (
-                <th key={h} scope="col" style={{ textAlign: al, padding: "8px 14px", fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} scope="col" style={{ textAlign: al, padding: "8px 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>

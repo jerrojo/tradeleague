@@ -16,7 +16,7 @@ const ThemeProvider = ({ children }) => {
    green/red/amber stay strictly semantic; purple is the single brand accent. */
 const C = {
   bg: "#0b0f15", card: "#161b22", cardElev: "#1b212b", cardHover: "#1f2630", border: "#272d37",
-  borderLight: "#3a414c", text: "#e9eff5", textMuted: "#9ba6b2", textFaint: "#6b7482",
+  borderLight: "#3a414c", text: "#e9eff5", textMuted: "#9ba6b2", textFaint: "#828c99",
   green: "#3fb950", greenBg: "rgba(63,185,80,0.1)", red: "#f85149", redBg: "rgba(248,81,73,0.1)",
   amber: "#e3a72f", amberBg: "rgba(227,167,47,0.1)", purple: "#8b5cf6", purpleBg: "rgba(139,92,246,0.1)",
   blue: "#58a6ff", blueBg: "rgba(88,166,255,0.1)", cyan: "#39d0d8",
