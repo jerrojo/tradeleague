@@ -2,14 +2,17 @@ import { useMemo, useState } from "react";
 import { CalendarClock, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Coins, Wallet } from "lucide-react";
 import { SectionHeader } from "../common";
 import { monthLedger, breakdownBy } from "../../data/tradeReport";
+import { usd as fUsd, usdCompact } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const usd = (n, sign = true) => `${n >= 0 ? (sign ? "+" : "") : "-"}$${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const compact = (n) => { const a = Math.abs(n); const s = n >= 0 ? "+" : "-"; if (a >= 1000) return `${s}$${(a / 1000).toFixed(1)}k`; return `${s}$${a.toFixed(0)}`; };
-const k = (n) => (Math.abs(n) >= 1000 ? `$${(n / 1000).toFixed(2)}K` : `$${n.toFixed(2)}`);
+// Money formatting routed through the single source (lib/format) so the minus glyph
+// and decimals match the rest of the platform.
+const usd = (n, sign = true) => fUsd(n, { signed: sign });
+const compact = (n) => usdCompact(n, { signed: true });
+const k = (n) => usdCompact(n);
 const fmtDT = (ms) => { const d = new Date(ms); const p = (x) => String(x).padStart(2, "0"); return `${p(d.getMonth() + 1)}/${p(d.getDate())}/${String(d.getFullYear()).slice(2)}, ${p(d.getHours())}:${p(d.getMinutes())}`; };
 const fmtDur = (min) => { if (min == null) return "—"; const h = Math.floor(min / 60), m = min % 60; return h ? `${h}h ${m}m` : `${m}m`; };
 

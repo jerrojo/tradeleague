@@ -36,6 +36,23 @@ const round = (x) => {
 const STEP = 3600; // 1h candles
 const N = 160;
 
+/* ── Single source of truth for per-trade execution costs (used by SignalTable +
+   Execution Audit so the same trade never shows two different fee numbers) ──
+   feeOf: deterministic taker fee per round-trip, $0.10–0.40 from the trade id.
+   arrivalSlipBps: REAL arrival slippage from signal price vs limit fill —
+   (entry − signalPx)/signalPx in bps, signed by trade direction. */
+export const feeOf = (s) => {
+  const id = String(s.id ?? s.coin ?? "");
+  let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 1e9;
+  const x = Math.sin(h) * 10000; const r = x - Math.floor(x);
+  return Math.round((0.1 + r * 0.3) * 100) / 100;
+};
+export const arrivalSlipBps = (s) => {
+  if (!s.signalPx || !s.entry) return 0;
+  const sign = s.dir === "LONG" ? 1 : -1; // paying up to enter = adverse slippage
+  return Math.round(sign * ((s.entry - s.signalPx) / s.signalPx) * 10000 * 10) / 10;
+};
+
 /* ── OHLC candle series for a coin (deterministic random walk around its price) ── */
 export function coinCandles(coin) {
   const base = COIN_PX[coin] || 100;

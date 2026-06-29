@@ -6,7 +6,7 @@ import {
 import { StatCard, CollapsibleSection } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { coinCandles, coinSignals, ROBOTIN_COINS, feeOf, arrivalSlipBps } from "../../data/robotin";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
@@ -35,14 +35,10 @@ const pct = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
 const fmtTime = (t) =>
   t == null ? "—" : new Date(t * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
-/* deterministic per-trade fee (matches TradeDetail's seedFrom) */
-const seedFrom = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1e9; const x = Math.sin(h) * 10000; return x - Math.floor(x); };
-const feeOf = (s) => Math.round((0.1 + seedFrom(s.id || s.coin) * 0.3) * 100) / 100;
-
-/* Arrival slippage (TCA): realized fill vs. the price at AI approval. Deterministic
-   execution noise per trade, slightly skewed adverse (you usually pay a touch).
-   Convention (Talos): negative bps = beat arrival (good), positive = underperformed. */
-const slipBps = (s) => Math.round(((seedFrom((s.id || s.coin) + "slip") - 0.46) * 7) * 10) / 10;
+/* Arrival slippage (TCA): REAL realized fill (entry) vs. price at AI approval
+   (signalPx) — computed in robotin.js so audit & detail agree. Convention:
+   positive bps = paid up to enter (adverse), negative = filled better than arrival. */
+const slipBps = (s) => arrivalSlipBps(s);
 
 /* ── derived audit fields for a single signal (mirrors TradeDetail's logic) ── */
 const deriveAudit = (s) => {

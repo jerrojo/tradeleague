@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizontal, X } from "lucide-react";
 import { Avatar, BotTag, EmptyState } from "./common";
 import { TradeDetail } from "./TradeDetail";
+import { feeOf } from "../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
 /* ═══════════════════════ SignalTable — THE canonical dense trade/signal table ═══════════════════════
@@ -211,8 +212,7 @@ const SignalTable = ({
               const cr = isClosed ? closedResult(s) : null;
               const lc = lastCloseFor ? lastCloseFor(s) : null;
               const ur = s.status === "active" && lc != null ? unrealized(s, lc) : null;
-              const feeSeed = String(s.id ?? s.coin ?? "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-              const fee = audit ? Math.round((0.1 + (feeSeed % 30) / 30 * 0.3) * 100) / 100 : 0;
+              const fee = audit ? feeOf(s) : 0;
               return (
                 <Fragment key={s.id}>
                   <tr className="hoverable" onClick={() => onToggle(s.id)}
