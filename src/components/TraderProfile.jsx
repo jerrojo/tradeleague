@@ -58,6 +58,28 @@ const TraderProfile = ({ trader, onClose }) => {
     return m;
   }, []);
 
+  // ── Fund attribution: what VARIV actually executed from THIS provider (approved
+  // signals only), the executed-PnL curve, and where the edge comes from (setup/coin). ──
+  const fundAttr = useMemo(() => {
+    const approved = traderSignals.filter((s) => s.approved);
+    const closed = approved.filter((s) => s.status === "closed").sort((a, b) => a.time - b.time);
+    let cum = 0;
+    const curve = [{ i: 0, pnl: 0 }, ...closed.map((s, i) => { cum += s.pnl; return { i: i + 1, pnl: Math.round(cum) }; })];
+    const wins = closed.filter((s) => s.hit === "TP").length;
+    const bySetup = {}, byCoin = {};
+    closed.forEach((s) => {
+      (bySetup[s.setup] ||= { n: 0, pnl: 0, w: 0 }); bySetup[s.setup].n++; bySetup[s.setup].pnl += s.pnl; if (s.hit === "TP") bySetup[s.setup].w++;
+      (byCoin[s.coin] ||= { n: 0, pnl: 0, w: 0 }); byCoin[s.coin].n++; byCoin[s.coin].pnl += s.pnl; if (s.hit === "TP") byCoin[s.coin].w++;
+    });
+    const rows = (o) => Object.entries(o).map(([k, v]) => ({ k, ...v, wr: v.n ? Math.round((v.w / v.n) * 100) : 0 })).sort((a, b) => b.pnl - a.pnl);
+    return {
+      execPnl: Math.round(cum), curve, closedN: closed.length,
+      activeN: approved.filter((s) => s.status === "active").length,
+      winRate: closed.length ? Math.round((wins / closed.length) * 100) : 0,
+      setupRows: rows(bySetup), coinRows: rows(byCoin).slice(0, 6),
+    };
+  }, [traderSignals]);
+
   // Trading Journal — crypto-journal KPIs derived from the trader's own trade history.
   // Reuses computeMetrics for the heavy lifting (winRate / profitFactor / maxDD / expectancyR)
   // and layers the per-trade P&L cuts (avg win/loss, best/worst, best win streak) on top.
@@ -319,6 +341,65 @@ const TraderProfile = ({ trader, onClose }) => {
               </ResponsiveContainer>
             </div>
           </div>
+          {/* ── Fund attribution — what VARIV executed from this provider ── */}
+          <SectionHeader
+            icon={DollarSign}
+            title="Fund attribution"
+            subtitle={`Executed P&L VARIV realized from ${t.name}'s approved signals — and where the edge comes from`}
+            color={C.green}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: "16px" }}>
+            <div style={cardStyle}>
+              <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
+                {[
+                  ["Executed P&L", `${fundAttr.execPnl >= 0 ? "+" : "−"}$${Math.abs(fundAttr.execPnl).toLocaleString()}`, fundAttr.execPnl >= 0 ? C.green : C.red],
+                  ["Approved & closed", `${fundAttr.closedN}`, C.text],
+                  ["Win rate", `${fundAttr.winRate}%`, fundAttr.winRate >= 50 ? C.green : C.amber],
+                  ["Active now", `${fundAttr.activeN}`, C.blue],
+                ].map(([l, v, c]) => (
+                  <div key={l}>
+                    <div style={{ fontSize: 9.5, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 700 }}>{l}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: c, ...mono }}>{v}</div>
+                  </div>
+                ))}
+              </div>
+              <ResponsiveContainer width="100%" height={150}>
+                <AreaChart data={fundAttr.curve} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id={`fa-${t.name.replace(/\s/g, "")}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={fundAttr.execPnl >= 0 ? C.green : C.red} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={fundAttr.execPnl >= 0 ? C.green : C.red} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
+                  <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
+                  <YAxis stroke={C.textMuted} fontSize={9} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+                  <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [`$${Number(v).toLocaleString()}`, "Cumulative executed P&L"]} />
+                  <Area type="monotone" dataKey="pnl" stroke={fundAttr.execPnl >= 0 ? C.green : C.red} strokeWidth={2} fill={`url(#fa-${t.name.replace(/\s/g, "")})`} dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div style={{ fontSize: 9, color: C.textFaint, marginTop: 2 }}>Cumulative executed P&L from this provider's approved, closed signals</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Edge by setup</div>
+              {fundAttr.setupRows.length === 0 ? (
+                <div style={{ fontSize: 11, color: C.textMuted, padding: "8px 0" }}>No closed approved signals yet.</div>
+              ) : fundAttr.setupRows.map((r) => (
+                <div key={r.k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 11.5 }}>
+                  <span style={{ color: C.text, fontWeight: 600 }}>{r.k} <span style={{ color: C.textFaint, fontWeight: 400 }}>· {r.n} · {r.wr}% WR</span></span>
+                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{r.pnl >= 0 ? "+" : "−"}${Math.abs(Math.round(r.pnl)).toLocaleString()}</span>
+                </div>
+              ))}
+              <div style={{ fontSize: 12, fontWeight: 700, margin: "12px 0 8px" }}>Top coins</div>
+              {fundAttr.coinRows.map((r) => (
+                <div key={r.k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 11.5 }}>
+                  <span style={{ color: C.text, fontWeight: 600 }}>{r.k} <span style={{ color: C.textFaint, fontWeight: 400 }}>· {r.n} · {r.wr}% WR</span></span>
+                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{r.pnl >= 0 ? "+" : "−"}${Math.abs(Math.round(r.pnl)).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Latest signals — this trader's most recent calls and what Robotín did with them */}
           <SectionHeader
             icon={Activity}
