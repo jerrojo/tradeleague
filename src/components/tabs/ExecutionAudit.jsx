@@ -6,7 +6,7 @@ import {
 import { StatCard, CollapsibleSection } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
-import { coinCandles, coinSignals, ROBOTIN_COINS, feeOf, arrivalSlipBps } from "../../data/robotin";
+import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
@@ -141,11 +141,7 @@ const ExecutionAudit = () => {
   const [opsOpen, setOpsOpen] = useState(true);
 
   // latest close per coin → lets the table read unrealized P&L on active executions
-  const lastCloseByCoin = useMemo(() => {
-    const m = {};
-    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
-    return m;
-  }, []);
+  const lastCloseByCoin = LAST_CLOSE;
 
   // filters
   const [asset, setAsset] = useState("All");
@@ -158,16 +154,15 @@ const ExecutionAudit = () => {
   const { within } = useTimeframe();
   const executed = useMemo(() => {
     void refreshKey; // re-key forces recompute on Refresh
-    return ROBOTIN_COINS
-      .flatMap((coin) => {
-        const candles = coinCandles(coin);
-        return coinSignals(coin, candles)
-          .filter((s) => s.approved === true && within(s.time))
-          .map((s) => ({
-            ...s,
-            audit: deriveAudit(s),
-            exitTime: s.exitIdx != null && candles[s.exitIdx] ? candles[s.exitIdx].time : null,
-          }));
+    return ALL_SIGNALS
+      .filter((s) => s.approved === true && within(s.time))
+      .map((s) => {
+        const candles = CANDLES_BY_COIN[s.coin];
+        return {
+          ...s,
+          audit: deriveAudit(s),
+          exitTime: s.exitIdx != null && candles && candles[s.exitIdx] ? candles[s.exitIdx].time : null,
+        };
       })
       .sort((a, b) => a.time - b.time);
   }, [refreshKey, within]);

@@ -5,7 +5,7 @@ import { SignalTable } from "./SignalTable";
 import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData } from "../data/mockData";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
+import { ALL_SIGNALS, lastCloseByCoin as LAST_CLOSE } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
@@ -41,22 +41,15 @@ const TraderProfile = ({ trader, onClose }) => {
   // Robotín filtering stats for this trader — how many of their signals R1 approved
   const robotinStats = useMemo(() => {
     let total = 0, approved = 0;
-    ROBOTIN_COINS.forEach((c) => coinSignals(c, coinCandles(c)).forEach((s) => {
-      if (s.trader === t.name) { total++; if (s.approved) approved++; }
-    }));
+    ALL_SIGNALS.forEach((s) => { if (s.trader === t.name) { total++; if (s.approved) approved++; } });
     return { total, approved, rate: total ? Math.round((approved / total) * 100) : 0 };
   }, [t.name]);
 
   // This trader's signals across all assets + their post-Robotín lifecycle — the Signal Log.
-  const traderSignals = useMemo(() => ROBOTIN_COINS
-    .flatMap((c) => coinSignals(c, coinCandles(c)))
+  const traderSignals = useMemo(() => ALL_SIGNALS
     .filter((s) => s.trader === t.name)
     .sort((a, b) => b.time - a.time), [t.name]);
-  const lastCloseByCoin = useMemo(() => {
-    const m = {};
-    ROBOTIN_COINS.forEach((c) => { const cs = coinCandles(c); m[c] = cs.length ? cs[cs.length - 1].close : null; });
-    return m;
-  }, []);
+  const lastCloseByCoin = LAST_CLOSE;
 
   // ── Fund attribution: what VARIV actually executed from THIS provider (approved
   // signals only), the executed-PnL curve, and where the edge comes from (setup/coin). ──

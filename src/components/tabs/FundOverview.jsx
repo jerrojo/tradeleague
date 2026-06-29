@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav } from "../../contexts";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { ALL_SIGNALS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
@@ -149,7 +149,7 @@ const FundOverview = () => {
   const { go } = useNav();
   const data = useMemo(() => {
     /* ── Every signal across all coins (for the system-wide approval rate) ── */
-    const allSignals = ROBOTIN_COINS.flatMap((coin) => coinSignals(coin, coinCandles(coin))).filter((s) => within(s.time));
+    const allSignals = ALL_SIGNALS.filter((s) => within(s.time));
     const approvedCount = allSignals.filter((s) => s.approved === true).length;
     const approvalRate = allSignals.length ? (approvedCount / allSignals.length) * 100 : 0;
 

@@ -10,7 +10,7 @@ import { TradeReport } from "./components/tabs/TradeReport";
 import { ExecutionEngine } from "./components/tabs/ExecutionEngine";
 import { MarketsSection, ActivitySection, TradersSection, AuditSection } from "./components/sections";
 import { mockTraders } from "./data/mockData";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "./data/robotin";
+import { ALL_SIGNALS } from "./data/robotin";
 import { START_CAPITAL } from "./data/fund";
 import { usd } from "./lib/format";
 import { C, cardStyle, mono } from "./theme";
@@ -131,8 +131,8 @@ const App = () => {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  // Every signal across all coins — one source for fund stats + the alerts feed
-  const signalsAll = useMemo(() => ROBOTIN_COINS.flatMap((c) => coinSignals(c, coinCandles(c))), []);
+  // Every signal across all coins — from the memoized store (computed once)
+  const signalsAll = ALL_SIGNALS;
 
   // Fund identity (VARIV) — derived from the approved/executed book, never hardcoded
   const fundStats = useMemo(() => {

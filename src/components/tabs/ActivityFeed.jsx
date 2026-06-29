@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { SignalTable } from "../SignalTable";
 import { useProfile, useTimeframe } from "../../contexts";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
 
@@ -32,23 +32,10 @@ const ActivityFeed = () => {
   useEffect(() => { try { localStorage.setItem("af:chip", filter); } catch { /* ignore */ } }, [filter]);
   useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
 
-  /* ── memoized per-coin candle lookups (built once; reused for unrealized calc) ── */
-  const candlesByCoin = useMemo(() => {
-    const map = {};
-    ROBOTIN_COINS.forEach((c) => { map[c] = coinCandles(c); });
-    return map;
-  }, []);
-  const lastClose = (coin) => {
-    const cs = candlesByCoin[coin];
-    return cs && cs.length ? cs[cs.length - 1].close : null;
-  };
+  const lastClose = (coin) => lastCloseByCoin[coin] ?? null;
 
-  /* ── single flat tape: every signal across every coin, newest first ── */
-  const allSignals = useMemo(
-    () =>
-      ROBOTIN_COINS.flatMap((c) => coinSignals(c, candlesByCoin[c])).sort((a, b) => b.time - a.time),
-    [candlesByCoin]
-  );
+  /* ── single flat tape from the memoized store: every signal, newest first ── */
+  const allSignals = useMemo(() => [...ALL_SIGNALS].sort((a, b) => b.time - a.time), []);
 
   /* ── distinct coins present in the tape (for the asset filter) ── */
   const coinOptions = useMemo(() => {

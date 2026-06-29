@@ -7,7 +7,7 @@ import { mockTraders } from "../../data/mockData";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
 import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { ALL_SIGNALS } from "../../data/robotin";
 import { useMemo, useState } from "react";
 
 /* ═══════════════════════ TAB 3: TRADERS ═══════════════════════ */
@@ -26,11 +26,11 @@ const TradersTab = () => {
   // question: which provider's APPROVED signals actually made the fund money)
   const robotinByTrader = useMemo(() => {
     const m = {};
-    ROBOTIN_COINS.forEach((c) => coinSignals(c, coinCandles(c)).forEach((s) => {
+    ALL_SIGNALS.forEach((s) => {
       const r = m[s.trader] || (m[s.trader] = { total: 0, approved: 0, execPnl: 0 });
       r.total++;
       if (s.approved) { r.approved++; if (s.status === "closed") r.execPnl += s.pnl; }
-    }));
+    });
     Object.values(m).forEach((r) => { r.rate = r.total ? Math.round((r.approved / r.total) * 100) : 0; });
     return m;
   }, []);

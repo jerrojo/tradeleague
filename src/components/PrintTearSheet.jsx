@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { X, Printer } from "lucide-react";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
+import { ALL_SIGNALS } from "../data/robotin";
 import { FUND, START_CAPITAL } from "../data/fund";
 import { mockTraders } from "../data/mockData";
 
@@ -16,7 +16,7 @@ const moneySigned = (x) => `${x < 0 ? "−" : "+"}$${f0(Math.abs(x))}`;
 
 export const PrintTearSheet = ({ onClose }) => {
   const d = useMemo(() => {
-    const all = ROBOTIN_COINS.flatMap((c) => coinSignals(c, coinCandles(c)));
+    const all = ALL_SIGNALS;
     const approved = all.filter((s) => s.approved);
     const closed = approved.filter((s) => s.status === "closed");
     const wins = closed.filter((s) => s.hit === "TP");

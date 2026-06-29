@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
 import { SectionHeader, EmptyState } from "../common";
 import { useTimeframe } from "../../contexts";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { ALL_SIGNALS } from "../../data/robotin";
 import { usd, pct, ratio, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
@@ -40,7 +40,7 @@ const FilterEdge = () => {
   const { within } = useTimeframe();
 
   const d = useMemo(() => {
-    const all = ROBOTIN_COINS.flatMap((coin) => coinSignals(coin, coinCandles(coin))).filter((s) => within(s.time));
+    const all = ALL_SIGNALS.filter((s) => within(s.time));
     const approved = all.filter((s) => s.approved);
     const rejected = all.filter((s) => !s.approved);
     const execClosed = approved.filter((s) => s.status === "closed");

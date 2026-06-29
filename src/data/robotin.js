@@ -197,3 +197,15 @@ export function signalMarkers(signals) {
     text: `${s.trader.split(" ")[0]}`,
   }));
 }
+
+/* ═══════════════════════ MEMOIZED SIGNAL STORE (single source of truth) ═══════════════════════
+   coinCandles / coinSignals are fully deterministic, so the entire signal book is
+   identical on every call. Compute it ONCE here and let every section import these
+   instead of re-running the engine over all coins on each render — one computation,
+   and a guarantee that no two sections can ever disagree on the numbers. Components
+   still apply their own timeframe (`within`) filtering on top of ALL_SIGNALS. */
+export const CANDLES_BY_COIN = Object.fromEntries(ROBOTIN_COINS.map((c) => [c, coinCandles(c)]));
+export const ALL_SIGNALS = ROBOTIN_COINS.flatMap((c) => coinSignals(c, CANDLES_BY_COIN[c]));
+export const lastCloseByCoin = Object.fromEntries(
+  ROBOTIN_COINS.map((c) => { const cs = CANDLES_BY_COIN[c]; return [c, cs.length ? cs[cs.length - 1].close : null]; })
+);
