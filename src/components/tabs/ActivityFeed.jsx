@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Radio } from "lucide-react";
+import { SectionHeader } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useProfile, useTimeframe } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
@@ -63,23 +64,16 @@ const ActivityFeed = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* ─────────── HEADER ─────────── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <span style={{ position: "relative", display: "inline-flex", width: 8, height: 8 }}>
-            <span style={{ position: "absolute", inset: 0, borderRadius: "50%", backgroundColor: C.green, opacity: 0.45, animation: "pulse 1.8s ease-in-out infinite" }} />
-            <span style={{ position: "absolute", inset: 1.5, borderRadius: "50%", backgroundColor: C.green }} />
+      <SectionHeader
+        icon={Radio}
+        title="Live activity"
+        subtitle="Every signal and what Robotín did with it — newest first, across all coins"
+        right={(
+          <span style={{ fontSize: 11, color: C.textMuted, ...mono }}>
+            <b style={{ color: C.text }}>{totalN}</b> events <span style={{ color: C.textFaint }}>·</span> <b style={{ color: C.green }}>{approvedN}</b> approved <span style={{ color: C.textFaint }}>·</span> <b style={{ color: C.blue }}>{activeN}</b> active
           </span>
-          <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: "-0.3px" }}>Live activity</span>
-          <span style={{ fontSize: 9, fontWeight: 800, color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "1px 7px", borderRadius: 999, letterSpacing: "0.6px" }}>LIVE</span>
-        </div>
-        <div style={{ fontSize: 11, color: C.textMuted, ...mono }}>
-          <b style={{ color: C.text }}>{totalN}</b> events
-          <span style={{ color: C.textFaint }}> · </span>
-          <b style={{ color: C.green }}>{approvedN}</b> approved
-          <span style={{ color: C.textFaint }}> · </span>
-          <b style={{ color: C.blue }}>{activeN}</b> active
-        </div>
-      </div>
+        )}
+      />
 
       {/* ─────────── STICKY FILTER ROW ─────────── */}
       <div style={{

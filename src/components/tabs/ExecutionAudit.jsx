@@ -3,7 +3,7 @@ import {
   Activity, Award, ChevronDown, Coins, DollarSign, Percent, RefreshCw,
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { StatCard, CollapsibleSection } from "../common";
+import { StatCard, CollapsibleSection, SectionHeader } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
 import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
@@ -310,25 +310,16 @@ const ExecutionAudit = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* ─────────── 1) HEADER ─────────── */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Shield size={20} color={C.purple} />
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.4px" }}>Execution Audit</div>
-            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2, maxWidth: 560 }}>
-              The bot's executed-trade journal &amp; audit — order fills, fees, slippage and real vs. theoretical net PNL.
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => { setRefreshKey((k) => k + 1); }}
-          style={{ ...btnStyle, color: C.purple, borderColor: `${C.purple}40`, backgroundColor: C.purpleBg }}
-        >
-          <RefreshCw size={13} /> Refresh
-        </button>
-      </div>
+      <SectionHeader
+        icon={Shield}
+        title="Execution audit"
+        subtitle="The executed-trade journal — order fills, fees, slippage and real vs. theoretical net P&L"
+        right={(
+          <button onClick={() => { setRefreshKey((k) => k + 1); }} style={{ ...btnStyle, color: C.purple, borderColor: `${C.purple}40`, backgroundColor: C.purpleBg }}>
+            <RefreshCw size={13} /> Refresh
+          </button>
+        )}
+      />
 
       {/* ─────────── 2) FILTERS ─────────── */}
       <div style={{ ...cardStyle, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>

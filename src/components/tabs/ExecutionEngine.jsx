@@ -5,7 +5,7 @@ import {
   Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldX, Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
-import { EmptyState } from "../common";
+import { EmptyState, SectionHeader } from "../common";
 import { coinCandles } from "../../data/robotin";
 import { simulate, DEFAULT_CONFIG } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
@@ -40,11 +40,16 @@ const Num = ({ value, onChange, step = 1, min, max, w }) => (
 const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint }) => (
   <div className="tl-card" style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 5 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 10.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>{Icon && <Icon size={12} color={accent} />}{label}</span>
+      <span style={{ fontSize: 11.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>{Icon && <Icon size={12} color={accent} />}{label}</span>
     </div>
     <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 9.5, color: C.textFaint }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
   </div>
+);
+
+/* tier divider label (matches the Overview's tiering) */
+const TLabel = ({ children }) => (
+  <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", margin: "4px 2px -4px" }}>{children}</div>
 );
 
 /* ── one expandable signal in the detail list ── */
@@ -198,19 +203,17 @@ const ExecutionEngine = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`, display: "flex", alignItems: "center", justifyContent: "center" }}><Cpu size={20} color={C.purple} /></div>
-          <div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: C.purple, letterSpacing: "-0.4px" }}>Execution Engine Simulation</div>
-            <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 2 }}>Re-simulates execution with partials, sizing and costs over historical signals · simulated</div>
+      <SectionHeader
+        icon={Cpu}
+        title="Execution engine"
+        subtitle="Re-simulates execution with partials, sizing and costs over historical signals · simulated"
+        right={(
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={exportCsv} style={{ ...btn, color: C.green, borderColor: `${C.green}40`, backgroundColor: C.greenBg }}><Download size={13} /> CSV</button>
+            <button onClick={() => setTick((t) => t + 1)} style={btn}><RefreshCw size={13} /> Refresh</button>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={exportCsv} style={{ ...btn, color: C.green, borderColor: `${C.green}40`, backgroundColor: C.greenBg }}><Download size={13} /> CSV</button>
-          <button onClick={() => setTick((t) => t + 1)} style={btn}><RefreshCw size={13} /> Refresh</button>
-        </div>
-      </div>
+        )}
+      />
 
       {/* filters */}
       <div style={{ ...cardStyle }}>
@@ -287,13 +290,15 @@ const ExecutionEngine = () => {
         </div>
       </div>
 
-      {/* KPI grid */}
+      {/* KPI grid — tiered like the Overview */}
+      <TLabel>Headline</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
         <K label="Net PnL" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Win Rate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
         <K label="Profit Factor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
         <K label="Signals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
       </div>
+      <TLabel>Targets reached</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Reached L1" icon={Crosshair} value={`${k.reachL1.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL1 / 100)}`} />
         <K label="Reached L2" icon={Crosshair} value={`${k.reachL2.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL2 / 100)}`} />
@@ -302,6 +307,7 @@ const ExecutionEngine = () => {
         <K label="Expectancy" icon={TrendingUp} accent={C.green} value={pct(k.expectancyPct, { signed: true })} valueColor={signColor(k.expectancyPct, C)} sub={`${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Sharpe (trade)" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ net" />
       </div>
+      <TLabel>Risk &amp; return</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Total Return" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
         <K label="Max Drawdown" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
@@ -310,6 +316,7 @@ const ExecutionEngine = () => {
         <K label="Avg R" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="return/risk" />
         <K label="Peak concurrency" icon={Layers} value={k.peakConc} sub={`avg ${k.avgConc}`} />
       </div>
+      <TLabel>Execution</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         <K label="Exposure" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="time in market" />
         <K label="Rejected" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" />
