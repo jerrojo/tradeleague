@@ -153,7 +153,7 @@ const SignalTable = ({
     { id: "status", label: "Status" },
     { id: "setup", label: "Setup" },
     { id: "time", label: "Time" },
-    ...(audit ? [{ id: "fees", label: "Fees", noSort: true }, { id: "match", label: "Match", noSort: true }] : []),
+    ...(audit ? [{ id: "fees", label: "Fees", noSort: true }, { id: "match", label: "Net match", noSort: true }] : []),
     { id: "_chev", label: "", noSort: true, fixed: true },
   ];
   const show = (id) => id === "pair" || id === "_chev" || !hidden.has(id);
@@ -275,7 +275,7 @@ const SignalTable = ({
                     )}
                     {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>}
                     {audit && show("fees") && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
-                    {audit && show("match") && <td style={cell}><span style={{ fontWeight: 700, color: s.approved ? C.green : C.textFaint }}>{s.approved ? "Match" : "—"}</span></td>}
+                    {audit && show("match") && <td style={cell} title="Gross outcome (TP/SL) agrees with net P&L sign">{isClosed ? (() => { const m = (s.hit === "TP") === (s.pnl > 0); return <span style={{ fontWeight: 700, color: m ? C.green : C.amber }}>{m ? "✓" : "✗"}</span>; })() : <span style={{ color: C.textFaint }}>—</span>}</td>}
                     <td style={{ ...cell, textAlign: "right" }}>
                       <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                     </td>
