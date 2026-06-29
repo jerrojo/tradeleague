@@ -314,7 +314,7 @@ const ExecutionEngine = () => {
         <K label="CAGR" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="annualized" />
         <K label="Loss streak" icon={TrendingDown} value={k.maxLossRun} sub="max consecutive" />
         <K label="Avg R" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="return/risk" />
-        <K label="Peak concurrency" icon={Layers} value={k.peakConc} sub={`avg ${k.avgConc}`} />
+        <K label="Peak concurrency" icon={Layers} value={k.peakConc} sub={`avg ${Number(k.avgConc).toFixed(1)}`} />
       </div>
       <TLabel>Execution</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
@@ -326,7 +326,7 @@ const ExecutionEngine = () => {
 
       {/* capital curve */}
       <div style={{ ...cardStyle }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, marginBottom: 10 }}><BarChart3 size={14} color={C.green} /> Curva de capital — {cfg.capitalMode === "fixed" ? "Fixed" : "Compound"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, marginBottom: 10 }}><BarChart3 size={14} color={C.green} /> Capital curve — {cfg.capitalMode === "fixed" ? "Fixed" : "Compound"}</div>
         {sim.curve.length > 1 ? (
           <ResponsiveCurve curve={sim.curve} />
         ) : <EmptyState icon={BarChart3} title="No signals in range" hint="Widen the date range or relax the filters." compact />}
