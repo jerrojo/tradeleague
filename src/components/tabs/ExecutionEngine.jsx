@@ -336,12 +336,12 @@ const ExecutionEngine = () => {
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 800 }}>Detalle — Execution Engine</span>
-            <span style={{ fontSize: 11, color: C.textMuted, backgroundColor: C.card, border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 999 }}>{sim.rows.length} señales</span>
+            <span style={{ fontSize: 15, fontWeight: 800 }}>Per-signal detail</span>
+            <span style={{ fontSize: 11, color: C.textMuted, backgroundColor: C.card, border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 999 }}>{sim.rows.length} signals</span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setOpenId("ALL")} style={btn}>Expandir todo</button>
-            <button onClick={() => setOpenId(null)} style={btn}>Colapsar todo</button>
+            <button onClick={() => setOpenId("ALL")} style={btn}>Expand all</button>
+            <button onClick={() => setOpenId(null)} style={btn}>Collapse all</button>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

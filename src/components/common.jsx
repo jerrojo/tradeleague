@@ -185,64 +185,6 @@ const BotTag = ({ isBot, size = 15 }) => {
   );
 };
 
-/* ── TP Progress Bar: thin inline bar ── */
-const TpProgressBar = ({ entry, tp, sl, status }) => {
-  if (status !== "active") return null;
-  const isLong = tp > entry;
-  const progress = 0.3 + srand(entry * 7 + tp * 13 + sl * 17) * 0.5; // deterministic per-trade progress (stable across re-renders)
-  const currentPrice = isLong ? entry + (tp - entry) * progress : entry - (entry - tp) * progress;
-  const pct = Math.round(Math.min(1, Math.max(0, Math.abs(currentPrice - entry) / Math.abs(tp - entry))) * 100);
-  const barColor = pct > 70 ? C.green : pct > 40 ? C.amber : C.blue;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
-      <div style={{ flex: 1, height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, height: "100%", backgroundColor: barColor, borderRadius: "1px" }} />
-      </div>
-      <span style={{ fontSize: "9px", fontWeight: "700", color: barColor, ...mono, whiteSpace: "nowrap" }}>{pct}% TP</span>
-    </div>
-  );
-};
-
-/* ── Community Vote: a favor / en contra on cards ── */
-const CommunityVote = ({ itemId, votesState, setVotesState }) => {
-  const seed = typeof itemId === "number" ? itemId : String(itemId).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const v = votesState[itemId] || { up: Math.floor(srand(seed * 7 + 3) * 40 + 10), down: Math.floor(srand(seed * 13 + 5) * 15 + 2), myVote: null };
-  const total = v.up + v.down;
-  const upPct = total > 0 ? Math.round((v.up / total) * 100) : 50;
-  const vote = (side) => {
-    setVotesState(prev => {
-      const cur = { ...(prev[itemId] || v) };
-      if (cur.myVote === side) { cur[side]--; cur.myVote = null; }
-      else { if (cur.myVote) cur[cur.myVote]--; cur[side]++; cur.myVote = side; }
-      return { ...prev, [itemId]: cur };
-    });
-  };
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      <button onClick={() => vote("up")} style={{
-        display: "flex", alignItems: "center", gap: "3px", padding: "2px 8px", borderRadius: "4px",
-        border: `1px solid ${v.myVote === "up" ? C.green : C.border}`,
-        backgroundColor: v.myVote === "up" ? C.greenBg : "transparent",
-        color: v.myVote === "up" ? C.green : C.textMuted, cursor: "pointer", fontSize: "10px", fontWeight: "600",
-      }}>
-        <ThumbsUp size={10} /> <span style={mono}>{v.up}</span>
-      </button>
-      <div style={{ flex: 1, height: "2px", backgroundColor: C.border, borderRadius: "1px", overflow: "hidden", display: "flex", maxWidth: "60px" }}>
-        <div style={{ width: `${upPct}%`, height: "100%", backgroundColor: C.green }} />
-        <div style={{ width: `${100 - upPct}%`, height: "100%", backgroundColor: C.red }} />
-      </div>
-      <button onClick={() => vote("down")} style={{
-        display: "flex", alignItems: "center", gap: "3px", padding: "2px 8px", borderRadius: "4px",
-        border: `1px solid ${v.myVote === "down" ? C.red : C.border}`,
-        backgroundColor: v.myVote === "down" ? C.redBg : "transparent",
-        color: v.myVote === "down" ? C.red : C.textMuted, cursor: "pointer", fontSize: "10px", fontWeight: "600",
-      }}>
-        <ThumbsDown size={10} /> <span style={mono}>{v.down}</span>
-      </button>
-    </div>
-  );
-};
-
 /* ── Toast Notification System ── */
 const ToastContext = createContext();
 const useToast = () => useContext(ToastContext);
@@ -373,8 +315,6 @@ export {
   MiniSparkline,
   tagBase,
   BotTag,
-  TpProgressBar,
-  CommunityVote,
   ToastContext,
   useToast,
   ToastProvider

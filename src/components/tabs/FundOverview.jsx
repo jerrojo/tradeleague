@@ -478,7 +478,7 @@ const FundOverview = () => {
       {/* ── 1 · Title ── */}
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund Overview</div>
+          <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund overview</div>
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 800,
             color: C.cyan, backgroundColor: `${C.cyan}1c`, padding: "2px 8px", borderRadius: 4,

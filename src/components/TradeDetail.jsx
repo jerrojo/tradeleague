@@ -226,7 +226,7 @@ const TradeDetail = ({ trade, candles }) => {
         </div>
 
         <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
-          <HeaderStat label="Signal Status" value="Take Profit" color={C.green} />
+          <HeaderStat label="Signal claim" value={trade.signalOutcome === "TP" ? "Take Profit" : (trade.signalOutcome || "—")} color={C.textMuted} />
           <HeaderStat label="Audit Status" value={audit.label} color={audit.color} />
           <HeaderStat label="Match" value={`${match.prefix}${match.label}`} color={match.color} />
           <HeaderStat label="Net PNL" value={netPnlDisplay} color={netPnlColor} />

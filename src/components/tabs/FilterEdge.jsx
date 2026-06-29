@@ -3,7 +3,7 @@ import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from
 import { SectionHeader, EmptyState } from "../common";
 import { useTimeframe } from "../../contexts";
 import { ALL_SIGNALS } from "../../data/robotin";
-import { usd, pct, ratio, signColor } from "../../lib/format";
+import { usd, pct, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ FILTER EDGE — what Robotín's approve/reject is worth ═══════════════════════
@@ -82,7 +82,7 @@ const FilterEdge = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <SectionHeader
         icon={GitBranch}
-        title="Filter Edge — what Robotín's approve/reject is worth"
+        title="Filter edge — what Robotín's approve/reject is worth"
         subtitle="The executed book vs. the counterfactual of every signal, including the ones the filter rejected · simulated"
       />
 

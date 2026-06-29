@@ -1,19 +1,16 @@
 import { PositioningMap } from "../PositioningMap";
-import { smcCoins } from "../../data/mockData";
+import { lastCloseByCoin, COIN_PX } from "../../data/robotin";
 import { C } from "../../theme";
 
 /* ═══════════════════════ COIN POSITIONING ═══════════════════════
    One single view for "where is the crowd positioned on this coin": the
    Positioning Map plots every open trade and live signal against the current
-   price (dot size = leverage, color = side). Previously this screen showed two
-   charts that said the same thing — now there is exactly one. */
-
-const parsePx = (s) => Number(String(s).replace(/[^0-9.]/g, "")) || 100;
+   price (dot size = leverage, color = side). Price comes from the candle-derived
+   single source of truth so "NOW" matches the chart's right edge everywhere. */
 
 const CoinPositioning = ({ coin = "BTC" }) => {
-  const cd = smcCoins[coin];
-  if (!cd) return null;
-  const price = parsePx(cd.price);
+  const price = lastCloseByCoin[coin] ?? COIN_PX[coin];
+  if (price == null) return null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

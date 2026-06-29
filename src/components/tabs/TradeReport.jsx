@@ -51,7 +51,7 @@ const TradeReport = () => {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* ── Header: title + month nav ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <SectionHeader icon={CalendarClock} title="Trade Report" subtitle="Broker execution ledger — the VARIV accounts' realized positions by day · distinct from the live signal book (months of account history vs the current signal window) · simulated" />
+        <SectionHeader icon={CalendarClock} title="Trade report" subtitle="Broker execution ledger — the VARIV accounts' realized positions by day · distinct from the live signal book (months of account history vs the current signal window) · simulated" />
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={goToday} style={{ padding: "6px 12px", borderRadius: 7, border: `1px solid ${isCurrentMonth ? C.purple : C.border}`, backgroundColor: isCurrentMonth ? C.purpleBg : "transparent", color: isCurrentMonth ? C.purple : C.textMuted, fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>TODAY</button>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>

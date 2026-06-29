@@ -4,6 +4,7 @@ import { Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
+import { usdCompact } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 import { useMemo, useState } from "react";
 
@@ -104,7 +105,7 @@ const HomeTab = () => {
                 <div style={{ width: 8, height: 3, borderRadius: "1px", backgroundColor: traderColors[ci] }} />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "600", color: traderColors[ci] }}><Avatar name={t.name} size={14} /> {t.name}</span>
                 <span style={{ color: val >= 0 ? C.green : C.red, fontWeight: "700", ...mono }}>
-                  {val >= 0 ? "+" : ""}${val != null ? (Math.abs(val) >= 1000 ? (val / 1000).toFixed(1) + "K" : val) : "—"}
+                  {val != null ? usdCompact(val, { signed: true }) : "—"}
                 </span>
               </div>
             );

@@ -7,6 +7,7 @@ import { StatCard, CollapsibleSection, SectionHeader } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
 import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
+import { bps, signColor } from "../../lib/format";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
@@ -386,8 +387,8 @@ const ExecutionAudit = () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
           <MiniStat label="Avg Arrival Slippage" value={`${tca.avg > 0 ? "+" : tca.avg < 0 ? "−" : ""}${Math.abs(tca.avg).toFixed(1)} bps`} color={tca.avg <= 0 ? C.green : C.red} sub={`est. cost ${usd(-Math.abs(tca.cost))}`} />
           <MiniStat label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
-          <MiniStat label="Best Fill" value={`−${Math.abs(tca.best).toFixed(1)} bps`} color={C.green} />
-          <MiniStat label="Worst Fill" value={`+${Math.abs(tca.worst).toFixed(1)} bps`} color={C.red} />
+          <MiniStat label="Best Fill" value={tca.nn ? bps(tca.best) : "—"} color={signColor(-tca.best, C)} />
+          <MiniStat label="Worst Fill" value={tca.nn ? bps(tca.worst) : "—"} color={signColor(-tca.worst, C)} />
         </div>
       </div>
 
