@@ -1,6 +1,7 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, DollarSign, Eye, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, DollarSign, Eye, FileText, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
+import { PrintTearSheet } from "./components/PrintTearSheet";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext } from "./contexts";
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
@@ -56,6 +57,7 @@ const App = () => {
   const [showAlerts, setShowAlerts] = useState(false);
   const [alertFilter, setAlertFilter] = useState("all");
   const [notif, setNotif] = useState({});
+  const [showTearSheet, setShowTearSheet] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const proMode = true; // Casual/Pro split removed — always show full Pro detail
   const searchRef = useRef(null);
@@ -355,6 +357,10 @@ const App = () => {
               {/* Right: global time filter + utility icons */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                 <TimeframeFilter />
+                {/* Committee tear-sheet export */}
+                <button onClick={() => setShowTearSheet(true)} aria-label="Export committee tear sheet" title="Export committee tear sheet (PDF)" style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }}>
+                  <FileText size={14} /> Tear sheet
+                </button>
                 {/* Notifications bell with count */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
@@ -567,6 +573,9 @@ const App = () => {
                 </div>
               </div>
             )}
+
+            {/* ── Committee / LP tear sheet (print → PDF) ── */}
+            {showTearSheet && <PrintTearSheet onClose={() => setShowTearSheet(false)} />}
 
             {/* ── Settings Panel ── */}
             {showSettings && (
