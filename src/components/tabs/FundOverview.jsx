@@ -537,6 +537,18 @@ const FundOverview = () => {
         </div>
       </div>
 
+      {/* ── Operational texture — completes the card block before the charts ── */}
+      <TierLabel>Operational texture</TierLabel>
+      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+        <Mini label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+        <Mini label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+        <Mini label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
+        <Mini label="Avg hold time" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
+        <Mini label="Best streaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="win / loss run" onClick={() => go("activity")} />
+        <Mini label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="single trade" onClick={() => go("audit")} />
+        <Mini label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
+      </div>
+
       {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
@@ -776,18 +788,6 @@ const FundOverview = () => {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* ════════ TEXTURE — operational color (tertiary) ════════ */}
-      <TierLabel>Operational texture</TierLabel>
-      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-        <Mini label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
-        <Mini label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
-        <Mini label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-        <Mini label="Avg hold time" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
-        <Mini label="Best streaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="win / loss run" onClick={() => go("activity")} />
-        <Mini label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="single trade" onClick={() => go("audit")} />
-        <Mini label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
       </div>
     </div>
   );
