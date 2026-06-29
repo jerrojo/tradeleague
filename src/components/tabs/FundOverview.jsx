@@ -4,12 +4,13 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, BarChart3, Calendar, CheckCircle2, Clock, Cpu, Flame, Gauge, Layers, Percent, Radio,
-  Scale, Sparkles, Target, TrendingDown, TrendingUp, Wallet,
+  Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
+  Percent, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet,
 } from "lucide-react";
-import { InfoTip, StatCard } from "../common";
+import { InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav } from "../../contexts";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
 
@@ -126,6 +127,22 @@ const TodayCard = ({ dash, onClick }) => {
     </div>
   );
 };
+
+/* ── Compact funnel: signals → approved → executed → closed (the pipeline) ── */
+const Funnel = ({ stages }) => (
+  <div style={{ display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap" }}>
+    {stages.map((s, i) => (
+      <div key={s.label} style={{ display: "flex", alignItems: "center", flex: "1 1 0", minWidth: 120 }}>
+        <div className="tl-card" style={{ ...cardStyle, flex: 1, padding: "11px 13px", borderColor: `${s.color}40`, backgroundColor: `${s.color}0d` }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: s.color, ...mono, marginTop: 2, lineHeight: 1.1 }}>{s.value}</div>
+          <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>{s.sub}</div>
+        </div>
+        {i < stages.length - 1 && <ChevronRight size={16} color={C.textFaint} style={{ flexShrink: 0, margin: "0 5px" }} />}
+      </div>
+    ))}
+  </div>
+);
 
 const FundOverview = () => {
   const { within } = useTimeframe();
@@ -301,8 +318,40 @@ const FundOverview = () => {
       rolling.push({ i: i + 1, sharpe: Math.round(sh * 100) / 100 });
     }
 
+    /* ── Robotín filter detail (what the approve/reject is doing) ── */
+    const rejected = allSignals.filter((s) => !s.approved);
+    const rejClosed = rejected.filter((s) => s.hypoClosed);
+    const avoidedPnl = rejClosed.reduce((a, s) => a + s.hypoPnl, 0); // P&L the rejected book WOULD have taken
+    const avoidedLosers = rejClosed.filter((s) => s.hypoPnl < 0).length;
+    const avgConfApproved = trades.length ? trades.reduce((a, s) => a + s.confidence, 0) / trades.length : 0;
+    const avgConfRejected = rejected.length ? rejected.reduce((a, s) => a + s.confidence, 0) / rejected.length : 0;
+
+    /* ── Signal providers: the supply side (monitored vs who actually signaled) ── */
+    const provMap = new Map();
+    allSignals.forEach((s) => {
+      if (!provMap.has(s.trader)) provMap.set(s.trader, { trader: s.trader, isBot: s.isBot, total: 0, approved: 0, execPnl: 0 });
+      const p = provMap.get(s.trader);
+      p.total++;
+      if (s.approved) { p.approved++; if (s.status === "closed") p.execPnl += s.pnl; }
+    });
+    const providers = [...provMap.values()]
+      .map((p) => ({ ...p, approvalRate: p.total ? (p.approved / p.total) * 100 : 0 }))
+      .sort((a, b) => b.execPnl - a.execPnl);
+    const monitoredProviders = mockTraders.length;
+    const signaledProviders = providers.length;
+    const avgSignalsPerProvider = signaledProviders ? allSignals.length / signaledProviders : 0;
+    const humanSignals = allSignals.filter((s) => !s.isBot).length;
+    const botSignals = allSignals.length - humanSignals;
+    const humanExecPnl = closed.filter((s) => !s.isBot).reduce((a, s) => a + s.pnl, 0);
+    const botExecPnl = closed.filter((s) => s.isBot).reduce((a, s) => a + s.pnl, 0);
+    const topProvider = providers[0] || { trader: "—", execPnl: 0, isBot: false };
+    const topProviderShare = netPnl > 0 ? (topProvider.execPnl / netPnl) * 100 : 0;
+
     return {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
+      rejectedCount: rejected.length, avoidedPnl, avoidedLosers, avgConfApproved, avgConfRejected,
+      providers, monitoredProviders, signaledProviders, avgSignalsPerProvider,
+      humanSignals, botSignals, humanExecPnl, botExecPnl, topProvider, topProviderShare,
       trades, closed, active, wins, losses,
       netPnl, winRate, profitFactor, maxDrawdown, maxDrawdownPct,
       equity, balance, returnPct, btcReturnPct, sharpe, sortino, monthly, rDist,
@@ -400,11 +449,17 @@ const FundOverview = () => {
           }}><Cpu size={10} /> Tear Sheet</span>
         </div>
         <div style={{ fontSize: "11px", color: C.textMuted, marginTop: 2 }}>
-          Everything an allocator needs, on one page — simulated.
+          Three views on one page — how the balance is doing, what Robotín is filtering, and how the traders feeding it perform · simulated.
         </div>
       </div>
 
-      {/* ── 2 · Friendly KPI dashboard — scannable cards + balance & today rail ── */}
+      {/* ── 2a · AI commentary — the period in plain English (executive read) ── */}
+      <AICommentary data={data} />
+
+      {/* ════════ PILLAR 1 · BALANCE — how the portfolio is doing ════════ */}
+      <SectionHeader icon={Wallet} title="Balance & portfolio" subtitle="Capital, return and risk of the executed (Robotín-approved) book" color={C.green} />
+
+      {/* ── Friendly KPI dashboard — scannable cards + balance & today rail ── */}
       <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
           {/* row 1 */}
@@ -416,22 +471,17 @@ const FundOverview = () => {
           <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Best Streaks" icon={Flame} accent={C.amber} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streak" onClick={() => go("activity")} />
           <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best & worst single trade" onClick={() => go("audit")} />
-          <Kpi label="Last Month W/L" icon={Target} value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-          {/* row 3 */}
           <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
-          <Kpi label="Trades / Month" icon={BarChart3} value={dash.perMonth.toFixed(1)} sub={`this month ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+          {/* row 3 */}
           <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
-          {/* row 4 */}
           <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub="avg win / avg loss" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
+          {/* row 4 */}
           <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-          {/* row 5 — risk-adjusted + Robotín pipeline (fund identity) */}
           <Kpi label="Sharpe" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Sortino" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Signals Processed" icon={Cpu} accent={C.purple} value={data.allSignalsCount} sub={`${data.approvedCount} approved · ${data.active.length} active`} onClick={() => go("activity")} />
-          <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub="Robotín-approved signals" onClick={() => go("audit", { auditView: "edge" })} />
         </div>
         {/* right rail */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -439,9 +489,6 @@ const FundOverview = () => {
           <TodayCard dash={dash} onClick={() => go("report")} />
         </div>
       </div>
-
-      {/* ── 2b · AI commentary — the period in plain English ── */}
-      <AICommentary data={data} />
 
       {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
       <div style={cardStyle}>
@@ -639,6 +686,68 @@ const FundOverview = () => {
             <div style={{ height: 188, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: C.textMuted }}>Not enough closed trades in this window for a rolling estimate.</div>
           )}
         </div>
+      </div>
+
+      {/* ════════ PILLAR 2 · ROBOTÍN — the signal filter ════════ */}
+      <SectionHeader icon={Cpu} title="Robotín — the signal filter" subtitle="What the AI approves, rejects, and the edge that screening adds" color={C.purple} />
+
+      <Funnel stages={[
+        { label: "Signals published", value: data.allSignalsCount, sub: `${data.signaledProviders} providers`, color: C.blue },
+        { label: "Approved", value: data.approvedCount, sub: `${Math.round(data.approvalRate)}% pass rate`, color: C.purple },
+        { label: "Closed", value: data.closed.length, sub: `${data.active.length} still open`, color: C.cyan },
+        { label: "Wins", value: data.wins.length, sub: `${data.winRate.toFixed(0)}% win rate`, color: C.green },
+      ]} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+        <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub={`${data.approvedCount} of ${data.allSignalsCount} signals`} onClick={() => go("audit", { auditView: "edge" })} />
+        <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.balance - data.allBalance)} valueColor={data.balance - data.allBalance >= 0 ? C.green : C.red} sub={`${data.avoidedLosers} losers screened out`} onClick={() => go("audit", { auditView: "edge" })} />
+        <Kpi label="Avg Confidence" icon={Gauge} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+        <Kpi label="Rejected Signals" icon={GitBranch} accent={C.amber} value={data.rejectedCount} sub="filtered out this period" onClick={() => go("audit", { auditView: "edge" })} />
+      </div>
+
+      {/* ════════ PILLAR 3 · TRADERS — the signal providers ════════ */}
+      <SectionHeader icon={Users} title="Traders — signal providers" subtitle="The supply side: who feeds the fund and how concentrated the contribution is" color={C.blue}
+        right={<span onClick={() => go("traders")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") go("traders"); }} style={{ fontSize: 11, fontWeight: 700, color: C.purple, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>All traders <ChevronRight size={13} /></span>} />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+        <Kpi label="Active Providers" icon={Users} accent={C.blue} value={<><span style={{ color: C.text }}>{data.signaledProviders}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>/</span> <span style={{ color: C.textMuted }}>{data.monitoredProviders}</span></>} sub="signaled / monitored" onClick={() => go("traders")} />
+        <Kpi label="Signals / Provider" icon={BarChart3} value={data.avgSignalsPerProvider.toFixed(1)} sub="average published" onClick={() => go("traders")} />
+        <Kpi label="Human vs Bot" icon={Bot} accent={C.cyan} value={<><span style={{ color: C.text }}>{data.humanSignals}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.cyan }}>{data.botSignals}</span></>} sub="signals (human / bot)" onClick={() => go("traders")} />
+        <Kpi label="Top Provider Share" icon={Target} accent={C.amber} value={`${Math.round(data.topProviderShare)}%`} valueColor={data.topProviderShare >= 50 ? C.amber : C.text} sub={`${data.topProvider.trader} of executed P&L`} onClick={() => go("traders")} />
+      </div>
+
+      {/* Top providers by executed P&L — attribution preview (full detail in Traders / Audit) */}
+      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
+          <Users size={14} color={C.blue} />
+          <span style={{ fontSize: 13, fontWeight: 700 }}>Top providers by executed P&L</span>
+          <span style={{ fontSize: 10, color: C.textMuted, marginLeft: "auto" }}>{data.signaledProviders} providers this period</span>
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {[["Provider", "left"], ["Signals", "right"], ["Approved", "right"], ["Approval", "right"], ["Executed P&L", "right"]].map(([h, al]) => (
+                <th key={h} scope="col" style={{ textAlign: al, padding: "8px 14px", fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.providers.slice(0, 5).map((p) => (
+              <tr key={p.trader} className="card-hover" style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={() => go("traders")}>
+                <td style={{ padding: "9px 14px", fontWeight: 700, color: C.text, display: "flex", alignItems: "center", gap: 6 }}>
+                  {p.isBot ? <Bot size={12} color={C.cyan} /> : <User size={12} color={C.textMuted} />}{p.trader}
+                </td>
+                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.textMuted }}>{p.total}</td>
+                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.text }}>{p.approved}</td>
+                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: p.approvalRate >= 50 ? C.green : C.amber }}>{Math.round(p.approvalRate)}%</td>
+                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, fontWeight: 800, color: p.execPnl >= 0 ? C.green : C.red }}>{usd(p.execPnl)}</td>
+              </tr>
+            ))}
+            {data.providers.length === 0 && (
+              <tr><td colSpan={5} style={{ padding: 16, textAlign: "center", color: C.textMuted }}>No signals from providers in this window.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
