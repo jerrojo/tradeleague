@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
   Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
-  Percent, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet,
+  Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet,
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav } from "../../contexts";
@@ -74,14 +74,15 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
 );
 
 /* ── Account balance card with an equity sparkline (the friendly hero, right rail) ── */
-const AccountBalanceCard = ({ balance, netPnl, returnPct, equity, onClick }) => (
+const AccountBalanceCard = ({ balance, netPnl, returnPct, equity, thisMonth, lastMonth, onClick }) => (
   <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Wallet size={14} /> Account Balance</div>
     <div style={{ fontSize: 30, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
     <div style={{ fontSize: 13, fontWeight: 700, color: netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(netPnl)} ({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</div>
-    <div style={{ height: 96, marginTop: 4 }}>
+    {thisMonth != null && <div style={{ fontSize: 11, color: C.textFaint, marginTop: 1 }}>This month <span style={{ color: thisMonth >= 0 ? C.green : C.red, ...mono }}>{usd(thisMonth)}</span> · last <span style={{ ...mono }}>{usd(lastMonth)}</span></div>}
+    <div style={{ height: 88, marginTop: 4 }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={equity} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
           <defs>
@@ -131,19 +132,52 @@ const TodayCard = ({ dash, onClick }) => {
   );
 };
 
-/* ── Compact funnel: signals → approved → executed → closed (the pipeline) ── */
-const Funnel = ({ stages }) => (
-  <div style={{ display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap" }}>
-    {stages.map((s, i) => (
-      <div key={s.label} style={{ display: "flex", alignItems: "center", flex: "1 1 0", minWidth: 120 }}>
-        <div className="tl-card" style={{ ...cardStyle, flex: 1, padding: "11px 13px", borderColor: `${s.color}40`, backgroundColor: `${s.color}0d` }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{s.label}</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: s.color, ...mono, marginTop: 2, lineHeight: 1.1 }}>{s.value}</div>
-          <div style={{ fontSize: 10, color: C.textMuted, marginTop: 1 }}>{s.sub}</div>
-        </div>
-        {i < stages.length - 1 && <ChevronRight size={16} color={C.textFaint} style={{ flexShrink: 0, margin: "0 5px" }} />}
+/* ── Tier divider label (Headline / Edge quality / Texture) ── */
+const TierLabel = ({ children }) => (
+  <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", margin: "4px 2px 0" }}>{children}</div>
+);
+
+/* ── Compact tertiary stat (texture row) ── */
+const Mini = ({ label, value, sub, valueColor = C.text, onClick }) => (
+  <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+    <span style={{ fontSize: 11, color: C.textMuted }}>{label}</span>
+    <span style={{ fontSize: 15, fontWeight: 700, color: valueColor, ...mono, lineHeight: 1.15 }}>{value}</span>
+    {sub && <span style={{ fontSize: 10.5, color: C.textFaint }}>{sub}</span>}
+  </div>
+);
+
+/* ── Master pipeline node — Robotín is the highlighted hinge ── */
+const PipeNode = ({ label, value, sub, color, icon: Icon, hinge }) => (
+  <div className="tl-card" style={{ ...cardStyle, flex: hinge ? "1.18 1 0" : "1 1 0", minWidth: hinge ? 130 : 108, padding: "12px 14px", borderColor: hinge ? C.purple : C.border, borderWidth: hinge ? 1.5 : 1, backgroundColor: hinge ? `${C.purple}14` : C.cardElev, position: "relative" }}>
+    {hinge && <span style={{ position: "absolute", top: -9, left: 12, backgroundColor: C.purple, color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", padding: "1px 7px", borderRadius: 4 }}>the filter</span>}
+    <div style={{ fontSize: 11, color: hinge ? "#b9a7f0" : C.textFaint, display: "flex", alignItems: "center", gap: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px" }}>{Icon && <Icon size={12} />}{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 900, color, ...mono, marginTop: 3, lineHeight: 1.1 }}>{value}</div>
+    <div style={{ fontSize: 10.5, color: C.textMuted, marginTop: 1 }}>{sub}</div>
+  </div>
+);
+
+/* ── Master pipeline: providers → signals → Robotín → executed → P&L (the spine) ── */
+const Pipeline = ({ stages, edge, onClick }) => (
+  <div className={onClick ? "tl-card-int" : undefined} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: 16 }}>
+    <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>From providers to P&L — the fund&apos;s flow</div>
+    <div style={{ display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap" }}>
+      {stages.map((s, i) => (
+        <Fragment key={s.label}>
+          <PipeNode {...s} />
+          {i < stages.length - 1 && <div style={{ display: "flex", alignItems: "center" }}><ChevronRight size={16} color={C.textFaint} style={{ margin: "0 5px", flexShrink: 0 }} /></div>}
+        </Fragment>
+      ))}
+    </div>
+    {edge && (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "9px 12px", border: `1px solid ${C.green}40`, backgroundColor: `${C.green}0d`, borderRadius: 8 }}>
+        <ShieldCheck size={16} color={C.green} style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{edge}</span>
       </div>
-    ))}
+    )}
   </div>
 );
 
@@ -452,43 +486,53 @@ const FundOverview = () => {
           }}><Cpu size={10} /> Tear Sheet</span>
         </div>
         <div style={{ fontSize: "11px", color: C.textMuted, marginTop: 2 }}>
-          Three views on one page — how the balance is doing, what Robotín is filtering, and how the traders feeding it perform · simulated.
+          One page, one flow — providers feed signals, Robotín filters them, and the balance is the result · simulated.
         </div>
       </div>
 
       {/* ── 2a · AI commentary — the period in plain English (executive read) ── */}
       <AICommentary data={data} />
 
-      {/* ════════ PILLAR 1 · BALANCE — how the portfolio is doing ════════ */}
+      {/* ── 2b · The spine: providers → Robotín → P&L (integrates all three views) ── */}
+      <Pipeline
+        onClick={() => go("audit", { auditView: "edge" })}
+        stages={[
+          { label: "Providers", value: data.monitoredProviders, sub: `${data.signaledProviders} active`, color: C.blue, icon: Users },
+          { label: "Signals", value: data.allSignalsCount, sub: "published", color: C.text, icon: Radio },
+          { label: "Robotín approves", value: data.approvedCount, sub: `${Math.round(data.approvalRate)}% pass rate`, color: C.purple, icon: Cpu, hinge: true },
+          { label: "Executed", value: data.closed.length, sub: `${data.active.length} open`, color: C.cyan, icon: CheckCircle2 },
+          { label: "Result", value: usd(data.netPnl), sub: `${data.wins.length} wins · ${data.winRate.toFixed(0)}%`, color: data.netPnl >= 0 ? C.green : C.red, icon: TrendingUp },
+        ]}
+        edge={<>Robotín screened <b style={{ color: C.text }}>{data.rejectedCount}</b> signals ({data.avoidedLosers} losers) — adding <b style={{ color: C.green }}>{usd(data.balance - data.allBalance)}</b> of edge vs. taking everything.</>}
+      />
+
+      {/* ════════ BALANCE — how the portfolio is doing ════════ */}
       <SectionHeader icon={Wallet} title="Balance & portfolio" subtitle="Capital, return and risk of the executed (Robotín-approved) book" color={C.green} />
 
-      {/* ── Friendly KPI dashboard — scannable cards + balance & today rail ── */}
       <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-          {/* row 1 */}
-          <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`this month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("audit")} />
-          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(2)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
-          <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this month ${dash.lastM.winRate}% · last ${dash.prevM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Wins vs Losses" icon={Target} value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit")} />
-          {/* row 2 */}
-          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Best Streaks" icon={Flame} accent={C.amber} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streak" onClick={() => go("activity")} />
-          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best & worst single trade" onClick={() => go("audit")} />
-          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
-          {/* row 3 */}
-          <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
-          <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub="avg win / avg loss" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
-          {/* row 4 */}
-          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Sharpe" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Sortino" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Tier 1 — headline (go/no-go) */}
+          <TierLabel>Headline</TierLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.balance - data.allBalance)} valueColor={data.balance - data.allBalance >= 0 ? C.green : C.red} sub={`${data.avoidedLosers} losers screened`} onClick={() => go("audit", { auditView: "edge" })} />
+          </div>
+          {/* Tier 2 — quality & shape of the edge */}
+          <TierLabel>Edge quality</TierLabel>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+            <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
+            <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub={`${data.approvedCount} of ${data.allSignalsCount} signals`} onClick={() => go("audit", { auditView: "edge" })} />
+            <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+          </div>
         </div>
         {/* right rail */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} onClick={() => go("engine")} />
+          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} thisMonth={dash.thisMonthPnl} lastMonth={dash.lastMonthPnl} onClick={() => go("engine")} />
           <TodayCard dash={dash} onClick={() => go("report")} />
         </div>
       </div>
@@ -689,24 +733,7 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ════════ PILLAR 2 · ROBOTÍN — the signal filter ════════ */}
-      <SectionHeader icon={Cpu} title="Robotín — the signal filter" subtitle="What the AI approves, rejects, and the edge that screening adds" color={C.purple} />
-
-      <Funnel stages={[
-        { label: "Signals published", value: data.allSignalsCount, sub: `${data.signaledProviders} providers`, color: C.blue },
-        { label: "Approved", value: data.approvedCount, sub: `${Math.round(data.approvalRate)}% pass rate`, color: C.purple },
-        { label: "Closed", value: data.closed.length, sub: `${data.active.length} still open`, color: C.cyan },
-        { label: "Wins", value: data.wins.length, sub: `${data.winRate.toFixed(0)}% win rate`, color: C.green },
-      ]} />
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-        <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub={`${data.approvedCount} of ${data.allSignalsCount} signals`} onClick={() => go("audit", { auditView: "edge" })} />
-        <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.balance - data.allBalance)} valueColor={data.balance - data.allBalance >= 0 ? C.green : C.red} sub={`${data.avoidedLosers} losers screened out`} onClick={() => go("audit", { auditView: "edge" })} />
-        <Kpi label="Avg Confidence" icon={Gauge} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
-        <Kpi label="Rejected Signals" icon={GitBranch} accent={C.amber} value={data.rejectedCount} sub="filtered out this period" onClick={() => go("audit", { auditView: "edge" })} />
-      </div>
-
-      {/* ════════ PILLAR 3 · TRADERS — the signal providers ════════ */}
+      {/* ════════ TRADERS — the signal providers ════════ */}
       <SectionHeader icon={Users} title="Traders — signal providers" subtitle="The supply side: who feeds the fund and how concentrated the contribution is" color={C.blue}
         right={<span onClick={() => go("traders")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") go("traders"); }} style={{ fontSize: 11, fontWeight: 700, color: C.purple, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>All traders <ChevronRight size={13} /></span>} />
 
@@ -749,6 +776,16 @@ const FundOverview = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* ════════ TEXTURE — operational color (tertiary) ════════ */}
+      <TierLabel>Operational texture</TierLabel>
+      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10 }}>
+        <Mini label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+        <Mini label="Avg hold time" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
+        <Mini label="Best streaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="win / loss run" onClick={() => go("activity")} />
+        <Mini label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="single trade" onClick={() => go("audit")} />
+        <Mini label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
       </div>
     </div>
   );
