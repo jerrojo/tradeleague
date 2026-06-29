@@ -521,7 +521,7 @@ const FundOverview = () => {
           {/* Tier 2 — quality & shape of the edge */}
           <TierLabel>Edge quality</TierLabel>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-            <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
+            <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected per trade" onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
@@ -780,8 +780,10 @@ const FundOverview = () => {
 
       {/* ════════ TEXTURE — operational color (tertiary) ════════ */}
       <TierLabel>Operational texture</TierLabel>
-      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10 }}>
+      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
         <Mini label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+        <Mini label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+        <Mini label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
         <Mini label="Avg hold time" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
         <Mini label="Best streaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="win / loss run" onClick={() => go("activity")} />
         <Mini label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="single trade" onClick={() => go("audit")} />
