@@ -22,12 +22,14 @@ const TradersTab = () => {
   const [search, setSearch] = useState("");
   const { openProfile } = useProfile();
 
-  // Robotín approval per trader (how many of their signals R1 passed) — replaces "Copiers"
+  // Robotín approval + executed-PnL attribution per trader (the allocator's key
+  // question: which provider's APPROVED signals actually made the fund money)
   const robotinByTrader = useMemo(() => {
     const m = {};
     ROBOTIN_COINS.forEach((c) => coinSignals(c, coinCandles(c)).forEach((s) => {
-      const r = m[s.trader] || (m[s.trader] = { total: 0, approved: 0 });
-      r.total++; if (s.approved) r.approved++;
+      const r = m[s.trader] || (m[s.trader] = { total: 0, approved: 0, execPnl: 0 });
+      r.total++;
+      if (s.approved) { r.approved++; if (s.status === "closed") r.execPnl += s.pnl; }
     }));
     Object.values(m).forEach((r) => { r.rate = r.total ? Math.round((r.approved / r.total) * 100) : 0; });
     return m;
@@ -92,7 +94,7 @@ const TradersTab = () => {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr>
                 {/* [label, tip, sortKey] — numeric columns sort on click */}
-                {[["Rank",null,null],["Trader",null,null],["Alpha","alpha","alpha"],["Trend",null,null],["Streak","streak","streak"],["WR / PF / DD",null,"winRate"],["PnL",null,"pnl"],["Expect.","expectancy","expectancy"],["Robotín approval",null,"approval"]]
+                {[["Rank",null,null],["Trader",null,null],["Alpha","alpha","alpha"],["Trend",null,null],["Streak","streak","streak"],["WR / PF / DD",null,"winRate"],["Track record",null,"pnl"],["Expect.","expectancy","expectancy"],["Robotín approval",null,"approval"],["Fund P&L",null,"fundpnl"]]
                   .filter(([h]) => proMode || (h !== "Trend" && h !== "Expect."))
                   .map(([h,tip,key]) => {
                     const active = key && sort.key === key;
@@ -117,6 +119,7 @@ const TradersTab = () => {
                     alpha: (t) => calcAlphaScore(t), streak: (t) => t.streak, winRate: (t) => t.winRate,
                     pnl: (t) => t.pnl, expectancy: (t) => Number(calcExpectancy(t)),
                     approval: (t) => (robotinByTrader[t.name]?.rate || 0),
+                    fundpnl: (t) => (robotinByTrader[t.name]?.execPnl || 0),
                   };
                   const f = acc[sort.key] || acc.alpha; const d = sort.dir === "asc" ? 1 : -1;
                   filtered.sort((a, b) => (f(a) - f(b)) * d);
@@ -190,6 +193,12 @@ const TradersTab = () => {
                           <span style={{ fontWeight: "800", fontSize: "12px", color: r.rate >= 70 ? C.green : r.rate >= 50 ? C.amber : C.red }}>{r.rate}%</span>
                           <span style={{ fontSize: "9px", color: C.textFaint }}>{r.approved}/{r.total} signals</span>
                         </div>
+                      ); })()}
+                    </td>
+                    {/* Fund P&L — the executed-PnL this provider's approved signals contributed to VARIV */}
+                    <td style={{ ...tdStyle }}>
+                      {(() => { const ep = robotinByTrader[t.name]?.execPnl || 0; return (
+                        <span style={{ ...mono, fontWeight: "800", fontSize: "12px", color: ep > 0 ? C.green : ep < 0 ? C.red : C.textFaint }}>{ep >= 0 ? "+" : "−"}${Math.abs(Math.round(ep)).toLocaleString()}</span>
                       ); })()}
                     </td>
                   </tr>

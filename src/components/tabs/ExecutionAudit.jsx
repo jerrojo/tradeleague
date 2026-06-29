@@ -254,6 +254,19 @@ const ExecutionAudit = () => {
     return { nn, avg, beat, best, worst, cost };
   }, [executed]);
 
+  /* ── Confidence calibration: does R1's stated confidence predict the outcome? ──
+     Bucket closed trades by approval confidence and show realized TP-hit rate per
+     band. A well-calibrated filter should win MORE often as confidence rises. */
+  const calibration = useMemo(() => {
+    const closed = executed.filter((s) => s.status === "closed");
+    const buckets = [[60, 70], [70, 80], [80, 90], [90, 101]].map(([lo, hi]) => ({ lo, hi, label: hi > 100 ? `${lo}+` : `${lo}–${hi - 1}`, n: 0, wins: 0 }));
+    closed.forEach((s) => { const b = buckets.find((x) => s.confidence >= x.lo && s.confidence < x.hi); if (b) { b.n++; if (s.hit === "TP") b.wins++; } });
+    const rows = buckets.map((b) => ({ ...b, wr: b.n ? (b.wins / b.n) * 100 : 0 }));
+    const used = rows.filter((b) => b.n > 0);
+    const monotonic = used.length > 1 && used.every((b, i) => i === 0 || b.wr >= used[i - 1].wr - 8); // allows small noise
+    return { rows, monotonic, any: used.length > 0 };
+  }, [executed]);
+
   /* ── breakdown by asset ── */
   const byAsset = useMemo(() => {
     const map = new Map();
@@ -389,6 +402,29 @@ const ExecutionAudit = () => {
           <MiniStat label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
           <MiniStat label="Best Fill" value={`−${Math.abs(tca.best).toFixed(1)} bps`} color={C.green} />
           <MiniStat label="Worst Fill" value={`+${Math.abs(tca.worst).toFixed(1)} bps`} color={C.red} />
+        </div>
+      </div>
+
+      {/* ─────────── CONFIDENCE CALIBRATION ─────────── */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
+          Confidence Calibration
+        </div>
+        <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 10 }}>
+          Realized win rate by Robotín's approval confidence — a calibrated filter wins more as confidence rises.
+          {calibration.any && <> Current read: <span style={{ color: calibration.monotonic ? C.green : C.amber, fontWeight: 700 }}>{calibration.monotonic ? "well-calibrated" : "weakly calibrated"}</span>.</>}
+        </div>
+        <div style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 10 }}>
+          {calibration.rows.map((b) => (
+            <div key={b.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 56, fontSize: 11, fontWeight: 700, color: C.textMuted, ...mono }}>{b.label}%</span>
+              <div style={{ flex: 1, height: 16, backgroundColor: C.bg, borderRadius: 4, overflow: "hidden", position: "relative" }}>
+                <div style={{ width: `${b.n ? b.wr : 0}%`, height: "100%", backgroundColor: b.wr >= 50 ? C.green : C.amber, borderRadius: 4, transition: "width .3s" }} />
+              </div>
+              <span style={{ width: 44, textAlign: "right", fontSize: 12, fontWeight: 800, color: b.n ? (b.wr >= 50 ? C.green : C.amber) : C.textFaint, ...mono }}>{b.n ? `${Math.round(b.wr)}%` : "—"}</span>
+              <span style={{ width: 64, textAlign: "right", fontSize: 9.5, color: C.textFaint, ...mono }}>{b.n} trade{b.n === 1 ? "" : "s"}</span>
+            </div>
+          ))}
         </div>
       </div>
 
