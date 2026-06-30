@@ -5,11 +5,11 @@ import {
 } from "recharts";
 import {
   Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
-  Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet,
+  Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet, XCircle,
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav } from "../../contexts";
-import { ALL_SIGNALS } from "../../data/robotin";
+import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { C, cardStyle, mono } from "../../theme";
@@ -148,38 +148,102 @@ const Mini = ({ label, value, sub, valueColor = C.text, onClick }) => (
   </div>
 );
 
-/* ── Master pipeline node — Robotín is the highlighted hinge ── */
-const PipeNode = ({ label, value, sub, color, icon: Icon, hinge }) => (
-  <div className="tl-card" style={{ ...cardStyle, flex: hinge ? "1.18 1 0" : "1 1 0", minWidth: hinge ? 130 : 108, padding: "12px 14px", borderColor: hinge ? C.purple : C.border, borderWidth: hinge ? 1.5 : 1, backgroundColor: hinge ? `${C.purple}14` : C.cardElev, position: "relative" }}>
-    {hinge && <span style={{ position: "absolute", top: -9, left: 12, backgroundColor: C.purple, color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", padding: "1px 7px", borderRadius: 4 }}>the filter</span>}
-    <div style={{ fontSize: 11, color: hinge ? "#b9a7f0" : C.textFaint, display: "flex", alignItems: "center", gap: 5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px" }}>{Icon && <Icon size={12} />}{label}</div>
-    <div style={{ fontSize: 22, fontWeight: 900, color, ...mono, marginTop: 3, lineHeight: 1.1 }}>{value}</div>
-    <div style={{ fontSize: 10.5, color: C.textMuted, marginTop: 1 }}>{sub}</div>
-  </div>
+/* ── One book of the fork: a decision → result → outcomes strip ──
+   variant "approved" = real executed P&L (solid). variant "rejected" = the
+   counterfactual we never ran (ghost/dashed, "sim" tag) so a glance never confuses
+   simulated with realized. Both carry the same lifecycle so you can compare like-for-like. */
+const SimTag = () => (
+  <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: C.amber, backgroundColor: `${C.amber}1c`, border: `1px solid ${C.amber}40`, padding: "0px 5px", borderRadius: 3 }}>sim</span>
 );
-
-/* ── Master pipeline: providers → signals → Robotín → executed → P&L (the spine) ── */
-const Pipeline = ({ stages, edge, onClick }) => (
-  <div className={onClick ? "tl-card-int" : undefined} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
-    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-    style={{ ...cardStyle, padding: 16 }}>
-    <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>From providers to P&L — the fund&apos;s flow</div>
-    <div style={{ display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap" }}>
-      {stages.map((s, i) => (
-        <Fragment key={s.label}>
-          <PipeNode {...s} />
-          {i < stages.length - 1 && <div style={{ display: "flex", alignItems: "center" }}><ChevronRight size={16} color={C.textFaint} style={{ margin: "0 5px", flexShrink: 0 }} /></div>}
-        </Fragment>
-      ))}
-    </div>
-    {edge && (
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "9px 12px", border: `1px solid ${C.green}40`, backgroundColor: `${C.green}0d`, borderRadius: 8 }}>
-        <ShieldCheck size={16} color={C.green} style={{ flexShrink: 0 }} />
-        <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{edge}</span>
+const Branch = ({ variant, icon: Icon, label, total, sub, result, resultLabel, wins, losses, winGross, lossGross, winRate, onClick }) => {
+  const ghost = variant === "rejected";
+  const accent = ghost ? C.textMuted : C.purple;
+  const resColor = result >= 0 ? C.green : C.red;
+  return (
+    <div className="tl-card-int" onClick={onClick} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }}
+      style={{
+        display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap", borderRadius: 10, overflow: "hidden", cursor: "pointer",
+        border: `1px ${ghost ? "dashed" : "solid"} ${ghost ? C.border : `${C.purple}55`}`,
+        backgroundColor: ghost ? "transparent" : `${C.purple}0a`,
+      }}>
+      {/* decision */}
+      <div style={{ flex: "1.3 1 0", minWidth: 168, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4, borderRight: `1px solid ${C.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Icon size={13} color={accent} />
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: accent }}>{label}</span>
+          {ghost && <SimTag />}
+        </div>
+        <div style={{ fontSize: 23, fontWeight: 900, ...mono, color: C.text, lineHeight: 1.05 }}>{total}</div>
+        <div style={{ fontSize: 10, color: C.textFaint, ...mono }}>{sub}</div>
       </div>
-    )}
-  </div>
-);
+      {/* result */}
+      <div style={{ flex: "1 1 0", minWidth: 132, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4, justifyContent: "center", borderRight: `1px solid ${C.border}` }}>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{resultLabel}</span>
+        <div style={{ fontSize: 20, fontWeight: 900, ...mono, color: resColor, opacity: ghost ? 0.85 : 1, lineHeight: 1.05 }}>{usd(result)}</div>
+      </div>
+      {/* outcomes */}
+      <div style={{ flex: "1 1 0", minWidth: 148, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 5, justifyContent: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: C.green }}><TrendingUp size={12} /> {wins} wins</span>
+          <span style={{ fontSize: 11, ...mono, color: C.green }}>{usd(winGross)}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: C.red }}><TrendingDown size={12} /> {losses} losses</span>
+          <span style={{ fontSize: 11, ...mono, color: C.red }}>{usd(-lossGross)}</span>
+        </div>
+        <div style={{ fontSize: 9.5, color: C.textFaint }}>{Math.round(winRate)}% win rate{ghost ? " · would-be" : ""}</div>
+      </div>
+    </div>
+  );
+};
+
+/* ── The fork: ONE signal trunk splitting into Robotín's two books (approved vs
+   rejected), each resolving to a result + win/loss, with a double-edge remate that
+   reads both faces of the filter — losers it dodged AND opportunity still in play. ── */
+const ForkPipeline = ({ data, onClick }) => {
+  const a = data.approvedBranch, r = data.rejectedBranch, edge = data.filterEdge;
+  return (
+    <div style={{ ...cardStyle, padding: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>From signals to P&amp;L — Robotín&apos;s two books</div>
+        <div style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>{data.allSignalsCount} signals · {Math.round(data.approvalRate)}% approved</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "stretch", gap: 12, flexWrap: "wrap" }}>
+        {/* trunk — the single source both books branch from */}
+        <div className="tl-card" style={{ ...cardStyle, backgroundColor: C.cardElev, flex: "0 1 152px", minWidth: 132, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
+          <div style={{ fontSize: 10, color: C.textFaint, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", display: "flex", alignItems: "center", gap: 5 }}><Radio size={12} /> Signals</div>
+          <div style={{ fontSize: 26, fontWeight: 900, ...mono, lineHeight: 1.05 }}>{data.allSignalsCount}</div>
+          <div style={{ fontSize: 10, color: C.textMuted }}>published · {data.signaledProviders} providers</div>
+        </div>
+        {/* fork connector */}
+        <div style={{ display: "flex", alignItems: "center" }}><GitBranch size={18} color={C.purple} style={{ flexShrink: 0 }} /></div>
+        {/* the two books, stacked */}
+        <div style={{ flex: "3 1 0", minWidth: 300, display: "flex", flexDirection: "column", gap: 10 }}>
+          <Branch variant="approved" icon={CheckCircle2} label="Approved · executed" total={a.total}
+            sub={`${a.closed} closed · ${a.active} open · ${a.pending} pending`} result={a.result} resultLabel="Realized result"
+            wins={a.wins} losses={a.losses} winGross={a.winGross} lossGross={a.lossGross} winRate={a.winRate}
+            onClick={() => onClick("executions")} />
+          <Branch variant="rejected" icon={XCircle} label="Rejected · not taken" total={r.total}
+            sub={`${r.closed} resolved · ${r.active} open · ${r.pending} pending`} result={r.result} resultLabel="If executed"
+            wins={r.wins} losses={r.losses} winGross={r.winGross} lossGross={r.lossGross} winRate={r.winRate}
+            onClick={() => onClick("edge")} />
+        </div>
+      </div>
+      {/* double-edge remate — both faces of the filter */}
+      <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: `1px solid ${edge >= 0 ? C.green : C.red}40`, backgroundColor: `${edge >= 0 ? C.green : C.red}0d` }}>
+          <ShieldCheck size={16} color={edge >= 0 ? C.green : C.red} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.</span>
+        </div>
+        <div style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: `1px solid ${C.amber}40`, backgroundColor: `${C.amber}0d` }}>
+          <Clock size={16} color={C.amber} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}><b style={{ color: C.text }}>{r.active}</b> rejected still open are {r.activeUnreal >= 0 ? "up" : "down"} <b style={{ color: r.activeUnreal >= 0 ? C.green : C.red }}>{usd(r.activeUnreal)}</b> — opportunity {r.activeUnreal >= 0 ? "in progress" : "dodged"}.</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FundOverview = () => {
   const { within } = useTimeframe();
@@ -363,6 +427,41 @@ const FundOverview = () => {
     const avgConfApproved = trades.length ? trades.reduce((a, s) => a + s.confidence, 0) / trades.length : 0;
     const avgConfRejected = rejected.length ? rejected.reduce((a, s) => a + s.confidence, 0) / rejected.length : 0;
 
+    /* ═══ THE FORK — Robotín's two books, side by side ═══
+       Approved = REAL executed trades (realized P&L). Rejected = the COUNTERFACTUAL:
+       we never took these, but we track what they'd be doing live, so an allocator can
+       see whether the filter dodged losers or left money on the table. Both branches
+       carry the same lifecycle (closed → active → pending); the rejected branch's
+       "open" P&L is an unrealized mark vs. the latest close (it was never actually run). */
+    const pending = trades.filter((t) => t.status === "pending");
+    // mark-to-market for a still-open hypothetical position vs the coin's latest close
+    const markOf = (s) => {
+      const last = lastCloseByCoin[s.coin];
+      if (last == null) return 0;
+      const sign = s.dir === "LONG" ? 1 : -1;
+      return Math.round(sign * ((last - s.entry) / s.entry) * s.lev * s.notional * 100) / 100;
+    };
+    const rejActive = rejected.filter((s) => s.hypoStatus === "active");
+    const rejPending = rejected.filter((s) => s.hypoStatus === "pending");
+    const rejWins = rejClosed.filter((s) => s.hypoPnl > 0);
+    const rejLosses = rejClosed.filter((s) => s.hypoPnl < 0);
+    const rejWinGross = rejWins.reduce((a, s) => a + s.hypoPnl, 0);
+    const rejLossGross = Math.abs(rejLosses.reduce((a, s) => a + s.hypoPnl, 0));
+    const rejActiveUnreal = rejActive.reduce((a, s) => a + markOf(s), 0);  // opportunity in progress
+    const rejActiveWinning = rejActive.filter((s) => markOf(s) > 0).length;
+    const filterEdge = -avoidedPnl; // realized edge: rejected book net was avoidedPnl; not taking it added the inverse
+
+    const approvedBranch = {
+      total: approvedCount, closed: closed.length, active: active.length, pending: pending.length,
+      result: netPnl, wins: wins.length, losses: losses.length, winGross: grossWin, lossGross: grossLoss, winRate,
+    };
+    const rejectedBranch = {
+      total: rejected.length, closed: rejClosed.length, active: rejActive.length, pending: rejPending.length,
+      result: avoidedPnl, wins: rejWins.length, losses: rejLosses.length, winGross: rejWinGross, lossGross: rejLossGross,
+      winRate: rejClosed.length ? (rejWins.length / rejClosed.length) * 100 : 0,
+      activeUnreal: rejActiveUnreal, activeWinning: rejActiveWinning,
+    };
+
     /* ── Signal providers: the supply side (monitored vs who actually signaled) ── */
     const provMap = new Map();
     allSignals.forEach((s) => {
@@ -387,6 +486,7 @@ const FundOverview = () => {
     return {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
       rejectedCount: rejected.length, avoidedPnl, avoidedLosers, avgConfApproved, avgConfRejected,
+      approvedBranch, rejectedBranch, filterEdge,
       providers, monitoredProviders, signaledProviders, avgSignalsPerProvider,
       humanSignals, botSignals, humanExecPnl, botExecPnl, topProvider, topProviderShare,
       trades, closed, active, wins, losses,
@@ -493,17 +593,10 @@ const FundOverview = () => {
       {/* ── 2a · AI commentary — the period in plain English (executive read) ── */}
       <AICommentary data={data} />
 
-      {/* ── 2b · The spine: providers → Robotín → P&L (integrates all three views) ── */}
-      <Pipeline
-        onClick={() => go("audit", { auditView: "edge" })}
-        stages={[
-          { label: "Providers", value: data.monitoredProviders, sub: `${data.signaledProviders} active`, color: C.blue, icon: Users },
-          { label: "Signals", value: data.allSignalsCount, sub: "published", color: C.text, icon: Radio },
-          { label: "Robotín approves", value: data.approvedCount, sub: `${Math.round(data.approvalRate)}% pass rate`, color: C.purple, icon: Cpu, hinge: true },
-          { label: "Executed", value: data.closed.length, sub: `${data.active.length} open`, color: C.cyan, icon: CheckCircle2 },
-          { label: "Result", value: usd(data.netPnl), sub: `${data.wins.length} wins · ${data.winRate.toFixed(0)}%`, color: data.netPnl >= 0 ? C.green : C.red, icon: TrendingUp },
-        ]}
-        edge={<>Robotín screened <b style={{ color: C.text }}>{data.rejectedCount}</b> signals ({data.avoidedLosers} losers) — adding <b style={{ color: C.green }}>{usd(data.balance - data.allBalance)}</b> of edge vs. taking everything.</>}
+      {/* ── 2b · The fork: Robotín's two books — approved (real) vs rejected (counterfactual) ── */}
+      <ForkPipeline
+        data={data}
+        onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))}
       />
 
       {/* ════════ BALANCE — how the portfolio is doing ════════ */}
@@ -516,7 +609,7 @@ const FundOverview = () => {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
             <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.balance - data.allBalance)} valueColor={data.balance - data.allBalance >= 0 ? C.green : C.red} sub={`${data.avoidedLosers} losers screened`} onClick={() => go("audit", { auditView: "edge" })} />
+            <Kpi label="Total Return" icon={TrendingUp} accent={C.green} value={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}%`} valueColor={data.returnPct >= 0 ? C.green : C.red} sub={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts vs BTC buy-and-hold`} onClick={() => go("audit", { auditView: "analytics" })} />
           </div>
           {/* Tier 2 — quality & shape of the edge */}
           <TierLabel>Edge quality</TierLabel>
@@ -526,7 +619,6 @@ const FundOverview = () => {
             <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected per trade" onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
             <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Approval Rate" icon={CheckCircle2} accent={C.cyan} value={`${Math.round(data.approvalRate)}%`} valueColor={C.cyan} sub={`${data.approvedCount} of ${data.allSignalsCount} signals`} onClick={() => go("audit", { auditView: "edge" })} />
             <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
           </div>
         </div>

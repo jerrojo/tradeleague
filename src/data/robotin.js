@@ -153,6 +153,11 @@ export function coinSignals(coin, candles) {
     const hres = resolve(candles, ei, dir, entry, tp1, sl);
     const hypoClosed = !!(hres && hres.status === "closed");
     const hypoPnl = hypoClosed ? round(sign * ((hres.exit - entry) / entry) * lev * notional) : 0;
+    // Hypothetical lifecycle for EVERY signal (what the counterfactual is doing right
+    // now) — mirror the approved pending rule so a fresh unfilled limit reads PENDING
+    // not EXPIRED. Lets the rejected branch show live state, not just closed outcomes.
+    let hypoStatus = hres ? hres.status : "expired";
+    if (hypoStatus === "expired" && recent) hypoStatus = "pending";
 
     // Actual execution path (only if approved)
     let res = approved ? hres : null;
@@ -176,7 +181,7 @@ export function coinSignals(coin, candles) {
       activeIdx: res?.activeIdx ?? null, exitIdx: res?.exitIdx ?? null, exit: res?.exit ?? null, hit: res?.hit ?? "NONE",
       pnlPct, pnl,
       // hypothetical "if executed" outcome for EVERY signal (full-book vs executed comparison)
-      hypoClosed, hypoPnl, hypoExitIdx: hres?.exitIdx ?? null,
+      hypoClosed, hypoPnl, hypoExitIdx: hres?.exitIdx ?? null, hypoStatus, hypoActiveIdx: hres?.activeIdx ?? null,
       // audit: what the signal implied vs what happened
       signalOutcome: "TP", // a published signal always claims it will hit TP
       auditOutcome: res ? (res.status === "closed" ? (res.hit === "TP" ? "TP" : "SL") : res.status === "active" ? "OPEN" : res.status === "pending" ? "PENDING" : "NO ENTRY") : null,
