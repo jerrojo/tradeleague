@@ -22,18 +22,34 @@ const fmtDur = (h) => (h == null ? "—" : h < 1 ? `${Math.round(h * 60)}m` : `$
 /* compact dark field */
 const Field = ({ label, children }) => (
   <label style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-    <span style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
     {children}
   </label>
 );
-const inputStyle = { backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 7, color: C.text, fontSize: 13, fontWeight: 600, padding: "8px 10px", outline: "none", fontFamily: "inherit", width: "100%", boxSizing: "border-box" };
+const CTRL_H = 38;
+const inputStyle = { backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, fontSize: 13, fontWeight: 600, padding: "0 11px", height: CTRL_H, outline: "none", fontFamily: "inherit", width: "100%", boxSizing: "border-box" };
+/* select with a single custom chevron (matches the Outcome multi-select) */
 const Sel = ({ value, onChange, options }) => (
-  <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
-    {options.map((o) => <option key={o} value={o} style={{ backgroundColor: C.card }}>{o}</option>)}
-  </select>
+  <div style={{ position: "relative" }}>
+    <select value={value} onChange={(e) => onChange(e.target.value)} style={{ ...inputStyle, cursor: "pointer", appearance: "none", WebkitAppearance: "none", MozAppearance: "none", paddingRight: 30 }}>
+      {options.map((o) => <option key={o} value={o} style={{ backgroundColor: C.card }}>{o}</option>)}
+    </select>
+    <ChevronDown size={14} color={C.textMuted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+  </div>
 );
 const Num = ({ value, onChange, step = 1, min, max, w }) => (
-  <input type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, ...mono }} />
+  <input className="tl-num" type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, ...mono }} />
+);
+/* segmented toggle — one consistent style for every binary/mode switch */
+const Seg = ({ value, onChange, options }) => (
+  <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${C.border}`, overflow: "hidden", height: CTRL_H }}>
+    {options.map((o) => {
+      const on = value === o.v;
+      return (
+        <button key={o.v} onClick={() => onChange(o.v)} aria-pressed={on} style={{ padding: "0 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: on ? C.blue : "transparent", color: on ? "#fff" : C.textMuted, fontFamily: "inherit" }}>{o.label}</button>
+      );
+    })}
+  </div>
 );
 /* multi-select dropdown with checkboxes (Outcome filter) */
 const MultiSel = ({ selected, options, onToggle, onAll }) => {
@@ -298,7 +314,7 @@ const ExecutionEngine = () => {
               </div>
             </div>
             <Field label="Trailing">
-              <button onClick={() => set({ trailing: !cfg.trailing })} style={{ ...inputStyle, width: 110, cursor: "pointer", fontWeight: 700, color: cfg.trailing ? "#fff" : C.textMuted, backgroundColor: cfg.trailing ? C.green : C.cardElev, borderColor: cfg.trailing ? C.green : C.border }}>{cfg.trailing ? "On" : "Off"}</button>
+              <Seg value={cfg.trailing ? "on" : "off"} onChange={(v) => set({ trailing: v === "on" })} options={[{ v: "on", label: "On" }, { v: "off", label: "Off" }]} />
             </Field>
           </div>
         </div>
@@ -309,9 +325,7 @@ const ExecutionEngine = () => {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><DollarSign size={12} /> Sizing & costs</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
               <Field label="Sizing">
-                <div style={{ display: "inline-flex", borderRadius: 7, border: `1px solid ${C.border}`, overflow: "hidden" }}>
-                  {["margin", "risk"].map((m) => <button key={m} onClick={() => set({ sizing: m })} style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: cfg.sizing === m ? C.blue : "transparent", color: cfg.sizing === m ? "#fff" : C.textMuted, fontFamily: "inherit" }}>{m === "margin" ? "Margin" : "Risk"}</button>)}
-                </div>
+                <Seg value={cfg.sizing} onChange={(v) => set({ sizing: v })} options={[{ v: "margin", label: "Margin" }, { v: "risk", label: "Risk" }]} />
               </Field>
               {cfg.sizing === "risk"
                 ? <Field label="Risk / trade (%)"><Num value={cfg.riskPct} onChange={(v) => set({ riskPct: v })} step={0.05} min={0} /></Field>
@@ -325,9 +339,7 @@ const ExecutionEngine = () => {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
               <Field label="Starting capital ($)"><Num value={cfg.capital} onChange={(v) => set({ capital: v })} step={1000} min={0} /></Field>
               <Field label="Capital mode">
-                <div style={{ display: "inline-flex", borderRadius: 7, border: `1px solid ${C.border}`, overflow: "hidden" }}>
-                  {["fixed", "compound"].map((m) => <button key={m} onClick={() => set({ capitalMode: m })} style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: cfg.capitalMode === m ? C.blue : "transparent", color: cfg.capitalMode === m ? "#fff" : C.textMuted, fontFamily: "inherit", textTransform: "capitalize" }}>{m}</button>)}
-                </div>
+                <Seg value={cfg.capitalMode} onChange={(v) => set({ capitalMode: v })} options={[{ v: "fixed", label: "Fixed" }, { v: "compound", label: "Compound" }]} />
               </Field>
               <Field label="Max concurrent"><Num value={cfg.maxConcurrent} onChange={(v) => set({ maxConcurrent: v })} step={1} min={1} /></Field>
             </div>
