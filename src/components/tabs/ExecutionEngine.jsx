@@ -144,8 +144,8 @@ const SignalCard = ({ r, open, onToggle }) => {
         </div>
         <div style={{ textAlign: "right", marginRight: 10 }}>
           <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Net PnL</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: oc.c, ...mono }}>{r.noEntry ? "—" : usd(r.netPnl, { signed: true })}</div>
-          {!r.noEntry && <div style={{ fontSize: 10, color: oc.c, ...mono }}>{pct(r.grossPct, { signed: true })}</div>}
+          <div style={{ fontSize: 15, fontWeight: 800, color: r.noEntry ? C.textMuted : signColor(r.netPnl, C), ...mono }}>{r.noEntry ? "—" : usd(r.netPnl, { signed: true })}</div>
+          {!r.noEntry && <div style={{ fontSize: 10, color: signColor(r.netPnl, C), ...mono }}>{pct(r.grossPct, { signed: true })}</div>}
         </div>
         <span style={{ fontSize: 10, fontWeight: 800, color: oc.c, backgroundColor: `${oc.c}1c`, border: `1px solid ${oc.c}30`, padding: "3px 9px", borderRadius: 5 }}>{oc.t}</span>
       </div>
@@ -234,7 +234,7 @@ const SignalCard = ({ r, open, onToggle }) => {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 11, color: C.textMuted }}>
                 <span>Gross {pct(r.grossPct)} · fees included · pos. {usd(r.notional, { signed: false })}</span>
-                <span style={{ fontWeight: 800, color: oc.c, ...mono }}>Net {usd(r.netPnl, { signed: true })} ({pct(r.grossPct, { signed: true })})</span>
+                <span style={{ fontWeight: 800, color: signColor(r.netPnl, C), ...mono }}>Net {usd(r.netPnl, { signed: true })} ({pct(r.grossPct, { signed: true })})</span>
               </div>
             </div>
           </div>
