@@ -37,8 +37,8 @@ const Sel = ({ value, onChange, options }) => (
     <ChevronDown size={14} color={C.textMuted} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
   </div>
 );
-const Num = ({ value, onChange, step = 1, min, max, w }) => (
-  <input className="tl-num" type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, ...mono }} />
+const Num = ({ value, onChange, step = 1, min, max, w = 116 }) => (
+  <input type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, colorScheme: "dark", ...mono }} />
 );
 /* segmented toggle — one consistent style for every binary/mode switch */
 const Seg = ({ value, onChange, options }) => (

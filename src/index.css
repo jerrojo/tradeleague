@@ -89,6 +89,3 @@ button:not(:disabled):active { transform: translateY(0.5px); }
   .tearsheet-page { box-shadow: none !important; border-radius: 0 !important; width: 100% !important; padding: 24px 28px !important; }
 }
 
-/* ── Execution Engine number inputs: hide the chunky native spinner for a clean field ── */
-.tl-num::-webkit-outer-spin-button, .tl-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.tl-num { -moz-appearance: textfield; appearance: textfield; }
