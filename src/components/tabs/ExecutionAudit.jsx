@@ -333,7 +333,7 @@ const ExecutionAudit = () => {
       </div>
 
       {/* ─────────── 3) KPI GRID — audit-specific only (performance/PF/Net PnL live on Overview) ─────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <StatCard
           label="Total Signals" tip="totalSignalsAudit" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
           sub={`${kpi.closed.length} closed · ${kpi.active.length} active · ${kpi.pending.length} pending`}
@@ -364,7 +364,7 @@ const ExecutionAudit = () => {
         <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
           Advanced Statistics
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
           <MiniStat tip="bestTrade" label="Best Trade" value={usd(kpi.best)} color={C.green} />
           <MiniStat tip="worstTrade" label="Worst Trade" value={usd(kpi.worst)} color={C.red} />
           <MiniStat tip="avgWinTrade" label="Avg Win" value={`+$${kpi.avgWin.toFixed(2)}`} color={C.green} />
@@ -384,7 +384,7 @@ const ExecutionAudit = () => {
         <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 8 }}>
           Realized fill vs. the signal's approval price (arrival). Negative = beat arrival · {tca.nn} closed fills
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
           <MiniStat tip="avgSlippage" label="Avg Arrival Slippage" value={`${tca.avg > 0 ? "+" : tca.avg < 0 ? "−" : ""}${Math.abs(tca.avg).toFixed(1)} bps`} color={tca.avg <= 0 ? C.green : C.red} sub={`est. cost ${usd(-Math.abs(tca.cost))}`} />
           <MiniStat tip="beatArrival" label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
           <MiniStat tip="bestFill" label="Best Fill" value={tca.nn ? bps(tca.best) : "—"} color={signColor(-tca.best, C)} />

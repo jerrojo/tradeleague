@@ -34,57 +34,50 @@ const TimeframeFilter = () => {
 
   const openCustom = () => { setMenu(false); setOpen((v) => !v); };
 
+  const customActive = key === "custom";
+
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8 }}>
-      {/* resolved window (always visible) */}
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, color: isFiltered ? C.purple : C.textMuted, ...mono, whiteSpace: "nowrap" }}>
-        <Clock size={12} /> {label}
-      </span>
-
-      {/* favorited custom ranges — quick chips */}
-      {favorites.map((f) => {
-        const on = activeFavId === f.id;
-        return (
-          <span key={f.id} style={{
-            display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 6px 4px 9px", borderRadius: 999, fontSize: 10, fontWeight: 700, ...mono, whiteSpace: "nowrap",
-            border: `1px solid ${on ? C.amber : C.border}`, backgroundColor: on ? `${C.amber}1c` : "transparent", color: on ? C.amber : C.textMuted,
-          }}>
-            <Star size={10} fill={C.amber} color={C.amber} style={{ cursor: "pointer" }} onClick={() => setCustomRange(f.from, f.to)} />
-            <span style={{ cursor: "pointer" }} onClick={() => setCustomRange(f.from, f.to)}>{f.label}</span>
-            <X size={11} style={{ cursor: "pointer", opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); removeFavorite(f.id); }} />
-          </span>
-        );
-      })}
-
-      {/* pinned preset quick-bar */}
+      {/* ONE consolidated control: quick presets + a menu that holds favorites, all ranges and custom */}
       <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${C.border}`, overflow: "hidden" }}>
         {pinnedRanges.map((p) => {
           const on = key === p.key;
           return (
             <button key={p.key} onClick={() => { setRange(p.key); setMenu(false); }} style={{
-              padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none",
+              padding: "6px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none",
               borderRight: `1px solid ${C.border}`, ...mono,
               backgroundColor: on ? C.purple : "transparent",
               color: on ? "#fff" : C.textMuted,
             }}>{p.label}</button>
           );
         })}
-        {/* grouped "Range" dropdown trigger */}
-        <button onClick={() => { setMenu((v) => !v); setOpen(false); }} title="All ranges" style={{
-          padding: "5px 8px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none", borderRight: `1px solid ${C.border}`, display: "inline-flex", alignItems: "center", gap: 2,
-          backgroundColor: menu ? C.cardElev : "transparent", color: menu ? C.text : C.textMuted,
-        }}><ChevronDown size={13} /></button>
-        {/* custom range trigger */}
-        <button onClick={openCustom} title="Custom range" style={{
-          padding: "5px 9px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none", display: "inline-flex", alignItems: "center", gap: 4,
-          backgroundColor: key === "custom" ? C.purple : "transparent",
-          color: key === "custom" ? "#fff" : C.textMuted,
-        }}><CalendarRange size={13} /></button>
+        {/* menu trigger — shows the active custom window inline when one is set */}
+        <button onClick={() => { setMenu((v) => !v); setOpen(false); }} title="All ranges & custom" style={{
+          padding: "6px 9px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none", display: "inline-flex", alignItems: "center", gap: 5, ...mono,
+          backgroundColor: customActive || menu ? (customActive ? C.purple : C.cardElev) : "transparent",
+          color: customActive ? "#fff" : menu ? C.text : C.textMuted, whiteSpace: "nowrap",
+        }}>{customActive && <><Clock size={11} /> {label}</>}<ChevronDown size={13} style={{ transform: menu ? "rotate(180deg)" : "none", transition: "transform .15s" }} /></button>
       </div>
 
-      {/* grouped range dropdown — pick any range, star to pin to the quick-bar */}
+      {/* dropdown — favorites, all ranges (star to pin), and custom */}
       {menu && (
-        <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 50, backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: 8, boxShadow: C.shadowLg, width: 230, maxHeight: 380, overflowY: "auto" }}>
+        <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 50, backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: 8, boxShadow: C.shadowLg, width: 240, maxHeight: 420, overflowY: "auto" }}>
+          {favorites.length > 0 && (
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ fontSize: 8, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.6px", fontWeight: 700, padding: "6px 6px 3px" }}>Favorites</div>
+              {favorites.map((f) => {
+                const on = activeFavId === f.id;
+                return (
+                  <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 6px", borderRadius: 6, backgroundColor: on ? `${C.amber}1c` : "transparent" }}>
+                    <Star size={13} fill={C.amber} color={C.amber} />
+                    <span onClick={() => { setCustomRange(f.from, f.to); setMenu(false); }} style={{ flex: 1, cursor: "pointer", fontSize: 12, fontWeight: on ? 700 : 500, color: on ? C.amber : C.text, ...mono }}>{f.label}</span>
+                    <X size={12} style={{ cursor: "pointer", opacity: 0.6 }} onClick={(e) => { e.stopPropagation(); removeFavorite(f.id); }} />
+                  </div>
+                );
+              })}
+              <div style={{ borderTop: `1px solid ${C.border}`, margin: "6px 0 2px" }} />
+            </div>
+          )}
           {GROUPS.map((g) => {
             const rows = presets.filter((p) => p.group === g);
             if (!rows.length) return null;

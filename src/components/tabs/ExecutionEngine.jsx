@@ -155,7 +155,7 @@ const SignalCard = ({ r, open, onToggle }) => {
           {/* Original signal */}
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Original signal</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
               {[["Direction", r.dir, dirColor, null], ["Entry", px(r.entry), C.text, "entryZone"], ["Stop Loss", px(r.sl), C.red, "sl"], ["Take Profit", px(r.tpFinal), C.green, "tp"]].map(([l, v, c, tip]) => (
                 <div key={l}><div style={{ fontSize: 11, color: C.textMuted, marginBottom: 3 }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</div><div style={{ fontSize: 14, fontWeight: 700, color: c, ...mono }}>{v}</div></div>
               ))}
@@ -303,7 +303,7 @@ const ExecutionEngine = () => {
       {/* filters */}
       <div style={{ ...cardStyle }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><Layers size={13} color={C.purple} /> Filters</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
           <Field label="Start date"><input type="date" value={cfg.startDate} onChange={(e) => set({ startDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark", ...mono }} /></Field>
           <Field label="End date"><input type="date" value={cfg.endDate} onChange={(e) => set({ endDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark", ...mono }} /></Field>
           <Field label="Asset"><Sel value={cfg.asset} onChange={(v) => set({ asset: v })} options={ASSETS} /></Field>
@@ -375,14 +375,14 @@ const ExecutionEngine = () => {
 
       {/* KPI grid — tiered like the Overview */}
       <TLabel>Headline</TLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         <K label="Net PnL" tip="engNetPnl" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Win Rate" tip="winRate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
         <K label="Profit Factor" tip="profitFactor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
         <K label="Signals" tip="engSignals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
       </div>
       <TLabel>Targets reached</TLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         {(k.reach || []).map((v, i) => (
           <K key={i} label={`Reached L${i + 1}`} tip="reachedLevel" icon={Crosshair} value={`${v.toFixed(0)}%`} sub={`${Math.round(k.entries * v / 100)}`} />
         ))}
@@ -391,7 +391,7 @@ const ExecutionEngine = () => {
         <K label="Sharpe (trade)" tip="sharpeTrade" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ net" />
       </div>
       <TLabel>Risk &amp; return</TLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <K label="Total Return" tip="totalReturn" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
         <K label="Max Drawdown" tip="maxDD" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
         <K label="CAGR" tip="cagr" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="annualized" />
@@ -400,7 +400,7 @@ const ExecutionEngine = () => {
         <K label="Peak concurrency" tip="peakConcurrency" icon={Layers} value={k.peakConc} sub={`avg ${Number(k.avgConc).toFixed(1)}`} />
       </div>
       <TLabel>Execution</TLabel>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <K label="Exposure" tip="exposure" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="time in market" />
         <K label="Rejected" tip="rejectedEng" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" />
         <K label="Avg duration" tip="avgDuration" icon={Clock} value={fmtDur(k.avgDur)} sub="per trade" />

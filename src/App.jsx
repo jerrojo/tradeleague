@@ -254,6 +254,9 @@ const App = () => {
             @media (max-width: 900px) {
               .grid-2col, .grid-2col-16 { grid-template-columns: 1fr !important; }
             }
+            @media (max-width: 1100px) {
+              .dash-grid { grid-template-columns: 1fr !important; }
+            }
             @media (max-width: 700px) {
               .grid-3col { grid-template-columns: 1fr !important; }
             }
@@ -334,7 +337,7 @@ const App = () => {
           </aside>
 
           {/* ── Main Area ── */}
-          <div style={{ flex: 1, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+          <div style={{ flex: 1, minWidth: 0, marginLeft: sideW, transition: "margin-left 0.2s ease", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
 
             {/* Top Bar */}
             <header style={{ height: 56, position: "sticky", top: 0, zIndex: 100, backgroundColor: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px" }}>
@@ -648,7 +651,7 @@ const App = () => {
             )}
 
             {/* Content */}
-            <main key={profileTrader ? `profile-${profileTrader.name}` : activeTab} style={{ flex: 1, padding: "24px", maxWidth: "1400px", width: "100%", animation: "fadeInUp 0.2s ease" }}>
+            <main key={profileTrader ? `profile-${profileTrader.name}` : activeTab} style={{ flex: 1, minWidth: 0, padding: "24px", maxWidth: "1400px", width: "100%", boxSizing: "border-box", animation: "fadeInUp 0.2s ease" }}>
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
             </main>
 

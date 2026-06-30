@@ -520,7 +520,7 @@ const FundOverview = () => {
           </div>
           {/* Tier 2 — quality & shape of the edge */}
           <TierLabel>Edge quality</TierLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
             <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
             <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected per trade" onClick={() => go("audit", { auditView: "analytics" })} />
@@ -749,7 +749,7 @@ const FundOverview = () => {
       <SectionHeader icon={Users} title="Traders — signal providers" subtitle="The supply side: who feeds the fund and how concentrated the contribution is" color={C.blue}
         right={<span onClick={() => go("traders")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") go("traders"); }} style={{ fontSize: 11, fontWeight: 700, color: C.purple, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>All traders <ChevronRight size={13} /></span>} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         <Kpi label="Active Providers" icon={Users} accent={C.blue} value={<><span style={{ color: C.text }}>{data.signaledProviders}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>/</span> <span style={{ color: C.textMuted }}>{data.monitoredProviders}</span></>} sub="signaled / monitored" onClick={() => go("traders")} />
         <Kpi label="Signals / Provider" icon={BarChart3} value={data.avgSignalsPerProvider.toFixed(1)} sub="average published" onClick={() => go("traders")} />
         <Kpi label="Human vs Bot" icon={Bot} accent={C.cyan} value={<><span style={{ color: C.text }}>{data.humanSignals}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.cyan }}>{data.botSignals}</span></>} sub="signals (human / bot)" onClick={() => go("traders")} />
