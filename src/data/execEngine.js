@@ -23,11 +23,15 @@ function resolveLeg(candles, fromIdx, dir, target, sl) {
 }
 
 const DEFAULT_CONFIG = {
-  startDate: null, endDate: null, asset: "All", direction: "All", outcome: "All", sort: "Newest First",
-  legsPct: { L1: 25, L2: 25, L3: 25, RUN: 25 }, trailing: true,
-  sizing: "margin", margin: 1000, leverage: 1, fee: 0.04,
+  startDate: null, endDate: null, asset: "All", direction: "All",
+  outcome: ["Win", "Loss", "Breakeven", "No entry", "Invalid", "Open"], sort: "Newest First",
+  tps: 4, legsPct: { L1: 25, L2: 25, L3: 25, RUN: 25 }, trailing: true,
+  sizing: "margin", margin: 1000, leverage: 1, riskPct: 1, fee: 0.04,
   capital: 10000, capitalMode: "fixed", maxConcurrent: 5,
 };
+const OUTCOME_LABEL = { WIN: "Win", LOSS: "Loss", BE: "Breakeven", "NO ENTRY": "No entry", OPEN: "Open", INVALID: "Invalid" };
+/* dynamic leg keys for n total legs (n-1 partial TPs + RUN) */
+export const legKeysFor = (n) => [...Array(Math.max(1, n - 1))].map((_, i) => `L${i + 1}`).concat("RUN");
 
 export function simulate(userConfig = {}) {
   const cfg = { ...DEFAULT_CONFIG, ...userConfig, legsPct: { ...DEFAULT_CONFIG.legsPct, ...(userConfig.legsPct || {}) } };
@@ -45,33 +49,36 @@ export function simulate(userConfig = {}) {
   const rejected = universe.filter(({ s }) => !s.approved).length;
   const approved = universe.filter(({ s }) => s.approved);
 
-  const legPctArr = [cfg.legsPct.L1, cfg.legsPct.L2, cfg.legsPct.L3, cfg.legsPct.RUN].map((p) => p / 100);
+  const tps = Math.max(2, Math.min(6, Math.round(cfg.tps || 4))); // total legs (n-1 partials + RUN)
+  const legKeys = legKeysFor(tps);
+  const legPctArr = legKeys.map((k) => (cfg.legsPct[k] ?? 0) / 100);
   const rows = [];
 
   approved.forEach(({ s, candles }) => {
     const sign = s.dir === "LONG" ? 1 : -1;
     const entry = s.entry;
     const sl = s.sl;
-    const tpFinal = s.tp3; // furthest target = Runner (L4)
-    // 4 evenly-spaced levels between entry and the final TP
-    const levels = [1, 2, 3, 4].map((k) => round(entry + sign * (tpFinal - entry) * (k / 4)));
+    const tpFinal = s.tp3; // furthest target = Runner
+    // `tps` evenly-spaced levels between entry and the final TP (last = tpFinal for RUN)
+    const levels = [...Array(tps)].map((_, i) => round(entry + sign * (tpFinal - entry) * ((i + 1) / tps)));
     const filled = s.status === "active" || s.status === "closed";
     const noEntry = s.status === "pending" || s.status === "expired" || !filled;
     const fromIdx = s.activeIdx ?? s.entryIdx;
 
     // Margin sizing: fixed notional = margin × leverage. Risk sizing: size so the
-    // stop-out loses ~1% of capital (notional = 1% capital / stop-distance%).
+    // stop-out loses ~`riskPct`% of capital (notional = riskPct% capital / stop-distance%).
     const stopDistPct = Math.abs(entry - sl) / entry;
     const notional = cfg.sizing === "risk"
-      ? (stopDistPct > 0 ? (cfg.capital * 0.01) / stopDistPct : cfg.margin * cfg.leverage)
+      ? (stopDistPct > 0 ? (cfg.capital * (cfg.riskPct / 100)) / stopDistPct : cfg.margin * cfg.leverage)
       : cfg.margin * cfg.leverage;
-    const legs = ["L1", "L2", "L3", "Runner"].map((name, i) => {
+    const legs = legKeys.map((name, i) => {
+      const isRunner = name === "RUN";
       const target = levels[i];
       const pct = legPctArr[i];
       const legNotional = notional * pct;
       if (noEntry) return { name, pct, target, exit: null, hit: "NO ENTRY", idx: null, pnl: 0, pnlPct: 0 };
-      // Runner uses trailing → if trailing on, the runner rides to the final TP/last close instead of a fixed mid level
-      const r = resolveLeg(candles, fromIdx, s.dir, name === "Runner" && cfg.trailing ? tpFinal : target, sl);
+      // Runner uses trailing → if trailing on, it rides to the final TP instead of a fixed mid level
+      const r = resolveLeg(candles, fromIdx, s.dir, isRunner && cfg.trailing ? tpFinal : target, sl);
       const priceRet = sign * (r.exit - entry) / entry;
       const gross = legNotional * priceRet;
       const fee$ = legNotional * (cfg.fee / 100) * 2; // entry + exit
@@ -81,14 +88,15 @@ export function simulate(userConfig = {}) {
 
     const netPnl = noEntry ? 0 : round(legs.reduce((a, l) => a + l.pnl, 0));
     const grossPct = noEntry || notional <= 0 ? 0 : round((netPnl / notional) * 100);
-    const reachedL = [false, false, false]; // L1, L2, L3 reached (price hit target)
+    // reached flags for the partial TP legs (all but RUN)
+    const reachedL = legs.slice(0, tps - 1).map(() => false);
     if (!noEntry) {
-      legs.forEach((l, i) => { if (i < 3 && (l.hit === "TP")) reachedL[i] = true; });
-      // a higher level reached implies lower ones reached
-      if (reachedL[2]) { reachedL[1] = true; reachedL[0] = true; }
-      else if (reachedL[1]) reachedL[0] = true;
+      legs.slice(0, tps - 1).forEach((l, i) => { if (l.hit === "TP") reachedL[i] = true; });
+      for (let i = reachedL.length - 1; i > 0; i--) if (reachedL[i]) reachedL[i - 1] = true; // higher level implies lower
     }
-    const runnerTrailed = !noEntry && cfg.trailing && legs[3].hit === "TP";
+    const runner = legs.find((l) => l.name === "RUN");
+    const runnerTrailed = !noEntry && cfg.trailing && runner && runner.hit === "TP";
+    const hasOpen = !noEntry && legs.some((l) => l.hit === "OPEN");
     const exitIdx = noEntry ? null : Math.max(...legs.map((l) => l.idx ?? 0));
     // duration from real candle timestamps (not bar-index delta)
     const durationH = noEntry || !candles[exitIdx] || !candles[fromIdx] ? null : (candles[exitIdx].time - candles[fromIdx].time) / 3600;
@@ -99,16 +107,15 @@ export function simulate(userConfig = {}) {
       entry, sl, tpFinal, levels, signalPx: s.signalPx,
       entryIdx: s.entryIdx, fromIdx, exitIdx, exitTime: exitIdx != null && candles[exitIdx] ? candles[exitIdx].time : null,
       noEntry, filled, legs, netPnl, grossPct, reachedL, runnerTrailed, durationH,
-      outcome: noEntry ? "NO ENTRY" : netPnl >= 0 ? "WIN" : "LOSS",
+      outcome: noEntry ? "NO ENTRY" : hasOpen ? "OPEN" : netPnl > 0 ? "WIN" : netPnl < 0 ? "LOSS" : "BE",
       notional,
     });
   });
 
-  // ── filter by outcome + sort ──
+  // ── filter by outcome (multi-select) + sort ──
   let out = rows;
-  if (cfg.outcome === "Wins") out = out.filter((r) => r.outcome === "WIN");
-  else if (cfg.outcome === "Losses") out = out.filter((r) => r.outcome === "LOSS");
-  else if (cfg.outcome === "No entry") out = out.filter((r) => r.noEntry);
+  const sel = Array.isArray(cfg.outcome) ? cfg.outcome : (cfg.outcome && cfg.outcome !== "All" ? [cfg.outcome] : null);
+  if (sel) out = rows.filter((r) => sel.includes(OUTCOME_LABEL[r.outcome] ?? r.outcome));
   if (cfg.sort === "Newest First") out = [...out].sort((a, b) => b.time - a.time);
   else if (cfg.sort === "Oldest First") out = [...out].sort((a, b) => a.time - b.time);
   else if (cfg.sort === "Best PnL") out = [...out].sort((a, b) => b.netPnl - a.netPnl);
@@ -171,7 +178,7 @@ export function simulate(userConfig = {}) {
     profitFactor, avgWinPct: round(wins.length ? wins.reduce((a, r) => a + r.grossPct, 0) / wins.length : 0),
     avgLossPct: round(losses.length ? losses.reduce((a, r) => a + r.grossPct, 0) / losses.length : 0),
     signals: approved.length, entries: closed.length, noEntry: approved.length - closed.length, rejected,
-    reachL1: round(reach(0)), reachL2: round(reach(1)), reachL3: round(reach(2)), runnerRate: round(runnerRate),
+    tps, reach: [...Array(tps - 1)].map((_, k) => round(reach(k))), runnerRate: round(runnerRate),
     expectancyPct: round(closed.length ? closed.reduce((a, r) => a + r.grossPct, 0) / closed.length : 0),
     sharpe: round(sharpe), maxDD: round(maxDD), maxDDpct: round(maxDDpct), cagr: round(cagr),
     maxLossRun, avgR: round(avgR), peakConc, avgConc: round(avgConc * 10) / 10,

@@ -7,13 +7,13 @@ import {
 import { CandleChart } from "../CandleChart";
 import { EmptyState, SectionHeader } from "../common";
 import { coinCandles } from "../../data/robotin";
-import { simulate, DEFAULT_CONFIG } from "../../data/execEngine";
+import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 const ASSETS = ["All", "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "ARB", "OP", "SUI", "TON", "NEAR", "INJ"];
 const DIRECTIONS = ["All", "LONG", "SHORT"];
-const OUTCOMES = ["All", "Wins", "Losses", "No entry"];
+const OUTCOME_OPTS = ["Win", "Loss", "Breakeven", "No entry", "Invalid", "Open"];
 const SORTS = ["Newest First", "Oldest First", "Best PnL", "Worst PnL"];
 const px = (p) => (p == null ? "—" : p >= 1 ? p.toLocaleString(undefined, { maximumFractionDigits: 2 }) : p >= 0.01 ? p.toFixed(4) : p.toFixed(6));
 const fmtDT = (t) => (t == null ? "—" : new Date(t * 1000).toLocaleString(undefined, { month: "numeric", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }));
@@ -35,6 +35,35 @@ const Sel = ({ value, onChange, options }) => (
 const Num = ({ value, onChange, step = 1, min, max, w }) => (
   <input type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, ...mono }} />
 );
+/* multi-select dropdown with checkboxes (Outcome filter) */
+const MultiSel = ({ selected, options, onToggle, onAll }) => {
+  const [open, setOpen] = useState(false);
+  const allOn = options.every((o) => selected.includes(o));
+  const label = allOn ? "All" : selected.length === 0 ? "None" : `${selected.length} selected`;
+  const row = { display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 6, cursor: "pointer", fontSize: 12.5, color: C.text };
+  return (
+    <div style={{ position: "relative" }}>
+      <button onClick={() => setOpen((v) => !v)} style={{ ...inputStyle, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+        <span>{label}</span><ChevronDown size={14} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .15s", flexShrink: 0, color: C.textMuted }} />
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
+          <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, minWidth: 190, zIndex: 41, backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 8, boxShadow: C.shadowLg, padding: 6 }}>
+            <label style={{ ...row, borderBottom: `1px solid ${C.border}`, marginBottom: 4, paddingBottom: 9 }}>
+              <input type="checkbox" checked={allOn} onChange={onAll} /> <span style={{ fontWeight: 700 }}>Select all</span>
+            </label>
+            {options.map((o) => (
+              <label key={o} style={row}>
+                <input type="checkbox" checked={selected.includes(o)} onChange={() => onToggle(o)} /> <span>{o}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 /* KPI card */
 const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint }) => (
@@ -55,7 +84,8 @@ const TLabel = ({ children }) => (
 /* ── one expandable signal in the detail list ── */
 const SignalCard = ({ r, open, onToggle }) => {
   const dirColor = r.dir === "LONG" ? C.green : C.red;
-  const oc = r.outcome === "WIN" ? { c: C.green, t: "WIN" } : r.outcome === "LOSS" ? { c: C.red, t: "LOSS" } : { c: C.textMuted, t: "NO ENTRY" };
+  const OC = { WIN: { c: C.green, t: "WIN" }, LOSS: { c: C.red, t: "LOSS" }, OPEN: { c: C.blue, t: "OPEN" }, BE: { c: C.textMuted, t: "BE" }, "NO ENTRY": { c: C.textMuted, t: "NO ENTRY" } };
+  const oc = OC[r.outcome] || OC["NO ENTRY"];
   const reached = r.reachedL.filter(Boolean).length;
 
   const chart = useMemo(() => {
@@ -130,7 +160,7 @@ const SignalCard = ({ r, open, onToggle }) => {
           <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 0.9fr) minmax(0, 2.2fr)", gap: 16 }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Setup</div>
-              {[["Best entry", px(r.entry)], ["Entry time", fmtDT(r.time)], ["Initial SL", px(r.sl)], ["Final TP (L4)", px(r.tpFinal)], ["TPs reached", `${reached} / 3`], ["Duration", fmtDur(r.durationH)]].map(([l, v]) => (
+              {[["Best entry", px(r.entry)], ["Entry time", fmtDT(r.time)], ["Initial SL", px(r.sl)], ["Final TP (RUN)", px(r.tpFinal)], ["TPs reached", `${reached} / ${r.reachedL.length}`], ["Duration", fmtDur(r.durationH)]].map(([l, v]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 12 }}>
                   <span style={{ color: C.textMuted }}>{l}</span><span style={{ color: C.text, fontWeight: 600, ...mono }}>{v}</span>
                 </div>
@@ -186,10 +216,23 @@ const ExecutionEngine = () => {
   const [tick, setTick] = useState(0);
   const set = (patch) => setCfg((c) => ({ ...c, ...patch }));
   const setLeg = (k, v) => setCfg((c) => ({ ...c, legsPct: { ...c.legsPct, [k]: v === "" ? 0 : Number(v) } }));
+  // changing # TPs rebuilds the leg set with an even split that sums to 100%
+  const setTps = (v) => {
+    const n = Math.max(2, Math.min(6, Math.round(Number(v) || 4)));
+    const keys = legKeysFor(n);
+    const base = Math.floor(100 / keys.length);
+    const pct = {}; keys.forEach((kk, i) => { pct[kk] = base; }); pct[keys[keys.length - 1]] += 100 - base * keys.length;
+    setCfg((c) => ({ ...c, tps: n, legsPct: pct }));
+  };
+  const toggleOutcome = (label) => setCfg((c) => {
+    const cur = Array.isArray(c.outcome) ? c.outcome : OUTCOME_OPTS.slice();
+    return { ...c, outcome: cur.includes(label) ? cur.filter((x) => x !== label) : [...cur, label] };
+  });
 
   const sim = useMemo(() => simulate(cfg), [cfg, tick]);
   const k = sim.kpi;
-  const legSum = cfg.legsPct.L1 + cfg.legsPct.L2 + cfg.legsPct.L3 + cfg.legsPct.RUN;
+  const legKeys = legKeysFor(cfg.tps || 4);
+  const legSum = legKeys.reduce((a, kk) => a + (cfg.legsPct[kk] ?? 0), 0);
 
   const exportCsv = () => {
     const head = ["coin", "dir", "time", "outcome", "netPnl", "grossPct", "entry", "sl", "tpFinal", "duration_h"];
@@ -223,7 +266,7 @@ const ExecutionEngine = () => {
           <Field label="End date"><input type="date" value={cfg.endDate} onChange={(e) => set({ endDate: e.target.value })} style={{ ...inputStyle, colorScheme: "dark", ...mono }} /></Field>
           <Field label="Asset"><Sel value={cfg.asset} onChange={(v) => set({ asset: v })} options={ASSETS} /></Field>
           <Field label="Direction"><Sel value={cfg.direction} onChange={(v) => set({ direction: v })} options={DIRECTIONS} /></Field>
-          <Field label="Outcome"><Sel value={cfg.outcome} onChange={(v) => set({ outcome: v })} options={OUTCOMES} /></Field>
+          <Field label="Outcome"><MultiSel selected={Array.isArray(cfg.outcome) ? cfg.outcome : OUTCOME_OPTS} options={OUTCOME_OPTS} onToggle={toggleOutcome} onAll={() => set({ outcome: (Array.isArray(cfg.outcome) && cfg.outcome.length === OUTCOME_OPTS.length) ? [] : OUTCOME_OPTS.slice() })} /></Field>
           <Field label="Sort by"><Sel value={cfg.sort} onChange={(v) => set({ sort: v })} options={SORTS} /></Field>
         </div>
       </div>
@@ -242,14 +285,14 @@ const ExecutionEngine = () => {
             <span style={{ fontSize: 10, fontWeight: 700, color: legSum === 100 ? C.green : C.amber, backgroundColor: `${legSum === 100 ? C.green : C.amber}1c`, border: `1px solid ${(legSum === 100 ? C.green : C.amber)}40`, padding: "2px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>{legSum === 100 ? <CheckCircle size={11} /> : null} Σ {legSum}%</span>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <Field label="# partial TPs"><div style={{ ...inputStyle, width: 70, ...mono, color: C.textMuted, cursor: "default" }}>4</div></Field>
+            <Field label="# partial TPs"><Num value={cfg.tps || 4} onChange={setTps} min={2} max={6} step={1} w={70} /></Field>
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>% per TP</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {[["L1", C.textMuted], ["L2", C.textMuted], ["L3", C.textMuted], ["RUN", C.green]].map(([leg, clr]) => (
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>% per TP</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {legKeys.map((leg) => (
                   <label key={leg} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: clr, textAlign: "center" }}>{leg}</span>
-                    <Num value={cfg.legsPct[leg]} onChange={(v) => setLeg(leg, v)} min={0} max={100} step={5} w={64} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: leg === "RUN" ? C.green : C.textMuted, textAlign: "center" }}>{leg}</span>
+                    <Num value={cfg.legsPct[leg] ?? 0} onChange={(v) => setLeg(leg, v)} min={0} max={100} step={5} w={64} />
                   </label>
                 ))}
               </div>
@@ -270,7 +313,9 @@ const ExecutionEngine = () => {
                   {["margin", "risk"].map((m) => <button key={m} onClick={() => set({ sizing: m })} style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: cfg.sizing === m ? C.blue : "transparent", color: cfg.sizing === m ? "#fff" : C.textMuted, fontFamily: "inherit" }}>{m === "margin" ? "Margin" : "Risk"}</button>)}
                 </div>
               </Field>
-              <Field label="Margin ($)"><Num value={cfg.margin} onChange={(v) => set({ margin: v })} step={100} min={0} /></Field>
+              {cfg.sizing === "risk"
+                ? <Field label="Risk / trade (%)"><Num value={cfg.riskPct} onChange={(v) => set({ riskPct: v })} step={0.05} min={0} /></Field>
+                : <Field label="Margin ($)"><Num value={cfg.margin} onChange={(v) => set({ margin: v })} step={100} min={0} /></Field>}
               <Field label="Leverage (x)"><Num value={cfg.leverage} onChange={(v) => set({ leverage: v })} step={1} min={1} /></Field>
               <Field label="Fee per side (%)"><Num value={cfg.fee} onChange={(v) => set({ fee: v })} step={0.01} min={0} /></Field>
             </div>
@@ -300,9 +345,9 @@ const ExecutionEngine = () => {
       </div>
       <TLabel>Targets reached</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
-        <K label="Reached L1" icon={Crosshair} value={`${k.reachL1.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL1 / 100)}`} />
-        <K label="Reached L2" icon={Crosshair} value={`${k.reachL2.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL2 / 100)}`} />
-        <K label="Reached L3" icon={Crosshair} value={`${k.reachL3.toFixed(0)}%`} sub={`${Math.round(k.entries * k.reachL3 / 100)}`} />
+        {(k.reach || []).map((v, i) => (
+          <K key={i} label={`Reached L${i + 1}`} icon={Crosshair} value={`${v.toFixed(0)}%`} sub={`${Math.round(k.entries * v / 100)}`} />
+        ))}
         <K label="Runner trailing" icon={Layers} value={`${k.runnerRate.toFixed(0)}%`} sub={`${Math.round(k.entries * k.runnerRate / 100)}`} />
         <K label="Expectancy" icon={TrendingUp} accent={C.green} value={pct(k.expectancyPct, { signed: true })} valueColor={signColor(k.expectancyPct, C)} sub={`${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Sharpe (trade)" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ net" />
