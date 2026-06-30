@@ -101,12 +101,26 @@ export function simulate(userConfig = {}) {
     // duration from real candle timestamps (not bar-index delta)
     const durationH = noEntry || !candles[exitIdx] || !candles[fromIdx] ? null : (candles[exitIdx].time - candles[fromIdx].time) / 3600;
 
+    // MAE / MFE — max adverse / favorable excursion (unleveraged %) over the trade's life
+    let maeMove = 0, mfeMove = 0, maePx = entry, mfePx = entry;
+    if (!noEntry && exitIdx != null) {
+      for (let i = fromIdx; i <= exitIdx; i++) {
+        const c = candles[i]; if (!c) continue;
+        const adv = s.dir === "LONG" ? (entry - c.low) / entry : (c.high - entry) / entry;
+        const fav = s.dir === "LONG" ? (c.high - entry) / entry : (entry - c.low) / entry;
+        if (adv > maeMove) { maeMove = adv; maePx = s.dir === "LONG" ? c.low : c.high; }
+        if (fav > mfeMove) { mfeMove = fav; mfePx = s.dir === "LONG" ? c.high : c.low; }
+      }
+    }
+    const maePct = round(-maeMove * 100), mfePct = round(mfeMove * 100);
+
     rows.push({
       id: s.id, coin: s.coin, pair: s.pair, dir: s.dir, time: s.time, trader: s.trader, isBot: s.isBot,
       confidence: s.confidence, setup: s.setup, tf: s.tf, tag: s.tag, reasoning: s.reasoning,
       entry, sl, tpFinal, levels, signalPx: s.signalPx,
       entryIdx: s.entryIdx, fromIdx, exitIdx, exitTime: exitIdx != null && candles[exitIdx] ? candles[exitIdx].time : null,
       noEntry, filled, legs, netPnl, grossPct, reachedL, runnerTrailed, durationH,
+      maePct, mfePct, maePx: round(maePx), mfePx: round(mfePx),
       outcome: noEntry ? "NO ENTRY" : hasOpen ? "OPEN" : netPnl > 0 ? "WIN" : netPnl < 0 ? "LOSS" : "BE",
       notional,
     });

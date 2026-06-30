@@ -103,6 +103,32 @@ const GLOSSARY = {
   // Predictions
   odds:           "Market probability. 38% YES = most believe it won't happen",
   pot:            "Total money staked on this prediction. Split among the winners",
+  // Execution Engine (re-simulation)
+  engNetPnl:      "Net P&L of the re-simulation — sum of every partial leg's realized P&L, after fees, across all entered signals at your sizing and cost settings",
+  engSignals:     "Approved signals in scope. Entries = those whose limit price filled; no-entry = price never returned to the entry zone",
+  reachedLevel:   "Share of entered trades where price reached this partial take-profit (Ln). A higher level being hit implies the lower ones were too",
+  runnerTrailing: "Share of trades where the trailing Runner leg rode all the way to the furthest target",
+  expectancyPct:  "Average % return per trade (gross of leverage) across every entered signal",
+  sharpeTrade:    "Per-trade Sharpe = mean ÷ std-dev of net returns × √n. Higher = a steadier edge",
+  totalReturn:    "Final balance vs starting capital, as a percent",
+  cagr:           "Compound annual growth rate implied by the period's return",
+  lossStreak:     "Longest run of consecutive losing trades in the sequence",
+  avgREng:        "Average R-multiple = return ÷ risk per trade. +1R means the trade made what it risked",
+  peakConcurrency:"Most positions open at the same instant (and the average), given your max-concurrent cap",
+  exposure:       "Share of the period with at least one position open — time in market",
+  rejectedEng:    "Signals Robotín rejected — excluded from this re-simulation",
+  avgDuration:    "Average time a trade stayed open, from entry to final exit",
+  openEng:        "Trades still running (no final exit) at the end of the window",
+  partialTps:     "Number of take-profit legs (n−1 partials + a trailing Runner). The position is split across them",
+  pctPerTp:       "Share of the position closed at each take-profit leg. Must sum to 100%",
+  trailing:       "Trailing Runner — the last leg rides the trend to the furthest target instead of a fixed level",
+  sizingMode:     "Margin = fixed notional (margin × leverage). Risk = size each trade so a stop-out loses a set % of capital",
+  riskTrade:      "Percent of capital risked per trade in Risk sizing — the loss if the stop is hit",
+  marginField:    "Fixed dollar margin per trade; notional = margin × leverage",
+  feeSide:        "Trading fee per side (charged on both entry and exit), as a % of notional",
+  capitalMode:    "Fixed = every trade sized off the starting capital. Compound = sized off the running balance (interest on interest)",
+  maxConcurrent:  "Cap on how many trades can be open at the same time",
+  excursion:      "Excursion (no leverage) — how far price ran for/against the trade while it was open, vs entry",
 };
 
 const InfoTip = ({ k, children, inline = false }) => {

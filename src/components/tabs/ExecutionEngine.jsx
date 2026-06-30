@@ -5,7 +5,7 @@ import {
   Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldX, Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
-import { EmptyState, SectionHeader } from "../common";
+import { EmptyState, SectionHeader, InfoTip } from "../common";
 import { coinCandles } from "../../data/robotin";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
@@ -20,9 +20,9 @@ const fmtDT = (t) => (t == null ? "—" : new Date(t * 1000).toLocaleString(unde
 const fmtDur = (h) => (h == null ? "—" : h < 1 ? `${Math.round(h * 60)}m` : `${h.toFixed(1)}h`);
 
 /* compact dark field */
-const Field = ({ label, children }) => (
+const Field = ({ label, children, tip }) => (
   <label style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 0 }}>
-    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
     {children}
   </label>
 );
@@ -82,10 +82,10 @@ const MultiSel = ({ selected, options, onToggle, onAll }) => {
 };
 
 /* KPI card */
-const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint }) => (
+const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
   <div className="tl-card" style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 5 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 11.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>{Icon && <Icon size={12} color={accent} />}{label}</span>
+      <span style={{ fontSize: 11.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>{Icon && <Icon size={12} color={accent} />}{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
     </div>
     <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
     {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
@@ -147,15 +147,36 @@ const SignalCard = ({ r, open, onToggle }) => {
 
       {open && (
         <div style={{ borderTop: `1px solid ${C.border}`, padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Señal Original */}
+          {/* Original signal */}
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Original signal</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Original signal</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-              {[["Direction", r.dir, dirColor], ["Entry", px(r.entry), C.text], ["Stop Loss", px(r.sl), C.red], ["Take Profit", px(r.tpFinal), C.green]].map(([l, v, c]) => (
-                <div key={l}><div style={{ fontSize: 9.5, color: C.textMuted, marginBottom: 3 }}>{l}</div><div style={{ fontSize: 14, fontWeight: 700, color: c, ...mono }}>{v}</div></div>
+              {[["Direction", r.dir, dirColor, null], ["Entry", px(r.entry), C.text, "entryZone"], ["Stop Loss", px(r.sl), C.red, "sl"], ["Take Profit", px(r.tpFinal), C.green, "tp"]].map(([l, v, c, tip]) => (
+                <div key={l}><div style={{ fontSize: 11, color: C.textMuted, marginBottom: 3 }}>{tip ? <InfoTip k={tip} inline><span>{l}</span></InfoTip> : l}</div><div style={{ fontSize: 14, fontWeight: 700, color: c, ...mono }}>{v}</div></div>
               ))}
             </div>
           </div>
+
+          {/* Excursion (MAE / MFE) — how far price ran for/against the trade */}
+          {!r.noEntry && (
+            <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>
+                <InfoTip k="excursion" inline><span>Excursion (no leverage)</span></InfoTip>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 3 }}><InfoTip k="mae" inline><span>MAE · Adverse</span></InfoTip></div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.red, ...mono }}>{pct(r.maePct, { signed: true })}</div>
+                  <div style={{ fontSize: 11, color: C.textFaint, ...mono }}>{px(r.maePx)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 3 }}><InfoTip k="mfe" inline><span>MFE · Favorable</span></InfoTip></div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.green, ...mono }}>{pct(r.mfePct, { signed: true })}</div>
+                  <div style={{ fontSize: 11, color: C.textFaint, ...mono }}>{px(r.mfePx)}</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* AI analysis */}
           <div style={{ ...cardStyle, borderColor: `${C.purple}40`, backgroundColor: `${C.purple}0d` }}>
@@ -301,7 +322,7 @@ const ExecutionEngine = () => {
             <span style={{ fontSize: 10, fontWeight: 700, color: legSum === 100 ? C.green : C.amber, backgroundColor: `${legSum === 100 ? C.green : C.amber}1c`, border: `1px solid ${(legSum === 100 ? C.green : C.amber)}40`, padding: "2px 9px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4 }}>{legSum === 100 ? <CheckCircle size={11} /> : null} Σ {legSum}%</span>
           </div>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
-            <Field label="# partial TPs"><Num value={cfg.tps || 4} onChange={setTps} min={2} max={6} step={1} w={70} /></Field>
+            <Field label="# partial TPs" tip="partialTps"><Num value={cfg.tps || 4} onChange={setTps} min={2} max={6} step={1} w={70} /></Field>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 5 }}>% per TP</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -313,7 +334,7 @@ const ExecutionEngine = () => {
                 ))}
               </div>
             </div>
-            <Field label="Trailing">
+            <Field label="Trailing" tip="trailing">
               <Seg value={cfg.trailing ? "on" : "off"} onChange={(v) => set({ trailing: v === "on" })} options={[{ v: "on", label: "On" }, { v: "off", label: "Off" }]} />
             </Field>
           </div>
@@ -324,24 +345,24 @@ const ExecutionEngine = () => {
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><DollarSign size={12} /> Sizing & costs</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-              <Field label="Sizing">
+              <Field label="Sizing" tip="sizingMode">
                 <Seg value={cfg.sizing} onChange={(v) => set({ sizing: v })} options={[{ v: "margin", label: "Margin" }, { v: "risk", label: "Risk" }]} />
               </Field>
               {cfg.sizing === "risk"
-                ? <Field label="Risk / trade (%)"><Num value={cfg.riskPct} onChange={(v) => set({ riskPct: v })} step={0.05} min={0} /></Field>
-                : <Field label="Margin ($)"><Num value={cfg.margin} onChange={(v) => set({ margin: v })} step={100} min={0} /></Field>}
-              <Field label="Leverage (x)"><Num value={cfg.leverage} onChange={(v) => set({ leverage: v })} step={1} min={1} /></Field>
-              <Field label="Fee per side (%)"><Num value={cfg.fee} onChange={(v) => set({ fee: v })} step={0.01} min={0} /></Field>
+                ? <Field label="Risk / trade (%)" tip="riskTrade"><Num value={cfg.riskPct} onChange={(v) => set({ riskPct: v })} step={0.05} min={0} /></Field>
+                : <Field label="Margin ($)" tip="marginField"><Num value={cfg.margin} onChange={(v) => set({ margin: v })} step={100} min={0} /></Field>}
+              <Field label="Leverage (x)" tip="leverage"><Num value={cfg.leverage} onChange={(v) => set({ leverage: v })} step={1} min={1} /></Field>
+              <Field label="Fee per side (%)" tip="feeSide"><Num value={cfg.fee} onChange={(v) => set({ fee: v })} step={0.01} min={0} /></Field>
             </div>
           </div>
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, color: C.green, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><Wallet size={12} /> Account & capital</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
               <Field label="Starting capital ($)"><Num value={cfg.capital} onChange={(v) => set({ capital: v })} step={1000} min={0} /></Field>
-              <Field label="Capital mode">
+              <Field label="Capital mode" tip="capitalMode">
                 <Seg value={cfg.capitalMode} onChange={(v) => set({ capitalMode: v })} options={[{ v: "fixed", label: "Fixed" }, { v: "compound", label: "Compound" }]} />
               </Field>
-              <Field label="Max concurrent"><Num value={cfg.maxConcurrent} onChange={(v) => set({ maxConcurrent: v })} step={1} min={1} /></Field>
+              <Field label="Max concurrent" tip="maxConcurrent"><Num value={cfg.maxConcurrent} onChange={(v) => set({ maxConcurrent: v })} step={1} min={1} /></Field>
             </div>
           </div>
         </div>
@@ -350,35 +371,35 @@ const ExecutionEngine = () => {
       {/* KPI grid — tiered like the Overview */}
       <TLabel>Headline</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 }}>
-        <K label="Net PnL" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
-        <K label="Win Rate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
-        <K label="Profit Factor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
-        <K label="Signals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
+        <K label="Net PnL" tip="engNetPnl" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
+        <K label="Win Rate" tip="winRate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
+        <K label="Profit Factor" tip="profitFactor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
+        <K label="Signals" tip="engSignals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
       </div>
       <TLabel>Targets reached</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
         {(k.reach || []).map((v, i) => (
-          <K key={i} label={`Reached L${i + 1}`} icon={Crosshair} value={`${v.toFixed(0)}%`} sub={`${Math.round(k.entries * v / 100)}`} />
+          <K key={i} label={`Reached L${i + 1}`} tip="reachedLevel" icon={Crosshair} value={`${v.toFixed(0)}%`} sub={`${Math.round(k.entries * v / 100)}`} />
         ))}
-        <K label="Runner trailing" icon={Layers} value={`${k.runnerRate.toFixed(0)}%`} sub={`${Math.round(k.entries * k.runnerRate / 100)}`} />
-        <K label="Expectancy" icon={TrendingUp} accent={C.green} value={pct(k.expectancyPct, { signed: true })} valueColor={signColor(k.expectancyPct, C)} sub={`${usd(k.perTrade, { signed: true })}/trade`} />
-        <K label="Sharpe (trade)" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ net" />
+        <K label="Runner trailing" tip="runnerTrailing" icon={Layers} value={`${k.runnerRate.toFixed(0)}%`} sub={`${Math.round(k.entries * k.runnerRate / 100)}`} />
+        <K label="Expectancy" tip="expectancyPct" icon={TrendingUp} accent={C.green} value={pct(k.expectancyPct, { signed: true })} valueColor={signColor(k.expectancyPct, C)} sub={`${usd(k.perTrade, { signed: true })}/trade`} />
+        <K label="Sharpe (trade)" tip="sharpeTrade" icon={Gauge} value={k.sharpe.toFixed(2)} sub="mean/σ net" />
       </div>
       <TLabel>Risk &amp; return</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
-        <K label="Total Return" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
-        <K label="Max Drawdown" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
-        <K label="CAGR" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="annualized" />
-        <K label="Loss streak" icon={TrendingDown} value={k.maxLossRun} sub="max consecutive" />
-        <K label="Avg R" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="return/risk" />
-        <K label="Peak concurrency" icon={Layers} value={k.peakConc} sub={`avg ${Number(k.avgConc).toFixed(1)}`} />
+        <K label="Total Return" tip="totalReturn" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
+        <K label="Max Drawdown" tip="maxDD" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
+        <K label="CAGR" tip="cagr" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="annualized" />
+        <K label="Loss streak" tip="lossStreak" icon={TrendingDown} value={k.maxLossRun} sub="max consecutive" />
+        <K label="Avg R" tip="avgREng" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="return/risk" />
+        <K label="Peak concurrency" tip="peakConcurrency" icon={Layers} value={k.peakConc} sub={`avg ${Number(k.avgConc).toFixed(1)}`} />
       </div>
       <TLabel>Execution</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 12 }}>
-        <K label="Exposure" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="time in market" />
-        <K label="Rejected" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" />
-        <K label="Avg duration" icon={Clock} value={fmtDur(k.avgDur)} sub="per trade" />
-        <K label="Open" icon={Activity} value={k.open} sub="still running" />
+        <K label="Exposure" tip="exposure" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="time in market" />
+        <K label="Rejected" tip="rejectedEng" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" />
+        <K label="Avg duration" tip="avgDuration" icon={Clock} value={fmtDur(k.avgDur)} sub="per trade" />
+        <K label="Open" tip="openEng" icon={Activity} value={k.open} sub="still running" />
       </div>
 
       {/* capital curve */}
