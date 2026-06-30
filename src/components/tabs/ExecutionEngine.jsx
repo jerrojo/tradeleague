@@ -5,7 +5,7 @@ import {
   Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldX, Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
-import { EmptyState, SectionHeader, InfoTip } from "../common";
+import { EmptyState, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
 import { coinCandles } from "../../data/robotin";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
@@ -131,9 +131,14 @@ const SignalCard = ({ r, open, onToggle }) => {
         style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", cursor: "pointer" }}>
         <ChevronDown size={16} color={C.textMuted} style={{ transform: open ? "none" : "rotate(-90deg)", transition: "transform .15s", flexShrink: 0 }} />
         <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14, fontWeight: 800, ...mono }}>{r.coin} <span style={{ color: C.textMuted, fontSize: 11 }}>/USDT</span></span>
             <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: dirColor, backgroundColor: `${dirColor}1c`, border: `1px solid ${dirColor}30`, padding: "1px 7px", borderRadius: 4 }}>{r.dir}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <Avatar name={r.trader} size={16} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{r.trader}</span>
+              <BotTag isBot={r.isBot} />
+            </span>
           </div>
           <span style={{ fontSize: 10.5, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={10} /> {fmtDT(r.time)}</span>
         </div>
