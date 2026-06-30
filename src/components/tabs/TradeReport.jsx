@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CalendarClock, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Coins, Wallet } from "lucide-react";
-import { SectionHeader } from "../common";
+import { SectionHeader, InfoTip } from "../common";
 import { monthLedger, breakdownBy } from "../../data/tradeReport";
 import { usd as fUsd, usdCompact } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
@@ -16,9 +16,9 @@ const k = (n) => usdCompact(n);
 const fmtDT = (ms) => { const d = new Date(ms); const p = (x) => String(x).padStart(2, "0"); return `${p(d.getMonth() + 1)}/${p(d.getDate())}/${String(d.getFullYear()).slice(2)}, ${p(d.getHours())}:${p(d.getMinutes())}`; };
 const fmtDur = (min) => { if (min == null) return "—"; const h = Math.floor(min / 60), m = min % 60; return h ? `${h}h ${m}m` : `${m}m`; };
 
-const Stat = ({ label, children, color = C.text }) => (
+const Stat = ({ label, children, color = C.text, tip }) => (
   <div>
-    <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 4 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</div>
     <div style={{ fontSize: 14, fontWeight: 800, color, ...mono }}>{children}</div>
   </div>
 );
@@ -64,9 +64,9 @@ const TradeReport = () => {
 
       {/* ── Balance strip ── */}
       <div style={{ ...cardStyle, display: "flex", gap: 36, flexWrap: "wrap" }}>
-        <Stat label="Initial Balance">{usd(data.initialBalance, false)}</Stat>
-        <Stat label="Current Balance" color={data.currentBalance >= data.initialBalance ? C.green : C.red}>{usd(data.currentBalance, false)}</Stat>
-        <Stat label="Month ROI" color={data.roiPct >= 0 ? C.green : C.red}>{data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</Stat>
+        <Stat label="Initial Balance" tip="initialBalance">{usd(data.initialBalance, false)}</Stat>
+        <Stat label="Current Balance" tip="currentBalance" color={data.currentBalance >= data.initialBalance ? C.green : C.red}>{usd(data.currentBalance, false)}</Stat>
+        <Stat label="Month ROI" tip="monthRoi" color={data.roiPct >= 0 ? C.green : C.red}>{data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</Stat>
       </div>
 
       {/* ── Monthly performance card ── */}
@@ -78,21 +78,21 @@ const TradeReport = () => {
           </div>
           <div style={{ display: "flex", gap: 36, flexWrap: "wrap" }}>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}>Net P&L</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="netPnlReport" inline><span>Net P&L</span></InfoTip></div>
               <div style={{ fontSize: 26, fontWeight: 900, color: M.net >= 0 ? C.green : C.red, ...mono }}>{usd(M.net)}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}>Win Rate</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="winRate" inline><span>Win Rate</span></InfoTip></div>
               <div style={{ fontSize: 26, fontWeight: 900, color: C.text, ...mono }}>{M.wins}W / {M.losses}L <span style={{ fontSize: 16, color: C.textMuted }}>· {M.winRate.toFixed(1)}%</span></div>
             </div>
           </div>
         </div>
         <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 16 }}>
-          <Stat label="Fees (pos)" color={C.red}>{usd(-M.fees)}</Stat>
-          <Stat label="Positions">{M.positions} closed</Stat>
-          <Stat label="RRR">{M.rrr >= 999 ? "∞" : M.rrr.toFixed(2)}</Stat>
-          <Stat label="Capital Vol.">{k(M.capitalVol)}</Stat>
-          <Stat label="Leveraged Vol.">{k(M.leveragedVol)}</Stat>
+          <Stat label="Fees (pos)" tip="feesPos" color={C.red}>{usd(-M.fees)}</Stat>
+          <Stat label="Positions" tip="positionsClosed">{M.positions} closed</Stat>
+          <Stat label="RRR" tip="rrrReport">{M.rrr >= 999 ? "∞" : M.rrr.toFixed(2)}</Stat>
+          <Stat label="Capital Vol." tip="capitalVol">{k(M.capitalVol)}</Stat>
+          <Stat label="Leveraged Vol." tip="leveragedVol">{k(M.leveragedVol)}</Stat>
         </div>
       </div>
 
@@ -179,9 +179,9 @@ const DayDetail = ({ date, rec, onClose }) => {
         <button onClick={onClose} style={{ ...navBtn, width: 28, height: 28 }} title="Close"><X size={15} /></button>
       </div>
       <div style={{ display: "flex", gap: 40, flexWrap: "wrap", marginBottom: 16 }}>
-        <Stat label="Net PnL" color={rec.pnl >= 0 ? C.green : C.red}>{usd(rec.pnl)}</Stat>
-        <Stat label="Commission" color={C.red}>{usd(-rec.commission)}</Stat>
-        <Stat label="Positions">{rec.count} opened</Stat>
+        <Stat label="Net PnL" tip="netPnlReport" color={rec.pnl >= 0 ? C.green : C.red}>{usd(rec.pnl)}</Stat>
+        <Stat label="Commission" tip="commissionReport" color={C.red}>{usd(-rec.commission)}</Stat>
+        <Stat label="Positions" tip="positionsClosed">{rec.count} opened</Stat>
       </div>
 
       {/* positions table */}

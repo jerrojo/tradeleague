@@ -3,7 +3,7 @@ import {
   Activity, Award, ChevronDown, Coins, DollarSign, Percent, RefreshCw,
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
-import { StatCard, CollapsibleSection, SectionHeader } from "../common";
+import { StatCard, CollapsibleSection, SectionHeader, InfoTip } from "../common";
 import { SignalTable } from "../SignalTable";
 import { useTimeframe } from "../../contexts";
 import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
@@ -118,9 +118,9 @@ const Select = ({ label, value, onChange, options }) => (
 );
 
 /* ── small advanced-stat card ── */
-const MiniStat = ({ label, value, color, sub }) => (
+const MiniStat = ({ label, value, color, sub, tip }) => (
   <div className="tl-card" style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
-    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
     <span style={{ fontSize: 16, fontWeight: 800, color: color || C.text, ...mono, letterSpacing: "-0.3px" }}>{value}</span>
     {sub && <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{sub}</span>}
   </div>
@@ -335,25 +335,25 @@ const ExecutionAudit = () => {
       {/* ─────────── 3) KPI GRID — audit-specific only (performance/PF/Net PnL live on Overview) ─────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 12 }}>
         <StatCard
-          label="Total Signals" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
+          label="Total Signals" tip="totalSignalsAudit" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
           sub={`${kpi.closed.length} closed · ${kpi.active.length} active · ${kpi.pending.length} pending`}
         />
         <StatCard
-          label="Theoretical Win Rate" value={`${kpi.theoWinRate.toFixed(1)}%`} icon={TrendingUp}
+          label="Theoretical Win Rate" tip="theoWinRate" value={`${kpi.theoWinRate.toFixed(1)}%`} icon={TrendingUp}
           color={kpi.theoWinRate >= 50 ? C.green : C.red}
           sub={`${kpi.theoWins.length}/${kpi.closed.length} signals (gross)`}
         />
         <StatCard
-          label="Executed Win Rate" value={`${kpi.realWinRate.toFixed(1)}%`} icon={Activity}
+          label="Executed Win Rate" tip="execWinRate" value={`${kpi.realWinRate.toFixed(1)}%`} icon={Activity}
           color={kpi.realWinRate >= 50 ? C.green : C.red}
           sub={`${kpi.realWins.length}/${kpi.closed.length} trades (net)`}
         />
         <StatCard
-          label="Total Fees" value={`−$${kpi.totalFees.toFixed(2)}`} icon={Percent} color={C.amber}
+          label="Total Fees" tip="totalFees" value={`−$${kpi.totalFees.toFixed(2)}`} icon={Percent} color={C.amber}
           sub="sum of per-trade fees"
         />
         <StatCard
-          label="Match Rate" value={`${kpi.matchRate.toFixed(1)}%`} icon={Scale}
+          label="Match Rate" tip="matchRate" value={`${kpi.matchRate.toFixed(1)}%`} icon={Scale}
           color={kpi.matchRate >= 80 ? C.green : C.amber}
           sub={`${kpi.matches.length}/${kpi.closed.length} eligible`}
         />
@@ -365,14 +365,14 @@ const ExecutionAudit = () => {
           Advanced Statistics
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
-          <MiniStat label="Best Trade" value={usd(kpi.best)} color={C.green} />
-          <MiniStat label="Worst Trade" value={usd(kpi.worst)} color={C.red} />
-          <MiniStat label="Avg Win" value={`+$${kpi.avgWin.toFixed(2)}`} color={C.green} />
-          <MiniStat label="Avg Loss" value={`−$${kpi.avgLoss.toFixed(2)}`} color={C.red} />
-          <MiniStat label="R-Multiple" value={`${kpi.avgR >= 0 ? "+" : ""}${kpi.avgR.toFixed(2)}R`} color={kpi.avgR >= 0 ? C.green : C.red} sub="avg realized R" />
-          <MiniStat label="Avg Fees / Notional" value={`${kpi.feeNotionalPct.toFixed(3)}%`} color={C.amber} />
-          <MiniStat label="LONG Win Rate" value={`${kpi.longWinRate.toFixed(1)}%`} color={kpi.longWinRate >= 50 ? C.green : C.red} sub={`${kpi.longWins.length}/${kpi.longClosed.length}`} />
-          <MiniStat label="SHORT Win Rate" value={`${kpi.shortWinRate.toFixed(1)}%`} color={kpi.shortWinRate >= 50 ? C.green : C.red} sub={`${kpi.shortWins.length}/${kpi.shortClosed.length}`} />
+          <MiniStat tip="bestTrade" label="Best Trade" value={usd(kpi.best)} color={C.green} />
+          <MiniStat tip="worstTrade" label="Worst Trade" value={usd(kpi.worst)} color={C.red} />
+          <MiniStat tip="avgWinTrade" label="Avg Win" value={`+$${kpi.avgWin.toFixed(2)}`} color={C.green} />
+          <MiniStat tip="avgLossTrade" label="Avg Loss" value={`−$${kpi.avgLoss.toFixed(2)}`} color={C.red} />
+          <MiniStat tip="expectancyR" label="R-Multiple" value={`${kpi.avgR >= 0 ? "+" : ""}${kpi.avgR.toFixed(2)}R`} color={kpi.avgR >= 0 ? C.green : C.red} sub="avg realized R" />
+          <MiniStat tip="feeNotional" label="Avg Fees / Notional" value={`${kpi.feeNotionalPct.toFixed(3)}%`} color={C.amber} />
+          <MiniStat tip="longWinRate" label="LONG Win Rate" value={`${kpi.longWinRate.toFixed(1)}%`} color={kpi.longWinRate >= 50 ? C.green : C.red} sub={`${kpi.longWins.length}/${kpi.longClosed.length}`} />
+          <MiniStat tip="shortWinRate" label="SHORT Win Rate" value={`${kpi.shortWinRate.toFixed(1)}%`} color={kpi.shortWinRate >= 50 ? C.green : C.red} sub={`${kpi.shortWins.length}/${kpi.shortClosed.length}`} />
         </div>
       </div>
 
@@ -385,10 +385,10 @@ const ExecutionAudit = () => {
           Realized fill vs. the signal's approval price (arrival). Negative = beat arrival · {tca.nn} closed fills
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
-          <MiniStat label="Avg Arrival Slippage" value={`${tca.avg > 0 ? "+" : tca.avg < 0 ? "−" : ""}${Math.abs(tca.avg).toFixed(1)} bps`} color={tca.avg <= 0 ? C.green : C.red} sub={`est. cost ${usd(-Math.abs(tca.cost))}`} />
-          <MiniStat label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
-          <MiniStat label="Best Fill" value={tca.nn ? bps(tca.best) : "—"} color={signColor(-tca.best, C)} />
-          <MiniStat label="Worst Fill" value={tca.nn ? bps(tca.worst) : "—"} color={signColor(-tca.worst, C)} />
+          <MiniStat tip="avgSlippage" label="Avg Arrival Slippage" value={`${tca.avg > 0 ? "+" : tca.avg < 0 ? "−" : ""}${Math.abs(tca.avg).toFixed(1)} bps`} color={tca.avg <= 0 ? C.green : C.red} sub={`est. cost ${usd(-Math.abs(tca.cost))}`} />
+          <MiniStat tip="beatArrival" label="Beat Arrival" value={`${tca.beat.toFixed(0)}%`} color={tca.beat >= 50 ? C.green : C.amber} sub="fills better than approval px" />
+          <MiniStat tip="bestFill" label="Best Fill" value={tca.nn ? bps(tca.best) : "—"} color={signColor(-tca.best, C)} />
+          <MiniStat tip="worstFill" label="Worst Fill" value={tca.nn ? bps(tca.worst) : "—"} color={signColor(-tca.worst, C)} />
         </div>
       </div>
 
