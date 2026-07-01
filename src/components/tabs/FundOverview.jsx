@@ -243,54 +243,6 @@ const ForkPipeline = ({ data, onClick }) => {
   );
 };
 
-/* ── One vital cell in the hero matrix — a metric with a light separator grid ── */
-const VitalCell = ({ label, value, valueColor = C.text, sub, tip, onClick }) => (
-  <div className={onClick ? "tl-card-int" : undefined} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
-    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-    style={{ padding: "12px 15px", display: "flex", flexDirection: "column", gap: 3, borderRight: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}`, cursor: onClick ? "pointer" : "default", minWidth: 0 }}>
-    <span style={{ fontSize: 10.5, color: C.textMuted, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
-    <span style={{ fontSize: 19, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</span>
-    {sub && <span style={{ fontSize: 10, color: C.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>}
-  </div>
-);
-
-/* ── Hero vitals — the fund's first-glance go/no-go: a big balance + equity
-   sparkline on the left, and a matrix of the six numbers an allocator checks
-   first on the right. Absorbs the old right-rail balance card + Headline tier. ── */
-const HeroVitals = ({ data, dash, onNav }) => {
-  const beat = data.returnPct - data.btcReturnPct;
-  const edge = data.filterEdge;
-  const pct1 = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
-  return (
-    <div style={{ ...cardStyle, padding: 0, overflow: "hidden", display: "flex", flexWrap: "wrap" }}>
-      {/* balance hero */}
-      <div style={{ flex: "1 1 300px", minWidth: 258, padding: "18px 20px", borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 3 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textMuted, fontWeight: 600 }}><Wallet size={13} /> Account balance · VARIV</div>
-        <div style={{ fontSize: 38, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.02 }}>{usdPlain(data.balance)}</div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: data.netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(data.netPnl)} ({data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(2)}%)</div>
-        <div style={{ height: 48, marginTop: 3 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data.equity} margin={{ top: 3, right: 0, left: 0, bottom: 0 }}>
-              <defs><linearGradient id="heroBal" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.green} stopOpacity={0.32} /><stop offset="100%" stopColor={C.green} stopOpacity={0} /></linearGradient></defs>
-              <Area type="monotone" dataKey="exec" stroke={C.green} strokeWidth={2} fill="url(#heroBal)" dot={false} isAnimationActive={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ fontSize: 10.5, color: C.textFaint }}>Start {usdPlain(START_CAPITAL)} · this month <span style={{ color: dash.thisMonthPnl >= 0 ? C.green : C.red, ...mono }}>{usd(dash.thisMonthPnl)}</span> · today <span style={{ color: dash.todayPnl >= 0 ? C.green : C.red, ...mono }}>{usd(dash.todayPnl)}</span></div>
-      </div>
-      {/* vitals matrix */}
-      <div style={{ flex: "2 1 460px", minWidth: 300, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(152px, 1fr))", marginTop: -1 }}>
-        <VitalCell label="Return vs BTC" value={`${beat >= 0 ? "+" : ""}${beat.toFixed(1)} pts`} valueColor={beat >= 0 ? C.green : C.red} sub={`${pct1(data.returnPct)} vs ${pct1(data.btcReturnPct)}`} onClick={() => onNav("audit", { auditView: "analytics" })} />
-        <VitalCell label="Max drawdown" tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={usd(data.maxDrawdown)} onClick={() => onNav("audit", { auditView: "analytics" })} />
-        <VitalCell label="Win rate" tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L`} onClick={() => onNav("audit", { auditView: "analytics" })} />
-        <VitalCell label="Profit factor" tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross W / gross L" onClick={() => onNav("audit", { auditView: "analytics" })} />
-        <VitalCell label="Filter edge" value={usd(edge)} valueColor={edge >= 0 ? C.green : C.red} sub="vs taking every signal" onClick={() => onNav("audit", { auditView: "edge" })} />
-        <VitalCell label="Risk-adjusted" value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino" onClick={() => onNav("audit", { auditView: "analytics" })} />
-      </div>
-    </div>
-  );
-};
-
 const FundOverview = () => {
   const { within } = useTimeframe();
   const { go } = useNav();
@@ -621,36 +573,48 @@ const FundOverview = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* ── 1 · Hero vitals — the fund's first-glance go/no-go ── */}
-      <HeroVitals data={data} dash={dash} onNav={go} />
+      {/* ── 1 · The legible core: one calm, uniform metric grid + a persistent
+             right rail (Account Balance + Today). Every number is its own airy card,
+             one template, no tier labels — scannable at a glance, nothing lost. ── */}
+      <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(186px, 1fr))", gap: 12 }}>
+          <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
+          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+          <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this mo ${dash.lastM.winRate}% · last ${dash.prevM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint, fontSize: 15 }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Best Streaks" icon={TrendingUp} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streaks" onClick={() => go("activity")} />
+          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best and worst single trades" onClick={() => go("audit")} />
+          <Kpi label="Last Month W/L" icon={Target} value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint, fontSize: 15 }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
+          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
+          <Kpi label="Trades per Month" icon={BarChart3} value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+          <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
+          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
+          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.filterEdge)} valueColor={data.filterEdge >= 0 ? C.green : C.red} sub="value vs taking every signal" onClick={() => go("audit", { auditView: "edge" })} />
+          <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+        </div>
+        {/* right rail — persistent Account Balance + Today (the calm anchor) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} thisMonth={dash.thisMonthPnl} lastMonth={dash.lastMonthPnl} onClick={() => go("engine")} />
+          <TodayCard dash={dash} onClick={() => go("report")} />
+        </div>
+      </div>
 
-      {/* ── 2 · Robotín's read — the period in plain English (executive TL;DR) ── */}
+      {/* ── 2 · Robotín's read — slim executive summary of the period ── */}
       <AICommentary data={data} />
 
-      {/* ── 2b · The fork: Robotín's two books — approved (real) vs rejected (counterfactual) ── */}
+      {/* ── 3 · The fork: Robotín's two books — approved (real) vs rejected (counterfactual) ── */}
       <ForkPipeline
         data={data}
         onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))}
       />
 
-      {/* ════════ PERFORMANCE DETAIL — the full metric set in one unified matrix ════════ */}
-      <SectionHeader icon={BarChart3} title="Performance detail" subtitle="The complete metric set behind the executed (Robotín-approved) book · click any cell to drill in" color={C.green} />
-      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))", marginTop: -1 }}>
-          <VitalCell label="Payoff ratio" value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
-          <VitalCell label="Expectancy" tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="per trade" onClick={() => go("audit", { auditView: "analytics" })} />
-          <VitalCell label="Average R" tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="realized risk / reward" onClick={() => go("engine")} />
-          <VitalCell label="Avg confidence" value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved / rejected" onClick={() => go("audit", { auditView: "edge" })} />
-          <VitalCell label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
-          <VitalCell label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
-          <VitalCell label="This month P&L" value={usd(dash.monthPnl)} valueColor={dash.monthPnl >= 0 ? C.green : C.red} sub={`this week ${usd(dash.weekPnl)}`} onClick={() => go("report")} />
-          <VitalCell label="Current streak" value={`${dash.curStreak} ${dash.curWin ? "W" : "L"}`} valueColor={dash.curWin ? C.green : C.red} sub={`best ${dash.bestWinStreak}W / ${dash.bestLossStreak}L`} onClick={() => go("activity")} />
-          <VitalCell label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-          <VitalCell label="Avg hold" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
-          <VitalCell label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span></>} sub={`worst ${usd(dash.largestLoss)}`} onClick={() => go("audit")} />
-          <VitalCell label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span></>} sub={`worst ${usd(dash.worstDay[1])}`} onClick={() => go("report")} />
-        </div>
-      </div>
+      {/* ════════ Equity, benchmark and risk charts follow ════════ */}
 
       {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
       <div style={cardStyle}>
