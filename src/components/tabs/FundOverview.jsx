@@ -34,16 +34,14 @@ const AICommentary = ({ data }) => {
   const beat = data.returnPct - data.btcReturnPct;
   const pct1 = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
   return (
-    <div style={{ ...cardStyle, borderColor: `${C.purple}40`, backgroundColor: `${C.purple}0d`, display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <div style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Sparkles size={16} color={C.purple} />
-      </div>
+    <div style={{ ...cardStyle, padding: "12px 16px", borderColor: C.border, borderLeft: `3px solid ${C.purple}`, backgroundColor: `${C.purple}08`, display: "flex", gap: 11, alignItems: "flex-start" }}>
+      <Sparkles size={15} color={C.purple} style={{ flexShrink: 0, marginTop: 2 }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.4px" }}>Robotín's read</span>
-          <span style={{ fontSize: 8, fontWeight: 800, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>AI commentary</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.4px", color: C.purple, textTransform: "uppercase" }}>Robotín's read</span>
+          <span style={{ fontSize: 9, color: C.textFaint }}>AI · re-written each period</span>
         </div>
-        <p style={{ fontSize: 12.5, lineHeight: 1.65, color: C.textMuted, margin: 0 }}>
+        <p style={{ fontSize: 12.5, lineHeight: 1.6, color: C.textMuted, margin: 0 }}>
           The fund stands at <Em c={C.text}>{usdPlain(data.balance)}</Em>, <Em c={data.returnPct >= 0 ? C.green : C.red}>{pct1(data.returnPct)}</Em> for the period versus <Em c={data.btcReturnPct >= 0 ? C.green : C.red}>{pct1(data.btcReturnPct)}</Em> for BTC buy-and-hold — {beat >= 0 ? "ahead of" : "behind"} the benchmark by <Em c={beat >= 0 ? C.green : C.red}>{Math.abs(beat).toFixed(1)} pts</Em>.
           {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({Math.round(data.approvalRate)}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
           {" "}Win rate is <Em c={C.text}>{Number(data.winRate).toFixed(1)}%</Em> at a <Em c={data.profitFactor >= 1 ? C.green : C.red}>{pfFmt(data.profitFactor)}</Em> profit factor, with the worst drawdown reaching <Em c={C.red}>{data.maxDrawdownPct.toFixed(1)}%</Em>{data.topCoin ? <> · most active in <Em c={C.text}>{data.topCoin}</Em> ({data.topConcentration}% of trades)</> : null}.
@@ -240,6 +238,54 @@ const ForkPipeline = ({ data, onClick }) => {
           <Clock size={16} color={C.amber} style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}><b style={{ color: C.text }}>{r.active}</b> rejected still open are {r.activeUnreal >= 0 ? "up" : "down"} <b style={{ color: r.activeUnreal >= 0 ? C.green : C.red }}>{usd(r.activeUnreal)}</b> — opportunity {r.activeUnreal >= 0 ? "in progress" : "dodged"}.</span>
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── One vital cell in the hero matrix — a metric with a light separator grid ── */
+const VitalCell = ({ label, value, valueColor = C.text, sub, tip, onClick }) => (
+  <div className={onClick ? "tl-card-int" : undefined} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ padding: "12px 15px", display: "flex", flexDirection: "column", gap: 3, borderRight: `1px solid ${C.border}`, borderTop: `1px solid ${C.border}`, cursor: onClick ? "pointer" : "default", minWidth: 0 }}>
+    <span style={{ fontSize: 10.5, color: C.textMuted, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+    <span style={{ fontSize: 19, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</span>
+    {sub && <span style={{ fontSize: 10, color: C.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>}
+  </div>
+);
+
+/* ── Hero vitals — the fund's first-glance go/no-go: a big balance + equity
+   sparkline on the left, and a matrix of the six numbers an allocator checks
+   first on the right. Absorbs the old right-rail balance card + Headline tier. ── */
+const HeroVitals = ({ data, dash, onNav }) => {
+  const beat = data.returnPct - data.btcReturnPct;
+  const edge = data.filterEdge;
+  const pct1 = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  return (
+    <div style={{ ...cardStyle, padding: 0, overflow: "hidden", display: "flex", flexWrap: "wrap" }}>
+      {/* balance hero */}
+      <div style={{ flex: "1 1 300px", minWidth: 258, padding: "18px 20px", borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textMuted, fontWeight: 600 }}><Wallet size={13} /> Account balance · VARIV</div>
+        <div style={{ fontSize: 38, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.02 }}>{usdPlain(data.balance)}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: data.netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(data.netPnl)} ({data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(2)}%)</div>
+        <div style={{ height: 48, marginTop: 3 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data.equity} margin={{ top: 3, right: 0, left: 0, bottom: 0 }}>
+              <defs><linearGradient id="heroBal" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.green} stopOpacity={0.32} /><stop offset="100%" stopColor={C.green} stopOpacity={0} /></linearGradient></defs>
+              <Area type="monotone" dataKey="exec" stroke={C.green} strokeWidth={2} fill="url(#heroBal)" dot={false} isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{ fontSize: 10.5, color: C.textFaint }}>Start {usdPlain(START_CAPITAL)} · this month <span style={{ color: dash.thisMonthPnl >= 0 ? C.green : C.red, ...mono }}>{usd(dash.thisMonthPnl)}</span> · today <span style={{ color: dash.todayPnl >= 0 ? C.green : C.red, ...mono }}>{usd(dash.todayPnl)}</span></div>
+      </div>
+      {/* vitals matrix */}
+      <div style={{ flex: "2 1 460px", minWidth: 300, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(152px, 1fr))", marginTop: -1 }}>
+        <VitalCell label="Return vs BTC" value={`${beat >= 0 ? "+" : ""}${beat.toFixed(1)} pts`} valueColor={beat >= 0 ? C.green : C.red} sub={`${pct1(data.returnPct)} vs ${pct1(data.btcReturnPct)}`} onClick={() => onNav("audit", { auditView: "analytics" })} />
+        <VitalCell label="Max drawdown" tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={usd(data.maxDrawdown)} onClick={() => onNav("audit", { auditView: "analytics" })} />
+        <VitalCell label="Win rate" tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L`} onClick={() => onNav("audit", { auditView: "analytics" })} />
+        <VitalCell label="Profit factor" tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross W / gross L" onClick={() => onNav("audit", { auditView: "analytics" })} />
+        <VitalCell label="Filter edge" value={usd(edge)} valueColor={edge >= 0 ? C.green : C.red} sub="vs taking every signal" onClick={() => onNav("audit", { auditView: "edge" })} />
+        <VitalCell label="Risk-adjusted" value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino" onClick={() => onNav("audit", { auditView: "analytics" })} />
       </div>
     </div>
   );
@@ -575,22 +621,10 @@ const FundOverview = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {/* ── 1 · Title ── */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{ fontSize: "15px", fontWeight: "800" }}>Fund overview</div>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 800,
-            color: C.cyan, backgroundColor: `${C.cyan}1c`, padding: "2px 8px", borderRadius: 4,
-            textTransform: "uppercase", letterSpacing: "0.5px",
-          }}><Cpu size={10} /> Tear Sheet</span>
-        </div>
-        <div style={{ fontSize: "11px", color: C.textMuted, marginTop: 2 }}>
-          One page, one flow — providers feed signals, Robotín filters them, and the balance is the result · simulated.
-        </div>
-      </div>
+      {/* ── 1 · Hero vitals — the fund's first-glance go/no-go ── */}
+      <HeroVitals data={data} dash={dash} onNav={go} />
 
-      {/* ── 2a · AI commentary — the period in plain English (executive read) ── */}
+      {/* ── 2 · Robotín's read — the period in plain English (executive TL;DR) ── */}
       <AICommentary data={data} />
 
       {/* ── 2b · The fork: Robotín's two books — approved (real) vs rejected (counterfactual) ── */}
@@ -599,46 +633,23 @@ const FundOverview = () => {
         onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))}
       />
 
-      {/* ════════ BALANCE — how the portfolio is doing ════════ */}
-      <SectionHeader icon={Wallet} title="Balance & portfolio" subtitle="Capital, return and risk of the executed (Robotín-approved) book" color={C.green} />
-
-      <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Tier 1 — headline (go/no-go) */}
-          <TierLabel>Headline</TierLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
-            <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={usd(data.maxDrawdown)} valueColor={C.red} sub="largest peak-to-trough" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Total Return" icon={TrendingUp} accent={C.green} value={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}%`} valueColor={data.returnPct >= 0 ? C.green : C.red} sub={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts vs BTC buy-and-hold`} onClick={() => go("audit", { auditView: "analytics" })} />
-          </div>
-          {/* Tier 2 — quality & shape of the edge */}
-          <TierLabel>Edge quality</TierLabel>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-            <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Payoff Ratio" icon={Scale} value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected per trade" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg realized risk/reward" onClick={() => go("engine")} />
-            <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
-          </div>
+      {/* ════════ PERFORMANCE DETAIL — the full metric set in one unified matrix ════════ */}
+      <SectionHeader icon={BarChart3} title="Performance detail" subtitle="The complete metric set behind the executed (Robotín-approved) book · click any cell to drill in" color={C.green} />
+      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(158px, 1fr))", marginTop: -1 }}>
+          <VitalCell label="Payoff ratio" value={pfFmt(dash.payoff)} valueColor={dash.payoff >= 1 ? C.green : C.red} sub={`${usd(dash.avgWin)} / ${usd(-dash.avgLoss)} avg`} onClick={() => go("audit", { auditView: "analytics" })} />
+          <VitalCell label="Expectancy" tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+          <VitalCell label="Average R" tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="realized risk / reward" onClick={() => go("engine")} />
+          <VitalCell label="Avg confidence" value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved / rejected" onClick={() => go("audit", { auditView: "edge" })} />
+          <VitalCell label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
+          <VitalCell label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+          <VitalCell label="This month P&L" value={usd(dash.monthPnl)} valueColor={dash.monthPnl >= 0 ? C.green : C.red} sub={`this week ${usd(dash.weekPnl)}`} onClick={() => go("report")} />
+          <VitalCell label="Current streak" value={`${dash.curStreak} ${dash.curWin ? "W" : "L"}`} valueColor={dash.curWin ? C.green : C.red} sub={`best ${dash.bestWinStreak}W / ${dash.bestLossStreak}L`} onClick={() => go("activity")} />
+          <VitalCell label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
+          <VitalCell label="Avg hold" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
+          <VitalCell label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span></>} sub={`worst ${usd(dash.largestLoss)}`} onClick={() => go("audit")} />
+          <VitalCell label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span></>} sub={`worst ${usd(dash.worstDay[1])}`} onClick={() => go("report")} />
         </div>
-        {/* right rail */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <AccountBalanceCard balance={data.balance} netPnl={data.netPnl} returnPct={data.returnPct} equity={data.equity} thisMonth={dash.thisMonthPnl} lastMonth={dash.lastMonthPnl} onClick={() => go("engine")} />
-          <TodayCard dash={dash} onClick={() => go("report")} />
-        </div>
-      </div>
-
-      {/* ── Operational texture — completes the card block before the charts ── */}
-      <TierLabel>Operational texture</TierLabel>
-      <div className="texture-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-        <Mini label="Total trades" value={data.closed.length} sub={`${dash.perDay.toFixed(1)}/day · ${dash.perWeek.toFixed(1)}/wk`} onClick={() => go("activity")} />
-        <Mini label="Trades / month" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
-        <Mini label="Last month W/L" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-        <Mini label="Avg hold time" value={`${dash.avgHold.toFixed(1)}h`} sub="per trade" onClick={() => go("audit")} />
-        <Mini label="Best streaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="win / loss run" onClick={() => go("activity")} />
-        <Mini label="Largest win / loss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="single trade" onClick={() => go("audit")} />
-        <Mini label="Best / worst day" value={<><span style={{ color: C.green }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}`} onClick={() => go("report")} />
       </div>
 
       {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
@@ -652,13 +663,10 @@ const FundOverview = () => {
               Starting {usdPlain(STARTING_BALANCE)} · executed (Robotín) vs every signal if executed, and BTC buy-and-hold · the gap is the filter's value-add · simulated
             </div>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: C.purple, ...mono }}>{usdPlain(data.balance)}</div>
-            <div style={{ fontSize: 10, color: C.textMuted, ...mono }}>Executed · {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(1)}%</div>
-            <div style={{ fontSize: 11, color: C.amber, ...mono, marginTop: 3 }}>All signals {usdPlain(data.allBalance)} · {data.allReturnPct >= 0 ? "+" : ""}{data.allReturnPct.toFixed(1)}%</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: data.balance >= data.allBalance ? C.green : C.red, ...mono }}>
-              Filter edge {usd(data.balance - data.allBalance)}
-            </div>
+          <div style={{ textAlign: "right", fontSize: 11.5, ...mono, lineHeight: 1.55 }}>
+            <div style={{ color: C.purple, fontWeight: 700 }}>Executed {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(1)}%</div>
+            <div style={{ color: C.amber }}>All signals {data.allReturnPct >= 0 ? "+" : ""}{data.allReturnPct.toFixed(1)}%</div>
+            <div style={{ color: C.textMuted }}>BTC {data.btcReturnPct >= 0 ? "+" : ""}{data.btcReturnPct.toFixed(1)}%</div>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
