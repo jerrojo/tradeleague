@@ -8,7 +8,7 @@ import {
   Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet, XCircle,
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
-import { useTimeframe, useNav } from "../../contexts";
+import { useTimeframe, useNav, useProfile } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
@@ -293,6 +293,9 @@ const ForkPipeline = ({ data, onClick }) => {
 const FundOverview = () => {
   const { within } = useTimeframe();
   const { go } = useNav();
+  const { openProfile } = useProfile();
+  // any trader name anywhere should land on that trader's profile, not a generic list
+  const openTrader = (name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); else go("traders"); };
   const data = useMemo(() => {
     /* ── Every signal across all coins (for the system-wide approval rate) ── */
     const allSignals = ALL_SIGNALS.filter((s) => within(s.time));
@@ -920,7 +923,7 @@ const FundOverview = () => {
           </thead>
           <tbody>
             {data.providers.slice(0, 5).map((p) => (
-              <tr key={p.trader} className="card-hover" style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={() => go("traders")}>
+              <tr key={p.trader} className="hoverable" title={`Open ${p.trader}'s profile`} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={() => openTrader(p.trader)}>
                 <td style={{ padding: "9px 14px", fontWeight: 700, color: C.text, display: "flex", alignItems: "center", gap: 6 }}>
                   {p.isBot ? <Bot size={12} color={C.cyan} /> : <User size={12} color={C.textMuted} />}{p.trader}
                 </td>

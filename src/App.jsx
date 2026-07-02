@@ -248,6 +248,9 @@ const App = () => {
             @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
             @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
             tr.hoverable:hover { background-color: ${C.cardHover} !important; }
+            /* interactive surfaces never show text-selection highlights (stray purple
+               boxes when clicking names/rows); data stays copyable via CSV/JSON export */
+            button, [role="button"], tr.hoverable, .fav-chip { -webkit-user-select: none; user-select: none; }
             .card-hover:hover { border-color: ${C.borderLight} !important; }
             .card-glow:hover { box-shadow: 0 0 20px rgba(139,92,246,0.08) !important; }
             button.btn-hover:hover { filter: brightness(1.15); }

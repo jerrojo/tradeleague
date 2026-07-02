@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { StatCard, CollapsibleSection, SectionHeader, InfoTip } from "../common";
 import { SignalTable } from "../SignalTable";
-import { useTimeframe } from "../../contexts";
+import { useTimeframe, useProfile } from "../../contexts";
+import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
 import { bps, signColor } from "../../lib/format";
 import { START_CAPITAL } from "../../data/fund";
@@ -153,6 +154,7 @@ const ExecutionAudit = () => {
 
   /* ── DATA UNIVERSE: all approved signals across all coins = executed trades ── */
   const { within } = useTimeframe();
+  const { openProfile } = useProfile();
   const executed = useMemo(() => {
     void refreshKey; // re-key forces recompute on Refresh
     return ALL_SIGNALS
@@ -471,6 +473,7 @@ const ExecutionAudit = () => {
             signals={filtered}
             openId={openId}
             onToggle={(id) => setOpenId(openId === id ? null : id)}
+            onTrader={(name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); }}
             lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
             audit
             viewId="executions"

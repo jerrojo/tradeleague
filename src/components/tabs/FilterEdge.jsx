@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
 import { SectionHeader, EmptyState } from "../common";
-import { useTimeframe } from "../../contexts";
+import { useTimeframe, useProfile } from "../../contexts";
+import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS } from "../../data/robotin";
 import { usd, pct, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
@@ -38,6 +39,8 @@ const HeroStat = ({ label, value, color, hint }) => (
 
 const FilterEdge = () => {
   const { within } = useTimeframe();
+  const { openProfile } = useProfile();
+  const openTrader = (name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); };
 
   const d = useMemo(() => {
     const all = ALL_SIGNALS.filter((s) => within(s.time));
@@ -128,7 +131,7 @@ const FilterEdge = () => {
             </thead>
             <tbody>
               {d.traders.map((t) => (
-                <tr key={t.trader} className="card-hover" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <tr key={t.trader} className="hoverable" title={`Open ${t.trader}'s profile`} onClick={() => openTrader(t.trader)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
                   <td style={{ padding: "9px 12px", fontWeight: 700, color: C.text }}>{t.trader}{t.isBot ? <span style={{ fontSize: 11, color: C.textFaint, marginLeft: 6 }}>BOT</span> : null}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.textMuted }}>{t.total}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.text }}>{t.approved}</td>

@@ -7,6 +7,8 @@ import {
 import { CandleChart } from "../CandleChart";
 import { EmptyState, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
 import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
+import { useProfile } from "../../contexts";
+import { mockTraders } from "../../data/mockData";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
@@ -41,12 +43,15 @@ const Num = ({ value, onChange, step = 1, min, max, w = 116 }) => (
   <input type="number" value={value} step={step} min={min} max={max} onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))} style={{ ...inputStyle, width: w, colorScheme: "dark", ...mono }} />
 );
 /* segmented toggle — one consistent style for every binary/mode switch */
+/* Padded-track pattern (TradingView/Linear style): the track carries the border
+   and radius, the selected pill floats inside with a smaller radius — no more
+   corner clash between the fill and the container. */
 const Seg = ({ value, onChange, options }) => (
-  <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${C.border}`, overflow: "hidden", height: CTRL_H }}>
+  <div style={{ display: "inline-flex", gap: 2, padding: 3, borderRadius: 9, border: `1px solid ${C.border}`, backgroundColor: C.bg, height: CTRL_H, boxSizing: "border-box", alignItems: "stretch" }}>
     {options.map((o) => {
       const on = value === o.v;
       return (
-        <button key={o.v} onClick={() => onChange(o.v)} aria-pressed={on} style={{ padding: "0 16px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: on ? C.blue : "transparent", color: on ? "#fff" : C.textMuted, fontFamily: "inherit" }}>{o.label}</button>
+        <button key={o.v} onClick={() => onChange(o.v)} aria-pressed={on} style={{ padding: "0 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer", border: "none", borderRadius: 6, backgroundColor: on ? C.blue : "transparent", color: on ? "#fff" : C.textMuted, fontFamily: "inherit", transition: "background-color .12s" }}>{o.label}</button>
       );
     })}
   </div>
@@ -99,6 +104,8 @@ const TLabel = ({ children }) => (
 
 /* ── one expandable signal in the detail list ── */
 const SignalCard = ({ r, open, onToggle }) => {
+  const { openProfile } = useProfile();
+  const openTrader = (name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); };
   const dirColor = r.dir === "LONG" ? C.green : C.red;
   const OC = { WIN: { c: C.green, t: "WIN" }, LOSS: { c: C.red, t: "LOSS" }, OPEN: { c: C.blue, t: "OPEN" }, BE: { c: C.textMuted, t: "BE" }, "NO ENTRY": { c: C.textMuted, t: "NO ENTRY" } };
   const oc = OC[r.outcome] || OC["NO ENTRY"];
@@ -134,7 +141,9 @@ const SignalCard = ({ r, open, onToggle }) => {
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 14, fontWeight: 800, ...mono }}>{r.coin} <span style={{ color: C.textMuted, fontSize: 11 }}>/USDT</span></span>
             <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: dirColor, backgroundColor: `${dirColor}1c`, border: `1px solid ${dirColor}30`, padding: "1px 7px", borderRadius: 4 }}>{r.dir}</span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            {/* trader name → profile (stopPropagation so it doesn't toggle the card) */}
+            <span onClick={(e) => { e.stopPropagation(); openTrader(r.trader); }} title={`Open ${r.trader}'s profile`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40` }}>
               <Avatar name={r.trader} size={16} />
               <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{r.trader}</span>
               <BotTag isBot={r.isBot} />
