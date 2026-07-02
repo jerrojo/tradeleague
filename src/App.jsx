@@ -72,10 +72,17 @@ const UpdateNotifier = () => {
 const App = () => {
   // last visited section persists across refreshes; we always land at the top of the page
   const [activeTab, setActiveTab] = useState(() => { try { const t = localStorage.getItem("tl_active_tab"); return ["overview", "activity", "report", "audit", "engine", "traders", "markets"].includes(t) ? t : "overview"; } catch { return "overview"; } });
-  const [auditView, setAuditView] = useState(() => { try { return localStorage.getItem("tl_audit_view") || "execution"; } catch { return "execution"; } }); // Audit sub-tab (deep-linkable from KPI cards)
+  // Audit anchor (deep-linkable from KPI cards). Deliberately NOT persisted:
+  // Audit is one page now, so a stored value would only make a fresh visit land
+  // mid-scroll — every session starts at the top.
+  const [auditView, setAuditView] = useState("execution");
   useEffect(() => { try { localStorage.setItem("tl_active_tab", activeTab); } catch { /* ignore */ } }, [activeTab]);
-  useEffect(() => { try { localStorage.setItem("tl_audit_view", auditView); } catch { /* ignore */ } }, [auditView]);
-  useEffect(() => { window.scrollTo({ top: 0 }); }, []); // refresh always starts scrolled to the top
+  // Scroll policy: EVERY view change lands at the top, no exceptions and no
+  // per-callsite bookkeeping. The browser's own scroll restoration is disabled
+  // so reloads can't resurrect an old position either. (The only downward
+  // scrolls left are explicit in-page anchors: Audit's jump-nav deep links and
+  // Markets' coin-detail glide — those are destinations, not restored state.)
+  useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; window.scrollTo({ top: 0 }); }, []);
   const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
@@ -83,6 +90,10 @@ const App = () => {
   const [dateTo, setDateTo] = useState("");
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [profileTrader, setProfileTrader] = useState(null);
+  // central catch-all: switching section OR opening/closing a profile → top.
+  // Covers sidebar, keyboard 1–7, search results, welcome cards, alerts, every
+  // trader-name click across the app, and the profile back button.
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [activeTab, profileTrader]);
   const [feedFilter, setFeedFilter] = useState("all");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -157,7 +168,7 @@ const App = () => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
-      if (SECTIONS[e.key]) { setActiveTab(SECTIONS[e.key]); setProfileTrader(null); window.scrollTo({ top: 0 }); }
+      if (SECTIONS[e.key]) { setActiveTab(SECTIONS[e.key]); setProfileTrader(null); if (SECTIONS[e.key] === "audit") setAuditView("execution"); window.scrollTo({ top: 0 }); }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -337,6 +348,7 @@ const App = () => {
                     setActiveTab(tab.id);
                     setFeedFilter("all");
                     setProfileTrader(null);
+                    if (tab.id === "audit") setAuditView("execution"); // plain nav lands at the top, not at a stale deep-link section
                     window.scrollTo({ top: 0 }); // never inherit another section's scroll position
                   }} title={sidebarCollapsed ? tab.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: "10px",
