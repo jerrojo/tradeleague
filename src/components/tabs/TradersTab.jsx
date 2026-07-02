@@ -129,8 +129,9 @@ const TradersTab = () => {
                   const alpha = calcAlphaScore(t);
                   const aClr = alphaColor(alpha);
                   const isHotStreak = t.streak >= 10;
+                  // whole row opens the profile — before, only the small name link did
                   return (
-                  <tr key={t.name} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover }}>
+                  <tr key={t.name} className="hoverable" onClick={() => openProfile(t)} style={{ backgroundColor: i % 2 === 0 ? "transparent" : C.cardHover, cursor: "pointer" }}>
                     <td style={{ ...tdStyle, fontWeight: "800", fontSize: "14px", borderLeft: isTop1 ? `3px solid ${C.amber}` : "none", color: i < 3 ? rankColors[i] : C.textMuted, ...mono }}>
                       {i + 1}
                     </td>

@@ -438,7 +438,7 @@ const App = () => {
                   </div>
                   <div style={{ padding: "8px 28px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
                     <span style={{ fontSize: "11px", color: C.textFaint, display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                      <Sparkles size={12} color={C.amber} /> Hover any “?” for a plain-language explainer. Press ⌘K to jump anywhere.
+                      <Sparkles size={12} color={C.amber} /> Hover any “?” for an explainer · ⌘K search · 1–7 switch sections · [ ] cycle timeframes
                     </span>
                     <button onClick={dismissWelcome} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", backgroundColor: C.purple, color: "#fff", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
                       Start exploring
@@ -653,10 +653,7 @@ const App = () => {
                         <span>Compact sidebar</span>
                         <span style={{ color: sidebarCollapsed ? C.green : C.textFaint }} onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>{sidebarCollapsed ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}</span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", fontSize: "12px" }}>
-                        <span>Theme</span>
-                        <span style={{ fontSize: "11px", fontWeight: "600", color: C.textMuted }}>Dark</span>
-                      </div>
+                      {/* inert "Theme: Dark" row removed — a setting that can't change is noise */}
                     </div>
                   </div>
                 </div>
