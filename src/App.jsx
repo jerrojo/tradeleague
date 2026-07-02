@@ -93,7 +93,14 @@ const App = () => {
   // central catch-all: switching section OR opening/closing a profile → top.
   // Covers sidebar, keyboard 1–7, search results, welcome cards, alerts, every
   // trader-name click across the app, and the profile back button.
-  useEffect(() => { window.scrollTo({ top: 0 }); }, [activeTab, profileTrader]);
+  // The second, delayed reset beats late layout: chart-heavy sections mount
+  // ResponsiveContainers asynchronously and the browser's scroll anchoring can
+  // drag the position back down after the first scrollTo.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    const t = setTimeout(() => window.scrollTo({ top: 0 }), 150);
+    return () => clearTimeout(t);
+  }, [activeTab, profileTrader]);
   const [feedFilter, setFeedFilter] = useState("all");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -294,6 +301,8 @@ const App = () => {
             /* interactive surfaces never show text-selection highlights (stray purple
                boxes when clicking names/rows); data stays copyable via CSV/JSON export */
             button, [role="button"], tr.hoverable, .fav-chip { -webkit-user-select: none; user-select: none; }
+            /* browser scroll anchoring fights our scroll-to-top when async charts resize the page */
+            html { overflow-anchor: none; }
             .card-hover:hover { border-color: ${C.borderLight} !important; }
             .card-glow:hover { box-shadow: 0 0 20px rgba(139,92,246,0.08) !important; }
             button.btn-hover:hover { filter: brightness(1.15); }
