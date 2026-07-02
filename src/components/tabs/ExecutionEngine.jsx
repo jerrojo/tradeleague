@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { EmptyState, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
-import { coinCandles } from "../../data/robotin";
+import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
@@ -252,8 +252,17 @@ const SignalCard = ({ r, open, onToggle }) => {
   );
 };
 
+/* Default window: the last 30 days INCLUDING today — never a hardcoded month
+   that silently goes stale. */
+const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const defaultDates = () => {
+  const end = new Date();
+  const start = new Date(); start.setDate(start.getDate() - 30);
+  return { startDate: isoDay(start), endDate: isoDay(end) };
+};
+
 const ExecutionEngine = () => {
-  const [cfg, setCfg] = useState({ ...DEFAULT_CONFIG, startDate: "2026-06-01", endDate: "2026-06-30" });
+  const [cfg, setCfg] = useState({ ...DEFAULT_CONFIG, ...defaultDates() });
   const [openId, setOpenId] = useState(null);
   const [tick, setTick] = useState(0);
   const set = (patch) => setCfg((c) => ({ ...c, ...patch }));
@@ -273,6 +282,16 @@ const ExecutionEngine = () => {
 
   const sim = useMemo(() => simulate(cfg), [cfg, tick]);
   const k = sim.kpi;
+
+  // The fund's REAL executed book over the same date window — the reference point
+  // that keeps sandbox results from being read as the fund's performance.
+  const execBook = useMemo(() => {
+    const startTs = cfg.startDate ? new Date(cfg.startDate + "T00:00:00").getTime() / 1000 : -Infinity;
+    const endTs = cfg.endDate ? new Date(cfg.endDate + "T23:59:59").getTime() / 1000 : Infinity;
+    const closed = ALL_SIGNALS.filter((s) => s.approved && s.status === "closed" && s.time >= startTs && s.time <= endTs
+      && (cfg.asset === "All" || s.coin === cfg.asset) && (cfg.direction === "All" || s.dir === cfg.direction));
+    return { net: closed.reduce((a, s) => a + s.pnl, 0), closed: closed.length };
+  }, [cfg.startDate, cfg.endDate, cfg.asset, cfg.direction]);
   const legKeys = legKeysFor(cfg.tps || 4);
   const legSum = legKeys.reduce((a, kk) => a + (cfg.legsPct[kk] ?? 0), 0);
 
@@ -371,6 +390,17 @@ const ExecutionEngine = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Sandbox vs reality — without this anchor, a losing sandbox config reads
+          as "the fund loses money", contradicting the Overview's +30%. */}
+      <div style={{ ...cardStyle, padding: "11px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", borderLeft: `3px solid ${C.blue}`, backgroundColor: `${C.blue}08` }}>
+        <Sparkles size={14} color={C.blue} style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+          This is a <b style={{ color: C.text }}>what-if sandbox</b> over the same historical signals — it does <b style={{ color: C.text }}>not</b> change the fund's real results.
+          Your current config over this window: <b style={{ color: signColor(k.netPnl, C), ...mono }}>{usd(k.netPnl, { signed: true })}</b>
+          {execBook.closed > 0 && <> · the fund's executed book (same window): <b style={{ color: signColor(execBook.net, C), ...mono }}>{usd(execBook.net, { signed: true })}</b> over {execBook.closed} closed trades</>}.
+        </span>
       </div>
 
       {/* KPI grid — tiered like the Overview */}

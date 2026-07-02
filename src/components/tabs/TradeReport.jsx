@@ -23,10 +23,31 @@ const Stat = ({ label, children, color = C.text, tip }) => (
   </div>
 );
 
+/* Landing month: never open on a dead calendar. If the current month has no
+   positions yet (e.g. the 1st/2nd of a quiet month), fall back to the most
+   recent month that has activity — the user can always jump back with TODAY. */
+const initialView = () => {
+  const now = new Date();
+  let y = now.getFullYear(), m = now.getMonth();
+  for (let i = 0; i < 12; i++) {
+    if (monthLedger(y, m).month.positions > 0) return { y, m };
+    m -= 1; if (m < 0) { m = 11; y -= 1; }
+  }
+  return { y: now.getFullYear(), m: now.getMonth() };
+};
+/* Default selected day: today if it has data, otherwise the latest day with data. */
+const initialDay = (view, today) => {
+  const ledger = monthLedger(view.y, view.m);
+  const isCur = view.y === today.getFullYear() && view.m === today.getMonth();
+  if (isCur && ledger.days[`${view.y}-${view.m}-${today.getDate()}`]) return today.getDate();
+  const withData = Object.values(ledger.days).map((d) => d.day);
+  return withData.length ? Math.max(...withData) : null;
+};
+
 const TradeReport = () => {
   const today = new Date();
-  const [view, setView] = useState({ y: today.getFullYear(), m: today.getMonth() });
-  const [selDay, setSelDay] = useState(() => today.getDate());
+  const [view, setView] = useState(initialView);
+  const [selDay, setSelDay] = useState(() => initialDay(initialView(), today));
 
   const data = useMemo(() => monthLedger(view.y, view.m), [view]);
   const firstDow = new Date(view.y, view.m, 1).getDay();
@@ -66,8 +87,22 @@ const TradeReport = () => {
       <div style={{ ...cardStyle, display: "flex", gap: 36, flexWrap: "wrap" }}>
         <Stat label="Initial Balance" tip="initialBalance">{usd(data.initialBalance, false)}</Stat>
         <Stat label="Current Balance" tip="currentBalance" color={data.currentBalance >= data.initialBalance ? C.green : C.red}>{usd(data.currentBalance, false)}</Stat>
-        <Stat label="Month ROI" tip="monthRoi" color={data.roiPct >= 0 ? C.green : C.red}>{data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</Stat>
+        <Stat label="Month ROI" tip="monthRoi" color={data.roiPct > 0 ? C.green : data.roiPct < 0 ? C.red : C.textMuted}>{data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</Stat>
       </div>
+
+      {/* ── Empty month: say so explicitly and offer the way out ── */}
+      {M.positions === 0 && (
+        <div style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 12, borderColor: `${C.amber}40`, backgroundColor: `${C.amber}0a` }}>
+          <CalendarClock size={16} color={C.amber} style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: 12.5, color: C.textMuted }}>
+            No closed positions in <b style={{ color: C.text }}>{MONTHS[view.m]} {view.y}</b> yet.
+          </span>
+          <button onClick={() => { const v = initialView(); setView(v); setSelDay(initialDay(v, today)); }}
+            style={{ marginLeft: "auto", padding: "6px 12px", borderRadius: 7, border: `1px solid ${C.amber}50`, backgroundColor: "transparent", color: C.amber, fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+            Go to last active month
+          </button>
+        </div>
+      )}
 
       {/* ── Monthly performance card ── */}
       <div style={cardStyle}>
@@ -79,7 +114,8 @@ const TradeReport = () => {
           <div style={{ display: "flex", gap: 36, flexWrap: "wrap" }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="netPnlReport" inline><span>Net P&L</span></InfoTip></div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: M.net >= 0 ? C.green : C.red, ...mono }}>{usd(M.net)}</div>
+              {/* zero is neutral — green means gain, not "nothing happened" */}
+              <div style={{ fontSize: 26, fontWeight: 900, color: M.net > 0 ? C.green : M.net < 0 ? C.red : C.textMuted, ...mono }}>{usd(M.net)}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="winRate" inline><span>Win Rate</span></InfoTip></div>
@@ -148,7 +184,7 @@ const TradeReport = () => {
             <div key={w.idx} style={{ ...cardStyle, padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>Week {w.idx}</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: w.net >= 0 ? C.green : C.red, ...mono }}>{usd(w.net)}</span>
+                <span style={{ fontSize: 16, fontWeight: 900, color: w.net > 0 ? C.green : w.net < 0 ? C.red : C.textMuted, ...mono }}>{usd(w.net)}</span>
               </div>
               <div style={{ fontSize: 10.5, color: C.textMuted, marginTop: 4 }}>{w.activeDays} day{w.activeDays === 1 ? "" : "s"} · {w.wins}W / {w.losses}L · {w.winRate.toFixed(1)}%</div>
               <div style={{ fontSize: 10.5, color: C.textMuted }}>Fees {usd(-w.fees)}</div>

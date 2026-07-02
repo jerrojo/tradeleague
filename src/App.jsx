@@ -111,7 +111,7 @@ const App = () => {
   // Close search on Escape
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === "Escape") { setShowSearch(false); setShowAlerts(false); setShowSettings(false); }
+      if (e.key === "Escape") { setShowSearch(false); setShowAlerts(false); setShowSettings(false); setShowTearSheet(false); dismissWelcome(); }
       if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setShowSearch(true); }
     };
     document.addEventListener("keydown", handleKey);
@@ -125,7 +125,7 @@ const App = () => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = (e.target.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
-      if (SECTIONS[e.key]) { setActiveTab(SECTIONS[e.key]); setProfileTrader(null); }
+      if (SECTIONS[e.key]) { setActiveTab(SECTIONS[e.key]); setProfileTrader(null); window.scrollTo({ top: 0 }); }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -149,13 +149,15 @@ const App = () => {
   // Real alerts — Robotín's recent approve/reject/TP/SL events from the signal tape
   const alertsList = useMemo(() => {
     const ago = (t) => { const m = Math.max(1, Math.round(Date.now() / 1000 / 60 - t / 60)); return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
+    // Structured alerts: the datum that changes (pair + direction) leads in bold;
+    // the repeated sentence becomes a verb chip + a short detail line.
     return [...signalsAll].sort((a, b) => b.time - a.time).slice(0, 16).map((s, i) => {
-      const cd = `${s.coin} ${s.dir}`;
       const read = i >= 5;
-      if (!s.approved) return { id: s.id, type: "rejected", text: `Robotín rejected ${s.trader}'s ${cd} — ${s.rejectReason || "below threshold"}`, time: ago(s.time), read, priority: "low" };
-      if (s.status === "closed" && s.hit === "TP") return { id: s.id, type: "win", text: `${s.trader}'s ${cd} closed at target ${usd(s.pnl, { signed: true })}`, time: ago(s.time), read, priority: "normal" };
-      if (s.status === "closed" && s.hit === "SL") return { id: s.id, type: "loss", text: `${s.trader}'s ${cd} stopped out ${usd(s.pnl, { signed: true })}`, time: ago(s.time), read, priority: "normal" };
-      return { id: s.id, type: "approved", text: `Robotín approved ${s.trader}'s ${cd} (${s.confidence}% confidence)`, time: ago(s.time), read, priority: s.confidence >= 90 ? "high" : "normal" };
+      const base = { id: s.id, pair: s.coin, dir: s.dir, trader: s.trader, time: ago(s.time), read };
+      if (!s.approved) return { ...base, type: "rejected", verb: "Rejected", detail: s.rejectReason || "below threshold", priority: "low" };
+      if (s.status === "closed" && s.hit === "TP") return { ...base, type: "win", verb: "Target hit", detail: usd(s.pnl, { signed: true }), priority: "normal" };
+      if (s.status === "closed" && s.hit === "SL") return { ...base, type: "loss", verb: "Stopped out", detail: usd(s.pnl, { signed: true }), priority: "normal" };
+      return { ...base, type: "approved", verb: "Approved", detail: `by Robotín`, conf: s.confidence, priority: s.confidence >= 90 ? "high" : "normal" };
     });
   }, [signalsAll]);
   const visibleAlerts = alertFilter === "all" ? alertsList : alertsList.filter((a) => a.type === alertFilter);
@@ -300,6 +302,7 @@ const App = () => {
                     setActiveTab(tab.id);
                     setFeedFilter("all");
                     setProfileTrader(null);
+                    window.scrollTo({ top: 0 }); // never inherit another section's scroll position
                   }} title={sidebarCollapsed ? tab.label : undefined} style={{
                     display: "flex", alignItems: "center", gap: "10px",
                     padding: sidebarCollapsed ? "10px 0" : "10px 12px",
@@ -357,9 +360,17 @@ const App = () => {
                 </span>
               </div>
 
-              {/* Right: global time filter + utility icons */}
+              {/* Right: global time filter + utility icons. Trade Report and the
+                  Execution Engine carry their own date controls — showing the global
+                  filter there implies it applies when it doesn't, so it steps aside. */}
               <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <TimeframeFilter />
+                {["report", "engine"].includes(activeTab) && !profileTrader ? (
+                  <span title="This section has its own date controls — the global timeframe doesn't apply here." style={{ fontSize: 10.5, color: C.textFaint, border: `1px dashed ${C.border}`, borderRadius: 8, padding: "6px 10px", whiteSpace: "nowrap", ...mono }}>
+                    Own date range
+                  </span>
+                ) : (
+                  <TimeframeFilter />
+                )}
                 {/* Committee tear-sheet export */}
                 <button onClick={() => setShowTearSheet(true)} aria-label="Export committee tear sheet" title="Export committee tear sheet (PDF)" style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }}>
                   <FileText size={14} /> Tear sheet
@@ -371,7 +382,7 @@ const App = () => {
                   </button>
                   {unreadCount > 0 && <div style={{
                     position: "absolute", top: "2px", right: "2px", width: "14px", height: "14px",
-                    borderRadius: "50%", backgroundColor: C.red, color: "#fff",
+                    borderRadius: "50%", backgroundColor: C.purple, color: "#fff",
                     fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center",
                     pointerEvents: "none"
                   }}>{unreadCount}</div>}
@@ -524,7 +535,7 @@ const App = () => {
                   <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <div style={{ fontSize: "14px", fontWeight: "700" }}>Alerts</div>
-                      {unreadCount > 0 && <span style={{ fontSize: "9px", fontWeight: "700", color: C.red, backgroundColor: C.redBg, padding: "2px 6px", borderRadius: "3px" }}>{unreadCount} new</span>}
+                      {unreadCount > 0 && <span style={{ fontSize: "9px", fontWeight: "700", color: C.purple, backgroundColor: C.purpleBg, padding: "2px 6px", borderRadius: "3px" }}>{unreadCount} new</span>}
                     </div>
                     <button onClick={() => setShowAlerts(false)} style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer" }}><ChevronRight size={18} /></button>
                   </div>
@@ -558,12 +569,14 @@ const App = () => {
                           <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: `${aColor}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <AIcon size={13} color={aColor} />
                           </div>
-                          <div style={{ flex: 1 }}>
-                            {a.priority === "high" && (
-                              <div style={{ fontSize: "8px", fontWeight: "800", color: aColor, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "3px" }}>High confidence</div>
-                            )}
-                            <div style={{ fontSize: "12px", color: a.read ? C.textMuted : C.text, lineHeight: 1.4 }}>{a.text}</div>
-                            <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "4px", ...mono }}>{a.time} ago</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: "12.5px", fontWeight: 800, color: a.read ? C.textMuted : C.text, ...mono }}>{a.pair} <span style={{ color: a.dir === "LONG" ? C.green : C.red, fontSize: "10px" }}>{a.dir}</span></span>
+                              <span style={{ fontSize: "9px", fontWeight: 700, color: aColor, backgroundColor: `${aColor}15`, padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.3px" }}>{a.verb}</span>
+                              {a.conf != null && <span style={{ fontSize: "9px", fontWeight: 700, color: a.priority === "high" ? aColor : C.textMuted, ...mono }}>{a.conf}%</span>}
+                            </div>
+                            <div style={{ fontSize: "11px", color: a.read ? C.textFaint : C.textMuted, lineHeight: 1.4, marginTop: "2px" }}>{a.trader} · {a.detail}</div>
+                            <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "3px", ...mono }}>{a.time} ago</div>
                           </div>
                           {!a.read && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: aColor, flexShrink: 0, marginTop: "6px" }} />}
                         </div>

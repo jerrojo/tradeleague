@@ -123,7 +123,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
           <>
             <text x={x + 7} y={y + 17} fill="#fff" stroke="none" fontSize={12} fontWeight="800" style={{ fontFamily: "monospace" }}>{name}</text>
             <text x={x + 7} y={y + 31} fill="#fff" stroke="none" fontSize={10} fontWeight="400" style={{ fontFamily: "monospace" }}>
-              {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}%L`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
+              {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}% long`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
             </text>
           </>
         )}
@@ -238,7 +238,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
                       <div style={{ width: `${r.longPct}%`, backgroundColor: C.green }} />
                       <div style={{ width: `${100 - r.longPct}%`, backgroundColor: C.red }} />
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, ...mono, color: r.longPct >= 55 ? C.green : r.longPct <= 45 ? C.red : C.textMuted, minWidth: 50, whiteSpace: "nowrap" }}>{r.longPct}%L</span>
+                    <span title={`${r.longPct}% of approved signals are LONG`} style={{ fontSize: 10, fontWeight: 700, ...mono, color: r.longPct >= 55 ? C.green : r.longPct <= 45 ? C.red : C.textMuted, minWidth: 56, whiteSpace: "nowrap" }}>{r.longPct}% long</span>
                   </>
                 )}
               </div>
@@ -250,7 +250,9 @@ const MarketPanorama = ({ selected, onSelect }) => {
               {/* model bias */}
               <div style={{ textAlign: "right" }}>
                 {r.bias ? (
-                  <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: biasColor, backgroundColor: `${biasColor}1c`, padding: "2px 7px", borderRadius: 4 }}>{r.bias}</span>
+                  <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: biasColor, backgroundColor: `${biasColor}1c`, padding: "2px 7px", borderRadius: 4 }}>
+                    {r.bias === "BULLISH" ? "▲ " : r.bias === "BEARISH" ? "▼ " : ""}{r.bias}
+                  </span>
                 ) : <span style={{ fontSize: 10, color: C.textFaint }}>—</span>}
               </div>
             </div>

@@ -417,7 +417,8 @@ const ExecutionAudit = () => {
 
       {/* ─────────── 5) BREAKDOWN BY ASSET ─────────── */}
       <CollapsibleSection icon={Coins} title="Breakdown by Asset" summary={`${byAsset.length} assets · sorted by net PNL`} persistKey="audit-breakdown">
-        <div style={{ overflowX: "auto" }}>
+        {/* one scroll container for BOTH axes so the sticky header actually sticks */}
+        <div style={{ overflow: "auto", maxHeight: 480 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>

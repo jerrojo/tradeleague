@@ -18,6 +18,20 @@ const loadFavs = () => {
 
 const changeColor = (ch) => (ch == null ? C.textMuted : String(ch).trim().startsWith("-") ? C.red : C.green);
 
+/* tiny sparkline for the quick cards */
+const MiniSpark = ({ closes, color }) => {
+  if (!closes || closes.length < 2) return null;
+  const w = 54, h = 16;
+  const min = Math.min(...closes), max = Math.max(...closes), rng = max - min || 1;
+  const step = w / (closes.length - 1);
+  const pts = closes.map((c, i) => `${(i * step).toFixed(1)},${(h - ((c - min) / rng) * (h - 2) - 1).toFixed(1)}`).join(" ");
+  return (
+    <svg width={w} height={h} style={{ display: "block" }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" strokeLinecap="round" opacity={0.85} />
+    </svg>
+  );
+};
+
 const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = [] }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -119,14 +133,28 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
 
       {/* ── Quick-access favorite chips (editable) ── */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+        {/* Quick cards — the "market overview strip": one glance per major
+            (coin · model bias · price · Δ% · shape). Same editable favorites,
+            promoted from bare chips to informative mini-cards. */}
         {favCoins.map((c) => {
           const cm = meta[c] || {};
           const isActive = selected === c;
+          const chC = changeColor(cm.change);
+          const biasC = cm.bias === "BULLISH" ? C.green : cm.bias === "BEARISH" ? C.red : C.textMuted;
           return (
-            <div key={c} className="fav-chip" style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, cursor: "pointer", ...mono, border: `1px solid ${isActive ? C.purple : C.border}`, backgroundColor: isActive ? C.purpleBg : "transparent", color: isActive ? C.purple : C.text }} onClick={() => onSelect(c)}>
-              <span style={{ fontSize: 11, fontWeight: 700 }}>{c}</span>
-              {cm.change != null && <span style={{ fontSize: 9, fontWeight: 700, color: changeColor(cm.change), backgroundColor: `${changeColor(cm.change)}1c`, padding: "1px 4px", borderRadius: 3 }}>{cm.change}</span>}
-              <button title="Unpin" onClick={(e) => { e.stopPropagation(); toggleFav(c); }} className="fav-x" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: C.textFaint, display: "flex", opacity: 0, transition: "opacity 0.15s" }}><X size={11} /></button>
+            <div key={c} className="fav-chip" role="button" tabIndex={0}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(c); } }}
+              style={{ position: "relative", display: "flex", flexDirection: "column", gap: 3, padding: "8px 11px", minWidth: 128, borderRadius: 8, cursor: "pointer", ...mono, border: `1px solid ${isActive ? C.purple : C.border}`, backgroundColor: isActive ? C.purpleBg : C.card }} onClick={() => onSelect(c)}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: isActive ? C.purple : C.text }}>{c}<span style={{ color: C.textFaint, fontWeight: 400 }}>/{cm.pair || "USDT"}</span></span>
+                {cm.bias && <span title={`Model bias: ${cm.bias}`} style={{ marginLeft: "auto", fontSize: 8, fontWeight: 800, letterSpacing: "0.3px", color: biasC, backgroundColor: `${biasC}1a`, padding: "1px 5px", borderRadius: 3 }}>{cm.bias === "BULLISH" ? "▲ BULL" : "▼ BEAR"}</span>}
+                <button title="Unpin" onClick={(e) => { e.stopPropagation(); toggleFav(c); }} className="fav-x" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: C.textFaint, display: "flex", opacity: 0, transition: "opacity 0.15s" }}><X size={11} /></button>
+              </div>
+              {cm.price != null && <span style={{ fontSize: 14, fontWeight: 800, color: C.text }}>${cm.price}</span>}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {cm.change != null && <span style={{ fontSize: 10.5, fontWeight: 700, color: chC }}>{cm.change}</span>}
+                <span style={{ marginLeft: "auto" }}><MiniSpark closes={cm.closes} color={chC} /></span>
+              </div>
             </div>
           );
         })}

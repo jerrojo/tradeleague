@@ -84,13 +84,15 @@ const HomeTab = () => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} opacity={0.4} />
             <XAxis dataKey="day" stroke={C.textMuted} fontSize={9} tickFormatter={v => `D${v}`} />
-            <YAxis stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}K` : `$${v}`} />
+            {/* sqrt scale: the exponential 30-day curves otherwise flatten into the
+                floor for two thirds of the chart and the race is unreadable */}
+            <YAxis scale="sqrt" domain={[0, "dataMax"]} stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}K` : `$${Math.round(v)}`} />
             <Tooltip content={<RaceTooltip />} />
             {mockTraders.map((t, i) => watching[t.name] && (
               <Area key={`area-${t.name}`} type="monotone" dataKey={t.name} fill={`url(#grad-${i})`} stroke="none" fillOpacity={0.3} isAnimationActive={false} />
             ))}
             {mockTraders.map((t, i) => watching[t.name] && (
-              <Line key={`line-${t.name}`} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={leader && leader.name === t.name ? 3 : 2} dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }} connectNulls={false} />
+              <Line key={`line-${t.name}`} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={leader && leader.name === t.name ? 3.5 : 2.5} strokeOpacity={0.95} dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }} connectNulls={false} />
             ))}
           </ComposedChart>
         </ResponsiveContainer>

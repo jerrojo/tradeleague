@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { X, Printer } from "lucide-react";
 import { ALL_SIGNALS } from "../data/robotin";
 import { FUND, START_CAPITAL } from "../data/fund";
@@ -41,6 +41,13 @@ export const PrintTearSheet = ({ onClose }) => {
     };
   }, []);
 
+  // Standard modal affordances: Escape and a click on the backdrop both close.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const today = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
   const Stat = ({ label, value, color }) => (
     <div style={{ flex: "1 1 0", minWidth: 120, border: "1px solid #e3e6ea", borderRadius: 8, padding: "10px 12px" }}>
@@ -50,15 +57,15 @@ export const PrintTearSheet = ({ onClose }) => {
   );
 
   return (
-    <div className="tearsheet-overlay" style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.55)", overflow: "auto", display: "flex", justifyContent: "center", padding: "24px 16px" }}>
+    <div className="tearsheet-overlay" role="dialog" aria-modal="true" aria-label="Fund tear sheet" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.55)", overflow: "auto", display: "flex", justifyContent: "center", padding: "24px 16px" }}>
       {/* toolbar — hidden when printing */}
-      <div className="tearsheet-toolbar" style={{ position: "fixed", top: 16, right: 20, display: "flex", gap: 8, zIndex: 601 }}>
+      <div className="tearsheet-toolbar" onClick={(e) => e.stopPropagation()} style={{ position: "fixed", top: 16, right: 20, display: "flex", gap: 8, zIndex: 601 }}>
         <button onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#7c5cff", color: "#fff", border: "none", borderRadius: 8, padding: "9px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}><Printer size={15} /> Print / Save PDF</button>
         <button onClick={onClose} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fff", color: "#0f172a", border: "1px solid #d1d5db", borderRadius: 8, padding: "9px 12px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}><X size={15} /> Close</button>
       </div>
 
       {/* the page */}
-      <div className="tearsheet-page" style={{ width: 760, maxWidth: "100%", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "36px 40px", fontFamily: "'Inter', system-ui, sans-serif", alignSelf: "flex-start", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+      <div className="tearsheet-page" onClick={(e) => e.stopPropagation()} style={{ width: 760, maxWidth: "100%", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "36px 40px", fontFamily: "'Inter', system-ui, sans-serif", alignSelf: "flex-start", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
         {/* header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", borderBottom: "2px solid #0f172a", paddingBottom: 14, marginBottom: 18 }}>
           <div>

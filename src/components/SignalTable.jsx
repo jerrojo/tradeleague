@@ -59,6 +59,21 @@ const unrealized = (s, lastClose) => {
   return { distPct, toTpPct };
 };
 
+/* Plain-language read of a setup tag like "TV_SCALP_CHOCH_H1_CRYPTO" —
+   the chips are cryptic without it. */
+const TAG_WORDS = {
+  TV: "TradingView", TG: "Telegram", AI: "AI model",
+  SCALP: "scalp", SWING: "swing",
+  FVG: "fair-value gap", OB: "order block", BOS: "break of structure",
+  LIQ: "liquidity sweep", CHOCH: "change of character",
+  M15: "15-min chart", H1: "1-hour chart", H4: "4-hour chart",
+};
+const explainTag = (raw) => {
+  if (!raw) return "";
+  const parts = String(raw).split("_").map((p) => TAG_WORDS[p] || p.toLowerCase());
+  return `Setup: ${parts.join(" · ")} (source · style · trigger)`;
+};
+
 const num = { ...mono, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" };
 const cell = { ...tdStyle, fontSize: 11.5 };
 const toolBtn = {
@@ -270,7 +285,7 @@ const SignalTable = ({
                     )}
                     {show("setup") && (
                       <td style={cell}>
-                        {tag ? <span style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, ...num }}>{tag}</span> : <span style={{ color: C.textFaint }}>—</span>}
+                        {tag ? <span title={explainTag(s.tag)} style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, cursor: "help", ...num }}>{tag}</span> : <span style={{ color: C.textFaint }}>—</span>}
                       </td>
                     )}
                     {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>}

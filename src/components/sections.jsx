@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { CoinSelector } from "./CoinSelector";
@@ -15,27 +15,6 @@ import { FilterEdge } from "./tabs/FilterEdge";
 import { useNav } from "../contexts";
 import { smcCoins } from "../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
-
-/* ═══════════════════════ SECTION SUB-NAV ═══════════════════════ */
-const SubTabs = ({ tabs, active, onChange }) => (
-  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
-    {tabs.map(t => {
-      const on = active === t.id;
-      const Icon = t.icon;
-      return (
-        <button key={t.id} onClick={() => onChange(t.id)} style={{
-          display: "flex", alignItems: "center", gap: "7px",
-          padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer",
-          border: `1px solid ${on ? C.purple : C.border}`,
-          backgroundColor: on ? C.purpleBg : "transparent",
-          color: on ? C.purple : C.textMuted, transition: "all 0.15s",
-        }}>
-          {Icon && <Icon size={15} />}{t.label}
-        </button>
-      );
-    })}
-  </div>
-);
 
 const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
 
@@ -70,6 +49,7 @@ const MarketsSection = () => {
         longPct: tot ? Math.round((longs / tot) * 100) : null,
         signals: sigs.length,
         active: sigs.filter((s) => s.status === "active" || s.status === "pending").length,
+        closes: cs.filter((_, i) => i % 4 === 0).map((k) => k.close), // downsampled spark for the quick cards
       };
     });
     return m;
@@ -109,21 +89,65 @@ const TradersSection = () => (
   </div>
 );
 
-/* ── AUDIT: the verification layer. Execution Audit (what Robotín executed: fills,
-   fees, slippage, real vs theoretical) + Analytics (the raw signal-provider edge,
-   pre-filter). Together they audit the whole pipeline: raw edge → filter → execution. ── */
+/* ── AUDIT: the verification layer as ONE page, read top to bottom in pipeline
+   order — 1) what actually executed (fills, fees, slippage), 2) what the filter's
+   approve/reject was worth (counterfactual), 3) the raw provider edge pre-filter.
+   No tabs: an auditor reads the whole chain; a sticky jump-nav replaces them and
+   deep links from Overview cards scroll to the right part. ── */
+const AUDIT_PARTS = [
+  { id: "execution", label: "Execution", icon: ShieldCheck, Comp: ExecutionAudit, num: "1", desc: "what actually executed" },
+  { id: "edge", label: "Filter edge", icon: GitBranch, Comp: FilterEdge, num: "2", desc: "what the filter was worth" },
+  { id: "analytics", label: "Provider analytics", icon: BarChart3, Comp: PortfolioTab, num: "3", desc: "raw edge before the filter" },
+];
+
 const AuditSection = () => {
   const { auditView, setAuditView } = useNav();
-  const sub = auditView || "execution";
-  const setSub = setAuditView;
+  const refs = useRef({});
+  const jump = (id, smooth = true) => {
+    setAuditView(id);
+    refs.current[id]?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  };
+  // Deep links (Overview KPI cards → go("audit", { auditView })) land on the section.
+  useEffect(() => {
+    if (auditView && auditView !== "execution") {
+      const t = setTimeout(() => refs.current[auditView]?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      return () => clearTimeout(t);
+    }
+  }, [auditView]);
+
   return (
-    <div>
-      <SubTabs active={sub} onChange={setSub} tabs={[
-        { id: "execution", label: "Execution Audit", icon: ShieldCheck },
-        { id: "edge", label: "Filter Edge", icon: GitBranch },
-        { id: "analytics", label: "Analytics", icon: BarChart3 },
-      ]} />
-      {sub === "execution" ? <ExecutionAudit /> : sub === "edge" ? <FilterEdge /> : <PortfolioTab />}
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* sticky jump-nav — same offset as the app header */}
+      <div style={{ position: "sticky", top: 56, zIndex: 5, display: "flex", alignItems: "center", gap: 6, padding: "8px 0", backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 4 }}>On this page</span>
+        {AUDIT_PARTS.map((p) => {
+          const on = (auditView || "execution") === p.id;
+          const Icon = p.icon;
+          return (
+            <button key={p.id} onClick={() => jump(p.id)} style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999,
+              fontSize: 11, fontWeight: 700, cursor: "pointer",
+              border: `1px solid ${on ? C.purple : C.border}`,
+              backgroundColor: on ? C.purpleBg : "transparent", color: on ? C.purple : C.textMuted,
+            }}>
+              <Icon size={13} />{p.num} · {p.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {AUDIT_PARTS.map((p, i) => (
+        <div key={p.id} ref={(el) => { refs.current[p.id] = el; }} style={{ scrollMarginTop: 110, paddingTop: i === 0 ? 8 : 0 }}>
+          {i > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "26px 0 18px" }}>
+              <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Part {p.num} · {p.label} — {p.desc}</span>
+              <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
+            </div>
+          )}
+          <p.Comp />
+        </div>
+      ))}
     </div>
   );
 };

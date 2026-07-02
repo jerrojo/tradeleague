@@ -75,9 +75,9 @@ const ActivityFeed = () => {
         )}
       />
 
-      {/* ─────────── STICKY FILTER ROW ─────────── */}
+      {/* ─────────── STICKY FILTER ROW (offset = app header height, or it hides under it) ─────────── */}
       <div style={{
-        position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 7,
+        position: "sticky", top: 56, zIndex: 5, display: "flex", alignItems: "center", gap: 7,
         flexWrap: "wrap", padding: "8px 0", backgroundColor: C.bg, borderBottom: `1px solid ${C.border}`,
       }}>
         {CHIPS.map((c) => {
@@ -126,6 +126,7 @@ const ActivityFeed = () => {
         lastCloseFor={(s) => lastClose(s.coin)}
         viewId="activity"
         exportName="tradethlon-activity"
+        maxHeight="calc(100vh - 250px)"
       />
     </div>
   );
