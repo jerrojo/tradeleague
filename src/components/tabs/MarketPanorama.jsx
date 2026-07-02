@@ -61,7 +61,10 @@ const MarketPanorama = ({ selected, onSelect }) => {
   const { within, isFiltered } = useTimeframe();
   const [sortKey, setSortKey] = useState(null); // null = catalog order (majors first)
   const [sortDir, setSortDir] = useState("desc");
-  const [view, setView] = useState("table");     // "table" | "map"
+  // Heatmap is the default lead — the spatial "whole board" read comes first,
+  // the table is the drill-down. The user's choice persists across sessions.
+  const [view, setViewRaw] = useState(() => { try { return localStorage.getItem("mp:view") || "map"; } catch { return "map"; } }); // "table" | "map"
+  const setView = (v) => { setViewRaw(v); try { localStorage.setItem("mp:view", v); } catch { /* ignore */ } };
   const [sizeBy, setSizeBy] = useState("signals"); // signals | activity | equal
   const [colorBy, setColorBy] = useState("change"); // change | sentiment
 
