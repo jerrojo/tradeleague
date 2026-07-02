@@ -36,6 +36,38 @@ const UpdatedAgo = () => {
   return <span style={{ color: C.green }}>{secs}s ago</span>;
 };
 
+/* ── New-version notifier: an open SPA tab keeps running the bundle it loaded,
+   so freshly deployed changes are invisible until a reload. Poll the served
+   index.html every minute, compare its bundle hash with the one this tab runs,
+   and offer a one-click refresh when they differ. ── */
+const UpdateNotifier = () => {
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    const current = document.querySelector('script[type="module"][src*="/assets/"]')?.getAttribute("src");
+    if (!current) return; // dev server — nothing to compare
+    const check = async () => {
+      try {
+        const html = await fetch(`/?v=${Date.now()}`, { cache: "no-store" }).then((r) => r.text());
+        const m = html.match(/\/assets\/index-[\w-]+\.js/);
+        if (m && m[0] !== current) setStale(true);
+      } catch { /* offline / fetch blocked — check again next tick */ }
+    };
+    const id = setInterval(check, 60000);
+    check();
+    return () => clearInterval(id);
+  }, []);
+  if (!stale) return null;
+  return (
+    <div style={{ position: "fixed", bottom: 48, right: 20, zIndex: 700, display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 10, backgroundColor: C.card, border: `1px solid ${C.purple}50`, boxShadow: "0 12px 40px rgba(0,0,0,0.5)", animation: "toastSlideIn 0.25s ease" }}>
+      <Sparkles size={15} color={C.purple} />
+      <span style={{ fontSize: 12.5, color: C.text }}>A new version was deployed.</span>
+      <button onClick={() => window.location.reload()} style={{ padding: "7px 14px", borderRadius: 7, border: "none", backgroundColor: C.purple, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+        Refresh
+      </button>
+    </div>
+  );
+};
+
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
 const App = () => {
   // last visited section persists across refreshes; we always land at the top of the page
@@ -686,6 +718,9 @@ const App = () => {
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <UpdatedAgo /></span>
               </div>
             </footer>
+
+            {/* one-click refresh when a newer build is live */}
+            <UpdateNotifier />
           </div>
 
           </div>{/* close Main Layout wrapper */}
