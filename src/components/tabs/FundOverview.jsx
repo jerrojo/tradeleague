@@ -7,7 +7,7 @@ import {
   Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
   Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet, XCircle,
 } from "lucide-react";
-import { InfoTip, SectionHeader } from "../common";
+import { Avatar, BotTag, InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav, useProfile } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
@@ -925,8 +925,11 @@ const FundOverview = () => {
           <tbody>
             {data.providers.slice(0, 5).map((p) => (
               <tr key={p.trader} className="hoverable" title={`Open ${p.trader}'s profile`} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={() => openTrader(p.trader)}>
-                <td style={{ padding: "9px 14px", fontWeight: 700, color: C.text, display: "flex", alignItems: "center", gap: 6 }}>
-                  {p.isBot ? <Bot size={12} color={C.cyan} /> : <User size={12} color={C.textMuted} />}{p.trader}
+                {/* one identity pattern platform-wide: Avatar + name + BotTag */}
+                <td style={{ padding: "9px 14px" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontWeight: 700, color: C.text }}>
+                    <Avatar name={p.trader} size={22} />{p.trader}<BotTag isBot={p.isBot} size={13} />
+                  </span>
                 </td>
                 <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.textMuted }}>{p.total}</td>
                 <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.text }}>{p.approved}</td>

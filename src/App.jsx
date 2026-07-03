@@ -631,7 +631,9 @@ const App = () => {
                               <span style={{ fontSize: "9px", fontWeight: 700, color: aColor, backgroundColor: `${aColor}15`, padding: "1px 6px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.3px" }}>{a.verb}</span>
                               {a.conf != null && <span style={{ fontSize: "9px", fontWeight: 700, color: a.priority === "high" ? aColor : C.textMuted, ...mono }}>{a.conf}%</span>}
                             </div>
-                            <div style={{ fontSize: "11px", color: a.read ? C.textFaint : C.textMuted, lineHeight: 1.4, marginTop: "2px" }}>{a.trader} · {a.detail}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "11px", color: a.read ? C.textFaint : C.textMuted, lineHeight: 1.4, marginTop: "3px" }}>
+                              <Avatar name={a.trader} size={14} /> {a.trader} · {a.detail}
+                            </div>
                             <div style={{ fontSize: "10px", color: C.textFaint, marginTop: "3px", ...mono }}>{a.time} ago</div>
                           </div>
                           {!a.read && <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: aColor, flexShrink: 0, marginTop: "6px" }} />}

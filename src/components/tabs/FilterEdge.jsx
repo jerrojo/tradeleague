@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
-import { SectionHeader, EmptyState } from "../common";
+import { Avatar, BotTag, SectionHeader, EmptyState } from "../common";
 import { useTimeframe, useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS } from "../../data/robotin";
@@ -132,7 +132,12 @@ const FilterEdge = () => {
             <tbody>
               {d.traders.map((t) => (
                 <tr key={t.trader} className="hoverable" title={`Open ${t.trader}'s profile`} onClick={() => openTrader(t.trader)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
-                  <td style={{ padding: "9px 12px", fontWeight: 700, color: C.text }}>{t.trader}{t.isBot ? <span style={{ fontSize: 11, color: C.textFaint, marginLeft: 6 }}>BOT</span> : null}</td>
+                  {/* one identity pattern platform-wide: Avatar + name + BotTag */}
+                  <td style={{ padding: "9px 12px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontWeight: 700, color: C.text }}>
+                      <Avatar name={t.trader} size={22} />{t.trader}<BotTag isBot={t.isBot} size={13} />
+                    </span>
+                  </td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.textMuted }}>{t.total}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.text }}>{t.approved}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: t.approvalRate >= 50 ? C.green : C.amber }}>{pct(t.approvalRate)}</td>

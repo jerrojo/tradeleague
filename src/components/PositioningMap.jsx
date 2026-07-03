@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
 import { coinCandles, coinSignals } from "../data/robotin";
-import { SectionHeader } from "./common";
+import { Avatar, SectionHeader } from "./common";
 import { C, cardStyle, mono } from "../theme";
 
 /* ═══════════════════════ POSITIONING MAP ═══════════════════════
@@ -111,6 +111,7 @@ const PositioningMap = ({ coin, currentPrice }) => {
               boxShadow: C.shadowLg, whiteSpace: "nowrap", minWidth: 168,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                <Avatar name={p.trader} size={16} />
                 <span style={{ fontSize: 12, fontWeight: 800, color: C.text }}>{p.trader}</span>
                 <span style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: "0.5px", color: p.isBot ? C.cyan : C.textMuted, backgroundColor: p.isBot ? `${C.cyan}1c` : C.card, border: `1px solid ${C.border}`, padding: "1px 5px", borderRadius: 3 }}>{p.isBot ? "BOT" : "HUMAN"}</span>
               </div>
