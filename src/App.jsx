@@ -83,7 +83,7 @@ const App = () => {
   // scrolls left are explicit in-page anchors: Audit's jump-nav deep links and
   // Markets' coin-detail glide — those are destinations, not restored state.)
   useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; window.scrollTo({ top: 0 }); }, []);
-  const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0 }); };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
