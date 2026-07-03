@@ -103,17 +103,21 @@ const AUDIT_PARTS = [
 const AuditSection = () => {
   const { auditView, setAuditView } = useNav();
   const refs = useRef({});
-  // Instant jumps: smooth-scrolling across thousands of px of lazy-mounting
-  // charts means seconds of travel through half-rendered space. Terminal
-  // behavior is teleport, not tour.
-  const jump = (id) => {
-    setAuditView(id);
-    refs.current[id]?.scrollIntoView({ behavior: "auto", block: "start" });
+  // Instant jumps via explicit window.scrollTo (scrollIntoView proved flaky
+  // with the sticky header/nav combo). Offset = app header (56) + sticky
+  // jump-nav (~44). Teleport, not tour: smooth-scrolling across thousands of
+  // px of lazy-mounting charts meant seconds of travel through blank space.
+  const scrollToPart = (id) => {
+    const el = refs.current[id];
+    if (!el) return;
+    const y = id === "execution" ? 0 : el.getBoundingClientRect().top + window.scrollY - 104;
+    window.scrollTo({ top: Math.max(0, y) });
   };
+  const jump = (id) => { setAuditView(id); scrollToPart(id); };
   // Deep links (Overview KPI cards → go("audit", { auditView })) land on the section.
   useEffect(() => {
     if (auditView && auditView !== "execution") {
-      const t = setTimeout(() => refs.current[auditView]?.scrollIntoView({ behavior: "auto", block: "start" }), 120);
+      const t = setTimeout(() => scrollToPart(auditView), 120);
       return () => clearTimeout(t);
     }
   }, [auditView]);
