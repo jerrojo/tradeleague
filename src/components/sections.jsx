@@ -103,14 +103,17 @@ const AUDIT_PARTS = [
 const AuditSection = () => {
   const { auditView, setAuditView } = useNav();
   const refs = useRef({});
-  const jump = (id, smooth = true) => {
+  // Instant jumps: smooth-scrolling across thousands of px of lazy-mounting
+  // charts means seconds of travel through half-rendered space. Terminal
+  // behavior is teleport, not tour.
+  const jump = (id) => {
     setAuditView(id);
-    refs.current[id]?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+    refs.current[id]?.scrollIntoView({ behavior: "auto", block: "start" });
   };
   // Deep links (Overview KPI cards → go("audit", { auditView })) land on the section.
   useEffect(() => {
     if (auditView && auditView !== "execution") {
-      const t = setTimeout(() => refs.current[auditView]?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+      const t = setTimeout(() => refs.current[auditView]?.scrollIntoView({ behavior: "auto", block: "start" }), 120);
       return () => clearTimeout(t);
     }
   }, [auditView]);
