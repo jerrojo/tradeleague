@@ -130,8 +130,8 @@ const GLOSSARY = {
   maxConcurrent:  "Cap on how many trades can be open at the same time",
   excursion:      "Excursion (no leverage) — how far price ran for/against the trade while it was open, vs entry",
   // Trade Report (broker ledger)
-  initialBalance: "Starting capital of the VARIV accounts at the beginning of the month",
-  currentBalance: "Running balance = initial balance + realized net P&L for the month",
+  initialBalance: "Starting capital of the VARIV broker accounts at the beginning of the month. Note: this is the BROKER ledger — a different book from the signal-book equity on Overview. The two are separate universes by design (account history vs the current signal window) and will reconcile once live connectors ship.",
+  currentBalance: "Running broker-account balance = initial balance + realized net P&L for the month. Distinct from Overview's signal-book equity — that one tracks executed signals in the current window; this one tracks the accounts' monthly history.",
   monthRoi:       "Return on the month = realized net P&L ÷ initial balance",
   netPnlReport:   "Net realized profit or loss after commissions for the period",
   feesPos:        "Total broker commissions paid on the period's positions",
@@ -180,6 +180,12 @@ const InfoTip = ({ k, children, inline = false }) => {
       style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "3px", cursor: "help" }}
       onMouseEnter={place}
       onMouseLeave={() => setPos(null)}
+      tabIndex={0}
+      role="button"
+      aria-label={`Explain: ${text}`}
+      onFocus={place}
+      onBlur={() => setPos(null)}
+      onKeyDown={(e) => { if (e.key === "Escape") setPos(null); }}
     >
       {children}
       <span style={{

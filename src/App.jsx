@@ -26,16 +26,6 @@ const dateRanges = [
   { id: "all", label: "All" },
 ];
 
-/* Live "data as-of" — self-contained ticker so the whole app doesn't re-render. */
-const UpdatedAgo = () => {
-  const [secs, setSecs] = useState(3);
-  useEffect(() => {
-    const id = setInterval(() => setSecs((s) => (s >= 59 ? 1 : s + 1)), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return <span style={{ color: C.green }}>{secs}s ago</span>;
-};
-
 /* ── New-version notifier: an open SPA tab keeps running the bundle it loaded,
    so freshly deployed changes are invisible until a reload. Poll the served
    index.html every minute, compare its bundle hash with the one this tab runs,
@@ -84,7 +74,15 @@ const App = () => {
   // Markets' coin-detail glide — those are destinations, not restored state.)
   useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; window.scrollTo({ top: 0 }); }, []);
   const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0 }); };
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => (typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(max-width: 900px)").matches : false));
+  // Narrow screens get the compact sidebar automatically (and re-expand when widened)
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const onChange = (e) => setSidebarCollapsed(e.matches);
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange);
+    return () => { mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange); };
+  }, []);
   const [dateRange, setDateRange] = useState("1m");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -468,6 +466,13 @@ const App = () => {
                       An intelligence terminal for traders. Seven areas, one job each — start anywhere, every screen tells you what it's for.
                     </div>
                   </div>
+                  {/* THE differentiator leads — the counterfactual is what no other tool has */}
+                  <div style={{ margin: "16px 28px 0", padding: "12px 14px", borderRadius: "10px", border: `1px solid ${C.purple}35`, backgroundColor: `${C.purple}0d`, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <GitBranch size={15} color={C.purple} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span style={{ fontSize: "12px", color: C.textMuted, lineHeight: 1.5 }}>
+                      <b style={{ color: C.text }}>What no other tool has:</b> Tradethlon tracks the counterfactual. Every signal Robotín <i>rejects</i> keeps living as a simulated position — so you can <b style={{ color: C.purple }}>prove</b> what the filter's judgment is worth, not just assert it.
+                    </span>
+                  </div>
                   <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                     {[
                       { icon: LayoutDashboard, color: C.purple, t: "Overview", d: "The fund at a glance — capital, return, risk and system state.", go: "overview" },
@@ -723,12 +728,14 @@ const App = () => {
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
             </main>
 
-            {/* Footer - Live Stats Bar */}
+            {/* Footer — status bar. HONEST: a fake "LIVE · updated 3s ago" ticker on
+                simulated data is theater a professional spots instantly, and it costs
+                credibility everywhere else. Amber SIM state until real connectors ship. */}
             <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
               <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
-                  <span style={{ color: C.green }}>LIVE</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title="Deterministic simulated feed — flips to LIVE when exchange connectors are wired.">
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
+                  <span style={{ color: C.amber }}>SIM FEED</span>
                 </div>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} providers</span>
@@ -738,7 +745,7 @@ const App = () => {
               <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Activity size={11} color={C.cyan} /> {fundStats.active} open positions</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>Updated <UpdatedAgo /></span>
+                <span style={{ color: C.textFaint }}>deterministic demo data</span>
               </div>
             </footer>
 
