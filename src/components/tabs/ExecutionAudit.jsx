@@ -118,12 +118,13 @@ const Select = ({ label, value, onChange, options }) => (
   </label>
 );
 
-/* ── small advanced-stat card ── */
+/* ── small advanced-stat card — sentence-case label, bigger colored value
+   (same card language as the KPI grid, one size down) ── */
 const MiniStat = ({ label, value, color, sub, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 3 }}>
-    <span style={{ fontSize: 11, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
-    <span style={{ fontSize: 16, fontWeight: 800, color: color || C.text, ...mono, letterSpacing: "-0.3px" }}>{value}</span>
-    {sub && <span style={{ fontSize: 10, color: C.textMuted, ...mono }}>{sub}</span>}
+  <div className="tl-card" style={{ ...cardStyle, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+    <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+    <span style={{ fontSize: 18, fontWeight: 800, color: color || C.text, ...mono, letterSpacing: "-0.3px" }}>{value}</span>
+    {sub && <span style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>{sub}</span>}
   </div>
 );
 

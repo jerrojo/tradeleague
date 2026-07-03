@@ -8,20 +8,27 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
    "$12K" mid-animation. Credibility beats the flourish: show the real number instantly.) */
 const AnimatedValue = ({ value }) => <span>{value}</span>;
 
-/* StatCard v2 — one clear primary value, muted label, semantic accent bar (LukeW: one metric per card) */
+/* IconChip — the tinted rounded-square icon badge (one visual voice for every
+   KPI card platform-wide: semantic color at low opacity behind the icon). */
+const IconChip = ({ icon: Icon, color = C.blue, size = 40 }) => (
+  <span aria-hidden style={{ width: size, height: size, borderRadius: Math.round(size * 0.28), backgroundColor: `${color}1a`, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    {Icon && <Icon size={Math.round(size * 0.45)} color={color} />}
+  </span>
+);
+
+/* StatCard v3 — sentence-case label, big value, IconChip on the right.
+   (v2's left accent bar + tiny uppercase label retired in favor of the calmer,
+   more legible card language used across the platform.) */
 const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
-  <div className="card-hover" style={{ ...cardStyle, display: "flex", alignItems: "flex-start", gap: "12px", position: "relative", overflow: "hidden" }}>
-    <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: color, opacity: 0.55 }} />
-    <div style={{ width: 34, height: 34, borderRadius: "9px", backgroundColor: `${color}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-      <Icon size={17} color={color} />
-    </div>
+  <div className="card-hover" style={{ ...cardStyle, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
     <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: "10px", color: C.textMuted, marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: "600" }}>
+      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", marginBottom: "7px" }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
-      <div style={{ fontSize: "21px", fontWeight: "800", letterSpacing: "-0.3px", ...mono }}><AnimatedValue value={value} /></div>
-      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "2px" }}>{sub}</div>}
+      <div style={{ fontSize: "24px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, ...mono }}><AnimatedValue value={value} /></div>
+      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "5px" }}>{sub}</div>}
     </div>
+    <IconChip icon={Icon} color={color} />
   </div>
 );
 
@@ -368,6 +375,7 @@ export {
   Avatar,
   CollapsibleSection,
   EmptyState,
+  IconChip,
   StatCard,
   SectionHeader,
   Tag,

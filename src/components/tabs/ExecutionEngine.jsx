@@ -5,7 +5,7 @@ import {
   Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldX, Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
-import { EmptyState, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
+import { EmptyState, IconChip, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
 import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
 import { useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
@@ -86,14 +86,16 @@ const MultiSel = ({ selected, options, onToggle, onAll }) => {
   );
 };
 
-/* KPI card */
+/* KPI card — same language as Overview/Audit: sentence-case label, big value,
+   tinted IconChip on the right */
 const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "13px 15px", display: "flex", flexDirection: "column", gap: 5 }}>
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 11.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>{Icon && <Icon size={12} color={accent} />}{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+  <div className="tl-card" style={{ ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+      <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
     </div>
-    <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
+    <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={34} />
   </div>
 );
 

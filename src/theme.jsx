@@ -33,7 +33,8 @@ const pillStyle = (color) => ({
   color: color, border: `1px solid ${color}30`
 });
 
-const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", padding: "14px", boxShadow: C.shadow };
+/* Softer radius + roomier padding — modern terminal cards breathe */
+const cardStyle = { backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "16px", boxShadow: C.shadow };
 const thStyle = { padding: "11px 14px", textAlign: "left", color: C.textMuted, fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `1px solid ${C.border}` };
 const tdStyle = { padding: "11px 14px", fontSize: "12px", borderBottom: `1px solid ${C.border}` };
 
