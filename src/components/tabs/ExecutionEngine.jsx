@@ -316,10 +316,10 @@ const ExecutionEngine = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* header */}
+      {/* no subtitle: the app header directly above already says exactly this */}
       <SectionHeader
         icon={Cpu}
         title="Execution engine"
-        subtitle="Re-simulates execution with partials, sizing and costs over historical signals · simulated"
         right={(
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={exportCsv} style={{ ...btn, color: C.green, borderColor: `${C.green}40`, backgroundColor: C.greenBg }}><Download size={13} /> CSV</button>

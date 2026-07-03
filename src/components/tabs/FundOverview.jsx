@@ -7,8 +7,8 @@ import {
   Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
   Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet, XCircle,
 } from "lucide-react";
-import { Avatar, BotTag, InfoTip, SectionHeader } from "../common";
-import { useTimeframe, useNav, useProfile } from "../../contexts";
+import { InfoTip, SectionHeader } from "../common";
+import { useTimeframe, useNav } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
@@ -30,7 +30,6 @@ const pfFmt = (v) => (v === Infinity ? "∞" : v.toFixed(2));
    changes; honest framing — it's narrated from the numbers, not invented. */
 const Em = ({ c, children }) => <span style={{ color: c, fontWeight: 700 }}>{children}</span>;
 const AICommentary = ({ data }) => {
-  const edge = data.balance - data.allBalance;
   const beat = data.returnPct - data.btcReturnPct;
   const pct1 = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
   return (
@@ -41,12 +40,11 @@ const AICommentary = ({ data }) => {
           <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.4px", color: C.purple, textTransform: "uppercase" }}>Robotín's read</span>
           <span style={{ fontSize: 9, color: C.textFaint }}>AI · re-written each period</span>
         </div>
-        {/* Two sentences, no card repeats: the verdict (vs benchmark) and the filter's
-            contribution — the two syntheses no single card carries. Win rate / PF / DD
-            already have their own cards; re-narrating them was pure redundancy. */}
+        {/* ONE sentence: the verdict vs benchmark — the only synthesis no card carries.
+            The filter story (approvals, edge) lives in the fork pipeline right below;
+            narrating it here too printed the same numbers twice on one screen. */}
         <p style={{ fontSize: 12.5, lineHeight: 1.6, color: C.textMuted, margin: 0 }}>
           The fund stands at <Em c={C.text}>{usdPlain(data.balance)}</Em>, <Em c={data.returnPct >= 0 ? C.green : C.red}>{pct1(data.returnPct)}</Em> for the period versus <Em c={data.btcReturnPct >= 0 ? C.green : C.red}>{pct1(data.btcReturnPct)}</Em> for BTC buy-and-hold — {beat >= 0 ? "ahead of" : "behind"} the benchmark by <Em c={beat >= 0 ? C.green : C.red}>{Math.abs(beat).toFixed(1)} pts</Em>.
-          {" "}Robotín approved <Em c={C.text}>{data.approvedCount}</Em> of <Em c={C.text}>{data.allSignalsCount}</Em> signals ({Math.round(data.approvalRate)}%); screening out the rest {edge >= 0 ? "added" : "cost"} an estimated <Em c={edge >= 0 ? C.green : C.red}>{usd(edge)}</Em> of filter edge.
         </p>
       </div>
     </div>
@@ -293,9 +291,6 @@ const ForkPipeline = ({ data, onClick }) => {
 const FundOverview = () => {
   const { within } = useTimeframe();
   const { go } = useNav();
-  const { openProfile } = useProfile();
-  // any trader name anywhere should land on that trader's profile, not a generic list
-  const openTrader = (name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); else go("traders"); };
   const data = useMemo(() => {
     /* ── Every signal across all coins (for the system-wide approval rate) ── */
     const allSignals = ALL_SIGNALS.filter((s) => within(s.time));
@@ -676,7 +671,9 @@ const FundOverview = () => {
           <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
           <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
           <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Filter Edge" icon={ShieldCheck} accent={C.green} value={usd(data.filterEdge)} valueColor={data.filterEdge >= 0 ? C.green : C.red} sub="value vs taking every signal" onClick={() => go("audit", { auditView: "edge" })} />
+          {/* "Filter Edge" card removed — the fork pipeline directly below OWNS that
+              number with full context (two books + banner) and deep-links to Audit.
+              The same figure printed twice on one screen was pure repetition. */}
           <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
           {/* rejected-signal confidence is NOT a loss — red implied "bad"; a low number
               here means the filter is doing its job, so it stays neutral */}
@@ -907,42 +904,10 @@ const FundOverview = () => {
         <Kpi label="Top Provider Share" icon={Target} accent={C.amber} value={`${Math.round(data.topProviderShare)}%`} valueColor={data.topProviderShare >= 50 ? C.amber : C.text} sub={`${data.topProvider.trader} of executed P&L`} onClick={() => go("traders")} />
       </div>
 
-      {/* Top providers by executed P&L — attribution preview (full detail in Traders / Audit) */}
-      <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
-          <Users size={14} color={C.blue} />
-          <span style={{ fontSize: 13, fontWeight: 700 }}>Top providers by executed P&L</span>
-          <span style={{ fontSize: 10, color: C.textMuted, marginLeft: "auto" }}>{data.signaledProviders} providers this period</span>
-        </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {[["Provider", "left"], ["Signals", "right"], ["Approved", "right"], ["Approval", "right"], ["Executed P&L", "right"]].map(([h, al]) => (
-                <th key={h} scope="col" style={{ textAlign: al, padding: "8px 14px", fontSize: 11, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.providers.slice(0, 5).map((p) => (
-              <tr key={p.trader} className="hoverable" title={`Open ${p.trader}'s profile`} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }} onClick={() => openTrader(p.trader)}>
-                {/* one identity pattern platform-wide: Avatar + name + BotTag */}
-                <td style={{ padding: "9px 14px" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontWeight: 700, color: C.text }}>
-                    <Avatar name={p.trader} size={22} />{p.trader}<BotTag isBot={p.isBot} size={13} />
-                  </span>
-                </td>
-                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.textMuted }}>{p.total}</td>
-                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: C.text }}>{p.approved}</td>
-                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, color: p.approvalRate >= 50 ? C.green : C.amber }}>{Math.round(p.approvalRate)}%</td>
-                <td style={{ padding: "9px 14px", textAlign: "right", ...mono, fontWeight: 800, color: p.execPnl >= 0 ? C.green : C.red }}>{usd(p.execPnl)}</td>
-              </tr>
-            ))}
-            {data.providers.length === 0 && (
-              <tr><td colSpan={5} style={{ padding: 16, textAlign: "center", color: C.textMuted }}>No signals from providers in this window.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* The old "Top providers by executed P&L" table was removed: it was a strict
+          subset of Audit → Part 2's attribution table (which adds the rejected-book
+          and edge columns). One click away is better than printed twice. The four
+          supply-side cards above + "All traders" keep the at-a-glance read. */}
     </div>
   );
 };

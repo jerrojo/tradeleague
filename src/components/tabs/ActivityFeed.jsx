@@ -63,11 +63,10 @@ const ActivityFeed = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* ─────────── HEADER ─────────── */}
+      {/* ─────────── HEADER (no subtitle: the app header directly above says exactly this) ─────────── */}
       <SectionHeader
         icon={Radio}
         title="Live activity"
-        subtitle="Every signal and what Robotín did with it — newest first, across all coins"
         right={(
           <span style={{ fontSize: 11, color: C.textMuted, ...mono }}>
             <b style={{ color: C.text }}>{totalN}</b> events <span style={{ color: C.textFaint }}>·</span> <b style={{ color: C.green }}>{approvedN}</b> approved <span style={{ color: C.textFaint }}>·</span> <b style={{ color: C.blue }}>{activeN}</b> active

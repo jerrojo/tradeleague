@@ -83,12 +83,8 @@ const TradeReport = () => {
         </div>
       </div>
 
-      {/* ── Balance strip ── */}
-      <div style={{ ...cardStyle, display: "flex", gap: 36, flexWrap: "wrap" }}>
-        <Stat label="Initial Balance" tip="initialBalance">{usd(data.initialBalance, false)}</Stat>
-        <Stat label="Current Balance" tip="currentBalance" color={data.currentBalance >= data.initialBalance ? C.green : C.red}>{usd(data.currentBalance, false)}</Stat>
-        <Stat label="Month ROI" tip="monthRoi" color={data.roiPct > 0 ? C.green : data.roiPct < 0 ? C.red : C.textMuted}>{data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</Stat>
-      </div>
+      {/* (Balance strip merged into the Monthly Performance header — Initial→Current
+          and ROI are the same monthly result Net P&L expresses; one card, not two.) */}
 
       {/* ── Empty month: say so explicitly and offer the way out ── */}
       {M.positions === 0 && (
@@ -110,12 +106,15 @@ const TradeReport = () => {
           <div>
             <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>Monthly Performance</div>
             <div style={{ fontSize: 26, fontWeight: 900, color: C.text, marginTop: 2 }}>{MONTHS[view.m]} {view.y}</div>
+            <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 4, ...mono }}>
+              <InfoTip k="initialBalance" inline><span>Balance</span></InfoTip> {usd(data.initialBalance, false)} <span style={{ color: C.textFaint }}>→</span> <span style={{ color: data.currentBalance > data.initialBalance ? C.green : data.currentBalance < data.initialBalance ? C.red : C.textMuted, fontWeight: 700 }}>{usd(data.currentBalance, false)}</span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 36, flexWrap: "wrap" }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="netPnlReport" inline><span>Net P&L</span></InfoTip></div>
               {/* zero is neutral — green means gain, not "nothing happened" */}
-              <div style={{ fontSize: 26, fontWeight: 900, color: M.net > 0 ? C.green : M.net < 0 ? C.red : C.textMuted, ...mono }}>{usd(M.net)}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: M.net > 0 ? C.green : M.net < 0 ? C.red : C.textMuted, ...mono }}>{usd(M.net)} <span style={{ fontSize: 15, color: data.roiPct > 0 ? C.green : data.roiPct < 0 ? C.red : C.textMuted }}>· {data.roiPct >= 0 ? "+" : ""}{data.roiPct.toFixed(2)}%</span></div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 2 }}><InfoTip k="winRate" inline><span>Win Rate</span></InfoTip></div>
