@@ -4,7 +4,10 @@
   padding: 0;
 }
 
-html { scroll-behavior: smooth; }
+/* NO global smooth scrolling: it silently turned every programmatic scroll
+   (section-change reset, Audit jump-nav, deep links) into a seconds-long
+   animation through half-rendered space. Terminal behavior is teleport. */
+html { scroll-behavior: auto; }
 
 body {
   margin: 0;
