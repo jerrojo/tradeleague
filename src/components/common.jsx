@@ -20,15 +20,16 @@ const IconChip = ({ icon: Icon, color = C.blue, size = 40 }) => (
    (v2's left accent bar + tiny uppercase label retired in favor of the calmer,
    more legible card language used across the platform.) */
 const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
-  <div className="card-hover" style={{ ...cardStyle, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
-    <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", marginBottom: "7px" }}>
+  <div className="card-hover" style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: "6px" }}>
+    {/* chip on the label row → long money values get the full card width below */}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", minWidth: 0 }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
-      <div style={{ fontSize: "24px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, ...mono }}><AnimatedValue value={value} /></div>
-      {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "5px" }}>{sub}</div>}
+      <IconChip icon={Icon} color={color} size={32} />
     </div>
-    <IconChip icon={Icon} color={color} />
+    <div style={{ fontSize: "23px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, ...mono }}><AnimatedValue value={value} /></div>
+    {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "1px" }}>{sub}</div>}
   </div>
 );
 

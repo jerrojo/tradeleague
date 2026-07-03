@@ -89,13 +89,13 @@ const MultiSel = ({ selected, options, onToggle, onAll }) => {
 /* KPI card — same language as Overview/Audit: sentence-case label, big value,
    tinted IconChip on the right */
 const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
-      <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
+  <div className="tl-card" style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, minWidth: 0 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+      <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={28} />
     </div>
-    <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={34} />
+    <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
   </div>
 );
 

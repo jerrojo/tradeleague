@@ -56,17 +56,17 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
   <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick}
     role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} title={onClick ? "Open detail" : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
-    style={{ ...cardStyle, padding: hero ? "16px 18px" : "14px 16px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, ...(hero ? { borderColor: C.borderLight } : {}) }}>
-    <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 12.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+    style={{ ...cardStyle, padding: hero ? "16px 18px" : "14px 16px", display: "flex", flexDirection: "column", gap: 7, ...(hero ? { borderColor: C.borderLight } : {}) }}>
+    {/* chip lives on the label row so long money values get the FULL card width below */}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+      <span style={{ fontSize: 12.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5, minWidth: 0 }}>
         {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
         {onClick && <ChevronRight size={12} color={C.textFaint} style={{ opacity: 0.7, flexShrink: 0 }} />}
       </span>
-      <div style={{ fontSize: hero ? 28 : 22, fontWeight: hero ? 900 : 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
+      <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={hero ? 34 : 30} />
     </div>
-    {/* the tinted icon badge — one visual voice with StatCard/Engine cards */}
-    <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={hero ? 42 : 36} />
+    <div style={{ fontSize: hero ? 27 : 21, fontWeight: hero ? 900 : 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
   </div>
 );
 
