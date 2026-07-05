@@ -1,6 +1,7 @@
 import { mockTraders } from "./data/mockData";
 import { C } from "./theme";
-import { createContext, useContext, useState, useMemo, useCallback } from "react";
+import { createContext, useContext, useState, useMemo, useCallback, useEffect } from "react";
+import { fetchLivePrices, POLL_MS, STALE_MS } from "./lib/livePrices";
 
 /* ═══════════════════════ TIMEFRAME CONTEXT (global date/time filter) ═══════════════════════
    One source of truth for the header time filter. Every signal-driven view reads
@@ -107,6 +108,38 @@ const useDate = () => useContext(DateContext);
 const ProContext = createContext();
 const useProMode = () => true;
 
+
+/* ═══════════════════════ LIVE PRICE CONTEXT ═══════════════════════
+   Real exchange tape (see lib/livePrices.js). status: "connecting" → "live" | "sim".
+   Honest by construction: if every public source is unreachable, the app stays in
+   its deterministic SIM state — it never fabricates a "live" label. A tape older
+   than STALE_MS degrades back to SIM rather than showing stale numbers as fresh. */
+const LivePriceContext = createContext({ status: "connecting", prices: {}, source: null, asOf: null });
+const useLivePrices = () => useContext(LivePriceContext);
+
+const LivePriceProvider = ({ children }) => {
+  const [state, setState] = useState({ status: "connecting", prices: {}, source: null, asOf: null });
+  useEffect(() => {
+    let alive = true, timer;
+    const schedule = () => { if (alive) timer = setTimeout(tick, POLL_MS); };
+    const tick = async () => {
+      if (document.hidden) { schedule(); return; } // background tabs don't poll
+      try {
+        const next = await fetchLivePrices();
+        if (alive) setState({ status: "live", ...next });
+      } catch {
+        // keep a recent tape through one bad poll; otherwise fall back to SIM
+        if (alive) setState((p) => (p.status === "live" && p.asOf && Date.now() - p.asOf < STALE_MS ? p : { ...p, status: "sim" }));
+      }
+      schedule();
+    };
+    tick();
+    return () => { alive = false; clearTimeout(timer); };
+  }, []);
+  const value = useMemo(() => state, [state]);
+  return <LivePriceContext.Provider value={value}>{children}</LivePriceContext.Provider>;
+};
+
 /* ═══════════════════════ NAV CONTEXT ═══════════════════════
    Lets any deep component jump to another section (and an Audit sub-view) — used
    to make the Overview KPI cards click through to their underlying detail. */
@@ -127,5 +160,7 @@ export {
   ProContext,
   useProMode,
   NavContext,
-  useNav
+  useNav,
+  LivePriceProvider,
+  useLivePrices
 };

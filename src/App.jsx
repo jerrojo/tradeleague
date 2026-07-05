@@ -2,7 +2,8 @@ import { TraderProfile } from "./components/TraderProfile";
 import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, DollarSign, Eye, FileText, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { PrintTearSheet } from "./components/PrintTearSheet";
-import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext } from "./contexts";
+import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext, LivePriceProvider, useLivePrices } from "./contexts";
+import { LiveFooterQuote } from "./components/LiveTape";
 import { TimeframeFilter } from "./components/TimeframeFilter";
 import { ThemeProvider } from "./theme";
 import { FundOverview } from "./components/tabs/FundOverview";
@@ -54,6 +55,36 @@ const UpdateNotifier = () => {
       <button onClick={() => window.location.reload()} style={{ padding: "7px 14px", borderRadius: 7, border: "none", backgroundColor: C.purple, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
         Refresh
       </button>
+    </div>
+  );
+};
+
+/* ── Footer feed status: honest two-book chip. When a real exchange tape is
+   flowing it shows LIVE TAPE (source + provenance tooltip) *alongside* an amber
+   SIM BOOK chip — prices are real, the ledger is simulated, and the UI never
+   blurs that line. With no reachable source it stays the plain amber SIM FEED. ── */
+const FeedStatus = () => {
+  const { status, source, asOf } = useLivePrices();
+  if (status === "live") {
+    return (
+      <>
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title={`Real spot prices from the ${source} public API — as of ${new Date(asOf).toLocaleTimeString()}, refreshed every 30s.`}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
+          <span style={{ color: C.green }}>LIVE TAPE</span>
+          <span style={{ color: C.textFaint }}>{source}</span>
+        </div>
+        <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title="Trades, P&L and analytics run on the deterministic simulated book — never re-marked against the live tape.">
+          <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block" }} />
+          <span style={{ color: C.amber }}>SIM BOOK</span>
+        </div>
+      </>
+    );
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title="Deterministic simulated feed — flips to LIVE TAPE automatically when a public exchange API is reachable.">
+      <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
+      <span style={{ color: C.amber }}>SIM FEED</span>
     </div>
   );
 };
@@ -283,6 +314,7 @@ const App = () => {
   return (
     <ThemeProvider>
     <ToastProvider>
+    <LivePriceProvider>
       <TimeframeProvider>
       <ProContext.Provider value={{ proMode }}>
       <DateContext.Provider value={{ dateRange, setDateRange, dateFrom, dateTo, dateLabel }}>
@@ -733,10 +765,7 @@ const App = () => {
                 credibility everywhere else. Amber SIM state until real connectors ship. */}
             <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
               <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title="Deterministic simulated feed — flips to LIVE when exchange connectors are wired.">
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.amber, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
-                  <span style={{ color: C.amber }}>SIM FEED</span>
-                </div>
+                <FeedStatus />
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} providers</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
@@ -745,7 +774,8 @@ const App = () => {
               <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Activity size={11} color={C.cyan} /> {fundStats.active} open positions</span>
                 <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ color: C.textFaint }}>deterministic demo data</span>
+                <LiveFooterQuote />
+                <span style={{ color: C.textFaint }}>sim ledger · deterministic</span>
               </div>
             </footer>
 
@@ -761,6 +791,7 @@ const App = () => {
       </DateContext.Provider>
       </ProContext.Provider>
       </TimeframeProvider>
+    </LivePriceProvider>
     </ToastProvider>
     </ThemeProvider>
   );

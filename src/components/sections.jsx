@@ -13,6 +13,7 @@ import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
 import { useNav } from "../contexts";
+import { LiveTape } from "./LiveTape";
 import { smcCoins } from "../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 
@@ -56,6 +57,8 @@ const MarketsSection = () => {
   }, []);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      {/* Real market first: the live exchange tape (clearly separated from SIM analytics) */}
+      <LiveTape selected={coin} onSelect={(c) => ROBOTIN_COINS.includes(c) && pick(c)} />
       {/* Cross-coin lead: the whole board at a glance */}
       <MarketPanorama selected={coin} onSelect={pick} />
       {/* ── Detail for the selected coin ── */}
