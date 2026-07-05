@@ -12,8 +12,7 @@ import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
-import { useNav } from "../contexts";
-import { LiveTape } from "./LiveTape";
+import { useNav, useLivePrices } from "../contexts";
 import { smcCoins } from "../data/mockData";
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
 
@@ -25,6 +24,8 @@ const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
    chart since it's just another lens on the same price. ── */
 const MarketsSection = () => {
   const [coin, setCoin] = useState("BTC");
+  const tape = useLivePrices();
+  const live = tape.status === "live" ? tape.prices : null;
   const detailRef = useRef(null);
   // pick from the panorama → load the coin's detail and glide down to it
   const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
@@ -42,10 +43,13 @@ const MarketsSection = () => {
       const longs = appr.filter((s) => s.dir === "LONG").length;
       const tot = appr.length;
       const meta = smcCoins[c] || {};
+      const lv = live?.[c]; // real quote takes over price/Δ when the tape is up
+      const px = lv?.px ?? last;
+      const chg = lv?.chg24h ?? change;
       m[c] = {
         pair: "USDT",
-        price: last >= 1 ? last.toLocaleString(undefined, { maximumFractionDigits: 2 }) : last.toFixed(4),
-        change: `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`,
+        price: px >= 1 ? px.toLocaleString(undefined, { maximumFractionDigits: 2 }) : px.toFixed(4),
+        change: `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`,
         category: meta.category, bias: meta.bias,
         longPct: tot ? Math.round((longs / tot) * 100) : null,
         signals: sigs.length,
@@ -54,11 +58,9 @@ const MarketsSection = () => {
       };
     });
     return m;
-  }, []);
+  }, [live]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-      {/* Real market first: the live exchange tape (clearly separated from SIM analytics) */}
-      <LiveTape selected={coin} onSelect={(c) => ROBOTIN_COINS.includes(c) && pick(c)} />
       {/* Cross-coin lead: the whole board at a glance */}
       <MarketPanorama selected={coin} onSelect={pick} />
       {/* ── Detail for the selected coin ── */}

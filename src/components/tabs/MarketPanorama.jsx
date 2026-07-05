@@ -4,7 +4,7 @@ import { Globe, ChevronUp, ChevronDown, LayoutGrid, Table as TableIcon } from "l
 import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
 import { smcCoins } from "../../data/mockData";
 import { CollapsibleSection } from "../common";
-import { useTimeframe } from "../../contexts";
+import { useTimeframe, useLivePrices } from "../../contexts";
 import { C, mono } from "../../theme";
 
 const a2 = (a) => Math.max(0, Math.min(255, Math.round(a * 255))).toString(16).padStart(2, "0");
@@ -59,6 +59,11 @@ const GRID = "1.5fr 0.95fr 1.05fr 0.75fr 1.7fr 1.05fr 0.95fr";
 
 const MarketPanorama = ({ selected, onSelect }) => {
   const { within, isFiltered } = useTimeframe();
+  // Real exchange tape (when reachable): price + Δ columns and heatmap colors go
+  // live per-coin; signals/sentiment/spark stay on the SIM book. Provenance is
+  // carried by the LIVE chip in the header, not by mixing the books silently.
+  const tape = useLivePrices();
+  const live = tape.status === "live" ? tape.prices : null;
   const [sortKey, setSortKey] = useState(null); // null = catalog order (majors first)
   const [sortDir, setSortDir] = useState("desc");
   // Heatmap is the default lead — the spatial "whole board" read comes first,
@@ -71,8 +76,12 @@ const MarketPanorama = ({ selected, onSelect }) => {
   const rows = useMemo(() => ROBOTIN_COINS.map((coin) => {
     const candles = coinCandles(coin);
     const closes = candles.map((c) => c.close);
-    const last = closes[closes.length - 1], first = closes[0];
-    const change = ((last - first) / first) * 100;
+    const simLast = closes[closes.length - 1], first = closes[0];
+    const simChange = ((simLast - first) / first) * 100;
+    const lv = live?.[coin];
+    const last = lv?.px ?? simLast;
+    const change = lv?.chg24h ?? simChange;
+    const isLive = !!lv;
     const sigs = coinSignals(coin, candles).filter((s) => within(s.time));
     const appr = sigs.filter((s) => s.approved);
     const longs = appr.filter((s) => s.dir === "LONG").length;
@@ -81,8 +90,8 @@ const MarketPanorama = ({ selected, onSelect }) => {
     const longPct = tot ? Math.round((longs / tot) * 100) : null;
     const active = sigs.filter((s) => s.status === "active" || s.status === "pending").length;
     const meta = smcCoins[coin] || {};
-    return { coin, closes, last, change, total: sigs.length, longPct, longs, shorts, active, bias: meta.bias || null, cat: meta.category || null };
-  }), [within]);
+    return { coin, closes, last, change, isLive, total: sigs.length, longPct, longs, shorts, active, bias: meta.bias || null, cat: meta.category || null };
+  }), [within, live]);
 
   const sorted = useMemo(() => {
     if (!sortKey) return rows;
@@ -105,7 +114,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
 
   // panorama summary — the one-line read of the whole board
   const bulls = rows.filter((r) => r.bias === "BULLISH").length;
-  const live = rows.filter((r) => r.active > 0).length;
+  const liveSigs = rows.filter((r) => r.active > 0).length;
   const up = rows.filter((r) => r.change >= 0).length;
 
   // ── treemap (heatmap) data + colour ──
@@ -150,6 +159,15 @@ const MarketPanorama = ({ selected, onSelect }) => {
 
   const controls = (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+      {live && (
+        <span
+          title={`Price and Δ (24h) are real ${tape.source} spot quotes, as of ${new Date(tape.asOf).toLocaleTimeString()} (30s refresh). Trend, sentiment and signals remain the deterministic SIM book.`}
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 6, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", color: C.green, ...mono }}
+        >
+          <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
+          LIVE · {tape.source}
+        </span>
+      )}
       {view === "map" && (
         <>
           <select value={sizeBy} onChange={(e) => setSizeBy(e.target.value)} style={miniSel} title="Tile size by" aria-label="Size tiles by">
@@ -174,7 +192,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
     <CollapsibleSection
       icon={Globe}
       title="Market panorama"
-      summary={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${live} with live signals${isFiltered ? " · in range" : ""} · click a coin for detail`}
+      summary={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${liveSigs} with live signals${isFiltered ? " · in range" : ""}${live ? " · real-time prices" : ""} · click a coin for detail`}
       right={controls}
       accent={C.cyan}
       persistKey="markets-panorama"
@@ -205,7 +223,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
         {sorted.map((r) => {
           const isSel = r.coin === selected;
           const chColor = r.change >= 0 ? C.green : C.red;
-          const sparkColor = r.change >= 0 ? C.green : C.red;
+          const sparkColor = r.closes[r.closes.length - 1] >= r.closes[0] ? C.green : C.red;
           const biasColor = r.bias === "BULLISH" ? C.green : r.bias === "BEARISH" ? C.red : C.textMuted;
           return (
             <div
