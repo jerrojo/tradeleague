@@ -179,7 +179,12 @@ const TradeReport = () => {
         {/* weekly rail */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Weekly Summary</div>
-          {data.weeks.map((w) => (
+          {data.weeks.map((w) => (w.positions === 0 && w.open === 0) ? (
+            <div key={w.idx} style={{ ...cardStyle, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.55 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.textMuted }}>Week {w.idx}</span>
+              <span style={{ fontSize: 10.5, color: C.textFaint }}>no activity</span>
+            </div>
+          ) : (
             <div key={w.idx} style={{ ...cardStyle, padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>Week {w.idx}</span>
@@ -240,8 +245,10 @@ const DayDetail = ({ date, rec, onClose }) => {
                 </td>
                 <td style={{ padding: "9px 10px", color: C.textMuted, ...mono, whiteSpace: "nowrap" }}>{fmtDT(p.entryTime)}</td>
                 <td style={{ padding: "9px 10px", color: C.textMuted, ...mono, whiteSpace: "nowrap" }}>{p.exitTime ? fmtDT(p.exitTime) : <span style={{ color: C.amber, fontWeight: 700 }}>OPEN</span>}</td>
-                <td style={{ padding: "9px 10px", textAlign: "right", fontWeight: 800, color: p.netPnl >= 0 ? C.green : C.red, ...mono }}>{usd(p.netPnl)}</td>
-                <td style={{ padding: "9px 10px", textAlign: "right", color: p.roiLev >= 0 ? C.green : C.red, ...mono }}>{p.roiLev >= 0 ? "+" : ""}{p.roiLev.toFixed(2)}%</td>
+                <td style={{ padding: "9px 10px", textAlign: "right", fontWeight: 800, color: p.netPnl == null ? C.amber : p.netPnl >= 0 ? C.green : C.red, ...mono }} title={p.netPnl == null ? "Unrealized — position still open; not booked into realized P&L" : undefined}>
+                  {p.netPnl == null ? <>{usd(p.unrealized)} <span style={{ fontSize: 9, fontWeight: 700 }}>UNRL</span></> : usd(p.netPnl)}
+                </td>
+                <td style={{ padding: "9px 10px", textAlign: "right", color: p.roiLev == null ? C.textFaint : p.roiLev >= 0 ? C.green : C.red, ...mono }}>{p.roiLev == null ? "—" : `${p.roiLev >= 0 ? "+" : ""}${p.roiLev.toFixed(2)}%`}</td>
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono }}>{p.leverage}x</td>
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono }}>{usd(p.margin, false)}</td>
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono, whiteSpace: "nowrap" }}>{fmtDur(p.durationMin)}</td>

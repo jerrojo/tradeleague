@@ -62,18 +62,25 @@ export function monthLedger(year, month) {
       const exitTime = stillOpen ? null : entryTime + durationMin * 60000;
       const entryPx = pxRound(basePx * (1 + (rnd() - 0.5) * 0.01));
       const exitPx = stillOpen ? null : pxRound(entryPx * (1 + priceDir * movePct));
+      // Open positions must NOT book realized P&L — that produced impossible reads
+      // like "3W / 0L · 100%" next to a red day. Their current mark lives in
+      // `unrealized`; netPnl/roiLev are null until the position closes.
       const pos = {
         id: `${symbol}-${year}${month}${d}-${k}`, symbol, side, account,
         entryTime, exitTime, entryPx, exitPx, leverage, margin, notional,
-        grossPnl, commission, netPnl, roiLev, durationMin: stillOpen ? null : durationMin,
+        grossPnl: stillOpen ? null : grossPnl, commission,
+        netPnl: stillOpen ? null : netPnl, roiLev: stillOpen ? null : roiLev,
+        unrealized: stillOpen ? netPnl : null,
+        durationMin: stillOpen ? null : durationMin,
         status: stillOpen ? "open" : "closed",
       };
       dayPos.push(pos); positions.push(pos);
     }
-    const pnl = r2(dayPos.reduce((a, p) => a + p.netPnl, 0));
-    const commission = r2(dayPos.reduce((a, p) => a + p.commission, 0));
-    const wins = dayPos.filter((p) => p.netPnl >= 0).length;
-    days[dayKey(year, month, d)] = { day: d, pnl, commission, count: dayPos.length, wins, losses: dayPos.length - wins, positions: dayPos };
+    const closedDay = dayPos.filter((p) => p.status === "closed");
+    const pnl = r2(closedDay.reduce((a, p) => a + p.netPnl, 0)); // realized only
+    const commission = r2(closedDay.reduce((a, p) => a + p.commission, 0));
+    const wins = closedDay.filter((p) => p.netPnl >= 0).length;
+    days[dayKey(year, month, d)] = { day: d, pnl, commission, count: dayPos.length, openCount: dayPos.length - closedDay.length, wins, losses: closedDay.length - wins, positions: dayPos };
   }
 
   // ── aggregate a set of positions into a summary block ──
@@ -81,13 +88,15 @@ export function monthLedger(year, month) {
     const closed = pos.filter((p) => p.status === "closed");
     const wins = closed.filter((p) => p.netPnl >= 0);
     const losses = closed.filter((p) => p.netPnl < 0);
-    const net = r2(pos.reduce((a, p) => a + p.netPnl, 0));
-    const fees = r2(pos.reduce((a, p) => a + p.commission, 0));
+    const net = r2(closed.reduce((a, p) => a + p.netPnl, 0)); // realized only
+    const fees = r2(closed.reduce((a, p) => a + p.commission, 0));
+    const open = pos.length - closed.length;
+    const unrealized = r2(pos.filter((p) => p.status === "open").reduce((a, p) => a + (p.unrealized || 0), 0));
     const avgWin = wins.length ? wins.reduce((a, p) => a + p.netPnl, 0) / wins.length : 0;
     const avgLoss = losses.length ? Math.abs(losses.reduce((a, p) => a + p.netPnl, 0) / losses.length) : 0;
     const rrr = avgLoss ? r2(avgWin / avgLoss) : avgWin ? 999 : 0;
     return {
-      net, fees, wins: wins.length, losses: losses.length, positions: closed.length,
+      net, fees, open, unrealized, wins: wins.length, losses: losses.length, positions: closed.length,
       winRate: closed.length ? r2((wins.length / closed.length) * 100) : 0,
       rrr, capitalVol: r2(pos.reduce((a, p) => a + p.margin, 0)), leveragedVol: r2(pos.reduce((a, p) => a + p.notional, 0)),
     };
@@ -125,7 +134,7 @@ export function monthLedger(year, month) {
 /* Breakdown helpers for a single day's positions. */
 export function breakdownBy(positions, field) {
   const m = {};
-  positions.forEach((p) => { m[p[field]] = r2((m[p[field]] || 0) + p.netPnl); });
+  positions.forEach((p) => { m[p[field]] = r2((m[p[field]] || 0) + (p.netPnl ?? 0)); });
   return Object.entries(m).map(([k, v]) => ({ key: k, net: v })).sort((a, b) => b.net - a.net);
 }
 

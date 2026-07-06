@@ -17,12 +17,23 @@
    3. CoinGecko            — GET /api/v3/simple/price?ids=...&include_24hr_change=true
    All are CORS-enabled public endpoints; each attempt has a hard timeout. */
 
-export const LIVE_COINS = ["BTC", "ETH", "SOL", "BNB", "XRP", "AVAX", "DOGE", "ADA", "LINK", "DOT", "UNI", "AAVE", "ATOM"];
+export const LIVE_COINS = [
+  "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "ADA", "LINK", "DOT",
+  "MATIC", "UNI", "AAVE", "ATOM", "FTM", "NEAR", "APT", "ARB", "OP", "SUI",
+  "INJ", "TIA", "SEI", "STX", "RENDER", "FET", "WLD", "JUP", "PENDLE", "ONDO",
+  "TON", "PEPE", "WIF", "BONK", "FLOKI",
+]; // the full Market Panorama coin set — partial tapes are fine (uncovered coins stay SIM)
 
 const GECKO_IDS = {
   bitcoin: "BTC", ethereum: "ETH", solana: "SOL", binancecoin: "BNB", ripple: "XRP",
-  "avalanche-2": "AVAX", dogecoin: "DOGE", cardano: "ADA", chainlink: "LINK",
-  polkadot: "DOT", uniswap: "UNI", aave: "AAVE", cosmos: "ATOM",
+  dogecoin: "DOGE", "avalanche-2": "AVAX", cardano: "ADA", chainlink: "LINK",
+  polkadot: "DOT", "matic-network": "MATIC", uniswap: "UNI", aave: "AAVE",
+  cosmos: "ATOM", fantom: "FTM", near: "NEAR", aptos: "APT", arbitrum: "ARB",
+  optimism: "OP", sui: "SUI", "injective-protocol": "INJ", celestia: "TIA",
+  "sei-network": "SEI", blockstack: "STX", "render-token": "RENDER",
+  "fetch-ai": "FET", "worldcoin-wld": "WLD", "jupiter-exchange-solana": "JUP",
+  pendle: "PENDLE", "ondo-finance": "ONDO", "the-open-network": "TON",
+  pepe: "PEPE", dogwifcoin: "WIF", bonk: "BONK", floki: "FLOKI",
 };
 
 /* ── Pure parsers (unit-tested) — each returns { BTC: { px, chg24h }, ... } ── */
@@ -92,14 +103,16 @@ const SOURCES = [
     parse: parseCryptoCom,
   },
   {
-    id: "Binance",
-    url: `https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(LIVE_COINS.map((c) => `${c}USDT`)))}`,
-    parse: parseBinance,
-  },
-  {
     id: "CoinGecko",
     url: `https://api.coingecko.com/api/v3/simple/price?ids=${Object.keys(GECKO_IDS).join(",")}&vs_currencies=usd&include_24hr_change=true`,
     parse: parseCoinGecko,
+  },
+  {
+    // last resort: majors only — one delisted symbol 400s Binance's whole batch,
+    // so this list is deliberately conservative
+    id: "Binance",
+    url: `https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK", "AVAX", "DOT"].map((c) => `${c}USDT`)))}`,
+    parse: parseBinance,
   },
 ];
 

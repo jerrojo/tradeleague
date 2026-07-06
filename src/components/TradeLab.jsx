@@ -201,8 +201,8 @@ const TradeLab = ({ trader, history }) => {
                 <YAxis stroke={C.textMuted} fontSize={10} tickFormatter={(v) => `${v}%`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }}
                   formatter={(v, n) => [`${Number(v).toFixed(1)}%`, n === "baseline" ? "Baseline" : "Scenario"]} labelFormatter={(l) => `Trade #${l}`} />
-                <Line type="monotone" dataKey="baseline" stroke={C.textFaint} strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
-                <Area type="monotone" dataKey="scenario" stroke={sim.totalPnl >= base.totalPnl ? C.green : C.red} strokeWidth={2.5} fill="url(#labEq)" dot={false} />
+                <Line isAnimationActive={false} type="monotone" dataKey="baseline" stroke={C.textFaint} strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
+                <Area isAnimationActive={false} type="monotone" dataKey="scenario" stroke={sim.totalPnl >= base.totalPnl ? C.green : C.red} strokeWidth={2.5} fill="url(#labEq)" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

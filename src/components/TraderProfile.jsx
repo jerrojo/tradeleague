@@ -304,9 +304,9 @@ const TraderProfile = ({ trader, onClose }) => {
                 <YAxis yAxisId="usd" orientation="right" stroke={C.textFaint} fontSize={9} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }}
                   formatter={(v, name) => name === "gross" ? [`$${Number(v).toLocaleString()}`, "Account balance"] : name === "ddPct" ? [`${v}%`, "Drawdown"] : [`${v >= 0 ? "+" : ""}${v}%`, "Cumulative return"]} />
-                <Area yAxisId="pct" type="monotone" dataKey="retPct" stroke={C.green} fill="url(#profEq)" strokeWidth={2} dot={false} name="retPct" />
-                <Area yAxisId="pct" type="monotone" dataKey="ddPct" stroke={C.red} fill="url(#ddFill)" strokeWidth={1} dot={false} connectNulls={false} name="ddPct" />
-                <Line yAxisId="usd" type="monotone" dataKey="gross" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="gross" />
+                <Area isAnimationActive={false} yAxisId="pct" type="monotone" dataKey="retPct" stroke={C.green} fill="url(#profEq)" strokeWidth={2} dot={false} name="retPct" />
+                <Area isAnimationActive={false} yAxisId="pct" type="monotone" dataKey="ddPct" stroke={C.red} fill="url(#ddFill)" strokeWidth={1} dot={false} connectNulls={false} name="ddPct" />
+                <Line isAnimationActive={false} yAxisId="usd" type="monotone" dataKey="gross" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="gross" />
               </ComposedChart>
             </ResponsiveContainer>
             <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px" }}>
@@ -322,7 +322,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Skill Radar</div>
               <ResponsiveContainer width="100%" height={220}>
-                <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
+                <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar isAnimationActive={false} dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
               </ResponsiveContainer>
             </div>
             <div style={cardStyle}>
@@ -330,7 +330,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={deep.monthlyPnl}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="month" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "PnL"]} />
-                <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
+                <Bar isAnimationActive={false} dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -368,7 +368,7 @@ const TraderProfile = ({ trader, onClose }) => {
                   <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
                   <YAxis stroke={C.textMuted} fontSize={9} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                   <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [`$${Number(v).toLocaleString()}`, "Cumulative executed P&L"]} />
-                  <Area type="monotone" dataKey="pnl" stroke={fundAttr.execPnl >= 0 ? C.green : C.red} strokeWidth={2} fill={`url(#fa-${t.name.replace(/\s/g, "")})`} dot={false} isAnimationActive={false} />
+                  <Area isAnimationActive={false} type="monotone" dataKey="pnl" stroke={fundAttr.execPnl >= 0 ? C.green : C.red} strokeWidth={2} fill={`url(#fa-${t.name.replace(/\s/g, "")})`} dot={false} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
               <div style={{ fontSize: 9, color: C.textFaint, marginTop: 2 }}>Cumulative executed P&L from this provider's approved, closed signals</div>
@@ -625,7 +625,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={deep.monthlyPnl}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="month" stroke={C.textMuted} fontSize={11} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
               <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "PnL"]} />
-              <Bar dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
+              <Bar isAnimationActive={false} dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
             </ResponsiveContainer>
           </div>
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
@@ -646,7 +646,7 @@ const TraderProfile = ({ trader, onClose }) => {
                 <defs><linearGradient id="pnlEq" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.3} /><stop offset="95%" stopColor={C.blue} stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="day" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "Equity"]} />
-                <Area type="monotone" dataKey="equity" stroke={C.blue} fill="url(#pnlEq)" strokeWidth={2} dot={false} />
+                <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke={C.blue} fill="url(#pnlEq)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -669,7 +669,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={deep.riskDna.sessionPerf}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="session" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
-                <Bar dataKey="winRate" name="Win %" fill={C.green} radius={[3, 3, 0, 0]} /></BarChart>
+                <Bar isAnimationActive={false} dataKey="winRate" name="Win %" fill={C.green} radius={[3, 3, 0, 0]} /></BarChart>
               </ResponsiveContainer>
               {deep.riskDna.sessionPerf.map(s => (
                 <div key={s.session} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${C.border}`, fontSize: "11px" }}>
@@ -684,7 +684,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={deep.riskDna.dayOfWeek}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="day" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
-                <Bar dataKey="pnl" name="PnL" radius={[3, 3, 0, 0]}>{deep.riskDna.dayOfWeek.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
+                <Bar isAnimationActive={false} dataKey="pnl" name="PnL" radius={[3, 3, 0, 0]}>{deep.riskDna.dayOfWeek.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -741,7 +741,7 @@ const TraderProfile = ({ trader, onClose }) => {
           <div style={cardStyle}>
             <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "8px" }}>Skill Radar</div>
             <ResponsiveContainer width="100%" height={260}>
-              <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
+              <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar isAnimationActive={false} dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
             </ResponsiveContainer>
           </div>
         </div>

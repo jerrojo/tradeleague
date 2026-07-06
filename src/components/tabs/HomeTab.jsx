@@ -92,7 +92,7 @@ const HomeTab = () => {
               <Area key={`area-${t.name}`} type="monotone" dataKey={t.name} fill={`url(#grad-${i})`} stroke="none" fillOpacity={0.3} isAnimationActive={false} />
             ))}
             {mockTraders.map((t, i) => watching[t.name] && (
-              <Line key={`line-${t.name}`} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={leader && leader.name === t.name ? 3.5 : 2.5} strokeOpacity={0.95} dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }} connectNulls={false} />
+              <Line isAnimationActive={false} key={`line-${t.name}`} type="monotone" dataKey={t.name} stroke={traderColors[i]} strokeWidth={leader && leader.name === t.name ? 3.5 : 2.5} strokeOpacity={0.95} dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: traderColors[i] }} connectNulls={false} />
             ))}
           </ComposedChart>
         </ResponsiveContainer>

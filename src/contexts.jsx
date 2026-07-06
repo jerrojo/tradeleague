@@ -120,10 +120,13 @@ const useLivePrices = () => useContext(LivePriceContext);
 const LivePriceProvider = ({ children }) => {
   const [state, setState] = useState({ status: "connecting", prices: {}, source: null, asOf: null });
   useEffect(() => {
-    let alive = true, timer;
+    let alive = true, timer, fetchedOnce = false;
     const schedule = () => { if (alive) timer = setTimeout(tick, POLL_MS); };
     const tick = async () => {
-      if (document.hidden) { schedule(); return; } // background tabs don't poll
+      // Background tabs skip *re*-polls, but the first fetch always runs — a tab
+      // opened behind another window must still come up LIVE, not stuck in SIM.
+      if (document.hidden && fetchedOnce) { schedule(); return; }
+      fetchedOnce = true;
       try {
         const next = await fetchLivePrices();
         if (alive) setState({ status: "live", ...next });
@@ -133,8 +136,11 @@ const LivePriceProvider = ({ children }) => {
       }
       schedule();
     };
+    // waking the tab refreshes immediately instead of waiting out the poll timer
+    const onVisible = () => { if (!document.hidden && alive) { clearTimeout(timer); tick(); } };
+    document.addEventListener("visibilitychange", onVisible);
     tick();
-    return () => { alive = false; clearTimeout(timer); };
+    return () => { alive = false; clearTimeout(timer); document.removeEventListener("visibilitychange", onVisible); };
   }, []);
   const value = useMemo(() => state, [state]);
   return <LivePriceContext.Provider value={value}>{children}</LivePriceContext.Provider>;

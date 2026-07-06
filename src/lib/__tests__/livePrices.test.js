@@ -9,8 +9,8 @@ describe("live price parsers", () => {
     const out = parseCryptoCom({ data: [
       { instrument_name: "BTC_USDT", last: "63932.22", change: "0.0134" },
       { instrument_name: "ETH_USDT", last: "3482.10", change: "-0.021" },
-      { instrument_name: "BTC_USD", last: "63930.00", change: "0.01" },   // non-USDT quote ignored
-      { instrument_name: "PEPE_USDT", last: "0.00001", change: "0.5" },   // outside coin set ignored
+      { instrument_name: "BTC_USD", last: "63930.00", change: "0.01" },    // non-USDT quote ignored
+      { instrument_name: "ZZZZ_USDT", last: "1.00", change: "0.5" },       // outside coin set ignored
     ]});
     expect(out.BTC).toEqual({ px: 63932.22, chg24h: 1.34 });
     expect(out.ETH.chg24h).toBeCloseTo(-2.1);
@@ -54,11 +54,13 @@ describe("live price parsers", () => {
     expect(out.BTC.chg24h).toBeNull();
   });
 
-  it("covers every coin in the terminal set via CoinGecko id map", () => {
-    const full = Object.fromEntries(
-      ["bitcoin","ethereum","solana","binancecoin","ripple","avalanche-2","dogecoin","cardano","chainlink","polkadot","uniswap","aave","cosmos"]
-        .map((id) => [id, { usd: 1, usd_24h_change: 0 }])
-    );
+  it("covers every coin in the terminal set (all 35 panorama coins) via CoinGecko id map", () => {
+    const ids = ["bitcoin","ethereum","solana","binancecoin","ripple","dogecoin","avalanche-2","cardano","chainlink","polkadot",
+      "matic-network","uniswap","aave","cosmos","fantom","near","aptos","arbitrum","optimism","sui",
+      "injective-protocol","celestia","sei-network","blockstack","render-token","fetch-ai","worldcoin-wld","jupiter-exchange-solana",
+      "pendle","ondo-finance","the-open-network","pepe","dogwifcoin","bonk","floki"];
+    const full = Object.fromEntries(ids.map((id) => [id, { usd: 1, usd_24h_change: 0 }]));
+    expect(LIVE_COINS.length).toBe(35);
     expect(Object.keys(parseCoinGecko(full)).sort()).toEqual([...LIVE_COINS].sort());
   });
 });
