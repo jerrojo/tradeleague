@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C, cardStyle } from "../theme";
 import { CoinTable } from "./CoinTable";
+import { FearGreedGauge } from "./FearGreedGauge";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
 import { CoinPositioning } from "./tabs/CoinPositioning";
@@ -26,6 +27,10 @@ const MarketsSection = () => {
   const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      {/* Market-wide sentiment — the crypto Fear & Greed index (live when reachable) */}
+      <div style={{ display: "flex" }}>
+        <FearGreedGauge />
+      </div>
       {/* Cross-coin lead: the whole board at a glance */}
       <MarketPanorama selected={coin} onSelect={pick} />
       {/* ── Detail for the selected coin ── */}
