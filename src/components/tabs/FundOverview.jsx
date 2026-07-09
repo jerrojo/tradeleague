@@ -676,7 +676,8 @@ const FundOverview = () => {
           {/* "Filter Edge" card removed — the fork pipeline directly below OWNS that
               number with full context (two books + banner) and deep-links to Audit.
               The same figure printed twice on one screen was pure repetition. */}
-          <Kpi label="Risk-adjusted" icon={Gauge} value={<><span style={{ color: C.blue }}>{data.sharpe.toFixed(2)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.cyan }}>{data.sortino.toFixed(2)}</span></>} sub="Sharpe / Sortino (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Sharpe Ratio" icon={Gauge} value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+          <Kpi label="Sortino Ratio" icon={Gauge} value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
           {/* rejected-signal confidence is NOT a loss — red implied "bad"; a low number
               here means the filter is doing its job, so it stays neutral */}
           <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.textMuted }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
