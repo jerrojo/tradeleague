@@ -649,38 +649,63 @@ const FundOverview = () => {
           {/* Robotín's two books — moved to the top-left: the fund's core story sits
               above the metric grid, sharing the top row with the right rail. */}
           <ForkPipeline data={data} compact onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))} />
-          {/* Primary tier — the four numbers an allocator checks first, one size up.
-              Everything else keeps the calm uniform grid below. */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
-            <Kpi hero label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
-            <Kpi hero label="Return vs BTC" icon={TrendingUp} accent={C.green} value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
-            <Kpi hero label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L closed · this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
-            {/* % is the allocator's unit (and the drawdown chart's) — $ is the sub */}
-            <Kpi hero label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "analytics" })} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(186px, 1fr))", gap: 12 }}>
-          {/* "Wins vs Losses" and "Last Month W/L" were re-statements of Win Rate's
-              own numbers — their counts now live in the Win Rate hero sub. */}
-          {/* the old "24.7/day" was a span artifact that contradicted "23/month" one line later */}
-          <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity")} />
-          <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Best Streaks" icon={TrendingUp} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streaks" onClick={() => go("activity")} />
-          <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best and worst single trades" onClick={() => go("audit")} />
-          <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
-          {/* color by SIGN, not by role — and when even the worst day is positive,
-              SAY so: otherwise a green "worst" reads like a data bug */}
-          <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: dash.bestDay[1] >= 0 ? C.green : C.red }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: dash.worstDay[1] >= 0 ? C.green : C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day in window" : ""}`} onClick={() => go("report")} />
-          <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
-          <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-          {/* "Filter Edge" card removed — the fork pipeline directly below OWNS that
-              number with full context (two books + banner) and deep-links to Audit.
-              The same figure printed twice on one screen was pure repetition. */}
-          <Kpi label="Sharpe Ratio" icon={Gauge} value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-          <Kpi label="Sortino Ratio" icon={Gauge} value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-          {/* rejected-signal confidence is NOT a loss — red implied "bad"; a low number
-              here means the filter is doing its job, so it stays neutral */}
-          <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.textMuted }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+          {/* Fund equity curve — compact, sits directly under the fork on the left */}
+          <div style={cardStyle}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600" }}>
+                  <Activity size={14} color={C.purple} /> Fund Equity Curve
+                </div>
+                <div style={{ fontSize: "10px", color: C.textFaint }}>
+                  Starting {usdPlain(STARTING_BALANCE)} · executed vs all-signals vs BTC · the gap is the filter&apos;s value-add · simulated
+                </div>
+              </div>
+              <div style={{ textAlign: "right", fontSize: 11.5, ...mono, lineHeight: 1.5 }}>
+                <div style={{ color: C.purple, fontWeight: 700 }}>Executed {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(1)}%</div>
+                <div style={{ color: C.amber }}>All signals {data.allReturnPct >= 0 ? "+" : ""}{data.allReturnPct.toFixed(1)}%</div>
+                <div style={{ color: C.textMuted }}>BTC {data.btcReturnPct >= 0 ? "+" : ""}{data.btcReturnPct.toFixed(1)}%</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={210}>
+              <ComposedChart data={data.equity}>
+                <defs>
+                  <linearGradient id="fundEq" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={C.purple} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={C.purple} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
+                <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
+                <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`} />
+                <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Signal #${v}`)} formatter={(v, name) => [usdPlain(Number(v)), name === "exec" ? "Executed (Robotín)" : name === "all" ? "All signals (if executed)" : "BTC buy & hold"]} />
+                <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
+                <Area type="monotone" dataKey="exec" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="exec" isAnimationActive={false} />
+                <Line type="monotone" dataKey="all" stroke={C.amber} strokeWidth={1.8} dot={false} name="all" isAnimationActive={false} />
+                <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div style={{ fontSize: 10.5, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", margin: "6px 0 2px" }}>Drawdown — % below peak</div>
+            <ResponsiveContainer width="100%" height={64}>
+              <ComposedChart data={data.equity}>
+                <defs>
+                  <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C.red} stopOpacity={0.06} />
+                    <stop offset="100%" stopColor={C.red} stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
+                <XAxis dataKey="i" hide />
+                <YAxis stroke={C.textMuted} fontSize={9} domain={[ddFloor, 0]} width={AXIS_W} tickFormatter={(v) => `${v}%`} />
+                <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
+                <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+            <div style={{ display: "flex", gap: "14px", fontSize: "9px", color: C.textMuted, marginTop: "4px", flexWrap: "wrap" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Executed (Robotín)</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.amber, borderRadius: 1 }} /> All signals</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown</span>
+            </div>
           </div>
         </div>
         {/* right rail — Balance (state), Open Risk (now), Today (flow): three
@@ -692,74 +717,30 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ── 2 · Robotín's read — slim executive summary of the period ── */}
+      {/* ── 2 · KPIs — full-width compact band (freed from the right rail) ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(184px, 1fr))", gap: 10 }}>
+        <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
+        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`${data.wins.length}W / ${data.losses.length}L · this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Total Trades" icon={BarChart3} value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity")} />
+        <Kpi label="Avg Win / Loss" icon={BarChart3} value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Best Streaks" icon={TrendingUp} value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streaks" onClick={() => go("activity")} />
+        <Kpi label="Largest Win / Loss" icon={TrendingUp} value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best and worst single trades" onClick={() => go("audit")} />
+        <Kpi label="Avg Hold Time" icon={Clock} value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
+        <Kpi label="Best / Worst Day" icon={Calendar} value={<><span style={{ color: dash.bestDay[1] >= 0 ? C.green : C.red }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: dash.worstDay[1] >= 0 ? C.green : C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day" : ""}`} onClick={() => go("report")} />
+        <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
+        <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Sharpe Ratio" icon={Gauge} value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Sortino Ratio" icon={Gauge} value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.textMuted }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+      </div>
+
+      {/* ── 3 · Robotín's read — slim executive summary of the period ── */}
       <AICommentary data={data} />
 
-      {/* ════════ Equity, benchmark and risk charts follow ════════ */}
-
-      {/* ── 3 · Fund equity curve vs BTC buy & hold ── */}
-      <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600" }}>
-              <Activity size={14} color={C.purple} /> Fund Equity Curve
-            </div>
-            <div style={{ fontSize: "10px", color: C.textFaint }}>
-              Starting {usdPlain(STARTING_BALANCE)} · executed (Robotín) vs every signal if executed, and BTC buy-and-hold · the gap is the filter's value-add · simulated
-            </div>
-          </div>
-          <div style={{ textAlign: "right", fontSize: 11.5, ...mono, lineHeight: 1.55 }}>
-            <div style={{ color: C.purple, fontWeight: 700 }}>Executed {data.returnPct >= 0 ? "+" : ""}{data.returnPct.toFixed(1)}%</div>
-            <div style={{ color: C.amber }}>All signals {data.allReturnPct >= 0 ? "+" : ""}{data.allReturnPct.toFixed(1)}%</div>
-            <div style={{ color: C.textMuted }}>BTC {data.btcReturnPct >= 0 ? "+" : ""}{data.btcReturnPct.toFixed(1)}%</div>
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={data.equity}>
-            <defs>
-              <linearGradient id="fundEq" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={C.purple} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={C.purple} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
-            <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
-            <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              labelFormatter={(v) => (v === 0 ? "Start" : `Signal #${v}`)}
-              formatter={(v, name) => [usdPlain(Number(v)), name === "exec" ? "Executed (Robotín)" : name === "all" ? "All signals (if executed)" : "BTC buy & hold"]}
-            />
-            <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
-            <Area type="monotone" dataKey="exec" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="exec" isAnimationActive={false} />
-            <Line type="monotone" dataKey="all" stroke={C.amber} strokeWidth={1.8} dot={false} name="all" isAnimationActive={false} />
-            <Line type="monotone" dataKey="btc" stroke={C.textMuted} strokeWidth={1.5} strokeDasharray="5 4" dot={false} name="btc" isAnimationActive={false} />
-          </ComposedChart>
-        </ResponsiveContainer>
-        {/* Underwater drawdown — risk beneath the return (drawdown is king) */}
-        <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", margin: "8px 0 2px" }}>Drawdown — % below peak</div>
-        <ResponsiveContainer width="100%" height={86}>
-          <ComposedChart data={data.equity}>
-            <defs>
-              <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.red} stopOpacity={0.06} />
-                <stop offset="100%" stopColor={C.red} stopOpacity={0.4} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}40`} />
-            <XAxis dataKey="i" hide />
-            <YAxis stroke={C.textMuted} fontSize={9} domain={[ddFloor, 0]} width={AXIS_W} tickFormatter={(v) => `${v}%`} />
-            <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Trade #${v}`)} formatter={(v) => [`${Number(v).toFixed(1)}%`, "Drawdown"]} />
-            <Area type="monotone" dataKey="dd" stroke={C.red} strokeWidth={1.5} fill="url(#ddGrad)" dot={false} isAnimationActive={false} />
-          </ComposedChart>
-        </ResponsiveContainer>
-        <div style={{ display: "flex", gap: "16px", fontSize: "9px", color: C.textMuted, marginTop: "4px", flexWrap: "wrap" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.purple, borderRadius: 1 }} /> Executed (Robotín)</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 3, backgroundColor: C.amber, borderRadius: 1 }} /> All signals (if executed)</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 0, borderTop: `2px dashed ${C.textMuted}` }} /> BTC buy &amp; hold</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><span style={{ width: 14, height: 8, backgroundColor: `${C.red}40`, borderRadius: 1 }} /> Drawdown (executed)</span>
-        </div>
-      </div>
+      {/* ════════ Monthly, distribution and risk charts follow ════════ */}
 
       {/* ── 5 · Monthly performance + Outcome distribution, side by side ── */}
       <div className="grid-2col-16">
