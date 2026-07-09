@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { CalendarClock, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Coins, Wallet } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Coins, Wallet } from "lucide-react";
 import { SectionHeader, InfoTip } from "../common";
 import { monthLedger, breakdownBy } from "../../data/tradeReport";
 import { usd as fUsd, usdCompact } from "../../lib/format";
@@ -208,10 +208,50 @@ const TradeReport = () => {
   );
 };
 
+/* ── One labeled value in the expanded position detail ── */
+const DField = ({ label, children, color = C.text }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{label}</span>
+    <span style={{ fontSize: 13, fontWeight: 700, color, ...mono, whiteSpace: "nowrap" }}>{children}</span>
+  </div>
+);
+
+/* ── Expanded per-position detail — the full broker record behind a ledger row ── */
+const PositionDetail = ({ p }) => {
+  const px = (v) => (v == null ? "—" : Number(v).toLocaleString(undefined, { maximumFractionDigits: 6 }));
+  return (
+    <div style={{ backgroundColor: C.bg, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, borderLeft: `2px solid ${p.side === "LONG" ? C.green : C.red}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: C.text, ...mono }}>{p.symbol}USDT</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: p.side === "LONG" ? C.green : C.red, backgroundColor: `${p.side === "LONG" ? C.green : C.red}1c`, padding: "2px 7px", borderRadius: 4 }}>
+          {p.side === "LONG" ? <TrendingUp size={11} /> : <TrendingDown size={11} />}{p.side}
+        </span>
+        <span style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>{p.account}</span>
+        <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: p.status === "open" ? C.amber : C.textMuted, backgroundColor: p.status === "open" ? `${C.amber}1c` : C.cardElev, padding: "2px 8px", borderRadius: 4 }}>{p.status}</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 12 }}>
+        <DField label="Entry price">{px(p.entryPx)}</DField>
+        <DField label="Exit price" color={p.exitPx == null ? C.amber : C.text}>{p.exitPx == null ? "OPEN" : px(p.exitPx)}</DField>
+        <DField label="Leverage">{p.leverage}x</DField>
+        <DField label="Margin">{usd(p.margin, false)}</DField>
+        <DField label="Notional">{usd(p.notional, false)}</DField>
+        <DField label="Gross P&L" color={p.grossPnl == null ? C.amber : p.grossPnl >= 0 ? C.green : C.red}>{p.grossPnl == null ? "—" : usd(p.grossPnl)}</DField>
+        <DField label="Commission" color={C.red}>{usd(-p.commission)}</DField>
+        <DField label="Net P&L" color={p.netPnl == null ? C.amber : p.netPnl >= 0 ? C.green : C.red}>{p.netPnl == null ? `${usd(p.unrealized)} · unrl` : usd(p.netPnl)}</DField>
+        <DField label="Lev. ROI" color={p.roiLev == null ? C.textFaint : p.roiLev >= 0 ? C.green : C.red}>{p.roiLev == null ? "—" : `${p.roiLev >= 0 ? "+" : ""}${p.roiLev.toFixed(2)}%`}</DField>
+        <DField label="Duration">{fmtDur(p.durationMin)}</DField>
+        <DField label="Entry time">{fmtDT(p.entryTime)}</DField>
+        <DField label="Exit time">{p.exitTime ? fmtDT(p.exitTime) : "—"}</DField>
+      </div>
+    </div>
+  );
+};
+
 const DayDetail = ({ date, rec, onClose }) => {
   const longDate = date.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
   const bySymbol = breakdownBy(rec.positions, "symbol");
   const byAccount = breakdownBy(rec.positions, "account");
+  const [openId, setOpenId] = useState(null);
   return (
     <div style={{ ...cardStyle, borderColor: C.borderLight }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -232,11 +272,17 @@ const DayDetail = ({ date, rec, onClose }) => {
               {["Symbol", "Side", "Entry", "Exit", "Net PnL", "Lev. ROI", "Leverage", "Margin", "Duration"].map((h, i) => (
                 <th key={h} style={{ textAlign: i > 3 ? "right" : "left", padding: "8px 10px", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
               ))}
+              <th style={{ width: 30 }} />
             </tr>
           </thead>
           <tbody>
-            {rec.positions.map((p) => (
-              <tr key={p.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+            {rec.positions.map((p) => {
+              const on = openId === p.id;
+              return (
+              <Fragment key={p.id}>
+              <tr onClick={() => setOpenId(on ? null : p.id)} role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(on ? null : p.id); } }}
+                className="card-hover" style={{ borderBottom: on ? "none" : `1px solid ${C.border}`, cursor: "pointer", backgroundColor: on ? C.cardElev : "transparent" }}>
                 <td style={{ padding: "9px 10px", fontWeight: 700, color: C.text, ...mono }}>{p.symbol}USDT</td>
                 <td style={{ padding: "9px 10px" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 700, color: p.side === "LONG" ? C.green : C.red, backgroundColor: `${p.side === "LONG" ? C.green : C.red}1c`, padding: "2px 7px", borderRadius: 4 }}>
@@ -252,8 +298,16 @@ const DayDetail = ({ date, rec, onClose }) => {
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono }}>{p.leverage}x</td>
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono }}>{usd(p.margin, false)}</td>
                 <td style={{ padding: "9px 10px", textAlign: "right", color: C.textMuted, ...mono, whiteSpace: "nowrap" }}>{fmtDur(p.durationMin)}</td>
+                <td style={{ padding: "9px 10px", textAlign: "right" }}><ChevronDown size={14} color={C.textFaint} style={{ transform: on ? "rotate(180deg)" : "none", transition: "transform .15s" }} /></td>
               </tr>
-            ))}
+              {on && (
+                <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td colSpan={10} style={{ padding: 0 }}><PositionDetail p={p} /></td>
+                </tr>
+              )}
+              </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
