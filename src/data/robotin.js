@@ -203,6 +203,23 @@ export function signalMarkers(signals) {
   }));
 }
 
+/* ── Deterministic market meta per coin (simulated) — market cap, 24h volume and
+   the 1h / 1w change columns the Markets board needs. Majors carry a large cap that
+   decays down the priority list; the tail coins get a small deterministic cap. Fully
+   stable across reloads (seeded by the coin) so bubbles and the table never disagree. */
+export function coinMarketMeta(coin) {
+  const cs = coinSeed(coin);
+  const rank = PREFERRED.indexOf(coin);
+  const r1 = srand(cs * 7 + 3), r2 = srand(cs * 11 + 5), r3 = srand(cs * 13 + 9), r4 = srand(cs * 17 + 1);
+  const base = rank >= 0 ? 1.25e12 * Math.pow(0.63, rank) : 6e8 * (0.25 + r1);
+  const marketCap = Math.round(base * (0.7 + r1 * 0.6));
+  const volume = Math.round(marketCap * (0.03 + r2 * 0.14));
+  const chg1h = Math.round((r3 - 0.5) * 4 * 100) / 100;   // ±2%
+  const chg1w = Math.round((r4 - 0.48) * 26 * 100) / 100; // ~±13%, slight upward tilt
+  return { marketCap, volume, chg1h, chg1w };
+}
+export const MARKET_META = Object.fromEntries(ROBOTIN_COINS.map((c) => [c, coinMarketMeta(c)]));
+
 /* ═══════════════════════ MEMOIZED SIGNAL STORE (single source of truth) ═══════════════════════
    coinCandles / coinSignals are fully deterministic, so the entire signal book is
    identical on every call. Compute it ONCE here and let every section import these

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
-import { Globe, ChevronUp, ChevronDown, LayoutGrid, Table as TableIcon } from "lucide-react";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../../data/robotin";
+import { Globe } from "lucide-react";
+import { coinCandles, coinSignals, ROBOTIN_COINS, MARKET_META } from "../../data/robotin";
 import { smcCoins } from "../../data/mockData";
 import { CollapsibleSection } from "../common";
 import { useTimeframe, useLivePrices } from "../../contexts";
@@ -9,68 +8,89 @@ import { C, mono } from "../../theme";
 
 const a2 = (a) => Math.max(0, Math.min(255, Math.round(a * 255))).toString(16).padStart(2, "0");
 
-/* ═══════════════════════ MARKET PANORAMA ═══════════════════════
-   The cross-coin lead for Markets: one scannable grid of every coin so you see
-   the whole landscape at once — trend, price, move, how the crowd is leaning,
-   how many signals are live, and where Robotín's model bias sits. Click any row
-   to drop into that coin's full detail below. Respects the global timeframe. */
+/* ═══════════════════════ MARKET PANORAMA — BUBBLES ═══════════════════════
+   The cross-coin lead for Markets: every coin as a bubble sized by market cap so
+   the whole landscape's magnitude reads at a glance, colored by 24h move (or crowd
+   sentiment). Click any bubble to drop into that coin's full detail below.
+   Respects the global timeframe. */
 
-const fmtPx = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1000) return p.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (a >= 0.01) return p.toFixed(4);
-  return p.toPrecision(3);
+const capFmt = (v) => {
+  if (v == null) return "—";
+  if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+  return `$${Math.round(v).toLocaleString()}`;
 };
 
-/* tiny inline trend line for the row */
-const Spark = ({ closes, color }) => {
-  const w = 76, h = 22;
-  const min = Math.min(...closes), max = Math.max(...closes), rng = max - min || 1;
-  const step = w / (closes.length - 1);
-  const pts = closes.map((c, i) => `${(i * step).toFixed(1)},${(h - ((c - min) / rng) * (h - 3) - 1.5).toFixed(1)}`).join(" ");
+/* Deterministic greedy circle-packing (no external lib): place the biggest bubble
+   at the centre, then spiral each next one outward to the first non-overlapping
+   slot. Finally scale/translate the whole cluster to fill the viewBox. */
+const packBubbles = (items, W, H) => {
+  const sorted = [...items].sort((a, b) => b.r - a.r);
+  const placed = [];
+  const gap = 2.5;
+  for (const it of sorted) {
+    if (!placed.length) { placed.push({ ...it, x: 0, y: 0 }); continue; }
+    const step = Math.max(1.2, it.r * 0.12);
+    let pos = null;
+    for (let a = 0; a < 600 && !pos; a += 0.14) {
+      const rho = step * a;
+      const x = Math.cos(a) * rho, y = Math.sin(a) * rho;
+      let ok = true;
+      for (const p of placed) { if (Math.hypot(x - p.x, y - p.y) < p.r + it.r + gap) { ok = false; break; } }
+      if (ok) pos = { x, y };
+    }
+    placed.push({ ...it, x: pos?.x ?? 0, y: pos?.y ?? 0 });
+  }
+  const minX = Math.min(...placed.map((p) => p.x - p.r)), maxX = Math.max(...placed.map((p) => p.x + p.r));
+  const minY = Math.min(...placed.map((p) => p.y - p.r)), maxY = Math.max(...placed.map((p) => p.y + p.r));
+  const bw = (maxX - minX) || 1, bh = (maxY - minY) || 1;
+  const scale = Math.min(W / bw, H / bh) * 0.98;
+  const offX = (W - bw * scale) / 2 - minX * scale, offY = (H - bh * scale) / 2 - minY * scale;
+  return placed.map((p) => ({ ...p, cx: p.x * scale + offX, cy: p.y * scale + offY, rr: p.r * scale }));
+};
+
+const BubbleBoard = ({ data, colorBy, selected, onSelect }) => {
+  const W = 1000, H = 440;
+  const packed = useMemo(() => {
+    const items = data.map((d) => ({ ...d, r: Math.pow(Math.max(1, d.size), 0.32) }));
+    return packBubbles(items, W, H);
+  }, [data]);
+  const chg = (v) => `${v >= 0 ? "+" : ""}${(v || 0).toFixed(1)}%`;
   return (
-    <svg width={w} height={h} style={{ display: "block" }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.3} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }}>
+      {packed.map((b) => {
+        const pos = colorBy === "sentiment" ? (b.longPct == null ? null : b.longPct >= 50) : b.change >= 0;
+        const base = pos == null ? C.textMuted : pos ? C.green : C.red;
+        const mag = colorBy === "sentiment" ? Math.abs((b.longPct ?? 50) - 50) / 50 : Math.min(1, Math.abs(b.change || 0) / 6);
+        const isSel = b.name === selected;
+        const showText = b.rr > 18;
+        const showChg = b.rr > 30;
+        return (
+          <g key={b.name} onClick={() => onSelect(b.name)} style={{ cursor: "pointer" }}>
+            <title>{`${b.name}/USDT · ${chg(b.change)} 24h · ${capFmt(b.size)} cap${b.longPct == null ? "" : ` · ${b.longPct}% long`}${b.active ? ` · ${b.active} live` : ""}`}</title>
+            <circle cx={b.cx} cy={b.cy} r={b.rr} fill={`${base}${a2(0.10 + mag * 0.18)}`} stroke={isSel ? C.purple : `${base}${a2(0.5 + mag * 0.4)}`} strokeWidth={isSel ? 3 : 1.6} />
+            {showText && (
+              <text x={b.cx} y={b.cy + (showChg ? -3 : 3)} textAnchor="middle" fill="#fff" fontSize={Math.min(18, Math.max(8, b.rr * 0.42))} fontWeight="800" style={{ fontFamily: "monospace", pointerEvents: "none" }}>{b.name}</text>
+            )}
+            {showChg && (
+              <text x={b.cx} y={b.cy + 13} textAnchor="middle" fill={pos == null ? "#a9b2bd" : pos ? "#8ef0a8" : "#ff9b8f"} fontSize={Math.min(12, Math.max(7, b.rr * 0.26))} style={{ fontFamily: "monospace", pointerEvents: "none" }}>
+                {colorBy === "sentiment" ? (b.longPct == null ? "—" : `${b.longPct}%L`) : chg(b.change)}
+              </text>
+            )}
+          </g>
+        );
+      })}
     </svg>
   );
 };
 
-const HeaderCell = ({ label, k, sortKey, sortDir, onSort, align = "left" }) => {
-  const active = sortKey === k;
-  return (
-    <button
-      onClick={() => onSort(k)}
-      style={{
-        display: "flex", alignItems: "center", gap: 3, justifyContent: align === "right" ? "flex-end" : "flex-start",
-        background: "none", border: "none", cursor: "pointer", padding: 0, width: "100%",
-        fontSize: 9.5, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase",
-        color: active ? C.text : C.textFaint, fontFamily: "inherit",
-      }}
-    >
-      {label}
-      {active && (sortDir === "desc" ? <ChevronDown size={11} /> : <ChevronUp size={11} />)}
-    </button>
-  );
-};
-
-const GRID = "1.5fr 0.95fr 1.05fr 0.75fr 1.7fr 1.05fr 0.95fr";
-
 const MarketPanorama = ({ selected, onSelect }) => {
   const { within, isFiltered } = useTimeframe();
-  // Real exchange tape (when reachable): price + Δ columns and heatmap colors go
-  // live per-coin; signals/sentiment/spark stay on the SIM book. Provenance is
-  // carried by the LIVE chip in the header, not by mixing the books silently.
+  // Real exchange tape (when reachable): price + Δ go live per-coin; sizing (market
+  // cap), sentiment and signals stay on the SIM book. Provenance via the LIVE chip.
   const tape = useLivePrices();
   const live = tape.status === "live" ? tape.prices : null;
-  const [sortKey, setSortKey] = useState(null); // null = catalog order (majors first)
-  const [sortDir, setSortDir] = useState("desc");
-  // Heatmap is the default lead — the spatial "whole board" read comes first,
-  // the table is the drill-down. The user's choice persists across sessions.
-  const [view, setViewRaw] = useState(() => { try { return localStorage.getItem("mp:view") || "map"; } catch { return "map"; } }); // "table" | "map"
-  const setView = (v) => { setViewRaw(v); try { localStorage.setItem("mp:view", v); } catch { /* ignore */ } };
-  const [sizeBy, setSizeBy] = useState("signals"); // signals | activity | equal
   const [colorBy, setColorBy] = useState("change"); // change | sentiment
 
   const rows = useMemo(() => ROBOTIN_COINS.map((coin) => {
@@ -81,7 +101,6 @@ const MarketPanorama = ({ selected, onSelect }) => {
     const lv = live?.[coin];
     const last = lv?.px ?? simLast;
     const change = lv?.chg24h ?? simChange;
-    const isLive = !!lv;
     const sigs = coinSignals(coin, candles).filter((s) => within(s.time));
     const appr = sigs.filter((s) => s.approved);
     const longs = appr.filter((s) => s.dir === "LONG").length;
@@ -90,101 +109,35 @@ const MarketPanorama = ({ selected, onSelect }) => {
     const longPct = tot ? Math.round((longs / tot) * 100) : null;
     const active = sigs.filter((s) => s.status === "active" || s.status === "pending").length;
     const meta = smcCoins[coin] || {};
-    return { coin, closes, last, change, isLive, total: sigs.length, longPct, longs, shorts, active, bias: meta.bias || null, cat: meta.category || null };
+    const mm = MARKET_META[coin] || {};
+    return { coin, last, change, total: sigs.length, longPct, active, bias: meta.bias || null, marketCap: mm.marketCap };
   }), [within, live]);
-
-  const sorted = useMemo(() => {
-    if (!sortKey) return rows;
-    const dir = sortDir === "desc" ? -1 : 1;
-    const val = (r) => {
-      if (sortKey === "change") return r.change;
-      if (sortKey === "price") return r.last;
-      if (sortKey === "sentiment") return r.longPct ?? -1;
-      if (sortKey === "signals") return r.active * 1000 + r.total; // live signals float to the top
-      if (sortKey === "bias") return r.bias === "BULLISH" ? 1 : r.bias === "BEARISH" ? -1 : 0;
-      return 0;
-    };
-    return [...rows].sort((a, b) => (val(a) - val(b)) * dir);
-  }, [rows, sortKey, sortDir]);
-
-  const onSort = (k) => {
-    if (sortKey === k) { setSortDir((d) => (d === "desc" ? "asc" : "desc")); }
-    else { setSortKey(k); setSortDir("desc"); }
-  };
 
   // panorama summary — the one-line read of the whole board
   const bulls = rows.filter((r) => r.bias === "BULLISH").length;
   const liveSigs = rows.filter((r) => r.active > 0).length;
   const up = rows.filter((r) => r.change >= 0).length;
 
-  // ── treemap (heatmap) data + colour ──
-  const chgColor = (v) => `${v >= 0 ? C.green : C.red}${a2(0.16 + Math.min(1, Math.abs(v || 0) / 6) * 0.6)}`;
-  const sentColor = (lp) => (lp == null ? `${C.textFaint}22` : `${lp >= 55 ? C.green : lp <= 45 ? C.red : C.textMuted}${a2(0.18 + Math.min(1, Math.abs((lp - 50) / 50)) * 0.55)}`);
-  const sizeVal = (r) => (sizeBy === "equal" ? 1 : sizeBy === "activity" ? (r.active || 0.3) : (r.total || 0.5));
-  const treeData = sorted.map((r) => ({ name: r.coin, size: sizeVal(r), change: r.change, longPct: r.longPct, total: r.total, active: r.active }));
-  const renderTile = (props) => {
-    const { x, y, width, height, name, change, longPct } = props;
-    if (width <= 0 || height <= 0 || !name) return null;
-    const fill = colorBy === "sentiment" ? sentColor(longPct) : chgColor(change);
-    const isSel = name === selected;
-    const showText = width > 40 && height > 26;
-    return (
-      <g onClick={() => onSelect(name)} style={{ cursor: "pointer" }}>
-        <rect x={x} y={y} width={width} height={height} fill={fill} stroke={isSel ? C.purple : C.bg} strokeWidth={isSel ? 2.5 : 2} rx={3} />
-        {showText && (
-          <>
-            <text x={x + 7} y={y + 17} fill="#fff" stroke="none" fontSize={12} fontWeight="800" style={{ fontFamily: "monospace" }}>{name}</text>
-            <text x={x + 7} y={y + 31} fill="#fff" stroke="none" fontSize={10} fontWeight="400" style={{ fontFamily: "monospace" }}>
-              {colorBy === "sentiment" ? (longPct == null ? "—" : `${longPct}% long`) : `${change >= 0 ? "+" : ""}${(change || 0).toFixed(1)}%`}
-            </text>
-          </>
-        )}
-      </g>
-    );
-  };
-  const TileTip = ({ active: on, payload }) => {
-    if (!on || !payload || !payload.length) return null;
-    const d = payload[0].payload;
-    return (
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, padding: "8px 10px", fontSize: 11, ...mono }}>
-        <div style={{ fontWeight: 800, color: C.text, marginBottom: 2 }}>{d.name}/USDT</div>
-        <div style={{ color: d.change >= 0 ? C.green : C.red }}>{d.change >= 0 ? "+" : ""}{(d.change || 0).toFixed(1)}% Δ</div>
-        <div style={{ color: C.textMuted }}>{d.longPct == null ? "no signals" : `${d.longPct}% long`} · {d.total} sig{d.active ? ` · ${d.active} live` : ""}</div>
-      </div>
-    );
-  };
+  const bubbleData = rows.map((r) => ({ name: r.coin, size: r.marketCap || 1, change: r.change, longPct: r.longPct, active: r.active }));
 
-  const segBtn = (on) => ({ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none", backgroundColor: on ? C.purple : "transparent", color: on ? "#fff" : C.textMuted, fontFamily: "inherit" });
   const miniSel = { backgroundColor: C.cardElev, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 11, fontWeight: 600, padding: "5px 8px", cursor: "pointer", outline: "none", fontFamily: "inherit" };
 
   const controls = (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       {live && (
         <span
-          title={`Price and Δ (24h) are real ${tape.source} spot quotes, as of ${new Date(tape.asOf).toLocaleTimeString()} (30s refresh). Trend, sentiment and signals remain the deterministic SIM book.`}
+          title={`Price and Δ (24h) are real ${tape.source} spot quotes, as of ${new Date(tape.asOf).toLocaleTimeString()} (30s refresh). Bubble size (market cap), sentiment and signals remain the deterministic SIM book.`}
           style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 6, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", color: C.green, ...mono }}
         >
           <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
           LIVE · {tape.source}
         </span>
       )}
-      {view === "map" && (
-        <>
-          <select value={sizeBy} onChange={(e) => setSizeBy(e.target.value)} style={miniSel} title="Tile size by" aria-label="Size tiles by">
-            <option value="signals">Size: signals</option>
-            <option value="activity">Size: live signals</option>
-            <option value="equal">Size: equal</option>
-          </select>
-          <select value={colorBy} onChange={(e) => setColorBy(e.target.value)} style={miniSel} title="Tile color by" aria-label="Color tiles by">
-            <option value="change">Color: Δ%</option>
-            <option value="sentiment">Color: sentiment</option>
-          </select>
-        </>
-      )}
-      <div style={{ display: "inline-flex", borderRadius: 7, border: `1px solid ${C.border}`, overflow: "hidden" }}>
-        <button style={segBtn(view === "table")} onClick={() => setView("table")} aria-label="Table view"><TableIcon size={13} /> Table</button>
-        <button style={segBtn(view === "map")} onClick={() => setView("map")} aria-label="Heatmap view"><LayoutGrid size={13} /> Heatmap</button>
-      </div>
+      <span style={{ fontSize: 10, color: C.textFaint, ...mono }}>size = market cap</span>
+      <select value={colorBy} onChange={(e) => setColorBy(e.target.value)} style={miniSel} title="Bubble color by" aria-label="Color bubbles by">
+        <option value="change">Color: Δ%</option>
+        <option value="sentiment">Color: sentiment</option>
+      </select>
     </div>
   );
 
@@ -192,96 +145,14 @@ const MarketPanorama = ({ selected, onSelect }) => {
     <CollapsibleSection
       icon={Globe}
       title="Market panorama"
-      summary={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${liveSigs} with live signals${isFiltered ? " · in range" : ""}${live ? " · real-time prices" : ""} · click a coin for detail`}
+      summary={`${rows.length} coins · ${up} up / ${rows.length - up} down · ${bulls} model-bullish · ${liveSigs} with live signals${isFiltered ? " · in range" : ""}${live ? " · real-time prices" : ""} · bubble size = market cap · click a coin for detail`}
       right={controls}
       accent={C.cyan}
       persistKey="markets-panorama"
-      maxBody={view === "table" ? 520 : undefined}
     >
-      {view === "map" && (
-        <div style={{ padding: 12 }}>
-          <ResponsiveContainer width="100%" height={420}>
-            <Treemap data={treeData} dataKey="size" stroke={C.bg} content={renderTile} isAnimationActive={false}>
-              <Tooltip content={<TileTip />} />
-            </Treemap>
-          </ResponsiveContainer>
-        </div>
-      )}
-      {view === "table" && (
-      <div>
-        {/* header row (sticky inside the scroll body) */}
-        <div style={{ display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, backgroundColor: C.card, position: "sticky", top: 0, zIndex: 2 }}>
-          <HeaderCell label="Coin" k="coin" sortKey={sortKey} sortDir={sortDir} onSort={() => { setSortKey(null); }} />
-          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>Trend</span>
-          <HeaderCell label="Price" k="price" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="right" />
-          <HeaderCell label="Δ" k="change" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="right" />
-          <HeaderCell label="Sentiment" k="sentiment" sortKey={sortKey} sortDir={sortDir} onSort={onSort} />
-          <HeaderCell label="Signals" k="signals" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="right" />
-          <HeaderCell label="Model" k="bias" sortKey={sortKey} sortDir={sortDir} onSort={onSort} align="right" />
-        </div>
-        {/* rows */}
-        {sorted.map((r) => {
-          const isSel = r.coin === selected;
-          const chColor = r.change >= 0 ? C.green : C.red;
-          const sparkColor = r.closes[r.closes.length - 1] >= r.closes[0] ? C.green : C.red;
-          const biasColor = r.bias === "BULLISH" ? C.green : r.bias === "BEARISH" ? C.red : C.textMuted;
-          return (
-            <div
-              key={r.coin}
-              onClick={() => onSelect(r.coin)}
-              className="panorama-row"
-              style={{
-                display: "grid", gridTemplateColumns: GRID, gap: 10, alignItems: "center",
-                padding: "9px 14px", cursor: "pointer",
-                borderLeft: `3px solid ${isSel ? C.purple : "transparent"}`,
-                backgroundColor: isSel ? C.purpleBg : "transparent",
-                borderBottom: `1px solid ${C.border}`,
-              }}
-            >
-              {/* coin + category */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: 7, minWidth: 0 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: isSel ? C.purple : C.text, ...mono }}>{r.coin}</span>
-                {r.cat && <span style={{ fontSize: 9, color: C.textFaint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.cat}</span>}
-              </div>
-              {/* sparkline */}
-              <div><Spark closes={r.closes} color={sparkColor} /></div>
-              {/* price */}
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, ...mono, textAlign: "right" }}>{fmtPx(r.last)}</div>
-              {/* change */}
-              <div style={{ fontSize: 12, fontWeight: 800, color: chColor, ...mono, textAlign: "right" }}>{r.change >= 0 ? "+" : ""}{r.change.toFixed(1)}%</div>
-              {/* sentiment bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {r.longPct == null ? (
-                  <span style={{ fontSize: 10, color: C.textFaint }}>no signals</span>
-                ) : (
-                  <>
-                    <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", display: "flex", backgroundColor: C.bg, minWidth: 54 }}>
-                      <div style={{ width: `${r.longPct}%`, backgroundColor: C.green }} />
-                      <div style={{ width: `${100 - r.longPct}%`, backgroundColor: C.red }} />
-                    </div>
-                    <span title={`${r.longPct}% of approved signals are LONG`} style={{ fontSize: 10, fontWeight: 700, ...mono, color: r.longPct >= 55 ? C.green : r.longPct <= 45 ? C.red : C.textMuted, minWidth: 56, whiteSpace: "nowrap" }}>{r.longPct}% long</span>
-                  </>
-                )}
-              </div>
-              {/* signals: active + total */}
-              <div style={{ textAlign: "right", ...mono }}>
-                {r.active > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: C.amber }}>{r.active} live</span>}
-                <span style={{ fontSize: 10.5, color: C.textMuted, marginLeft: r.active > 0 ? 6 : 0 }}>{r.total} sig</span>
-              </div>
-              {/* model bias */}
-              <div style={{ textAlign: "right" }}>
-                {r.bias ? (
-                  <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: biasColor, backgroundColor: `${biasColor}1c`, padding: "2px 7px", borderRadius: 4 }}>
-                    {r.bias === "BULLISH" ? "▲ " : r.bias === "BEARISH" ? "▼ " : ""}{r.bias}
-                  </span>
-                ) : <span style={{ fontSize: 10, color: C.textFaint }}>—</span>}
-              </div>
-            </div>
-          );
-        })}
+      <div style={{ padding: 12 }}>
+        <BubbleBoard data={bubbleData} colorBy={colorBy} selected={selected} onSelect={onSelect} />
       </div>
-      )}
-      <style>{`.panorama-row:hover { background-color: ${C.cardHover} !important; }`}</style>
     </CollapsibleSection>
   );
 };

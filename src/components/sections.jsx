@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
-import { C } from "../theme";
-import { CoinSelector } from "./CoinSelector";
+import { C, cardStyle } from "../theme";
+import { CoinTable } from "./CoinTable";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
 import { CoinPositioning } from "./tabs/CoinPositioning";
@@ -12,11 +12,8 @@ import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
-import { useNav, useLivePrices } from "../contexts";
-import { smcCoins } from "../data/mockData";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
-
-const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
+import { useNav } from "../contexts";
+import { ROBOTIN_COINS } from "../data/robotin";
 
 /* ── MARKETS: one coin, everything on a single page (no sub-tabs). Pick a coin,
    then scroll its chart + the signals it produced + the trades those became +
@@ -24,41 +21,9 @@ const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
    chart since it's just another lens on the same price. ── */
 const MarketsSection = () => {
   const [coin, setCoin] = useState("BTC");
-  const tape = useLivePrices();
-  const live = tape.status === "live" ? tape.prices : null;
   const detailRef = useRef(null);
   // pick from the panorama → load the coin's detail and glide down to it
   const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
-  // Enriched coin meta so the selector dropdown carries cross-coin context
-  // (sentiment, live/total signals, model bias) — the panorama's signal, inline
-  // where you pick a coin. Computed once from the same engine.
-  const coinMeta = useMemo(() => {
-    const m = {};
-    ROBOTIN_COINS.forEach((c) => {
-      const cs = coinCandles(c);
-      const last = cs[cs.length - 1].close, first = cs[0].close;
-      const change = ((last - first) / first) * 100;
-      const sigs = coinSignals(c, cs);
-      const appr = sigs.filter((s) => s.approved);
-      const longs = appr.filter((s) => s.dir === "LONG").length;
-      const tot = appr.length;
-      const meta = smcCoins[c] || {};
-      const lv = live?.[c]; // real quote takes over price/Δ when the tape is up
-      const px = lv?.px ?? last;
-      const chg = lv?.chg24h ?? change;
-      m[c] = {
-        pair: "USDT",
-        price: px >= 1 ? px.toLocaleString(undefined, { maximumFractionDigits: 2 }) : px.toFixed(4),
-        change: `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`,
-        category: meta.category, bias: meta.bias,
-        longPct: tot ? Math.round((longs / tot) * 100) : null,
-        signals: sigs.length,
-        active: sigs.filter((s) => s.status === "active" || s.status === "pending").length,
-        closes: cs.filter((_, i) => i % 4 === 0).map((k) => k.close), // downsampled spark for the quick cards
-      };
-    });
-    return m;
-  }, [live]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       {/* Cross-coin lead: the whole board at a glance */}
@@ -69,9 +34,15 @@ const MarketsSection = () => {
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
       </div>
-      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={coinMeta} categories={COIN_CATEGORIES} />
-      {/* Chart with signals plotted (no execution table — that lives in Audit) */}
-      <RobotinSignals coin={coin} embedded />
+      {/* Coin table (rich selector) sits beside the chart — pick a coin right where you read it */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
+        <div style={{ ...cardStyle, padding: 12, flex: "1 1 320px", minWidth: 300, maxWidth: 420 }}>
+          <CoinTable coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} />
+        </div>
+        <div style={{ flex: "2 1 480px", minWidth: 0 }}>
+          <RobotinSignals coin={coin} embedded />
+        </div>
+      </div>
       {/* Positioning — the same price, one more lens */}
       <CoinPositioning coin={coin} />
       {/* Consensus signal — where to enter, the targets, the stop */}
