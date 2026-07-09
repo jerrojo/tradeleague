@@ -243,11 +243,11 @@ const Branch = ({ variant, icon: Icon, label, total, sub, result, resultLabel, w
 /* ── The fork: ONE signal trunk splitting into Robotín's two books (approved vs
    rejected), each resolving to a result + win/loss, with a double-edge remate that
    reads both faces of the filter — losers it dodged AND opportunity still in play. ── */
-const ForkPipeline = ({ data, onClick }) => {
+const ForkPipeline = ({ data, onClick, compact }) => {
   const a = data.approvedBranch, r = data.rejectedBranch, edge = data.filterEdge;
   return (
-    <div style={{ ...cardStyle, padding: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+    <div style={{ ...cardStyle, padding: compact ? 14 : 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: compact ? 9 : 12 }}>
         <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>From signals to P&amp;L — Robotín&apos;s two books</div>
         <div style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>{data.allSignalsCount} signals · {Math.round(data.approvalRate)}% approved</div>
       </div>
@@ -273,7 +273,7 @@ const ForkPipeline = ({ data, onClick }) => {
         </div>
       </div>
       {/* double-edge remate — both faces of the filter */}
-      <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, marginTop: compact ? 9 : 12, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: `1px solid ${edge >= 0 ? C.green : C.red}40`, backgroundColor: `${edge >= 0 ? C.green : C.red}0d` }}>
           <ShieldCheck size={16} color={edge >= 0 ? C.green : C.red} style={{ flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.</span>
@@ -646,6 +646,9 @@ const FundOverview = () => {
              one template, no tier labels — scannable at a glance, nothing lost. ── */}
       <div className="dash-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 3fr) minmax(264px, 1fr)", gap: 16, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Robotín's two books — moved to the top-left: the fund's core story sits
+              above the metric grid, sharing the top row with the right rail. */}
+          <ForkPipeline data={data} compact onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))} />
           {/* Primary tier — the four numbers an allocator checks first, one size up.
               Everything else keeps the calm uniform grid below. */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
@@ -690,12 +693,6 @@ const FundOverview = () => {
 
       {/* ── 2 · Robotín's read — slim executive summary of the period ── */}
       <AICommentary data={data} />
-
-      {/* ── 3 · The fork: Robotín's two books — approved (real) vs rejected (counterfactual) ── */}
-      <ForkPipeline
-        data={data}
-        onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))}
-      />
 
       {/* ════════ Equity, benchmark and risk charts follow ════════ */}
 
