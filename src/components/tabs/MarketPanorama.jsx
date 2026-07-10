@@ -25,7 +25,7 @@ const capFmt = (v) => {
 /* Deterministic greedy circle-packing (no external lib): place the biggest bubble
    at the centre, then spiral each next one outward to the first non-overlapping
    slot. Finally scale/translate the whole cluster to fill the viewBox. */
-const packBubbles = (items, W, H) => {
+const packBubbles = (items, W, H, xStretch = 1) => {
   const sorted = [...items].sort((a, b) => b.r - a.r);
   const placed = [];
   const gap = 2.5;
@@ -33,9 +33,11 @@ const packBubbles = (items, W, H) => {
     if (!placed.length) { placed.push({ ...it, x: 0, y: 0 }); continue; }
     const step = Math.max(1.2, it.r * 0.12);
     let pos = null;
-    for (let a = 0; a < 600 && !pos; a += 0.14) {
+    // elliptical spiral: stretch the search horizontally so the cluster grows
+    // wider-than-tall (spreads toward the sides, keeps the container short)
+    for (let a = 0; a < 800 && !pos; a += 0.12) {
       const rho = step * a;
-      const x = Math.cos(a) * rho, y = Math.sin(a) * rho;
+      const x = Math.cos(a) * rho * xStretch, y = Math.sin(a) * rho;
       let ok = true;
       for (const p of placed) { if (Math.hypot(x - p.x, y - p.y) < p.r + it.r + gap) { ok = false; break; } }
       if (ok) pos = { x, y };
@@ -51,10 +53,10 @@ const packBubbles = (items, W, H) => {
 };
 
 const BubbleBoard = ({ data, colorBy, selected, onSelect }) => {
-  const W = 1000, H = 440;
+  const W = 1300, H = 400; // wide-and-short frame: less vertical height, coins spread to the sides
   const packed = useMemo(() => {
     const items = data.map((d) => ({ ...d, r: Math.pow(Math.max(1, d.size), 0.32) }));
-    return packBubbles(items, W, H);
+    return packBubbles(items, W, H, 3.0);
   }, [data]);
   const chg = (v) => `${v >= 0 ? "+" : ""}${(v || 0).toFixed(1)}%`;
   return (
