@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
-import { C, cardStyle } from "../theme";
-import { CoinTable } from "./CoinTable";
+import { C } from "../theme";
+import { CoinSelector } from "./CoinSelector";
 import { FearGreedGauge } from "./FearGreedGauge";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
@@ -13,8 +13,11 @@ import { ActivityFeed } from "./tabs/ActivityFeed";
 import { PortfolioTab } from "./tabs/PortfolioTab";
 import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
-import { useNav } from "../contexts";
-import { ROBOTIN_COINS } from "../data/robotin";
+import { useNav, useLivePrices } from "../contexts";
+import { smcCoins } from "../data/mockData";
+import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
+
+const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
 
 /* ── MARKETS: one coin, everything on a single page (no sub-tabs). Pick a coin,
    then scroll its chart + the signals it produced + the trades those became +
@@ -22,9 +25,40 @@ import { ROBOTIN_COINS } from "../data/robotin";
    chart since it's just another lens on the same price. ── */
 const MarketsSection = () => {
   const [coin, setCoin] = useState("BTC");
+  const tape = useLivePrices();
+  const live = tape.status === "live" ? tape.prices : null;
   const detailRef = useRef(null);
   // pick from the panorama → load the coin's detail and glide down to it
   const pick = (c) => { setCoin(c); setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60); };
+  // Enriched coin meta so the selector dropdown + quick cards carry cross-coin
+  // context (price/Δ, sentiment, live/total signals, model bias). Computed once.
+  const coinMeta = useMemo(() => {
+    const m = {};
+    ROBOTIN_COINS.forEach((c) => {
+      const cs = coinCandles(c);
+      const last = cs[cs.length - 1].close, first = cs[0].close;
+      const change = ((last - first) / first) * 100;
+      const sigs = coinSignals(c, cs);
+      const appr = sigs.filter((s) => s.approved);
+      const longs = appr.filter((s) => s.dir === "LONG").length;
+      const tot = appr.length;
+      const meta = smcCoins[c] || {};
+      const lv = live?.[c]; // real quote takes over price/Δ when the tape is up
+      const px = lv?.px ?? last;
+      const chg = lv?.chg24h ?? change;
+      m[c] = {
+        pair: "USDT",
+        price: px >= 1 ? px.toLocaleString(undefined, { maximumFractionDigits: 2 }) : px.toFixed(4),
+        change: `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`,
+        category: meta.category, bias: meta.bias,
+        longPct: tot ? Math.round((longs / tot) * 100) : null,
+        signals: sigs.length,
+        active: sigs.filter((s) => s.status === "active" || s.status === "pending").length,
+        closes: cs.filter((_, i) => i % 4 === 0).map((k) => k.close), // downsampled spark for the quick cards
+      };
+    });
+    return m;
+  }, [live]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       {/* Market-wide sentiment — the crypto Fear & Greed index (live when reachable) */}
@@ -39,10 +73,8 @@ const MarketsSection = () => {
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
       </div>
-      {/* Rich coin table — full width (readable, as sent), the chart runs full width below */}
-      <div style={{ ...cardStyle, padding: 12 }}>
-        <CoinTable coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} />
-      </div>
+      {/* Coin selector — primary display + searchable dropdown + quick-access cards */}
+      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={coinMeta} categories={COIN_CATEGORIES} />
       {/* Chart with signals plotted (no execution table — that lives in Audit) */}
       <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
