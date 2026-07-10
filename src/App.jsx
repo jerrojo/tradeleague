@@ -137,6 +137,33 @@ const App = () => {
     const t = setTimeout(() => window.scrollTo({ top: 0 }), 150);
     return () => clearTimeout(t);
   }, [activeTab, profileTrader]);
+  // ─── Browser history sync ───────────────────────────────────────────────
+  // Every view (section, open trader profile, audit anchor) becomes a history
+  // entry so the browser's Back/Forward buttons move between them. We watch the
+  // nav state itself, so ALL entry points — sidebar, keyboard 1–7, search,
+  // welcome cards, deep links, trader-name clicks — are covered without wrapping
+  // each callsite. popstate reapplies the stored view; a guard ref stops the
+  // reapply from pushing a fresh entry (which would break Forward).
+  const historyPopRef = useRef(false);
+  const historyMountRef = useRef(false);
+  useEffect(() => {
+    const view = { tlNav: true, tab: activeTab, profile: profileTrader?.name ?? null, auditView };
+    if (!historyMountRef.current) { historyMountRef.current = true; window.history.replaceState(view, ""); return; }
+    if (historyPopRef.current) { historyPopRef.current = false; return; }
+    window.history.pushState(view, "");
+  }, [activeTab, profileTrader, auditView]);
+  useEffect(() => {
+    const onPop = (e) => {
+      const st = e.state && e.state.tlNav ? e.state : { tab: "overview", profile: null, auditView: "execution" };
+      historyPopRef.current = true;
+      setActiveTab(st.tab || "overview");
+      setAuditView(st.auditView || "execution");
+      setProfileTrader(st.profile ? (mockTraders.find((t) => t.name === st.profile) || null) : null);
+      window.scrollTo({ top: 0 });
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
   const [feedFilter, setFeedFilter] = useState("all");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
