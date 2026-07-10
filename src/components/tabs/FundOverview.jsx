@@ -4,8 +4,8 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, BarChart3, Bot, Calendar, CheckCircle2, ChevronRight, Clock, Cpu, Flame, Gauge, GitBranch,
-  Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Users, Wallet, XCircle,
+  Activity, BarChart3, Calendar, CheckCircle2, Clock, Cpu, Flame, Gauge, GitBranch,
+  Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Wallet, XCircle,
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
 import { useTimeframe, useNav } from "../../contexts";
@@ -882,21 +882,6 @@ const FundOverview = () => {
         </div>
       </div>
 
-      {/* ════════ TRADERS — the signal providers ════════ */}
-      <SectionHeader icon={Users} title="Traders — signal providers" subtitle="The supply side: who feeds the fund and how concentrated the contribution is" color={C.blue}
-        right={<span onClick={() => go("traders")} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") go("traders"); }} style={{ fontSize: 11, fontWeight: 700, color: C.purple, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3 }}>All traders <ChevronRight size={13} /></span>} />
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-        <Kpi label="Active Providers" icon={Users} accent={C.blue} tip="activeProviders" value={<><span style={{ color: C.text }}>{data.signaledProviders}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>/</span> <span style={{ color: C.textMuted }}>{data.monitoredProviders}</span></>} sub="signaled / monitored" onClick={() => go("traders")} />
-        <Kpi label="Signals / Provider" icon={BarChart3} tip="signalsPerProvider" value={data.avgSignalsPerProvider.toFixed(1)} sub="average published" onClick={() => go("traders")} />
-        <Kpi label="Human vs Bot" icon={Bot} accent={C.cyan} tip="humanVsBot" value={<><span style={{ color: C.text }}>{data.humanSignals}</span> <span style={{ color: C.textFaint, fontSize: 14 }}>vs</span> <span style={{ color: C.cyan }}>{data.botSignals}</span></>} sub="signals (human / bot)" onClick={() => go("traders")} />
-        <Kpi label="Top Provider Share" icon={Target} accent={C.amber} tip="topProviderShare" value={`${Math.round(data.topProviderShare)}%`} valueColor={data.topProviderShare >= 50 ? C.amber : C.text} sub={`${data.topProvider.trader} of executed P&L`} onClick={() => go("traders")} />
-      </div>
-
-      {/* The old "Top providers by executed P&L" table was removed: it was a strict
-          subset of Audit → Part 2's attribution table (which adds the rejected-book
-          and edge columns). One click away is better than printed twice. The four
-          supply-side cards above + "All traders" keep the at-a-glance read. */}
     </div>
   );
 };
