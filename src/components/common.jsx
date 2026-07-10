@@ -52,8 +52,26 @@ const SectionHeader = ({ icon: Icon, title, subtitle, right, color = C.purple })
 
 /* ── InfoTip: hover tooltip explaining jargon in plain language ── */
 const GLOSSARY = {
+  // Overview KPIs (fund tear-sheet cards) — where each number comes from
+  netPnl:         "Total realized profit/loss of the executed (Robotín-approved) book over the selected timeframe: sum of every closed trade's net P&L.",
+  returnVsBtc:    "The fund's % return minus BTC buy-and-hold's % return over the same window — how many percentage points the fund beat (or trailed) simply holding Bitcoin.",
+  totalTrades:    "Count of closed (realized) trades from Robotín-approved signals in the selected timeframe. The sub shows this month vs last.",
+  avgWinLoss:     "Average P&L of winning trades vs the average P&L of losing trades (per closed trade).",
+  bestStreaks:    "Longest run of consecutive winning trades (W) and consecutive losing trades (L), ordered by time.",
+  largestWinLoss: "The single best and single worst closed trade by net P&L in the window.",
+  avgHold:        "Average time a trade stays open, from fill to close, across closed trades.",
+  bestWorstDay:   "The best and worst calendar day by summed net P&L. 'No losing day' appears when even the worst day was net positive.",
+  avgConfidence:  "Robotín's average confidence score on APPROVED signals vs REJECTED ones — a low rejected number means the filter is screening low-conviction calls.",
+  winsVsLosses:   "Count of winning vs losing closed trades in the window (wins hit take-profit, losses hit stop-loss). The sub shows this month.",
+  lastMonthWL:    "Winning vs losing trades in the previous calendar month, with that month's win rate.",
+  tradesPerMonth: "Average number of closed trades per month over the simulated track, with this month vs last.",
+  activeProviders: "Signal providers that actually published in this window vs the total roster the fund monitors.",
+  signalsPerProvider: "Average number of signals published per active provider over the window.",
+  humanVsBot: "Split of signals authored by human providers vs automated bot providers.",
+  topProviderShare: "Share of the fund's executed P&L attributable to the single best provider — high values flag concentration risk.",
   // SMC Analysis
   bias:           "Market direction. BULLISH = price going up, BEARISH = price going down",
+  confluence:     "Signal strength: how many indicators agree (more = more reliable)",
   confluence:     "Signal strength: how many indicators agree (more = more reliable)",
   riskLevel:      "How risky it is to trade right now. LOW = safe, HIGH = dangerous",
   stopDistance:   "Average distance from entry to stop-loss across this asset's approved signals, in %. Tighter = less capital at risk per trade",
