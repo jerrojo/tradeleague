@@ -1,6 +1,7 @@
 import { Activity, Check, ChevronDown, Clock, Cpu, X } from "lucide-react";
 import { Avatar, BotTag } from "./common";
 import { TradeDetail } from "./TradeDetail";
+import { TelegramButton } from "./TelegramSignal";
 import { C, cardStyle, mono } from "../theme";
 
 /* ═══════════════════════ SignalRow — THE canonical trade/signal row ═══════════════════════
@@ -191,6 +192,9 @@ const SignalRow = ({ signal: s, isOpen, onToggle, onTrader, showTime = false, la
         {showTime && (
           <span title={new Date(s.time * 1000).toLocaleString()} style={{ ...COL.time, fontSize: 11, color: C.textFaint, ...mono }}>{relTime(s.time)}</span>
         )}
+
+        {/* Original Telegram signal */}
+        <TelegramButton signal={s} size={20} />
 
         {/* Chevron */}
         <ChevronDown size={16} color={C.textFaint} style={{ flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />

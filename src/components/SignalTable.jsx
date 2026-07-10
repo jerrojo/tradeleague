@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizontal, X } from "lucide-react";
 import { Avatar, BotTag, EmptyState } from "./common";
 import { TradeDetail } from "./TradeDetail";
+import { TelegramButton } from "./TelegramSignal";
 import { feeOf } from "../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
@@ -292,7 +293,10 @@ const SignalTable = ({
                     {audit && show("fees") && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
                     {audit && show("match") && <td style={cell} title="Gross outcome (TP/SL) agrees with net P&L sign">{isClosed ? (() => { const m = (s.hit === "TP") === (s.pnl > 0); return <span style={{ fontWeight: 700, color: m ? C.green : C.amber }}>{m ? "✓" : "✗"}</span>; })() : <span style={{ color: C.textFaint }}>—</span>}</td>}
                     <td style={{ ...cell, textAlign: "right" }}>
-                      <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+                        <TelegramButton signal={s} size={18} />
+                        <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                      </span>
                     </td>
                   </tr>
                   {isOpen && (
