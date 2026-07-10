@@ -18,10 +18,13 @@ const fmt = (p) => {
   return p.toPrecision(3);
 };
 
-const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false } = {}) => {
+const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false, onSelectCoin, coins: coinsProp, coinMeta: metaProp, categories = [] } = {}) => {
   const { openProfile } = useProfile();
   const [coinState, setCoin] = useState("BTC");
   const coin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
+  // When the parent hands us a coin picker (Markets), the selector lives IN the
+  // chart header — one consolidated control instead of a separate block above.
+  const headerSelector = embedded && typeof onSelectCoin === "function";
   const [chartMode, setChartMode] = useState("candles");
   const [open, setOpen] = useState(null); // expanded signal id
 
@@ -57,16 +60,21 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {/* Asset selector (shared component: dropdown + editable favorites) — hidden when the Coin Hub owns the coin */}
+      {/* Asset selector (shared component: dropdown + editable favorites) — hidden
+          when embedded (the header owns the selector) or the Coin Hub owns the coin */}
       {!embedded && (
         <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={(c) => { setCoin(c); setOpen(null); }} meta={coinMeta} />
       )}
 
       {/* Chart */}
       <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: headerSelector ? 10 : 2, minWidth: 0 }}>
+            {headerSelector ? (
+              <CoinSelector coins={coinsProp ?? ROBOTIN_COINS} selected={coin} onSelect={(c) => { onSelectCoin(c); setOpen(null); }} meta={metaProp ?? coinMeta} categories={categories} />
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
+            )}
             <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} executed · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row for full detail` : `${signals.length} signals · ${approved} approved · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed${embedded ? " · full execution record in Audit" : " · click a row to plot levels"}`}</div>
           </div>
           <div style={{ display: "flex", gap: 3 }}>

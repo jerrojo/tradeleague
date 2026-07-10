@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
-import { CoinSelector } from "./CoinSelector";
 import { FearGreedGauge } from "./FearGreedGauge";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
@@ -72,14 +71,13 @@ const MarketsSection = () => {
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
       </div>
-      {/* Coin selector — primary display + searchable dropdown + quick-access cards */}
-      <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={coinMeta} categories={COIN_CATEGORIES} />
-      {/* Market-wide mood as macro context for the coin you're weighing (compact) */}
+      {/* Chart with the coin selector merged INTO its header (primary switcher +
+          searchable dropdown + quick-access cards) — one consolidated control. */}
+      <RobotinSignals coin={coin} embedded onSelectCoin={setCoin} coins={ROBOTIN_COINS} coinMeta={coinMeta} categories={COIN_CATEGORIES} />
+      {/* Market-wide mood, compact, tucked below the chart so it doesn't compete */}
       <div style={{ display: "flex" }}>
         <FearGreedGauge compact />
       </div>
-      {/* Chart with signals plotted (no execution table — that lives in Audit) */}
-      <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
       <CoinPositioning coin={coin} />
       {/* Consensus signal — where to enter, the targets, the stop */}
