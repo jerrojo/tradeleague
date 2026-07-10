@@ -376,10 +376,10 @@ const ExecutionEngine = () => {
         </div>
 
         {/* sizing + account */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }}>
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><DollarSign size={12} /> Sizing & costs</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
               <Field label="Sizing" tip="sizingMode">
                 <Seg value={cfg.sizing} onChange={(v) => set({ sizing: v })} options={[{ v: "margin", label: "Margin" }, { v: "risk", label: "Risk" }]} />
               </Field>
@@ -392,7 +392,7 @@ const ExecutionEngine = () => {
           </div>
           <div style={{ ...cardStyle, backgroundColor: C.cardElev }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, color: C.green, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}><Wallet size={12} /> Account & capital</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
               <Field label="Starting capital ($)"><Num value={cfg.capital} onChange={(v) => set({ capital: v })} step={1000} min={0} /></Field>
               <Field label="Capital mode" tip="capitalMode">
                 <Seg value={cfg.capitalMode} onChange={(v) => set({ capitalMode: v })} options={[{ v: "fixed", label: "Fixed" }, { v: "compound", label: "Compound" }]} />

@@ -168,7 +168,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ fontSize: "13px", color: C.textMuted, lineHeight: "1.6", marginBottom: "12px" }}>{t.bio}</div>
 
             {/* Info grid — 2 rows of 4 */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "8px", marginBottom: "12px" }}>
               {[["Rank", `#${t.rank}`, null], ["Location", t.location, null], ["Since", t.joined, null], ["Style", t.style, null],
                 ["Exchange", t.exchange, null], ["Favorite Pairs", t.favPairs.slice(0, 2).join(", "), null], ["Avg Duration", t.avgHold, null], ["Risk:Reward", t.avgRR, "rr"],
               ].map(([l, v, tip]) => (
@@ -231,7 +231,7 @@ const TraderProfile = ({ trader, onClose }) => {
               {journal.wins}W · {journal.losses}L over {journal.totalTrades} logged trades · avg hold {journal.avgHold.toFixed(1)}h
             </span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Net P&L" value={`${journal.totalNetPnl >= 0 ? "+" : "-"}$${Math.abs(journal.totalNetPnl).toLocaleString()}`} icon={DollarSign} color={journal.totalNetPnl >= 0 ? C.green : C.red} />
             <StatCard label="Win Rate" value={`${journal.winRate}%`} sub={`${journal.wins}W / ${journal.losses}L`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Profit Factor" value={journal.profitFactor === Infinity ? "∞" : journal.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
@@ -319,7 +319,7 @@ const TraderProfile = ({ trader, onClose }) => {
           {/* Activity Heatmap — GitHub-style (VARIV View A.3) */}
           <ActivityHeatmap traderData={deep} />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Skill Radar</div>
               <ResponsiveContainer width="100%" height={220}>
@@ -342,7 +342,7 @@ const TraderProfile = ({ trader, onClose }) => {
             subtitle={`Executed P&L VARIV realized from ${t.name}'s approved signals — and where the edge comes from`}
             color={C.green}
           />
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "16px" }}>
             <div style={cardStyle}>
               <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
                 {[
@@ -418,13 +418,13 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ SEÑALES ═══ */}
       {profileTab === "signals" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Total Signals" value={deep.signalStats.total} icon={Zap} color={C.purple} />
             <StatCard label="Accuracy" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Active Now" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
             <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Avg Profit / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
             <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
             <StatCard label="Actionability" value={`${deep.signalStats.actionability}%`} icon={Crosshair} color={C.blue} tip="actionability" />
@@ -498,7 +498,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ TRADES ═══ */}
       {profileTab === "trades" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px" }}>
             <StatCard label="Total Trades" value={t.trades} icon={Activity} color={C.blue} />
             <StatCard label="Win Rate" value={`${t.winRate}%`} icon={Trophy} color={C.green} tip="winRate" />
             <StatCard label="Profit Factor" value={t.profitFactor?.toFixed(1)} icon={Scale} color={C.amber} tip="profitFactor" />
@@ -543,7 +543,7 @@ const TraderProfile = ({ trader, onClose }) => {
                         {isOpen && (
                           <tr>
                             <td colSpan={11} style={{ padding: "4px 16px 16px", borderBottom: `1px solid ${C.border}`, backgroundColor: `${C.bg}80` }}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 240px", gap: "20px", alignItems: "start", paddingTop: "8px" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", alignItems: "start", paddingTop: "8px" }}>
                                 <div>
                                   <div style={{ fontSize: "10px", fontWeight: "700", color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>
                                     Trade Anatomy <InfoTip k="mae" inline><span style={{ fontWeight: 400, textTransform: "none" }}>(geometry + path)</span></InfoTip>
@@ -591,7 +591,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ SIGNAL LOG ═══ (replaces the retail "Social" tab per the VARIV brief) */}
       {profileTab === "signal_log" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Signals Emitted" value={robotinStats.total} icon={Zap} color={C.purple} />
             <StatCard label="Approved by Robotín" value={robotinStats.approved} icon={Activity} color={C.green} />
             <StatCard label="Approval Rate" value={`${robotinStats.rate}%`} icon={Target} color={robotinStats.rate >= 70 ? C.green : robotinStats.rate >= 50 ? C.amber : C.red} />
@@ -617,7 +617,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ P&L ═══ */}
       {profileTab === "pnl" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Total PnL" value={`+$${(t.pnl / 1000).toFixed(1)}K`} icon={TrendingUp} color={C.green} />
             <StatCard label="Best Month" value={t.bestMonth} icon={Trophy} color={C.green} />
             <StatCard label="Worst Month" value={t.worstMonth} icon={TrendingDown} color={C.red} />
@@ -659,13 +659,13 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ RISK DNA ═══ */}
       {profileTab === "risk_dna" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Sharpe Ratio" value={t.sharpe.toFixed(1)} icon={BarChart3} color={C.blue} />
             <StatCard label="Max Drawdown" value={`${t.maxDD}%`} icon={TrendingDown} color={C.red} />
             <StatCard label="Profit Factor" value={t.profitFactor?.toFixed(1) || "—"} icon={DollarSign} color={C.green} />
             <StatCard label="Win Streak" value={`${t.streak} trades`} icon={Flame} color={C.amber} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
             {/* Session Performance */}
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Performance by Session</div>
@@ -691,7 +691,7 @@ const TraderProfile = ({ trader, onClose }) => {
               </ResponsiveContainer>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
             {/* Pair Breakdown */}
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Performance by Pair</div>
@@ -730,7 +730,7 @@ const TraderProfile = ({ trader, onClose }) => {
           {/* Drawdown History */}
           <div style={cardStyle}>
             <div style={{ fontSize: "13px", fontWeight: "700", marginBottom: "12px" }}>Drawdown History</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "12px" }}>
               {deep.riskDna.drawdownPeriods.map((dd, i) => (
                 <div key={i} style={{ padding: "12px", backgroundColor: C.bg, borderRadius: "6px", border: `1px solid ${C.border}` }}>
                   <div style={{ fontSize: "11px", color: C.textMuted, marginBottom: "4px" }}>{dd.start} → {dd.end}</div>
@@ -753,7 +753,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {/* ═══ JOURNAL ═══ */}
       {profileTab === "journal" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Journal Entries" value={deep.journal.length} icon={Activity} color={C.blue} />
             <StatCard label="Net PnL (Journaled)" value={`$${deep.journal.reduce((a, j) => a + j.pnl, 0).toLocaleString()}`} icon={TrendingUp} color={C.green} />
             <StatCard label="Most Common Mood" value="Focused" icon={Target} color={C.blue} />

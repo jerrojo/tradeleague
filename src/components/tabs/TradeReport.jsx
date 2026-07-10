@@ -132,7 +132,7 @@ const TradeReport = () => {
       </div>
 
       {/* ── Calendar + weekly rail ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.7fr) minmax(220px, 1fr)", gap: 16, alignItems: "start" }}>
+      <div className="grid-cal" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.7fr) minmax(220px, 1fr)", gap: 16, alignItems: "start" }}>
         {/* calendar */}
         <div style={cardStyle}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>

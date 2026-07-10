@@ -15,7 +15,7 @@ const CandleChart = ({ data = [], mode = "candles", markers = [], priceLines = [
     const el = elRef.current;
     if (!el) return;
     const chart = createChart(el, {
-      autoSize: true,
+      width: el.clientWidth || 600,
       height,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: C.textMuted, fontSize: 11, fontFamily: "'SF Mono','Cascadia Code',monospace" },
       grid: { vertLines: { color: `${C.border}55` }, horzLines: { color: `${C.border}55` } },
@@ -24,7 +24,21 @@ const CandleChart = ({ data = [], mode = "candles", markers = [], priceLines = [
       timeScale: { borderColor: C.border, timeVisible: true, secondsVisible: false },
     });
     chartRef.current = chart;
-    return () => { chart.remove(); chartRef.current = null; seriesRef.current = null; };
+
+    // Track the container width so the chart re-fits on every layout change
+    // (window resize, sidebar collapse, orientation). autoSize's built-in
+    // observer proved unreliable, so we drive width explicitly. rAF-batched to
+    // avoid ResizeObserver-loop warnings.
+    let raf = 0;
+    const ro = new ResizeObserver((entries) => {
+      const w = Math.floor(entries[0].contentRect.width);
+      if (!w) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { try { chart.applyOptions({ width: w }); } catch { /* removed */ } });
+    });
+    ro.observe(el);
+
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); chart.remove(); chartRef.current = null; seriesRef.current = null; };
   }, [height]);
 
   // (Re)build the series whenever mode or data changes
