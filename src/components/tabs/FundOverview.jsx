@@ -197,13 +197,17 @@ const Mini = ({ label, value, sub, valueColor = C.text, onClick }) => (
 const SimTag = () => (
   <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: C.amber, backgroundColor: `${C.amber}1c`, border: `1px solid ${C.amber}40`, padding: "0px 5px", borderRadius: 3 }}>sim</span>
 );
-const Branch = ({ variant, icon: Icon, label, total, sub, result, resultLabel, wins, losses, winGross, lossGross, winRate, onClick }) => {
+const Branch = ({ variant, icon: Icon, label, book, total, closed, open, pending, closedWord, result, resultLabel, wins, losses, winGross, lossGross, winRate, onNav }) => {
   const ghost = variant === "rejected";
   const accent = ghost ? C.textMuted : C.purple;
   const resColor = result >= 0 ? C.green : C.red;
+  const seg = (status, children) => (
+    <span className="fork-seg" onClick={(e) => { e.stopPropagation(); onNav(book, status); }} style={{ cursor: "pointer" }}>{children}</span>
+  );
   return (
-    <div className="tl-card-int" onClick={onClick} role="button" tabIndex={0}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }}
+    <div className="tl-card-int" onClick={() => onNav(book, "all")} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav(book, "all"); } }}
+      title={`See ${label.split(" ")[0].toLowerCase()} signals in Activity`}
       style={{
         display: "flex", alignItems: "stretch", gap: 0, flexWrap: "wrap", borderRadius: 10, overflow: "hidden", cursor: "pointer",
         border: `1px ${ghost ? "dashed" : "solid"} ${ghost ? C.border : `${C.purple}55`}`,
@@ -217,20 +221,22 @@ const Branch = ({ variant, icon: Icon, label, total, sub, result, resultLabel, w
           {ghost && <SimTag />}
         </div>
         <div style={{ fontSize: 23, fontWeight: 900, ...mono, color: C.text, lineHeight: 1.05 }}>{total}</div>
-        <div style={{ fontSize: 10, color: C.textFaint, ...mono }}>{sub}</div>
+        <div style={{ fontSize: 10, color: C.textFaint, ...mono, display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <span>{closed} {closedWord}</span><span>·</span>{seg("active", `${open} open`)}<span>·</span>{seg("pending", `${pending} pending`)}
+        </div>
       </div>
       {/* result */}
       <div style={{ flex: "1 1 0", minWidth: 132, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4, justifyContent: "center", borderRight: `1px solid ${C.border}` }}>
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint }}>{resultLabel}</span>
         <div style={{ fontSize: 20, fontWeight: 900, ...mono, color: resColor, opacity: ghost ? 0.85 : 1, lineHeight: 1.05 }}>{usd(result)}</div>
       </div>
-      {/* outcomes */}
+      {/* outcomes — each row deep-links to that filtered slice in Activity */}
       <div style={{ flex: "1 1 0", minWidth: 148, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 5, justifyContent: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div className="fork-seg" onClick={(e) => { e.stopPropagation(); onNav(book, "wins"); }} title="See these wins in Activity" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: C.green }}><TrendingUp size={12} /> {wins} wins</span>
           <span style={{ fontSize: 11, ...mono, color: C.green }}>{usd(winGross)}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div className="fork-seg" onClick={(e) => { e.stopPropagation(); onNav(book, "losses"); }} title="See these losses in Activity" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, cursor: "pointer" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: C.red }}><TrendingDown size={12} /> {losses} losses</span>
           <span style={{ fontSize: 11, ...mono, color: C.red }}>{usd(-lossGross)}</span>
         </div>
@@ -243,17 +249,21 @@ const Branch = ({ variant, icon: Icon, label, total, sub, result, resultLabel, w
 /* ── The fork: ONE signal trunk splitting into Robotín's two books (approved vs
    rejected), each resolving to a result + win/loss, with a double-edge remate that
    reads both faces of the filter — losers it dodged AND opportunity still in play. ── */
-const ForkPipeline = ({ data, onClick, compact }) => {
+const ForkPipeline = ({ data, onNav, compact }) => {
   const a = data.approvedBranch, r = data.rejectedBranch, edge = data.filterEdge;
   return (
     <div style={{ ...cardStyle, padding: compact ? 14 : 16 }}>
+      <style>{`.fork-seg:hover { text-decoration: underline; }`}</style>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: compact ? 9 : 12 }}>
         <div style={{ fontSize: 11, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>From signals to P&amp;L — Robotín&apos;s two books</div>
         <div style={{ fontSize: 10.5, color: C.textMuted, ...mono }}>{data.allSignalsCount} signals · {Math.round(data.approvalRate)}% approved</div>
       </div>
       <div style={{ display: "flex", alignItems: "stretch", gap: 12, flexWrap: "wrap" }}>
-        {/* trunk — the single source both books branch from */}
-        <div className="tl-card" style={{ ...cardStyle, backgroundColor: C.cardElev, flex: "0 1 152px", minWidth: 132, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
+        {/* trunk — the single source both books branch from (click = all signals) */}
+        <div className="tl-card tl-card-int" onClick={() => onNav("all", "all")} role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("all", "all"); } }}
+          title="See all signals in Activity"
+          style={{ ...cardStyle, backgroundColor: C.cardElev, flex: "0 1 152px", minWidth: 132, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4, cursor: "pointer" }}>
           <div style={{ fontSize: 10, color: C.textFaint, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", display: "flex", alignItems: "center", gap: 5 }}><Radio size={12} /> Signals</div>
           <div style={{ fontSize: 26, fontWeight: 900, ...mono, lineHeight: 1.05 }}>{data.allSignalsCount}</div>
           <div style={{ fontSize: 10, color: C.textMuted }}>published · {data.signaledProviders} providers</div>
@@ -262,14 +272,12 @@ const ForkPipeline = ({ data, onClick, compact }) => {
         <div style={{ display: "flex", alignItems: "center" }}><GitBranch size={18} color={C.purple} style={{ flexShrink: 0 }} /></div>
         {/* the two books, stacked */}
         <div style={{ flex: "3 1 0", minWidth: 300, display: "flex", flexDirection: "column", gap: 10 }}>
-          <Branch variant="approved" icon={CheckCircle2} label="Approved · executed" total={a.total}
-            sub={`${a.closed} closed · ${a.active} open · ${a.pending} pending`} result={a.result} resultLabel="Realized result"
-            wins={a.wins} losses={a.losses} winGross={a.winGross} lossGross={a.lossGross} winRate={a.winRate}
-            onClick={() => onClick("executions")} />
-          <Branch variant="rejected" icon={XCircle} label="Rejected · not taken" total={r.total}
-            sub={`${r.closed} resolved · ${r.active} open · ${r.pending} pending`} result={r.result} resultLabel="If executed"
-            wins={r.wins} losses={r.losses} winGross={r.winGross} lossGross={r.lossGross} winRate={r.winRate}
-            onClick={() => onClick("edge")} />
+          <Branch variant="approved" icon={CheckCircle2} label="Approved · executed" book="approved" total={a.total}
+            closed={a.closed} open={a.active} pending={a.pending} closedWord="closed" result={a.result} resultLabel="Realized result"
+            wins={a.wins} losses={a.losses} winGross={a.winGross} lossGross={a.lossGross} winRate={a.winRate} onNav={onNav} />
+          <Branch variant="rejected" icon={XCircle} label="Rejected · not taken" book="rejected" total={r.total}
+            closed={r.closed} open={r.active} pending={r.pending} closedWord="resolved" result={r.result} resultLabel="If executed"
+            wins={r.wins} losses={r.losses} winGross={r.winGross} lossGross={r.lossGross} winRate={r.winRate} onNav={onNav} />
         </div>
       </div>
       {/* double-edge remate — both faces of the filter */}
@@ -648,7 +656,7 @@ const FundOverview = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Robotín's two books — moved to the top-left: the fund's core story sits
               above the metric grid, sharing the top row with the right rail. */}
-          <ForkPipeline data={data} compact onClick={(view) => (view === "edge" ? go("audit", { auditView: "edge" }) : go("activity"))} />
+          <ForkPipeline data={data} compact onNav={(book, status) => go("activity", { book, status })} />
           {/* Fund equity curve — compact, sits directly under the fork on the left */}
           <div style={cardStyle}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>

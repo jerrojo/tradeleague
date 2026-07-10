@@ -104,7 +104,14 @@ const App = () => {
   // scrolls left are explicit in-page anchors: Audit's jump-nav deep links and
   // Markets' coin-detail glide — those are destinations, not restored state.)
   useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; window.scrollTo({ top: 0 }); }, []);
-  const go = (tab, opts = {}) => { setActiveTab(tab); setProfileTrader(null); if (tab === "audit" && opts.auditView) setAuditView(opts.auditView); window.scrollTo({ top: 0 }); };
+  const go = (tab, opts = {}) => {
+    // deep-link Activity's two filter dimensions (BOOK + STATUS): write them before
+    // the section remounts (main is keyed on activeTab) so the tape opens pre-filtered.
+    if (tab === "activity") { try { if (opts.book) localStorage.setItem("af:book", opts.book); if (opts.status) localStorage.setItem("af:status", opts.status); } catch { /* ignore */ } }
+    setActiveTab(tab); setProfileTrader(null);
+    if (tab === "audit" && opts.auditView) setAuditView(opts.auditView);
+    window.scrollTo({ top: 0 });
+  };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => (typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(max-width: 900px)").matches : false));
   // Narrow screens get the compact sidebar automatically (and re-expand when widened)
   useEffect(() => {
