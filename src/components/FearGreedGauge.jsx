@@ -28,7 +28,7 @@ const arcPts = (aStart, aEnd, n = 18) => {
   return pts.join(" ");
 };
 
-const FearGreedGauge = ({ compact = false }) => {
+const FearGreedGauge = ({ compact = false, vertical = false }) => {
   const [fg, setFg] = useState(null);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const FearGreedGauge = ({ compact = false }) => {
   const dot = polar(angleOf(value));
 
   return (
-    <div style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8, minWidth: 260 }}>
+    <div style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8, minWidth: vertical ? 220 : 260, height: vertical ? "100%" : undefined, boxSizing: "border-box" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: C.text }}>
         <Gauge size={14} color={C.cyan} /> Crypto Fear &amp; Greed <span style={{ fontSize: 9.5, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px" }}>· market-wide</span>
         {fg && (fg.live ? (
@@ -61,8 +61,8 @@ const FearGreedGauge = ({ compact = false }) => {
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-        <svg viewBox="0 0 260 160" width={compact ? 168 : 200} style={{ display: "block", flexShrink: 0 }}>
+      <div style={{ display: "flex", flexDirection: vertical ? "column" : "row", alignItems: "center", justifyContent: "center", gap: vertical ? 8 : 14, flexWrap: "wrap", flex: vertical ? 1 : undefined }}>
+        <svg viewBox="0 0 260 160" width={vertical ? 210 : compact ? 168 : 200} style={{ display: "block", flexShrink: 0 }}>
           {/* colored bands */}
           {BANDS.map((b) => {
             const aS = angleOf(b.from) - (b.from > 0 ? GAP / 2 : 0);
@@ -77,7 +77,7 @@ const FearGreedGauge = ({ compact = false }) => {
           <text x={CX} y={CY + 2} textAnchor="middle" fill={lc} fontSize={13} fontWeight="800" style={{ fontFamily: "monospace" }}>{label}</text>
         </svg>
 
-        <div style={{ minWidth: 0, flex: "1 1 120px" }}>
+        <div style={{ minWidth: 0, flex: vertical ? "0 0 auto" : "1 1 120px", textAlign: vertical ? "center" : "left", maxWidth: vertical ? 280 : undefined }}>
           <div style={{ fontSize: 10.5, color: C.textMuted, lineHeight: 1.5 }}>
             {compact
               ? "The whole market's mood as you weigh this coin — 0 (extreme fear) to 100 (extreme greed)."

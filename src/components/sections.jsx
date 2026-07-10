@@ -74,14 +74,14 @@ const MarketsSection = () => {
       {/* Chart with the coin selector merged INTO its header (primary switcher +
           searchable dropdown + quick-access cards) — one consolidated control. */}
       <RobotinSignals coin={coin} embedded onSelectCoin={setCoin} coins={ROBOTIN_COINS} coinMeta={coinMeta} categories={COIN_CATEGORIES} />
-      {/* Market-wide mood, compact, tucked below the chart so it doesn't compete */}
-      <div style={{ display: "flex" }}>
-        <FearGreedGauge compact />
-      </div>
       {/* Positioning — the same price, one more lens */}
       <CoinPositioning coin={coin} />
-      {/* Consensus signal — where to enter, the targets, the stop */}
-      <SMCAnalysis coin={coin} embedded />
+      {/* Consensus signal + market-wide mood, side by side at equal height —
+          the F&G fills the Consensus card's spare width instead of a bare strip. */}
+      <div className="grid-consensus" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.3fr) minmax(280px, 1fr)", gap: 16, alignItems: "stretch" }}>
+        <SMCAnalysis coin={coin} embedded />
+        <FearGreedGauge compact vertical />
+      </div>
     </div>
   );
 };

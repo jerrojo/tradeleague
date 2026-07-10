@@ -378,6 +378,9 @@ const App = () => {
             @media (max-width: 820px) {
               .grid-cal { grid-template-columns: 1fr !important; }
             }
+            @media (max-width: 860px) {
+              .grid-consensus { grid-template-columns: 1fr !important; }
+            }
             @media (max-width: 1100px) {
               .dash-grid { grid-template-columns: 1fr !important; }
             }
