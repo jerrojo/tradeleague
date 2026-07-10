@@ -28,7 +28,7 @@ const arcPts = (aStart, aEnd, n = 18) => {
   return pts.join(" ");
 };
 
-const FearGreedGauge = () => {
+const FearGreedGauge = ({ compact = false }) => {
   const [fg, setFg] = useState(null);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ const FearGreedGauge = () => {
   return (
     <div style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 8, minWidth: 260 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: C.text }}>
-        <Gauge size={14} color={C.cyan} /> Crypto Fear &amp; Greed
+        <Gauge size={14} color={C.cyan} /> Crypto Fear &amp; Greed <span style={{ fontSize: 9.5, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px" }}>· market-wide</span>
         {fg && (fg.live ? (
           <span title={`Live from ${fg.source} · as of ${new Date(fg.ts).toLocaleString()}`} style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4, fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", color: C.green, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, padding: "2px 6px", borderRadius: 4, ...mono }}>
             <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.green, animation: "livePulse 2s ease-in-out infinite" }} /> LIVE
@@ -62,7 +62,7 @@ const FearGreedGauge = () => {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-        <svg viewBox="0 0 260 160" width="200" style={{ display: "block", flexShrink: 0 }}>
+        <svg viewBox="0 0 260 160" width={compact ? 168 : 200} style={{ display: "block", flexShrink: 0 }}>
           {/* colored bands */}
           {BANDS.map((b) => {
             const aS = angleOf(b.from) - (b.from > 0 ? GAP / 2 : 0);
@@ -79,7 +79,9 @@ const FearGreedGauge = () => {
 
         <div style={{ minWidth: 0, flex: "1 1 120px" }}>
           <div style={{ fontSize: 10.5, color: C.textMuted, lineHeight: 1.5 }}>
-            Market-wide sentiment, 0 (extreme fear) to 100 (extreme greed). Contrarians read deep fear as opportunity and extreme greed as caution.
+            {compact
+              ? "The whole market's mood as you weigh this coin — 0 (extreme fear) to 100 (extreme greed)."
+              : "Market-wide sentiment, 0 (extreme fear) to 100 (extreme greed). Contrarians read deep fear as opportunity and extreme greed as caution."}
           </div>
           <div style={{ marginTop: 6, fontSize: 9.5, color: C.textFaint, ...mono }}>
             {fg ? (fg.live ? `${fg.source} · updated ${new Date(fg.ts).toLocaleDateString()}` : "placeholder — source offline") : "loading…"}

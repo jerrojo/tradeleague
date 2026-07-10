@@ -64,10 +64,6 @@ const MarketsSection = () => {
   }, [live]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-      {/* Market-wide sentiment — the crypto Fear & Greed index (live when reachable) */}
-      <div style={{ display: "flex" }}>
-        <FearGreedGauge />
-      </div>
       {/* Cross-coin lead: the whole board at a glance */}
       <MarketPanorama selected={coin} onSelect={pick} />
       {/* ── Detail for the selected coin ── */}
@@ -78,6 +74,10 @@ const MarketsSection = () => {
       </div>
       {/* Coin selector — primary display + searchable dropdown + quick-access cards */}
       <CoinSelector coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} meta={coinMeta} categories={COIN_CATEGORIES} />
+      {/* Market-wide mood as macro context for the coin you're weighing (compact) */}
+      <div style={{ display: "flex" }}>
+        <FearGreedGauge compact />
+      </div>
       {/* Chart with signals plotted (no execution table — that lives in Audit) */}
       <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
