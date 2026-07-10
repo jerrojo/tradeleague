@@ -78,9 +78,9 @@ const MarketsSection = () => {
       <CoinPositioning coin={coin} />
       {/* Consensus signal + market-wide mood, side by side at equal height —
           the F&G fills the Consensus card's spare width instead of a bare strip. */}
-      <div className="grid-consensus" style={{ display: "grid", gridTemplateColumns: "minmax(0, 2.3fr) minmax(280px, 1fr)", gap: 16, alignItems: "stretch" }}>
-        <SMCAnalysis coin={coin} embedded />
+      <div className="grid-consensus" style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) minmax(0, 2.3fr)", gap: 16, alignItems: "stretch" }}>
         <FearGreedGauge compact vertical />
+        <SMCAnalysis coin={coin} embedded />
       </div>
     </div>
   );
