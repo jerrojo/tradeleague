@@ -12,6 +12,14 @@ import { C, mono } from "../theme";
 
 const TG_BLUE = "#2AABEE";
 
+/* The X (Twitter) glyph. */
+const XGlyph = ({ size = 15 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill="#fff" style={{ display: "block" }}>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+
+
 const fmtPx = (p) => {
   if (p == null) return "—";
   const a = Math.abs(p);
@@ -28,6 +36,14 @@ const TelegramGlyph = ({ size = 15 }) => (
     <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
   </svg>
 );
+
+/* Per-source branding — glyph, button gradient, modal header, labels. Signals
+   default to Telegram; a `source: "x"` field routes to the X (Twitter) look. */
+const SOURCES = {
+  telegram: { key: "telegram", name: "Telegram", Glyph: TelegramGlyph, grad: `linear-gradient(135deg, ${TG_BLUE}, #229ED9)`, headerGrad: `linear-gradient(90deg, ${TG_BLUE}, #229ED9)`, border: "none", sub: "Telegram · original signal · 8 members", tip: "View the original signal on Telegram" },
+  x: { key: "x", name: "X", Glyph: XGlyph, grad: "linear-gradient(135deg, #16181c, #000)", headerGrad: "linear-gradient(90deg, #000, #16181c)", border: "1px solid #2f3336", sub: "X (Twitter) · original post", tip: "View the original signal on X" },
+};
+const srcOf = (signal) => SOURCES[signal?.source] || SOURCES.telegram;
 
 const B = ({ children }) => <b style={{ color: C.text, fontWeight: 700 }}>{children}</b>;
 
@@ -77,6 +93,7 @@ const TgMessage = ({ s }) => {
 };
 
 const TelegramSignalModal = ({ signal, onClose }) => {
+  const src = srcOf(signal);
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -87,12 +104,12 @@ const TelegramSignalModal = ({ signal, onClose }) => {
   return createPortal(
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 4000, backgroundColor: "rgba(0,0,0,0.62)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: 440, maxWidth: "100%", borderRadius: 14, overflow: "hidden", border: `1px solid ${C.border}`, backgroundColor: C.card, boxShadow: C.shadowLg }}>
-        {/* Telegram-style header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: `linear-gradient(90deg, ${TG_BLUE}, #229ED9)` }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}><TelegramGlyph size={17} /></div>
+        {/* Source-styled header (Telegram / X) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: src.headerGrad }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}><src.Glyph size={17} /></div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>VARIV {signal.approved ? "Approved" : "Rejected"} Signals</div>
-            <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.8)" }}>Telegram · original signal · 8 members</div>
+            <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.8)" }}>{src.sub}</div>
           </div>
           <button onClick={onClose} title="Close" style={{ width: 26, height: 26, borderRadius: 7, border: "none", backgroundColor: "rgba(255,255,255,0.18)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={15} /></button>
         </div>
@@ -109,23 +126,25 @@ const TelegramSignalModal = ({ signal, onClose }) => {
   );
 };
 
-/* Small round Telegram button — drop it into any signal/trade row. Self-contained:
-   manages its own open state and renders the popup in a portal. */
-const TelegramButton = ({ signal, size = 20 }) => {
+/* Small round source button (Telegram / X) — drop it into any signal/trade row.
+   Self-contained: manages its own open state and renders the popup in a portal. */
+const SourceButton = ({ signal, size = 20 }) => {
   const [open, setOpen] = useState(false);
+  const src = srcOf(signal);
   return (
     <>
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); } }}
-        title="View the original signal on Telegram"
-        style={{ width: size, height: size, borderRadius: "50%", border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${TG_BLUE}, #229ED9)`, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}
+        title={src.tip}
+        style={{ width: size, height: size, borderRadius: "50%", border: src.border, cursor: "pointer", background: src.grad, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0, boxSizing: "border-box" }}
       >
-        <TelegramGlyph size={Math.round(size * 0.62)} />
+        <src.Glyph size={Math.round(size * 0.62)} />
       </button>
       {open && <TelegramSignalModal signal={signal} onClose={() => setOpen(false)} />}
     </>
   );
 };
 
-export { TelegramButton, TelegramSignalModal };
+const TelegramButton = SourceButton; // back-compat alias
+export { SourceButton, TelegramButton, TelegramSignalModal };

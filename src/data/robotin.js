@@ -169,8 +169,14 @@ export function coinSignals(coin, candles) {
       pnl = round(sign * ((res.exit - entry) / entry) * lev * notional);
     }
 
+    // Provider source — most signals arrive via the Telegram channel; a minority
+    // come from X (Twitter). Deterministic (a stable hash, not the RNG stream, so
+    // it never flickers and never shifts other seeded draws).
+    const srcHash = (coin.charCodeAt(0) + coin.charCodeAt(coin.length - 1) + k * 7 + trader.name.length * 13) % 4;
+    const source = srcHash === 0 ? "x" : "telegram";
+
     out.push({
-      id: `${coin}-${k}`, coin, pair: `${coin}/USDT`, trader: trader.name, isBot: trader.isBot,
+      id: `${coin}-${k}`, coin, pair: `${coin}/USDT`, trader: trader.name, isBot: trader.isBot, source,
       time: candles[ei].time, entryIdx: ei,
       dir, entry, signalPx: px, sl, tp1, tp2, tp3, tf, setup, tag,
       lev, notional: round(notional), // position sizing (used by Positioning map / detail)

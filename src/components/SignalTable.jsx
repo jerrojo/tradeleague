@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizontal, X } from "lucide-react";
 import { Avatar, BotTag, EmptyState } from "./common";
 import { TradeDetail } from "./TradeDetail";
-import { TelegramButton } from "./TelegramSignal";
+import { SourceButton } from "./TelegramSignal";
 import { feeOf } from "../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
@@ -104,7 +104,7 @@ const exportRows = (rows, name, format) => {
   const recs = rows.map((s) => {
     const cr = s.status === "closed" ? closedResult(s) : null;
     return {
-      coin: s.coin, pair: s.pair, type: s.dir, trader: s.trader, isBot: !!s.isBot,
+      coin: s.coin, pair: s.pair, type: s.dir, trader: s.trader, isBot: !!s.isBot, source: s.source || "telegram",
       approved: !!s.approved, confidence: s.confidence, status: s.status,
       entry: s.entry, exit: cr ? cr.exit : null, sl: s.sl, tp1: s.tp1,
       pnl: s.status === "closed" ? s.pnl : null, pnlPct: s.status === "closed" ? s.pnlPct : null,
@@ -170,6 +170,7 @@ const SignalTable = ({
     { id: "setup", label: "Setup" },
     { id: "time", label: "Time" },
     ...(audit ? [{ id: "fees", label: "Fees", noSort: true }, { id: "match", label: "Net match", noSort: true }] : []),
+    { id: "source", label: "Source", noSort: true },
     { id: "_chev", label: "", noSort: true, fixed: true },
   ];
   const show = (id) => id === "pair" || id === "_chev" || !hidden.has(id);
@@ -209,7 +210,7 @@ const SignalTable = ({
             return (
               <th key={c.id} onClick={sortable ? () => onSort(c.id) : undefined}
                 aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : (sortable ? "none" : undefined)}
-                style={{ ...thStyle, fontSize: 11, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none", ...(maxHeight ? { position: "sticky", top: 0, backgroundColor: C.card, zIndex: 2 } : {}) }}>
+                style={{ ...thStyle, fontSize: 11, cursor: sortable ? "pointer" : "default", color: active ? C.text : C.textMuted, userSelect: "none", ...(c.id === "source" ? { textAlign: "center" } : {}), ...(maxHeight ? { position: "sticky", top: 0, backgroundColor: C.card, zIndex: 2 } : {}) }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
                   {c.label}
                   {active && (sort.dir === "asc" ? <ChevronUp size={11} /> : <ChevronDown size={11} />)}
@@ -292,11 +293,13 @@ const SignalTable = ({
                     {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>}
                     {audit && show("fees") && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
                     {audit && show("match") && <td style={cell} title="Gross outcome (TP/SL) agrees with net P&L sign">{isClosed ? (() => { const m = (s.hit === "TP") === (s.pnl > 0); return <span style={{ fontWeight: 700, color: m ? C.green : C.amber }}>{m ? "✓" : "✗"}</span>; })() : <span style={{ color: C.textFaint }}>—</span>}</td>}
+                    {show("source") && (
+                      <td style={{ ...cell, textAlign: "center" }}>
+                        <SourceButton signal={s} size={18} />
+                      </td>
+                    )}
                     <td style={{ ...cell, textAlign: "right" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-                        <TelegramButton signal={s} size={18} />
-                        <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
-                      </span>
+                      <ChevronDown size={15} color={C.textFaint} style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
                     </td>
                   </tr>
                   {isOpen && (
