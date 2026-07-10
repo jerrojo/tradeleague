@@ -796,7 +796,7 @@ const App = () => {
             )}
 
             {/* Content */}
-            <main key={profileTrader ? `profile-${profileTrader.name}` : activeTab} style={{ flex: 1, minWidth: 0, padding: "24px", maxWidth: "1400px", width: "100%", boxSizing: "border-box", animation: "fadeInUp 0.2s ease" }}>
+            <main key={profileTrader ? `profile-${profileTrader.name}` : activeTab} style={{ flex: 1, minWidth: 0, padding: "24px", width: "100%", boxSizing: "border-box", animation: "fadeInUp 0.2s ease" }}>
               {profileTrader ? <TraderProfile trader={profileTrader} onClose={closeProfile} /> : <ActiveComponent />}
             </main>
 
