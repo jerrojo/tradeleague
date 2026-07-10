@@ -34,7 +34,7 @@ const CandleChart = ({ data = [], mode = "candles", markers = [], priceLines = [
       const w = Math.floor(entries[0].contentRect.width);
       if (!w) return;
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => { try { chart.applyOptions({ width: w }); } catch { /* removed */ } });
+      raf = requestAnimationFrame(() => { try { chart.resize(w, height); } catch { /* removed */ } });
     });
     ro.observe(el);
 
