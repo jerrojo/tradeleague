@@ -25,20 +25,23 @@ const CandleChart = ({ data = [], mode = "candles", markers = [], priceLines = [
     });
     chartRef.current = chart;
 
-    // Track the container width so the chart re-fits on every layout change
-    // (window resize, sidebar collapse, orientation). autoSize's built-in
-    // observer proved unreliable, so we drive width explicitly. rAF-batched to
-    // avoid ResizeObserver-loop warnings.
+    // Track the container width so the chart re-fits on every layout change.
+    // autoSize's built-in observer proved unreliable, so we drive width
+    // explicitly via BOTH a ResizeObserver (container-only changes, e.g. sidebar
+    // collapse) and a window resize listener (browser resize / device rotation).
+    // rAF-batched to coalesce bursts and avoid ResizeObserver-loop warnings.
     let raf = 0;
-    const ro = new ResizeObserver((entries) => {
-      const w = Math.floor(entries[0].contentRect.width);
+    const refit = () => {
+      const w = Math.floor(el.clientWidth);
       if (!w) return;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => { try { chart.resize(w, height); } catch { /* removed */ } });
-    });
+    };
+    const ro = new ResizeObserver(refit);
     ro.observe(el);
+    window.addEventListener("resize", refit);
 
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); chart.remove(); chartRef.current = null; seriesRef.current = null; };
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener("resize", refit); chart.remove(); chartRef.current = null; seriesRef.current = null; };
   }, [height]);
 
   // (Re)build the series whenever mode or data changes
