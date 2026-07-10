@@ -15,7 +15,7 @@ import { ExecutionAudit } from "./tabs/ExecutionAudit";
 import { FilterEdge } from "./tabs/FilterEdge";
 import { useNav, useLivePrices } from "../contexts";
 import { smcCoins } from "../data/mockData";
-import { coinCandles, coinSignals, ROBOTIN_COINS } from "../data/robotin";
+import { coinCandles, coinSignals, ROBOTIN_COINS, MARKET_META } from "../data/robotin";
 
 const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
 
@@ -43,6 +43,7 @@ const MarketsSection = () => {
       const longs = appr.filter((s) => s.dir === "LONG").length;
       const tot = appr.length;
       const meta = smcCoins[c] || {};
+      const mm = MARKET_META[c] || {};
       const lv = live?.[c]; // real quote takes over price/Δ when the tape is up
       const px = lv?.px ?? last;
       const chg = lv?.chg24h ?? change;
@@ -55,6 +56,8 @@ const MarketsSection = () => {
         signals: sigs.length,
         active: sigs.filter((s) => s.status === "active" || s.status === "pending").length,
         closes: cs.filter((_, i) => i % 4 === 0).map((k) => k.close), // downsampled spark for the quick cards
+        // rich dropdown columns: 1h/1d/1w moves + market cap (1d live, others SIM)
+        chg1h: mm.chg1h, chg1d: chg, chg1w: mm.chg1w, marketCap: mm.marketCap,
       };
     });
     return m;

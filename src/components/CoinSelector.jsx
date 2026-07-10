@@ -18,6 +18,19 @@ const loadFavs = () => {
 
 const changeColor = (ch) => (ch == null ? C.textMuted : String(ch).trim().startsWith("-") ? C.red : C.green);
 
+/* rich-dropdown formatters (Fav · Coin · Price · 1h · 1d · 1w · Mkt Cap · Buy/Sell) */
+const numColor = (v) => (v == null ? C.textMuted : v >= 0 ? C.green : C.red);
+const pctNum = (v) => (v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`);
+const capFmt = (v) => {
+  if (v == null) return "—";
+  if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+  return `$${Math.round(v).toLocaleString()}`;
+};
+const DD_GRID = "24px 1.45fr 1.05fr 0.72fr 0.72fr 0.72fr 0.95fr 0.82fr";
+const ddHead = { fontSize: 9, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint };
+
 /* tiny sparkline for the quick cards */
 const MiniSpark = ({ closes, color }) => {
   if (!closes || closes.length < 2) return null;
@@ -82,46 +95,55 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
         </button>
 
         {open && (
-          <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", width: "520px", maxWidth: "92vw", boxShadow: C.shadowLg, overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 300, backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "10px", width: "780px", maxWidth: "94vw", boxShadow: C.shadowLg, overflow: "hidden" }}>
             <div style={{ padding: "12px 12px 8px", position: "relative" }}>
               <Search size={14} style={{ position: "absolute", left: 22, top: 22, color: C.textMuted }} />
-              <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search coins…  ·  ★ to pin to quick access" style={{ width: "100%", padding: "8px 10px 8px 32px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none" }} />
+              <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search coins…  ·  ★ to pin to quick access" style={{ width: "100%", padding: "8px 10px 8px 32px", borderRadius: 6, border: `1px solid ${C.border}`, backgroundColor: C.bg, color: C.text, fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
             </div>
             {categories.length > 0 && (
-              <div style={{ display: "flex", gap: 2, padding: "0 12px 8px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", gap: 2, padding: "0 12px 8px" }}>
                 {categories.map((c) => (
                   <button key={c} onClick={() => setCat(c)} style={{ padding: "4px 10px", borderRadius: 4, fontSize: 10, fontWeight: 600, cursor: "pointer", border: "none", backgroundColor: cat === c ? C.purpleBg : "transparent", color: cat === c ? C.purple : C.textMuted }}>{c}</button>
                 ))}
               </div>
             )}
-            <div style={{ maxHeight: 300, overflowY: "auto" }}>
+            {/* column header */}
+            <div style={{ display: "grid", gridTemplateColumns: DD_GRID, gap: 8, alignItems: "center", padding: "6px 12px", borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
+              <span />
+              <span style={ddHead}>Coin</span>
+              <span style={{ ...ddHead, textAlign: "right" }}>Price</span>
+              <span style={{ ...ddHead, textAlign: "right" }}>1h</span>
+              <span style={{ ...ddHead, textAlign: "right" }}>1d</span>
+              <span style={{ ...ddHead, textAlign: "right" }}>1w</span>
+              <span style={{ ...ddHead, textAlign: "right" }}>Mkt Cap</span>
+              <span style={{ ...ddHead, textAlign: "center" }}>Signal</span>
+            </div>
+            <div style={{ maxHeight: 340, overflowY: "auto" }}>
               {filtered.map((c) => {
                 const cm = meta[c] || {};
                 const isSel = selected === c;
                 const isFav = favs.includes(c);
+                const call = cm.bias === "BULLISH" ? "BUY" : cm.bias === "BEARISH" ? "SELL" : ((cm.chg1d ?? 0) >= 0 ? "BUY" : "SELL");
+                const buy = call === "BUY";
+                const num = { fontSize: 11.5, fontWeight: 700, ...mono, textAlign: "right" };
                 return (
-                  <div key={c} style={{ display: "flex", alignItems: "center", borderLeft: isSel ? `3px solid ${C.purple}` : "3px solid transparent", backgroundColor: isSel ? C.purpleBg : "transparent" }}>
-                    <button title={isFav ? "Unpin from quick access" : "Pin to quick access"} onClick={(e) => { e.stopPropagation(); toggleFav(c); }} style={{ background: "none", border: "none", cursor: "pointer", padding: "8px 6px 8px 12px", color: isFav ? C.amber : C.textFaint, display: "flex", alignItems: "center" }}>
+                  <div key={c} className="cs-row" role="button" tabIndex={0}
+                    onClick={() => { onSelect(c); setOpen(false); }}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(c); setOpen(false); } }}
+                    style={{ display: "grid", gridTemplateColumns: DD_GRID, gap: 8, alignItems: "center", padding: "8px 12px", cursor: "pointer", borderLeft: `3px solid ${isSel ? C.purple : "transparent"}`, backgroundColor: isSel ? C.purpleBg : "transparent", borderBottom: `1px solid ${C.border}` }}>
+                    <button title={isFav ? "Unpin from quick access" : "Pin to quick access"} onClick={(e) => { e.stopPropagation(); toggleFav(c); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: isFav ? C.amber : C.textFaint, display: "flex", alignItems: "center" }}>
                       <Star size={13} fill={isFav ? C.amber : "none"} />
                     </button>
-                    <button onClick={() => { onSelect(c); setOpen(false); }} style={{ flex: 1, display: "flex", alignItems: "center", padding: "8px 14px 8px 4px", border: "none", cursor: "pointer", gap: 10, background: "none", textAlign: "left" }}>
-                      <span style={{ flex: 1 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: isSel ? C.purple : C.text }}>{c}</span>
-                        {cm.category && <span style={{ fontSize: 10, color: C.textMuted, marginLeft: 8 }}>{cm.category}</span>}
-                      </span>
-                      {cm.longPct != null && (
-                        <span title={`${cm.longPct}% long / ${100 - cm.longPct}% short`} style={{ display: "inline-flex", alignItems: "center", gap: 5, minWidth: 78, justifyContent: "flex-end" }}>
-                          <span style={{ width: 32, height: 5, borderRadius: 3, overflow: "hidden", display: "flex", backgroundColor: C.bg }}>
-                            <span style={{ width: `${cm.longPct}%`, backgroundColor: C.green }} />
-                            <span style={{ width: `${100 - cm.longPct}%`, backgroundColor: C.red }} />
-                          </span>
-                          <span style={{ fontSize: 9.5, color: C.textMuted, ...mono }}>{cm.active ? `${cm.active}•` : ""}{cm.signals}s</span>
-                        </span>
-                      )}
-                      {cm.bias && <span title={`Model bias: ${cm.bias}`} style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: cm.bias === "BULLISH" ? C.green : C.red, flexShrink: 0 }} />}
-                      {cm.price != null && <span style={{ fontSize: 12, fontWeight: 600, color: C.text, ...mono, minWidth: 72, textAlign: "right" }}>{cm.price}</span>}
-                      {cm.change != null && <span style={{ fontSize: 11, fontWeight: 700, ...mono, minWidth: 50, textAlign: "right", color: changeColor(cm.change) }}>{cm.change}</span>}
-                    </button>
+                    <span style={{ minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: isSel ? C.purple : C.text }}>{c}</span>
+                      {cm.category && <span style={{ fontSize: 9.5, color: C.textFaint, marginLeft: 6 }}>{cm.category}</span>}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.text, ...mono, textAlign: "right" }}>{cm.price ?? "—"}</span>
+                    <span style={{ ...num, color: numColor(cm.chg1h) }}>{pctNum(cm.chg1h)}</span>
+                    <span style={{ ...num, color: numColor(cm.chg1d) }}>{pctNum(cm.chg1d)}</span>
+                    <span style={{ ...num, color: numColor(cm.chg1w) }}>{pctNum(cm.chg1w)}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: C.textMuted, ...mono, textAlign: "right" }}>{capFmt(cm.marketCap)}</span>
+                    <span style={{ justifySelf: "center", fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: buy ? C.green : C.red, backgroundColor: `${buy ? C.green : C.red}1c`, padding: "3px 9px", borderRadius: 5 }}>{call}</span>
                   </div>
                 );
               })}
@@ -160,7 +182,7 @@ const CoinSelector = ({ coins = [], selected, onSelect, meta = {}, categories = 
         })}
         {favCoins.length === 0 && <span style={{ fontSize: 10, color: C.textFaint }}>★ a coin in the menu to pin it here</span>}
       </div>
-      <style>{`.fav-chip:hover .fav-x { opacity: 1 !important; }`}</style>
+      <style>{`.fav-chip:hover .fav-x { opacity: 1 !important; } .cs-row:hover { background-color: ${C.cardHover} !important; }`}</style>
     </div>
   );
 };
