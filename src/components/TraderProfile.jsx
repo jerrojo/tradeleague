@@ -2,6 +2,7 @@ import { Avatar, BotTag, InfoTip, SectionHeader, StatCard, Tag } from "./common"
 import { ActivityHeatmap, TradeStructureDiagram } from "./widgets";
 import { TradeLab } from "./TradeLab";
 import { SignalTable } from "./SignalTable";
+import { TelegramButton } from "./TelegramSignal";
 import { Bell, BellRing, ChevronRight, Circle, Copy, Crosshair, Eye, Scale } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { traderDeepData } from "../data/mockData";
@@ -454,9 +455,10 @@ const TraderProfile = ({ trader, onClose }) => {
                     {/* Trade Structure Diagram — VARIV View B.2 */}
                     <TradeStructureDiagram entry={s.entry} sl={s.sl} tp={s.tp} type={s.type} />
                   </div>
-                  <div style={{ textAlign: "right", minWidth: "100px" }}>
+                  <div style={{ textAlign: "right", minWidth: "100px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                     <div style={{ fontSize: "14px", fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</div>
                     <div style={{ fontSize: "10px", color: C.textMuted }}>{s.subscribers} subs</div>
+                    <TelegramButton signal={{ trader: t.name, coin: (s.pair || "").split("/")[0], dir: s.type, entry: s.entry, sl: s.sl, tp1: s.tp, approved: true, reasoning: s.analysis }} size={20} />
                   </div>
                 </div>
               ))}
@@ -467,7 +469,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Signal History — Last 12</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","PnL","Status","Subscribers","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","PnL","Status","Subscribers","Date","Signal"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.signals.map(s => (
                     <tr key={s.id} style={{ borderLeft: `3px solid ${s.type === "LONG" ? C.green : C.red}` }}>
@@ -483,6 +485,7 @@ const TraderProfile = ({ trader, onClose }) => {
                       <td style={tdStyle}><Tag text={s.status === "active" ? "Active" : s.status === "tp_hit" ? "TP Hit" : "SL Hit"} color={s.status === "active" ? C.blue : s.status === "tp_hit" ? C.green : C.red} /></td>
                       <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>{s.subscribers}</td>
                       <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.date}</td>
+                      <td style={tdStyle}><TelegramButton signal={{ trader: t.name, coin: (s.pair || "").split("/")[0], dir: s.type, entry: s.entry, sl: s.sl, tp1: s.tp, approved: true, time: (Date.parse(`${s.date} 2026`) || Date.now()) / 1000 }} size={18} /></td>
                     </tr>
                   ))}
                 </tbody>
