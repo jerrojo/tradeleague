@@ -39,15 +39,12 @@ const MarketsSection = () => {
         <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.6px", textTransform: "uppercase", color: C.textFaint }}>Coin detail</span>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />
       </div>
-      {/* Coin table (rich selector) sits beside the chart — pick a coin right where you read it */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start" }}>
-        <div style={{ ...cardStyle, padding: 12, flex: "1 1 320px", minWidth: 300, maxWidth: 420 }}>
-          <CoinTable coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} />
-        </div>
-        <div style={{ flex: "2 1 480px", minWidth: 0 }}>
-          <RobotinSignals coin={coin} embedded />
-        </div>
+      {/* Rich coin table — full width (readable, as sent), the chart runs full width below */}
+      <div style={{ ...cardStyle, padding: 12 }}>
+        <CoinTable coins={ROBOTIN_COINS} selected={coin} onSelect={setCoin} />
       </div>
+      {/* Chart with signals plotted (no execution table — that lives in Audit) */}
+      <RobotinSignals coin={coin} embedded />
       {/* Positioning — the same price, one more lens */}
       <CoinPositioning coin={coin} />
       {/* Consensus signal — where to enter, the targets, the stop */}
