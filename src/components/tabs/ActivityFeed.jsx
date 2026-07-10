@@ -12,25 +12,37 @@ import { C, cardStyle, mono } from "../../theme";
    One chronological stream (newest first), scannable. Rows render through the
    shared SignalRow so the tape matches Markets and the Wallet exactly. */
 
-/* ── filter chip definitions (id, label, predicate) ── */
-const CHIPS = [
-  { id: "all", label: "All", test: () => true },
+/* ── two independent, combinable filter dimensions ──
+   BOOK = which signals (all / Robotín-approved / rejected); STATUS = lifecycle or
+   outcome (active / pending / wins / losses), AND-combined with BOOK. Wins & losses
+   read the realized result for approved trades and the counterfactual (hypothetical)
+   result for rejected ones — so "Approved · Wins" and "Signals · Losses" are both
+   meaningful, and the old "Closed (TP)/(SL)" chips become plain Wins / Losses. */
+const BOOK = [
+  { id: "all", label: "Signals", test: () => true },
   { id: "approved", label: "Approved", test: (s) => s.approved === true },
   { id: "rejected", label: "Rejected", test: (s) => s.approved === false },
+];
+const isWin = (s) => (s.approved ? (s.status === "closed" && s.hit === "TP") : (s.hypoClosed && s.hypoPnl > 0));
+const isLoss = (s) => (s.approved ? (s.status === "closed" && s.hit === "SL") : (s.hypoClosed && s.hypoPnl < 0));
+const STATUS = [
+  { id: "all", label: "All", test: () => true },
   { id: "active", label: "Active", test: (s) => s.status === "active" },
   { id: "pending", label: "Pending", test: (s) => s.status === "pending" },
-  { id: "tp", label: "Closed (TP)", test: (s) => s.status === "closed" && s.hit === "TP" },
-  { id: "sl", label: "Closed (SL)", test: (s) => s.status === "closed" && s.hit === "SL" },
+  { id: "wins", label: "Wins", test: isWin, tone: "green" },
+  { id: "losses", label: "Losses", test: isLoss, tone: "red" },
 ];
 
 const ActivityFeed = () => {
   const { openProfile } = useProfile();
 
   // filters persist so the analyst's view sticks across sessions
-  const [filter, setFilter] = useState(() => { try { return localStorage.getItem("af:chip") || "all"; } catch { return "all"; } });
+  const [book, setBook] = useState(() => { try { return localStorage.getItem("af:book") || "all"; } catch { return "all"; } });
+  const [status, setStatus] = useState(() => { try { return localStorage.getItem("af:status") || "all"; } catch { return "all"; } });
   const [coinFilter, setCoinFilter] = useState(() => { try { return localStorage.getItem("af:coin") || "all"; } catch { return "all"; } });
   const [open, setOpen] = useState(null); // expanded signal id
-  useEffect(() => { try { localStorage.setItem("af:chip", filter); } catch { /* ignore */ } }, [filter]);
+  useEffect(() => { try { localStorage.setItem("af:book", book); } catch { /* ignore */ } }, [book]);
+  useEffect(() => { try { localStorage.setItem("af:status", status); } catch { /* ignore */ } }, [status]);
   useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
 
   const lastClose = (coin) => lastCloseByCoin[coin] ?? null;
@@ -45,21 +57,29 @@ const ActivityFeed = () => {
     return seen;
   }, [allSignals]);
 
-  const chip = CHIPS.find((x) => x.id === filter) || CHIPS[0];
+  const bookDef = BOOK.find((x) => x.id === book) || BOOK[0];
+  const statusDef = STATUS.find((x) => x.id === status) || STATUS[0];
   /* ── global timeframe filter (header) applies to the whole tape ── */
   const { within } = useTimeframe();
   const tfSignals = useMemo(() => allSignals.filter((s) => within(s.time)), [allSignals, within]);
 
   const visible = useMemo(() => {
-    let list = tfSignals.filter(chip.test);
+    let list = tfSignals.filter(bookDef.test).filter(statusDef.test);
     if (coinFilter !== "all") list = list.filter((s) => s.coin === coinFilter);
     return list;
-  }, [tfSignals, chip, coinFilter]);
+  }, [tfSignals, bookDef, statusDef, coinFilter]);
 
   /* ── header summary counts (over the timeframe-filtered tape) ── */
   const totalN = tfSignals.length;
   const approvedN = useMemo(() => tfSignals.filter((s) => s.approved).length, [tfSignals]);
   const activeN = useMemo(() => tfSignals.filter((s) => s.status === "active").length, [tfSignals]);
+
+  const grpLbl = { fontSize: 10, fontWeight: 700, color: C.textFaint, letterSpacing: "0.4px", ...mono };
+  const chipStyle = (on, ac) => ({
+    padding: "5px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
+    border: `1px solid ${on ? ac : C.border}`, backgroundColor: on ? `${ac}1c` : "transparent",
+    color: on ? ac : C.textMuted, ...mono, whiteSpace: "nowrap",
+  });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -79,16 +99,19 @@ const ActivityFeed = () => {
         position: "sticky", top: 56, zIndex: 5, display: "flex", alignItems: "center", gap: 7,
         flexWrap: "wrap", padding: "8px 0", backgroundColor: C.bg, borderBottom: `1px solid ${C.border}`,
       }}>
-        {CHIPS.map((c) => {
-          const on = filter === c.id;
-          return (
-            <button key={c.id} onClick={() => { setFilter(c.id); setOpen(null); }} style={{
-              padding: "5px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer",
-              border: `1px solid ${on ? C.purple : C.border}`,
-              backgroundColor: on ? C.purpleBg : "transparent",
-              color: on ? C.purple : C.textMuted, ...mono, whiteSpace: "nowrap",
-            }}>{c.label}</button>
-          );
+        {/* BOOK dimension — which signals */}
+        <span style={grpLbl}>BOOK</span>
+        {BOOK.map((c) => {
+          const on = book === c.id;
+          return <button key={c.id} onClick={() => { setBook(c.id); setOpen(null); }} style={chipStyle(on, C.purple)}>{c.label}</button>;
+        })}
+        <div style={{ width: 1, height: 20, backgroundColor: C.border, margin: "0 4px" }} />
+        {/* STATUS dimension — lifecycle / outcome, combined with BOOK */}
+        <span style={grpLbl}>STATUS</span>
+        {STATUS.map((c) => {
+          const on = status === c.id;
+          const ac = c.tone === "green" ? C.green : c.tone === "red" ? C.red : C.purple;
+          return <button key={c.id} onClick={() => { setStatus(c.id); setOpen(null); }} style={chipStyle(on, ac)}>{c.label}</button>;
         })}
 
         {/* asset filter — distinct coins present in the tape + "All assets" */}
