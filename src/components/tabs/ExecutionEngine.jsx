@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { EmptyState, IconChip, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
+import { SourceButton } from "../TelegramSignal";
 import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
 import { useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
@@ -150,6 +151,8 @@ const SignalCard = ({ r, open, onToggle }) => {
               <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{r.trader}</span>
               <BotTag isBot={r.isBot} />
             </span>
+            {/* the original post as it arrived (Telegram / X) — sits beside the trader */}
+            <SourceButton signal={r} size={18} />
           </div>
           <span style={{ fontSize: 10.5, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={10} /> {fmtDT(r.time)}</span>
         </div>
