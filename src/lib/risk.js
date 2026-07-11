@@ -14,8 +14,11 @@
         · NET BETA — the book's true directional exposure, in BTC-equivalents. Two
           "offsetting" positions in assets with different betas do not offset.
         · EFFECTIVE BETS — how many genuinely independent positions you hold. With
-          correlations near 0.9 a 44-name book is worth roughly 2–3 real bets. This is
-          the number that tells you whether "diversified" is true or a comfortable story.
+          pairwise correlations near 0.9, a 44-name crypto book is worth barely more than
+          ONE real bet. This is the number that tells you whether "diversified" is true or
+          just a comfortable story. It is disclosed, not policed: within one asset class
+          this correlated, ~1 effective bet is structural, and a limit that fires on every
+          possible book would only teach the reader to ignore the alarm.
 
    The model is deliberately simple and legible (one factor, published betas) because a
    risk number an allocator cannot reconstruct on paper is a risk number they won't trust. */
@@ -44,7 +47,6 @@ export const RISK_POLICY = {
   maxCoinWeightPct:  { limit: 25,   label: "Max weight in one coin",    fmt: (v) => `${v.toFixed(0)}%` },
   maxGrossLeverage:  { limit: 3.0,  label: "Max gross leverage",        fmt: (v) => `${v.toFixed(2)}×` },
   maxNetBeta:        { limit: 1.50, label: "Max net BTC beta",          fmt: (v) => `${v.toFixed(2)}β` },
-  minEffectiveBets:  { limit: 3.0,  label: "Min effective bets",        fmt: (v) => v.toFixed(1) },
   maxDrawdownPct:    { limit: 15,   label: "Drawdown circuit breaker",  fmt: (v) => `${Math.abs(v).toFixed(1)}%` },
 };
 
@@ -71,17 +73,32 @@ export const assessRisk = (positions, equity, ddPct = 0) => {
   // extent their betas match, which they usually don't.
   const netBeta = w.reduce((a, x) => a + x.w * x.beta, 0) * (gross / equity);
 
-  /* EFFECTIVE BETS. Portfolio variance under one factor:
-       var = (Σ wᵢβᵢ)²·σf²  +  Σ wᵢ²·σidio²
-     Set σf² = 1 (everything is in BTC-vol units). The diversification ratio compares the
-     weighted-average standalone risk to the actual portfolio risk; squaring it gives the
-     number of independent bets the book is really worth. */
+  /* EFFECTIVE BETS — how many INDEPENDENT positions the book is really worth.
+     Deliberately computed on ABSOLUTE weights, not signed ones. An earlier version used
+     signed weights, which let a short cancel a long inside the factor and reported "29.5
+     of 44 effective bets" for a book that is plainly one crypto trade wearing 44 hats.
+     That conflates two different questions, so we answer them separately:
+
+       · netBeta (SIGNED)      → which way does the book point?
+       · effectiveBets (ABS)   → how many genuinely independent bets is it made of?
+
+     The correlation between i and j under one factor is
+        ρᵢⱼ = βᵢβⱼ / (√(βᵢ²+σ²)·√(βⱼ²+σ²))
+     which for typical crypto betas lands around 0.9. The effective number of bets is then
+        ENB = (Σ|wᵢ|)² / (|w|ᵀ·C·|w|)
+     With ρ ≈ 0.9 across the board, 44 names collapse to barely more than one bet — and
+     that is the honest answer, however uncomfortable. */
   const sysExposure = w.reduce((a, x) => a + x.w * x.beta, 0);
-  const idioVar = w.reduce((a, x) => a + x.abs * x.abs * IDIO_VAR, 0);
-  const portVar = sysExposure * sysExposure + idioVar;
-  const avgStandalone = w.reduce((a, x) => a + x.abs * Math.sqrt(x.beta * x.beta + IDIO_VAR), 0);
-  const divRatio = portVar > 0 ? avgStandalone / Math.sqrt(portVar) : 1;
-  const effectiveBets = Math.max(1, divRatio * divRatio);
+  const sd = (b) => Math.sqrt(b * b + IDIO_VAR);
+  let quad = 0;
+  for (let i = 0; i < w.length; i++) {
+    for (let j = 0; j < w.length; j++) {
+      const rho = i === j ? 1 : (w[i].beta * w[j].beta) / (sd(w[i].beta) * sd(w[j].beta));
+      quad += w[i].abs * w[j].abs * rho;
+    }
+  }
+  const sumAbs = w.reduce((a, x) => a + x.abs, 0);
+  const effectiveBets = quad > 0 ? Math.max(1, (sumAbs * sumAbs) / quad) : 1;
 
   // concentration
   const byCoin = {};
@@ -108,7 +125,11 @@ export const assessRisk = (positions, equity, ddPct = 0) => {
   check("maxCoinWeightPct", topCoinWeightPct, topCoinWeightPct > RISK_POLICY.maxCoinWeightPct.limit);
   check("maxGrossLeverage", grossLeverage, grossLeverage > RISK_POLICY.maxGrossLeverage.limit);
   check("maxNetBeta", Math.abs(netBeta), Math.abs(netBeta) > RISK_POLICY.maxNetBeta.limit);
-  check("minEffectiveBets", effectiveBets, effectiveBets < RISK_POLICY.minEffectiveBets.limit);
+  /* NOTE: effective bets is deliberately NOT a limit. Inside a single asset class this
+     correlated, ~1 effective bet is a STRUCTURAL FACT, not a policy violation — a limit
+     that fires on every possible book is not an alarm, it is background noise, and it
+     would train the reader to ignore the banner that carries the real breaches. It is
+     disclosed as a metric so nobody mistakes 44 positions for 44 bets. */
   check("maxDrawdownPct", ddPct, Math.abs(ddPct) > RISK_POLICY.maxDrawdownPct.limit);
 
   return {

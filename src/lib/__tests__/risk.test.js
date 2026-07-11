@@ -22,10 +22,22 @@ describe("effective bets — the diversification illusion", () => {
     expect(r.effectiveBets).toBeLessThan(5);
   });
 
-  it("a long-only book has fewer effective bets than one that is genuinely hedged", () => {
+  it("hedging does NOT buy you independent bets — it only changes direction", () => {
+    // Effective bets is deliberately computed on ABSOLUTE weights. A long/short crypto
+    // book is still a pile of highly-correlated crypto exposures; the shorts change where
+    // it points (netBeta), not how many distinct things it is betting on.
     const longOnly = assessRisk(["BTC", "ETH", "SOL", "AVAX"].map((c) => pos(c, "LONG")), EQUITY);
     const hedged = assessRisk([pos("BTC", "LONG"), pos("ETH", "SHORT"), pos("SOL", "LONG"), pos("AVAX", "SHORT")], EQUITY);
-    expect(hedged.effectiveBets).toBeGreaterThan(longOnly.effectiveBets);
+    expect(hedged.effectiveBets).toBeCloseTo(longOnly.effectiveBets, 6);
+    expect(Math.abs(hedged.netBeta)).toBeLessThan(Math.abs(longOnly.netBeta)); // direction DID change
+  });
+
+  it("44 correlated names are worth barely more than one bet", () => {
+    const coins = ["BTC", "ETH", "SOL", "AVAX", "LINK", "DOT", "MATIC", "ARB", "OP", "SUI", "APT"];
+    const positions = coins.flatMap((c) => [pos(c, "LONG"), pos(c, "LONG"), pos(c, "LONG"), pos(c, "LONG")]);
+    const r = assessRisk(positions, EQUITY);
+    expect(r.n).toBe(44);
+    expect(r.effectiveBets).toBeLessThan(2); // the uncomfortable truth
   });
 });
 
@@ -87,6 +99,14 @@ describe("limit breaches", () => {
       EQUITY, -2,
     );
     expect(r.breaches).toHaveLength(0);
+  });
+
+  it("does NOT raise a breach for low effective bets — that is structural, not a violation", () => {
+    // Every crypto book has ~1 effective bet. An alarm that fires on every possible book
+    // is noise, and it would teach the reader to ignore the banner carrying real breaches.
+    const r = assessRisk(["BTC", "ETH", "SOL", "LINK", "DOT", "LTC"].map((c) => pos(c, "LONG", 3000)), EQUITY, -2);
+    expect(r.effectiveBets).toBeLessThan(2);            // the fact is disclosed...
+    expect(r.breaches.map((b) => b.key)).not.toContain("minEffectiveBets"); // ...but it is not an alarm
   });
 
   it("handles an empty book without dividing by zero", () => {
