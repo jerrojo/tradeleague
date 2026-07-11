@@ -14,6 +14,7 @@ import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { fmtDayShort, axisK } from "../../lib/format";
 import { wilson, bootstrapSum, verdict } from "../../lib/stats";
+import { assessRisk } from "../../lib/risk";
 import { C, T, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -205,6 +206,21 @@ const OpenRiskCard = ({ risk, onClick, onNav }) => {
       <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
         <Row icon={Activity} label="Unrealized (avg)" value={`${risk.avgUnrl >= 0 ? "+" : "−"}${Math.abs(risk.avgUnrl).toFixed(2)}%`} color={risk.avgUnrl >= 0 ? C.green : C.red} />
         <Row icon={ShieldCheck} iconColor={C.amber} label="Avg risk to stop" value={`${risk.avgToSl.toFixed(2)}%`} color={C.amber} />
+        {/* The two numbers that stop "25L / 19S" from implying a balance that isn't there.
+            In crypto almost everything is a levered expression of BTC, so counting longs
+            against shorts flatters a directional book, and 44 names are nowhere near 44 bets. */}
+        {risk.assess && (
+          <>
+            <Row icon={TrendingUp} iconColor={Math.abs(risk.assess.netBeta) > 1 ? C.amber : C.textFaint}
+              label={<InfoTip k="netBeta" inline><span>Net BTC beta</span></InfoTip>}
+              value={`${risk.assess.netBeta >= 0 ? "+" : "−"}${Math.abs(risk.assess.netBeta).toFixed(2)}β`}
+              color={Math.abs(risk.assess.netBeta) > 1 ? C.amber : C.text} />
+            <Row icon={GitBranch} iconColor={risk.assess.effectiveBets < 3 ? C.amber : C.textFaint}
+              label={<InfoTip k="effectiveBets" inline><span>Effective bets</span></InfoTip>}
+              value={`${risk.assess.effectiveBets.toFixed(1)} of ${risk.assess.n}`}
+              color={risk.assess.effectiveBets < 3 ? C.amber : C.text} />
+          </>
+        )}
         {/* the concentration warning names a coin — let the analyst open exactly it */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11.5 }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}><Flame size={12} color={C.textFaint} />Most exposed</span>
@@ -810,6 +826,12 @@ const FundOverview = () => {
           avgUnrl: unrl.length ? unrl.reduce((a, b) => a + b, 0) / unrl.length : 0,
           avgToSl: toSl.length ? toSl.reduce((a, b) => a + b, 0) / toSl.length : 0,
           topCoin: top ? top[0] : null, topCount: top ? top[1] : 0,
+          // the honest exposure read + the fund's limit policy, evaluated
+          assess: assessRisk(
+            actives.map((s) => ({ coin: s.coin, dir: s.dir, notional: s.notional || 0 })),
+            data.balance,
+            -Math.abs(data.maxDrawdownPct || 0),
+          ),
         };
       })(),
     };
@@ -821,8 +843,35 @@ const FundOverview = () => {
      assume precision we don't have. */
   const wr = wilson(data.wins.length, data.wins.length + data.losses.length);
 
+  const breaches = dash.openRisk.assess?.breaches || [];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* ── 0 · RISK LIMITS. A fund runs on limits, not on observations. A breach is an
+             EVENT — it belongs at the top of the page, above the performance story, and
+             it names the rule that broke rather than leaving the reader to do the
+             arithmetic against a policy they can't see. ── */}
+      {breaches.length > 0 && (
+        <div style={{ ...cardStyle, borderColor: `${C.red}55`, backgroundColor: `${C.red}0d`, padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <AlertTriangle size={16} color={C.red} />
+            <span style={{ ...T.cardTitle, color: C.text }}>
+              {breaches.length} risk limit{breaches.length === 1 ? "" : "s"} breached
+            </span>
+            <span style={{ ...T.caption }}>the book is outside the fund&apos;s stated policy</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {breaches.map((b) => (
+              <span key={b.key} title={`${b.label}: ${b.display} vs a limit of ${b.limitDisplay}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap", color: C.red, backgroundColor: `${C.red}14`, border: `1px solid ${C.red}40`, ...mono }}>
+                {b.label} <b style={{ color: C.text }}>{b.display}</b>
+                <span style={{ color: C.textFaint, fontWeight: 600 }}>/ limit {b.limitDisplay}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── 1 · The legible core: one calm, uniform metric grid + a persistent
              right rail (Account Balance + Today). Every number is its own airy card,
              one template, no tier labels — scannable at a glance, nothing lost. ── */}

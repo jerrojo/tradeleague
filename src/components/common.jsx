@@ -86,6 +86,8 @@ const GLOSSARY = {
   signalsPerProvider: "Average number of signals published per active provider over the window.",
   humanVsBot: "Split of signals authored by human providers vs automated bot providers.",
   topProviderShare: "Share of the fund's executed P&L attributable to the single best provider — high values flag concentration risk.",
+  netBeta:        "The book's true directional exposure, in BTC-equivalents. Longs and shorts only offset to the extent their betas match — shorting BTC against a long in a high-beta alt still leaves you net long crypto. Above 1.0 the fund is effectively a levered long.",
+  effectiveBets:  "How many INDEPENDENT positions the book is really worth, after correlation. In crypto almost everything is a levered expression of BTC, so a 44-name book is typically worth 2-3 real bets. A low number means 'diversified' is a story, not a fact.",
   // SMC Analysis
   bias:           "Market direction. BULLISH = price going up, BEARISH = price going down",
   confluence:     "Signal strength: how many indicators agree (more = more reliable)",
