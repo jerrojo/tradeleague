@@ -4,7 +4,7 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  Activity, BarChart3, Calendar, CheckCircle2, Clock, Cpu, Flame, Gauge, GitBranch,
+  Activity, AlertTriangle, BarChart3, Calendar, CheckCircle2, Clock, Cpu, Flame, Gauge, GitBranch,
   Percent, Radio, Scale, ShieldCheck, Sparkles, Target, TrendingDown, TrendingUp, User, Wallet, XCircle,
 } from "lucide-react";
 import { InfoTip, SectionHeader } from "../common";
