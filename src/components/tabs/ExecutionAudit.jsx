@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Activity, Award, ChevronDown, Coins, DollarSign, Percent, RefreshCw,
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
@@ -120,8 +120,12 @@ const Select = ({ label, value, onChange, options }) => (
 
 /* ── small advanced-stat card — sentence-case label, bigger colored value
    (same card language as the KPI grid, one size down) ── */
-const MiniStat = ({ label, value, color, sub, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4 }}>
+const MiniStat = ({ label, value, color, sub, tip, onClick }) => (
+  <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick}
+    role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+    title={onClick ? "See the rows behind this number" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4, ...(onClick ? { cursor: "pointer" } : {}) }}>
     <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
     <span style={{ fontSize: 18, fontWeight: 800, color: color || C.text, whiteSpace: "nowrap", ...mono, letterSpacing: "-0.3px" }}>{value}</span>
     {sub && <span style={{ fontSize: 10.5, color: C.textMuted, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
@@ -152,6 +156,24 @@ const ExecutionAudit = () => {
   const [auditStatus, setAuditStatus] = useState("All");
   const [match, setMatch] = useState("All");
   const [sort, setSort] = useState("Newest");
+
+  /* ── DRILL-DOWN: every KPI on this page already has a filter that can isolate its
+     rows — they just weren't wired. `drill` resets the filters, applies the ones the
+     clicked number implies, opens the Operation Details table and scrolls to it. So a
+     click on "Match Rate 82% · 41/50" lands on the 9 mismatches themselves. ── */
+  const opsRef = useRef(null);
+  const drill = (next = {}) => {
+    setAsset(next.asset ?? "All");
+    setDir(next.dir ?? "All");
+    setAuditStatus(next.auditStatus ?? "All");
+    setMatch(next.match ?? "All");
+    if (next.sort) setSort(next.sort);
+    setOpsOpen(true);
+    setTimeout(() => {
+      const el = opsRef.current;
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104 });
+    }, 60);
+  };
 
   /* ── DATA UNIVERSE: all approved signals across all coins = executed trades ── */
   const { within } = useTimeframe();
@@ -340,25 +362,30 @@ const ExecutionAudit = () => {
         <StatCard
           label="Total Signals" tip="totalSignalsAudit" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
           sub={`${kpi.closed.length} closed · ${kpi.active.length} active · ${kpi.pending.length} pending`}
+          onClick={() => drill()}
         />
         <StatCard
           label="Theoretical Win Rate" tip="theoWinRate" value={`${kpi.theoWinRate.toFixed(1)}%`} icon={TrendingUp}
           color={kpi.theoWinRate >= 50 ? C.green : C.red}
           sub={`${kpi.theoWins.length}/${kpi.closed.length} signals (gross)`}
+          onClick={() => drill({ auditStatus: "Take Profit" })}
         />
         <StatCard
           label="Executed Win Rate" tip="execWinRate" value={`${kpi.realWinRate.toFixed(1)}%`} icon={Activity}
           color={kpi.realWinRate >= 50 ? C.green : C.red}
           sub={`${kpi.realWins.length}/${kpi.closed.length} trades (net)`}
+          onClick={() => drill({ auditStatus: "Take Profit" })}
         />
         <StatCard
           label="Total Fees" tip="totalFees" value={`−$${kpi.totalFees.toFixed(2)}`} icon={Percent} color={C.amber}
           sub="sum of per-trade fees"
+          onClick={() => drill({ sort: "Net P&L" })}
         />
         <StatCard
           label="Match Rate" tip="matchRate" value={`${kpi.matchRate.toFixed(1)}%`} icon={Scale}
           color={kpi.matchRate >= 80 ? C.green : C.amber}
           sub={`${kpi.matches.length}/${kpi.closed.length} eligible`}
+          onClick={() => drill({ match: "Outcome Mismatch" })}
         />
       </div>
 
@@ -368,14 +395,14 @@ const ExecutionAudit = () => {
           Advanced Statistics
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
-          <MiniStat tip="bestTrade" label="Best Trade" value={usd(kpi.best)} color={C.green} />
-          <MiniStat tip="worstTrade" label="Worst Trade" value={usd(kpi.worst)} color={C.red} />
+          <MiniStat tip="bestTrade" label="Best Trade" value={usd(kpi.best)} color={C.green} onClick={() => drill({ sort: "Net P&L" })} />
+          <MiniStat tip="worstTrade" label="Worst Trade" value={usd(kpi.worst)} color={C.red} onClick={() => drill({ sort: "Net P&L" })} />
           <MiniStat tip="avgWinTrade" label="Avg Win" value={`+$${kpi.avgWin.toFixed(2)}`} color={C.green} />
           <MiniStat tip="avgLossTrade" label="Avg Loss" value={`−$${kpi.avgLoss.toFixed(2)}`} color={C.red} />
           <MiniStat tip="expectancyR" label="R-Multiple" value={`${kpi.avgR >= 0 ? "+" : ""}${kpi.avgR.toFixed(2)}R`} color={kpi.avgR >= 0 ? C.green : C.red} sub="avg realized R" />
           <MiniStat tip="feeNotional" label="Avg Fees / Notional" value={`${kpi.feeNotionalPct.toFixed(3)}%`} color={C.amber} />
-          <MiniStat tip="longWinRate" label="LONG Win Rate" value={`${kpi.longWinRate.toFixed(1)}%`} color={kpi.longWinRate >= 50 ? C.green : C.red} sub={`${kpi.longWins.length}/${kpi.longClosed.length}`} />
-          <MiniStat tip="shortWinRate" label="SHORT Win Rate" value={`${kpi.shortWinRate.toFixed(1)}%`} color={kpi.shortWinRate >= 50 ? C.green : C.red} sub={`${kpi.shortWins.length}/${kpi.shortClosed.length}`} />
+          <MiniStat tip="longWinRate" label="LONG Win Rate" value={`${kpi.longWinRate.toFixed(1)}%`} color={kpi.longWinRate >= 50 ? C.green : C.red} sub={`${kpi.longWins.length}/${kpi.longClosed.length}`} onClick={() => drill({ dir: "LONG" })} />
+          <MiniStat tip="shortWinRate" label="SHORT Win Rate" value={`${kpi.shortWinRate.toFixed(1)}%`} color={kpi.shortWinRate >= 50 ? C.green : C.red} sub={`${kpi.shortWins.length}/${kpi.shortClosed.length}`} onClick={() => drill({ dir: "SHORT" })} />
         </div>
       </div>
 
@@ -437,7 +464,10 @@ const ExecutionAudit = () => {
             </thead>
             <tbody>
               {byAsset.map((r) => (
-                <tr key={r.coin} className="card-hover">
+                /* "SOL is −$412 across 9 trades" — click the row, get exactly those nine */
+                <tr key={r.coin} className="card-hover hoverable" style={{ cursor: "pointer" }}
+                  title={`See ${r.coin}'s ${r.signals} executed trades`}
+                  onClick={() => drill({ asset: r.coin })}>
                   <td style={{ ...tdStyle, fontWeight: 800 }}>{r.coin}</td>
                   <td style={{ ...tdStyle, textAlign: "right", ...mono }}>{r.signals}</td>
                   <td style={{ ...tdStyle, textAlign: "right", ...mono }}>
@@ -461,7 +491,7 @@ const ExecutionAudit = () => {
       </CollapsibleSection>
 
       {/* ─────────── 6) OPERATION DETAILS — dense executions journal (collapsible + internal scroll) ─────────── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div ref={opsRef} style={{ display: "flex", flexDirection: "column", gap: 10, scrollMarginTop: 110 }}>
         <div onClick={() => setOpsOpen((o) => !o)} role="button" tabIndex={0} aria-expanded={opsOpen}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpsOpen((o) => !o); } }}
           style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>

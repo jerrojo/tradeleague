@@ -25,12 +25,20 @@ const BOOK = [
 ];
 const isWin = (s) => (s.approved ? (s.status === "closed" && s.hit === "TP") : (s.hypoClosed && s.hypoPnl > 0));
 const isLoss = (s) => (s.approved ? (s.status === "closed" && s.hit === "SL") : (s.hypoClosed && s.hypoPnl < 0));
+const isClosed = (s) => (s.approved ? s.status === "closed" : !!s.hypoClosed);
 const STATUS = [
   { id: "all", label: "All", test: () => true },
   { id: "active", label: "Active", test: (s) => s.status === "active" },
   { id: "pending", label: "Pending", test: (s) => s.status === "pending" },
+  { id: "closed", label: "Closed", test: isClosed },
   { id: "wins", label: "Wins", test: isWin, tone: "green" },
   { id: "losses", label: "Losses", test: isLoss, tone: "red" },
+];
+/* Direction — so "12 SHORT open" anywhere in the product can land on exactly those. */
+const DIRS = [
+  { id: "all", label: "All", test: () => true },
+  { id: "LONG", label: "Long", test: (s) => s.dir === "LONG", tone: "green" },
+  { id: "SHORT", label: "Short", test: (s) => s.dir === "SHORT", tone: "red" },
 ];
 
 const ActivityFeed = () => {
@@ -40,10 +48,12 @@ const ActivityFeed = () => {
   const [book, setBook] = useState(() => { try { return localStorage.getItem("af:book") || "all"; } catch { return "all"; } });
   const [status, setStatus] = useState(() => { try { return localStorage.getItem("af:status") || "all"; } catch { return "all"; } });
   const [coinFilter, setCoinFilter] = useState(() => { try { return localStorage.getItem("af:coin") || "all"; } catch { return "all"; } });
+  const [dir, setDir] = useState(() => { try { return localStorage.getItem("af:dir") || "all"; } catch { return "all"; } });
   const [open, setOpen] = useState(null); // expanded signal id
   useEffect(() => { try { localStorage.setItem("af:book", book); } catch { /* ignore */ } }, [book]);
   useEffect(() => { try { localStorage.setItem("af:status", status); } catch { /* ignore */ } }, [status]);
   useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
+  useEffect(() => { try { localStorage.setItem("af:dir", dir); } catch { /* ignore */ } }, [dir]);
 
   const lastClose = (coin) => lastCloseByCoin[coin] ?? null;
 
@@ -59,15 +69,16 @@ const ActivityFeed = () => {
 
   const bookDef = BOOK.find((x) => x.id === book) || BOOK[0];
   const statusDef = STATUS.find((x) => x.id === status) || STATUS[0];
+  const dirDef = DIRS.find((x) => x.id === dir) || DIRS[0];
   /* ── global timeframe filter (header) applies to the whole tape ── */
   const { within } = useTimeframe();
   const tfSignals = useMemo(() => allSignals.filter((s) => within(s.time)), [allSignals, within]);
 
   const visible = useMemo(() => {
-    let list = tfSignals.filter(bookDef.test).filter(statusDef.test);
+    let list = tfSignals.filter(bookDef.test).filter(statusDef.test).filter(dirDef.test);
     if (coinFilter !== "all") list = list.filter((s) => s.coin === coinFilter);
     return list;
-  }, [tfSignals, bookDef, statusDef, coinFilter]);
+  }, [tfSignals, bookDef, statusDef, dirDef, coinFilter]);
 
   /* ── header summary counts (over the timeframe-filtered tape) ── */
   const totalN = tfSignals.length;
@@ -112,6 +123,14 @@ const ActivityFeed = () => {
           const on = status === c.id;
           const ac = c.tone === "green" ? C.green : c.tone === "red" ? C.red : C.purple;
           return <button key={c.id} onClick={() => { setStatus(c.id); setOpen(null); }} style={chipStyle(on, ac)}>{c.label}</button>;
+        })}
+        <div style={{ width: 1, height: 20, backgroundColor: C.border, margin: "0 4px" }} />
+        {/* SIDE dimension — so "12 SHORT open" anywhere in the product lands on exactly those */}
+        <span style={grpLbl}>SIDE</span>
+        {DIRS.map((c) => {
+          const on = dir === c.id;
+          const ac = c.tone === "green" ? C.green : c.tone === "red" ? C.red : C.purple;
+          return <button key={c.id} onClick={() => { setDir(c.id); setOpen(null); }} style={chipStyle(on, ac)}>{c.label}</button>;
         })}
 
         {/* asset filter — distinct coins present in the tape + "All assets" */}

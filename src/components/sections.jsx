@@ -22,8 +22,15 @@ const COIN_CATEGORIES = ["All", "Layer 1", "Layer 2", "DeFi", "Meme", "AI"];
    then scroll its chart + the signals it produced + the trades those became +
    how the crowd is positioned + its structure. Positioning lives right under the
    chart since it's just another lens on the same price. ── */
+/* Deep-link inbox: another section can hand Markets a coin (go("markets", { coin })).
+   Consumed on read so an ordinary visit still lands on the last coin, not a stale one. */
+const takeCoin = () => {
+  try { const c = localStorage.getItem("mk:coin"); if (c) { localStorage.removeItem("mk:coin"); return c; } } catch { /* ignore */ }
+  return "BTC";
+};
+
 const MarketsSection = () => {
-  const [coin, setCoin] = useState("BTC");
+  const [coin, setCoin] = useState(takeCoin);
   const tape = useLivePrices();
   const live = tape.status === "live" ? tape.prices : null;
   const detailRef = useRef(null);

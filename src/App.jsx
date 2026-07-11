@@ -105,9 +105,19 @@ const App = () => {
   // Markets' coin-detail glide — those are destinations, not restored state.)
   useEffect(() => { if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual"; window.scrollTo({ top: 0 }); }, []);
   const go = (tab, opts = {}) => {
-    // deep-link Activity's two filter dimensions (BOOK + STATUS): write them before
-    // the section remounts (main is keyed on activeTab) so the tape opens pre-filtered.
-    if (tab === "activity") { try { if (opts.book) localStorage.setItem("af:book", opts.book); if (opts.status) localStorage.setItem("af:status", opts.status); } catch { /* ignore */ } }
+    // Deep-link inbox. Every aggregate number in the product should be able to say
+    // "here are the rows behind me" — we write the target view's filters here, before
+    // the section remounts (main is keyed on activeTab), and the section reads them on
+    // mount. Activity: BOOK + STATUS + DIR + COIN. Markets: COIN.
+    try {
+      if (tab === "activity") {
+        if (opts.book) localStorage.setItem("af:book", opts.book);
+        if (opts.status) localStorage.setItem("af:status", opts.status);
+        if (opts.dir) localStorage.setItem("af:dir", opts.dir);
+        if (opts.coin) localStorage.setItem("af:coin", opts.coin);
+      }
+      if (tab === "markets" && opts.coin) localStorage.setItem("mk:coin", opts.coin);
+    } catch { /* ignore */ }
     setActiveTab(tab); setProfileTrader(null);
     if (tab === "audit" && opts.auditView) setAuditView(opts.auditView);
     window.scrollTo({ top: 0 });

@@ -4,7 +4,7 @@ import { CandleChart } from "../CandleChart";
 import { CoinSelector } from "../CoinSelector";
 import { SignalTable } from "../SignalTable";
 import { SectionHeader } from "../common";
-import { useProfile, useTimeframe } from "../../contexts";
+import { useProfile, useTimeframe, useNav } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle } from "../../theme";
@@ -12,8 +12,19 @@ import { price } from "../../lib/format";
 
 const fmt = price; // single price ladder platform-wide
 
+/* A clickable count in the chart header — "14 approved" opens exactly those 14. */
+const Dot = () => <span style={{ color: C.textFaint }}>·</span>;
+const Count = ({ n, label, tone, onClick }) => (
+  <span role="button" tabIndex={0} title={`See these ${n} ${label}`}
+    onClick={onClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+    style={{ cursor: "pointer", borderBottom: `1px dashed ${C.purple}55` }}>
+    <b style={{ color: tone || C.text }}>{n}</b> {label}
+  </span>
+);
+
 const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false, onSelectCoin, coins: coinsProp, coinMeta: metaProp, categories = [] } = {}) => {
   const { openProfile } = useProfile();
+  const { go } = useNav();
   const [coinState, setCoin] = useState("BTC");
   const coin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
   // When the parent hands us a coin picker (Markets), the selector lives IN the
@@ -69,7 +80,14 @@ const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false, 
             ) : (
               <div style={{ fontSize: 14, fontWeight: 800 }}>{coin}/USDT — {onlyTrades ? "Robotín-executed trades" : "signals on chart"}</div>
             )}
-            <div style={{ fontSize: 10, color: C.textMuted }}>{onlyTrades ? `${approved} executed · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed · click a row for full detail` : `${signals.length} signals · ${approved} approved · ${signals.filter((s) => s.status === "active").length} active · ${signals.filter((s) => s.status === "closed").length} closed${embedded ? " · full execution record in Audit" : " · click a row to plot levels"}`}</div>
+            {/* every count here is a destination: the same coin's tape, pre-filtered */}
+            <div style={{ fontSize: 10, color: C.textMuted, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+              <Count n={signals.length} label="signals" onClick={() => go("activity", { coin, book: "all", status: "all" })} />
+              <Dot /><Count n={approved} label="approved" tone={C.green} onClick={() => go("activity", { coin, book: "approved", status: "all" })} />
+              <Dot /><Count n={signals.filter((s) => s.status === "active").length} label="active" tone={C.blue} onClick={() => go("activity", { coin, book: "approved", status: "active" })} />
+              <Dot /><Count n={signals.filter((s) => s.status === "closed").length} label="closed" onClick={() => go("activity", { coin, book: "approved", status: "closed" })} />
+              {embedded && <><Dot /><span style={{ color: C.textFaint }}>full execution record in Audit</span></>}
+            </div>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {[["candles", "Candles", CandlestickChart], ["line", "Line", LineChart]].map(([m, label, Icon]) => (

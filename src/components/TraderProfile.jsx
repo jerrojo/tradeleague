@@ -199,12 +199,15 @@ const TraderProfile = ({ trader, onClose }) => {
             {/* Institutional stats row — Robotín filtering, not social vanity metrics */}
             <div style={{ display: "flex", gap: "20px", paddingTop: "10px", borderTop: `1px solid ${C.border}`, marginBottom: "12px" }}>
               {[
-                ["Trades", t.trades.toLocaleString()],
-                ["Signals approved", `${robotinStats.approved}/${robotinStats.total}`],
-                ["Robotín approval", `${robotinStats.rate}%`],
-              ].map(([l, v]) => (
-                <div key={l}>
-                  <span style={{ fontSize: "16px", fontWeight: "900", ...mono }}>{v}</span>
+                ["Trades", t.trades.toLocaleString(), () => setProfileTab("trades")],
+                // the same number the Traders directory deep-links to was inert in here
+                ["Signals approved", `${robotinStats.approved}/${robotinStats.total}`, () => { setProfileTab("signal_log"); setSigBook("approved"); }],
+                ["Robotín approval", `${robotinStats.rate}%`, () => { setProfileTab("signal_log"); setSigBook("approved"); }],
+              ].map(([l, v, act]) => (
+                <div key={l} role="button" tabIndex={0} title="See the rows behind this number"
+                  onClick={act} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } }}
+                  style={{ cursor: "pointer" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "900", borderBottom: `1px dashed ${C.purple}55`, ...mono }}>{v}</span>
                   <span style={{ fontSize: "10px", color: C.textMuted, marginLeft: "5px" }}>{l}</span>
                 </div>
               ))}
@@ -609,10 +612,10 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "signal_log" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-            <StatCard label="Signals Emitted" value={robotinStats.total} icon={Zap} color={C.purple} />
-            <StatCard label="Approved by Robotín" value={robotinStats.approved} icon={Activity} color={C.green} />
-            <StatCard label="Approval Rate" value={`${robotinStats.rate}%`} icon={Target} color={robotinStats.rate >= 70 ? C.green : robotinStats.rate >= 50 ? C.amber : C.red} />
-            <StatCard label="Rejected" value={robotinStats.total - robotinStats.approved} icon={TrendingDown} color={C.textMuted} />
+            <StatCard label="Signals Emitted" value={robotinStats.total} icon={Zap} color={C.purple} onClick={() => setSigBook("all")} />
+            <StatCard label="Approved by Robotín" value={robotinStats.approved} icon={Activity} color={C.green} onClick={() => setSigBook("approved")} />
+            <StatCard label="Approval Rate" value={`${robotinStats.rate}%`} icon={Target} color={robotinStats.rate >= 70 ? C.green : robotinStats.rate >= 50 ? C.amber : C.red} onClick={() => setSigBook("approved")} />
+            <StatCard label="Rejected" value={robotinStats.total - robotinStats.approved} icon={TrendingDown} color={C.textMuted} onClick={() => setSigBook("rejected")} />
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <SectionHeader

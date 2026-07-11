@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
 import { Avatar, BotTag, SectionHeader, EmptyState } from "../common";
-import { useTimeframe, useProfile } from "../../contexts";
+import { useTimeframe, useProfile, useNav } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS } from "../../data/robotin";
 import { usd, pct, signColor } from "../../lib/format";
@@ -40,7 +40,15 @@ const HeroStat = ({ label, value, color, hint }) => (
 const FilterEdge = () => {
   const { within } = useTimeframe();
   const { openProfile } = useProfile();
+  const { go } = useNav();
   const openTrader = (name) => { const t = mockTraders.find((x) => x.name === name); if (t) openProfile(t); };
+  // open a provider straight on their rejected book — "which of Gonza's rejects cost us $2.1k?"
+  const openBook = (name, book) => {
+    const t = mockTraders.find((x) => x.name === name);
+    if (!t) return;
+    try { localStorage.setItem("tp:tab", "signal_log"); localStorage.setItem("tp:book", book); } catch { /* ignore */ }
+    openProfile(t);
+  };
 
   const d = useMemo(() => {
     const all = ALL_SIGNALS.filter((s) => within(s.time));
@@ -107,7 +115,12 @@ const FilterEdge = () => {
       <div style={{ ...cardStyle, display: "flex", gap: 12, alignItems: "center", borderColor: `${d.edge >= 0 ? C.green : C.red}40`, backgroundColor: `${d.edge >= 0 ? C.green : C.red}0d` }}>
         {d.edge >= 0 ? <ShieldCheck size={22} color={C.green} /> : <ShieldX size={22} color={C.red} />}
         <div style={{ fontSize: 13, color: C.text, lineHeight: 1.6 }}>
-          Robotín rejected <b style={{ ...mono }}>{d.rejectedN}</b> signals; of those that would have resolved, <b style={{ ...mono }}>{d.avoidedLosers}</b> were losers.
+          Robotín rejected <b className="fe-link" role="button" tabIndex={0} title="See every rejected signal"
+            onClick={() => go("activity", { book: "rejected" })} onKeyDown={(e) => { if (e.key === "Enter") go("activity", { book: "rejected" }); }}
+            style={{ cursor: "pointer", borderBottom: `1px dashed ${C.purple}55`, ...mono }}>{d.rejectedN}</b> signals; of those that would have resolved,{" "}
+          <b className="fe-link" role="button" tabIndex={0} title="See the losers the filter dodged"
+            onClick={() => go("activity", { book: "rejected", status: "losses" })} onKeyDown={(e) => { if (e.key === "Enter") go("activity", { book: "rejected", status: "losses" }); }}
+            style={{ cursor: "pointer", borderBottom: `1px dashed ${C.purple}55`, ...mono }}>{d.avoidedLosers}</b> were losers.
           {" "}Taken together they would have netted <b style={{ color: signColor(d.avoidedPnl, C), ...mono }}>{usd(d.avoidedPnl, { signed: true })}</b> — so screening them
           {" "}{d.edge >= 0 ? "added" : "cost"} <b style={{ color: signColor(d.edge, C), ...mono }}>{usd(d.edge, { signed: true })}</b> of edge this period.
         </div>
@@ -138,11 +151,12 @@ const FilterEdge = () => {
                       <Avatar name={t.trader} size={22} />{t.trader}<BotTag isBot={t.isBot} size={13} />
                     </span>
                   </td>
-                  <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.textMuted }}>{t.total}</td>
-                  <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.text }}>{t.approved}</td>
-                  <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: t.approvalRate >= 50 ? C.green : C.amber }}>{pct(t.approvalRate)}</td>
-                  <td style={{ padding: "9px 12px", textAlign: "right", ...mono, fontWeight: 800, color: signColor(t.execPnl, C) }}>{usd(t.execPnl, { signed: true })}</td>
-                  <td style={{ padding: "9px 12px", textAlign: "right", ...mono, color: signColor(t.avoidedPnl, C) }}>{usd(t.avoidedPnl, { signed: true })}</td>
+                  {/* each cell opens THIS provider's profile on the book that cell counts */}
+                  <td onClick={(e) => { e.stopPropagation(); openBook(t.trader, "all"); }} title={`All ${t.total} of ${t.trader}'s signals`} style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.textMuted }}>{t.total}</td>
+                  <td onClick={(e) => { e.stopPropagation(); openBook(t.trader, "approved"); }} title={`${t.trader}'s ${t.approved} approved signals`} style={{ padding: "9px 12px", textAlign: "right", ...mono, color: C.text }}>{t.approved}</td>
+                  <td onClick={(e) => { e.stopPropagation(); openBook(t.trader, "approved"); }} style={{ padding: "9px 12px", textAlign: "right", ...mono, color: t.approvalRate >= 50 ? C.green : C.amber }}>{pct(t.approvalRate)}</td>
+                  <td onClick={(e) => { e.stopPropagation(); openBook(t.trader, "approved"); }} style={{ padding: "9px 12px", textAlign: "right", ...mono, fontWeight: 800, color: signColor(t.execPnl, C) }}>{usd(t.execPnl, { signed: true })}</td>
+                  <td onClick={(e) => { e.stopPropagation(); openBook(t.trader, "rejected"); }} title={`What ${t.trader}'s rejected signals would have done`} style={{ padding: "9px 12px", textAlign: "right", ...mono, color: signColor(t.avoidedPnl, C) }}>{usd(t.avoidedPnl, { signed: true })}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", ...mono, fontWeight: 700, color: signColor(t.edge, C) }}>{usd(t.edge, { signed: true })}</td>
                 </tr>
               ))}

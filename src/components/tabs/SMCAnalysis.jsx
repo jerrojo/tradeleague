@@ -1,4 +1,5 @@
 import { CoinSelector } from "../CoinSelector";
+import { useNav } from "../../contexts";
 import { InfoTip, SectionHeader } from "../common";
 import { smcCoins, mockTraders } from "../../data/mockData";
 import { coinCandles, coinSignals, COIN_PX } from "../../data/robotin";
@@ -16,6 +17,7 @@ const SETUP_NAME = { OB: "Order Block", FVG: "Fair Value Gap", LIQ: "Liquidity",
 const SETUP_TIP = { OB: "ob", FVG: "fvg", LIQ: "liquidity", BOS: "bos", CHOCH: "bos" };
 
 const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
+  const { go } = useNav();
   const [coinState, setSelectedCoin] = useState("BTC");
   const selectedCoin = coinProp ?? coinState; // controlled by the Coin Hub when embedded
 
@@ -79,7 +81,14 @@ const SMCAnalysis = ({ coin: coinProp, embedded = false } = {}) => {
           <div style={{ padding: "24px", textAlign: "center", color: C.textMuted, fontSize: 12 }}>Widen the timeframe to see Robotín's consensus for {selectedCoin}.</div>
         ) : (
           <>
-            <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 8 }}>Live price <span style={{ color: C.text, ...mono }}>{fmtPrice(con.px)}</span> · levels averaged across {con.n} approved {con.dir} signal{con.n === 1 ? "" : "s"}</div>
+            <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 8 }}>Live price <span style={{ color: C.text, ...mono }}>{fmtPrice(con.px)}</span> · levels averaged across{" "}
+              <span role="button" tabIndex={0} title={`See the ${con.n} approved ${con.dir} signals these levels come from`}
+                onClick={() => go("activity", { coin: selectedCoin, book: "approved", dir: con.dir })}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go("activity", { coin: selectedCoin, book: "approved", dir: con.dir }); } }}
+                style={{ cursor: "pointer", color: C.text, fontWeight: 700, borderBottom: `1px dashed ${C.purple}55` }}>
+                {con.n} approved {con.dir} signal{con.n === 1 ? "" : "s"}
+              </span>
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
               {[
                 ["Entry Zone", `${fmtPrice(Math.min(con.entryLo, con.entryHi))} – ${fmtPrice(Math.max(con.entryLo, con.entryHi))}`, C.text, "entryZone"],

@@ -24,10 +24,12 @@ const TradersTab = () => {
   // Deep-link: clicking a provider's Robotín-approval cell opens their profile on the
   // Signal log, pre-filtered to the APPROVED book — the same "click the number, see the
   // rows behind it" contract as Overview's fork → filtered Activity.
-  const openApproved = (t) => {
+  const openApproved = (t) => openOn(t, "signal_log", "approved");
+  // open a provider's profile on the sub-tab that EXPLAINS the cell you clicked
+  const openOn = (t, tab, book) => {
     try {
-      localStorage.setItem("tp:tab", "signal_log");
-      localStorage.setItem("tp:book", "approved");
+      localStorage.setItem("tp:tab", tab);
+      if (book) localStorage.setItem("tp:book", book);
     } catch { /* ignore */ }
     openProfile(t);
   };
@@ -191,7 +193,7 @@ const TradersTab = () => {
                         </div>
                       </div>
                     </td>
-                    <td style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
+                    <td onClick={(e) => { e.stopPropagation(); openOn(t, "pnl"); }} title={`See ${t.name}'s P&L breakdown`} style={{ ...tdStyle, ...mono, color: C.green, fontWeight: "600" }}>+${(t.pnl / 1000).toFixed(1)}K</td>
                     {/* Expectancy — VARIV metrics catalog (Pro only) */}
                     {proMode && (
                     <td style={{ ...tdStyle }}>
@@ -216,10 +218,11 @@ const TradersTab = () => {
                         </span>
                       ); })()}
                     </td>
-                    {/* Fund P&L — the executed-PnL this provider's approved signals contributed to VARIV */}
-                    <td style={{ ...tdStyle }}>
+                    {/* Fund P&L — the executed-PnL this provider's approved signals contributed to VARIV.
+                        Click it to see the approved book that produced exactly this number. */}
+                    <td onClick={(e) => { e.stopPropagation(); openApproved(t); }} title={`See the approved signals behind ${t.name}'s fund P&L`} style={{ ...tdStyle }}>
                       {(() => { const ep = robotinByTrader[t.name]?.execPnl || 0; return (
-                        <span style={{ ...mono, fontWeight: "800", fontSize: "12px", color: ep > 0 ? C.green : ep < 0 ? C.red : C.textFaint }}>{ep >= 0 ? "+" : "−"}${Math.abs(Math.round(ep)).toLocaleString()}</span>
+                        <span style={{ ...mono, fontWeight: "800", fontSize: "12px", whiteSpace: "nowrap", borderBottom: `1px dashed ${C.purple}55`, color: ep > 0 ? C.green : ep < 0 ? C.red : C.textFaint }}>{ep >= 0 ? "+" : "−"}${Math.abs(Math.round(ep)).toLocaleString()}</span>
                       ); })()}
                     </td>
                   </tr>

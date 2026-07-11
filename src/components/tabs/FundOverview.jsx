@@ -158,7 +158,11 @@ const TodayCard = ({ dash, onClick }) => {
 /* ── Open Risk card (right rail) — what a desk actually checks between closes:
    how much is on RIGHT NOW, which way it leans, and where it's concentrated.
    This information existed nowhere on the page (only a raw count in the footer). ── */
-const OpenRiskCard = ({ risk, onClick }) => {
+const OpenRiskCard = ({ risk, onClick, onNav }) => {
+  // each sub-number is its own destination: the long book, the short book, the coin
+  // we're most concentrated in. Stop-propagation so they don't fire the card's own link.
+  const seg = (opts) => (e) => { e.stopPropagation(); onNav?.(opts); };
+  const segStyle = { cursor: "pointer", borderBottom: `1px dashed ${C.purple}55` };
   const Row = ({ label, value, color }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
       <span style={{ color: C.textMuted }}>{label}</span>
@@ -172,17 +176,25 @@ const OpenRiskCard = ({ risk, onClick }) => {
       <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Radio size={14} /> Open Risk</div>
       <div style={{ fontSize: 28, fontWeight: 900, color: C.text, ...mono, lineHeight: 1 }}>{risk.count} <span style={{ fontSize: 13, fontWeight: 700, color: C.textMuted }}>open</span></div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, fontSize: 12, ...mono, marginTop: 2 }}>
-        <span style={{ color: C.green }}>{risk.longs}L</span>
+        <span role="button" tabIndex={0} title={`See the ${risk.longs} open longs`} onClick={seg({ dir: "LONG" })} onKeyDown={(e) => { if (e.key === "Enter") seg({ dir: "LONG" })(e); }} style={{ color: C.green, ...segStyle }}>{risk.longs}L</span>
         <div style={{ flex: 1, height: 6, borderRadius: 3, overflow: "hidden", display: "flex", backgroundColor: C.bg }}>
           <div style={{ width: `${risk.count ? (risk.longs / risk.count) * 100 : 50}%`, backgroundColor: C.green }} />
           <div style={{ flex: 1, backgroundColor: C.red }} />
         </div>
-        <span style={{ color: C.red }}>{risk.shorts}S</span>
+        <span role="button" tabIndex={0} title={`See the ${risk.shorts} open shorts`} onClick={seg({ dir: "SHORT" })} onKeyDown={(e) => { if (e.key === "Enter") seg({ dir: "SHORT" })(e); }} style={{ color: C.red, ...segStyle }}>{risk.shorts}S</span>
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
         <Row label="Unrealized (avg)" value={`${risk.avgUnrl >= 0 ? "+" : "−"}${Math.abs(risk.avgUnrl).toFixed(2)}%`} color={risk.avgUnrl >= 0 ? C.green : C.red} />
         <Row label="Avg risk to stop" value={`${risk.avgToSl.toFixed(2)}%`} color={C.amber} />
-        <Row label="Most exposed" value={risk.topCoin ? `${risk.topCoin} · ${risk.topCount}` : "—"} />
+        {/* the concentration warning names a coin — let the analyst open exactly it */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
+          <span style={{ color: C.textMuted }}>Most exposed</span>
+          {risk.topCoin ? (
+            <span role="button" tabIndex={0} title={`See ${risk.topCoin}'s ${risk.topCount} open positions`}
+              onClick={seg({ coin: risk.topCoin })} onKeyDown={(e) => { if (e.key === "Enter") seg({ coin: risk.topCoin })(e); }}
+              style={{ fontWeight: 700, color: C.text, ...mono, ...segStyle }}>{risk.topCoin} · {risk.topCount}</span>
+          ) : <span style={{ fontWeight: 700, color: C.text, ...mono }}>—</span>}
+        </div>
       </div>
     </div>
   );
@@ -296,13 +308,18 @@ const ForkPipeline = ({ data, onNav, compact }) => {
       </div>
       {/* double-edge remate — both faces of the filter */}
       <div style={{ display: "flex", gap: 10, marginTop: compact ? 9 : 12, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: `1px solid ${edge >= 0 ? C.green : C.red}40`, backgroundColor: `${edge >= 0 ? C.green : C.red}0d` }}>
+        {/* Both remates are the sharpest "which ones?" on the page — make them the link. */}
+        <div role="button" tabIndex={0} title="See the closed losers the filter screened out"
+          onClick={() => onNav("rejected", "losses")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("rejected", "losses"); } }}
+          style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${edge >= 0 ? C.green : C.red}40`, backgroundColor: `${edge >= 0 ? C.green : C.red}0d` }}>
           <ShieldCheck size={16} color={edge >= 0 ? C.green : C.red} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.</span>
+          <span className="fork-seg" style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.</span>
         </div>
-        <div style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, border: `1px solid ${C.amber}40`, backgroundColor: `${C.amber}0d` }}>
+        <div role="button" tabIndex={0} title="See the rejected signals that are still running"
+          onClick={() => onNav("rejected", "active")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("rejected", "active"); } }}
+          style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${C.amber}40`, backgroundColor: `${C.amber}0d` }}>
           <Clock size={16} color={C.amber} style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}><b style={{ color: C.text }}>{r.active}</b> rejected still open are {r.activeUnreal >= 0 ? "up" : "down"} <b style={{ color: r.activeUnreal >= 0 ? C.green : C.red }}>{usd(r.activeUnreal)}</b> — opportunity {r.activeUnreal >= 0 ? "in progress" : "dodged"}.</span>
+          <span className="fork-seg" style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}><b style={{ color: C.text }}>{r.active}</b> rejected still open are {r.activeUnreal >= 0 ? "up" : "down"} <b style={{ color: r.activeUnreal >= 0 ? C.green : C.red }}>{usd(r.activeUnreal)}</b> — opportunity {r.activeUnreal >= 0 ? "in progress" : "dodged"}.</span>
         </div>
       </div>
     </div>
@@ -829,8 +846,11 @@ const FundOverview = () => {
         {/* right rail — Balance (state), Open Risk (now), Today (flow): three
             different questions, zero shared numbers */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <AccountBalanceCard balance={data.balance} returnPct={data.returnPct} equity={data.equity} onClick={() => go("engine")} />
-          <OpenRiskCard risk={dash.openRisk} onClick={() => go("activity")} />
+          {/* the fund's real balance belongs to the executed ledger, not the what-if sandbox */}
+          <AccountBalanceCard balance={data.balance} returnPct={data.returnPct} equity={data.equity} onClick={() => go("audit", { auditView: "execution" })} />
+          <OpenRiskCard risk={dash.openRisk}
+            onClick={() => go("activity", { book: "approved", status: "active" })}
+            onNav={(opts) => go("activity", { book: "approved", status: "active", ...opts })} />
           <TodayCard dash={dash} onClick={() => go("report")} />
         </div>
       </div>
@@ -838,24 +858,24 @@ const FundOverview = () => {
       {/* ── 2 · KPIs — full-width compact band, one metric per card, "?" on every card ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(184px, 1fr))", gap: 10 }}>
         <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} tip="netPnl" value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
-        <Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity")} />
-        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<Pair a={usd(dash.avgWin)} b={usd(-dash.avgLoss)} />} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<Pair a={`${dash.bestWinStreak}W`} b={`${dash.bestLossStreak}L`} />} sub="best winning / losing streaks" onClick={() => go("activity")} />
-        <Kpi label="Largest Win / Loss" icon={TrendingUp} tip="largestWinLoss" value={<Pair a={usd(dash.largestWin)} b={usd(dash.largestLoss)} />} sub="best and worst single trades" onClick={() => go("audit")} />
+        <Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
+        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
+        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<Pair a={usd(dash.avgWin)} b={usd(-dash.avgLoss)} />} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<Pair a={`${dash.bestWinStreak}W`} b={`${dash.bestLossStreak}L`} />} sub="best winning / losing streaks" onClick={() => go("activity", { book: "approved", status: "closed" })} />
+        <Kpi label="Largest Win / Loss" icon={TrendingUp} tip="largestWinLoss" value={<Pair a={usd(dash.largestWin)} b={usd(dash.largestLoss)} />} sub="best and worst single trades" onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Last Month W/L" icon={Target} tip="lastMonthWL" value={<Pair a={dash.prevMWins} b={dash.prevMLosses} sep="vs" />} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-        <Kpi label="Avg Hold Time" icon={Clock} tip="avgHold" value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
+        <Kpi label="Avg Hold Time" icon={Clock} tip="avgHold" value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("engine")} />
         <Kpi label="Trades / Month" icon={BarChart3} tip="tradesPerMonth" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
-        <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Best / Worst Day" icon={Calendar} tip="bestWorstDay" value={<Pair a={usd(dash.bestDay[1])} b={usd(dash.worstDay[1])} aColor={dash.bestDay[1] >= 0 ? C.green : C.red} bColor={dash.worstDay[1] >= 0 ? C.green : C.red} />} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day" : ""}`} onClick={() => go("report")} />
-        <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
-        <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+        <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "execution" })} />
       </div>
 
       {/* ── 3 · Robotín's read — slim executive summary of the period ── */}

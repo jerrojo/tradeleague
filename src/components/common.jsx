@@ -29,8 +29,14 @@ const signTone = (s) => {
 /* StatCard v3 — sentence-case label, big value, IconChip on the right.
    (v2's left accent bar + tiny uppercase label retired in favor of the calmer,
    more legible card language used across the platform.) */
-const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
-  <div className="card-hover" style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: "6px" }}>
+const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip, onClick }) => (
+  <div className={`card-hover${onClick ? " tl-card-int" : ""}`}
+    onClick={onClick}
+    role={onClick ? "button" : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    title={onClick ? "See the rows behind this number" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: "6px", ...(onClick ? { cursor: "pointer" } : {}) }}>
     {/* chip on the label row → long money values get the full card width below */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
       <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>

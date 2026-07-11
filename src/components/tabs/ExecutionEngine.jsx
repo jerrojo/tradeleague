@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   Activity, BarChart3, CheckCircle, ChevronDown, Clock, Cpu, DollarSign,
@@ -8,7 +8,7 @@ import { CandleChart } from "../CandleChart";
 import { EmptyState, IconChip, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
 import { SourceButton } from "../TelegramSignal";
 import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
-import { useProfile } from "../../contexts";
+import { useProfile, useNav } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor, price, fmtDateTime, axisUsd } from "../../lib/format";
@@ -88,8 +88,12 @@ const MultiSel = ({ selected, options, onToggle, onAll }) => {
 
 /* KPI card — same language as Overview/Audit: sentence-case label, big value,
    tinted IconChip on the right */
-const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
-  <div className="tl-card" style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip, onClick }) => (
+  <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick}
+    role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
+    title={onClick ? "See the rows behind this number" : undefined}
+    onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
+    style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6, ...(onClick ? { cursor: "pointer" } : {}) }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
       <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
       <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={28} />
@@ -276,10 +280,22 @@ const defaultDates = () => {
 };
 
 const ExecutionEngine = () => {
+  const { go } = useNav();
   const [cfg, setCfg] = useState({ ...DEFAULT_CONFIG, ...defaultDates() });
   const [openId, setOpenId] = useState(null);
   const [tick, setTick] = useState(0);
   const set = (patch) => setCfg((c) => ({ ...c, ...patch }));
+  /* The engine already owns a multi-select `outcome` filter and renders every matching
+     signal below — the KPI cards just weren't wired to it. `only` isolates one outcome
+     and scrolls to the list, so "12W / 8L / 2BE" becomes three destinations. */
+  const listRef = useRef(null);
+  const only = (...outcome) => {
+    set({ outcome });
+    setTimeout(() => {
+      const el = listRef.current;
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90 });
+    }, 60);
+  };
   const setLeg = (k, v) => setCfg((c) => ({ ...c, legsPct: { ...c.legsPct, [k]: v === "" ? 0 : Number(v) } }));
   // changing # TPs rebuilds the leg set with an even split that sums to 100%
   const setTps = (v) => {
@@ -421,9 +437,9 @@ const ExecutionEngine = () => {
       <TLabel>Headline</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         <K label="Net P&L" tip="engNetPnl" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
-        <K label="Win Rate" tip="winRate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
+        <K label="Win Rate" tip="winRate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} onClick={() => only("Win")} />
         <K label="Profit Factor" tip="profitFactor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
-        <K label="Signals" tip="engSignals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
+        <K label="Signals" tip="engSignals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} onClick={() => only("Win", "Loss", "Breakeven", "No entry", "Invalid", "Open")} />
       </div>
       <TLabel>Targets reached</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
@@ -437,18 +453,18 @@ const ExecutionEngine = () => {
       <TLabel>Risk &amp; return</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <K label="Total Return" tip="totalReturn" icon={BarChart3} accent={C.green} value={pct(k.totalReturnPct, { signed: true })} valueColor={signColor(k.totalReturnPct, C)} sub={`${usd(k.finalBal, { signed: false })} final`} />
-        <K label="Max Drawdown" tip="maxDD" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} />
+        <K label="Max Drawdown" tip="maxDD" icon={TrendingDown} accent={C.red} value={`${k.maxDDpct.toFixed(1)}%`} valueColor={C.red} sub={usd(k.maxDD, { signed: true })} onClick={() => only("Loss")} />
         <K label="CAGR" tip="cagr" icon={TrendingUp} accent={C.green} value={pct(k.cagr, { signed: true })} valueColor={signColor(k.cagr, C)} sub="annualized" />
-        <K label="Loss streak" tip="lossStreak" icon={TrendingDown} value={k.maxLossRun} sub="max consecutive" />
+        <K label="Loss streak" tip="lossStreak" icon={TrendingDown} value={k.maxLossRun} sub="max consecutive" onClick={() => only("Loss")} />
         <K label="Avg R" tip="avgREng" icon={Scale} value={k.avgR ? `${k.avgR >= 0 ? "+" : ""}${k.avgR.toFixed(2)}` : "—"} valueColor={signColor(k.avgR, C)} sub="return/risk" />
         <K label="Peak concurrency" tip="peakConcurrency" icon={Layers} value={k.peakConc} sub={`avg ${Number(k.avgConc).toFixed(1)}`} />
       </div>
       <TLabel>Execution</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <K label="Exposure" tip="exposure" icon={Activity} value={`${k.exposure.toFixed(0)}%`} sub="time in market" />
-        <K label="Rejected" tip="rejectedEng" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" />
+        <K label="Rejected" tip="rejectedEng" icon={ShieldX} value={k.rejected} sub="filtered by Robotín" onClick={() => go("activity", { book: "rejected" })} />
         <K label="Avg duration" tip="avgDuration" icon={Clock} value={fmtDur(k.avgDur)} sub="per trade" />
-        <K label="Open" tip="openEng" icon={Activity} value={k.open} sub="still running" />
+        <K label="Open" tip="openEng" icon={Activity} value={k.open} sub="still running" onClick={() => only("Open")} />
       </div>
 
       {/* capital curve */}
@@ -460,7 +476,7 @@ const ExecutionEngine = () => {
       </div>
 
       {/* detail list */}
-      <div>
+      <div ref={listRef} style={{ scrollMarginTop: 96 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 15, fontWeight: 800 }}>Per-signal detail</span>
