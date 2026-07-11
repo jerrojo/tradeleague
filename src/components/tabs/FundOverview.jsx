@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Line,
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -295,6 +295,88 @@ const ForkPipeline = ({ data, onNav, compact }) => {
   );
 };
 
+/* ── Monthly Performance — the fund's month-by-month track record. It owns its own
+   range filter (6M / 12M / 24M) because the global timeframe pills are a short-term
+   signal-tape control (6H…7D) and say nothing useful about a multi-month track.
+   The chart scales to ANY number of months: bar width, tick density and the per-month
+   stats row all adapt, so a real 36- or 60-month history drops in without changes. ── */
+const MonthTip = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  const m = payload[0].payload;
+  return (
+    <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", padding: "8px 10px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: m.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(m.pnl)}</div>
+      <div style={{ fontSize: 10, color: C.textMuted }}>{m.trades} trades · {m.winRate}% WR</div>
+    </div>
+  );
+};
+
+const MonthlyPerformance = ({ monthly = [] }) => {
+  const total = monthly.length;
+  const opts = [6, 12, 24].filter((n) => n <= total);
+  if (!opts.length) opts.push(total);
+  const [win, setWin] = useState(() => (total >= 12 ? 12 : total));
+  const shown = monthly.slice(-Math.min(win, total));
+  const subtotal = shown.reduce((a, m) => a + m.pnl, 0);
+  const wins = shown.filter((m) => m.pnl >= 0).length;
+  // density-aware presentation: full stats ≤6 months, P&L-only ≤12, chart-only beyond
+  const footer = shown.length <= 6 ? "full" : shown.length <= 12 ? "pnl" : "none";
+  const barSize = shown.length > 12 ? 12 : shown.length > 6 ? 20 : 30;
+  const shortLabel = (v) => (shown.length <= 12 ? String(v).split(" ")[0] : v);
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600" }}>
+            <BarChart3 size={14} color={C.green} /> Monthly Performance
+          </div>
+          <div style={{ fontSize: "10px", color: C.textFaint }}>
+            Closed P&amp;L by month — consistency over time · last {shown.length}M:{" "}
+            <span style={{ color: subtotal >= 0 ? C.green : C.red, fontWeight: 700, ...mono }}>{usd(subtotal)}</span>
+            {" "}· {wins}/{shown.length} green · simulated
+          </div>
+        </div>
+        {/* the card's own range filter — independent of the global signal timeframe */}
+        <div style={{ display: "flex", gap: 3 }}>
+          {opts.map((n) => {
+            const on = win === n;
+            return (
+              <button key={n} onClick={() => setWin(n)} title={`Show the last ${n} months`} style={{
+                padding: "4px 10px", borderRadius: 6, fontSize: 10.5, fontWeight: 700, cursor: "pointer",
+                border: `1px solid ${on ? C.purple : C.border}`, backgroundColor: on ? C.purpleBg : "transparent", color: on ? C.purple : C.textMuted, ...mono,
+              }}>{n}M</button>
+            );
+          })}
+        </div>
+      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={shown} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
+          <XAxis dataKey="period" stroke={C.textMuted} fontSize={10} tickFormatter={shortLabel} interval={shown.length > 12 ? 1 : 0} />
+          <YAxis stroke={C.textMuted} fontSize={10} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+          <Tooltip content={<MonthTip />} cursor={{ fill: `${C.border}40` }} />
+          <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={barSize} isAnimationActive={false}>
+            {shown.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      {/* stats row padded to match the chart's plot area (left margin 8 + Y-axis 44, right margin 8) so each column sits under its bar */}
+      {footer !== "none" && (
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(1, shown.length)}, 1fr)`, gap: "6px", marginTop: "8px", paddingLeft: "52px", paddingRight: "8px" }}>
+          {shown.map((m) => (
+            <div key={m.period} style={{ textAlign: "center", fontSize: "9px", color: C.textFaint, lineHeight: 1.5, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: footer === "full" ? "10px" : "9px", color: m.pnl >= 0 ? C.green : C.red, ...mono, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{usd(m.pnl)}</div>
+              {footer === "full" && <><div>{m.trades} trades</div><div>{m.winRate}% WR</div></>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const FundOverview = () => {
   const { within } = useTimeframe();
   const { go } = useNav();
@@ -403,19 +485,31 @@ const FundOverview = () => {
     const rawSortino = downStd > 0 ? (mean / downStd) * Math.sqrt(closedReturns.length) : 0;
     const sortino = Math.max(0.6, Math.min(3.4, Math.abs(rawSortino))) || 2.2;
 
-    /* ── Monthly performance: a simulated 6-month track. Deterministic shape that
-       includes a losing month (real consistency isn't all-green) and sums exactly
-       to the closed net P&L, so the months reconcile with the headline number. ── */
-    const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    const MONTH_SHAPE = [0.22, 0.72, -0.30, 0.05, 1.0, 0.31]; // Mar is red; Σ = 2.0
+    /* ── Monthly performance: a simulated 24-month track ending this month, so the
+       card has real history to window. Deterministic shape that includes losing
+       months (real consistency isn't all-green); the FULL track sums exactly to the
+       closed net P&L, so the months reconcile with the headline number. The card's
+       own 6M/12M/24M filter only windows the VIEW and shows that window's subtotal. ── */
+    const MONTH_SHAPE = [
+      0.35, 0.62, -0.28, 0.18, 0.90, 0.44,
+      0.25, -0.35, 0.55, 0.72, 0.30, 0.95,
+      0.40, 0.15, -0.42, 0.68, 0.85, 0.22,
+      0.50, 0.78, -0.20, 0.33, 1.00, 0.48,
+    ];
+    const N_MONTHS = MONTH_SHAPE.length;
+    const anchor = new Date();
+    const monthLabels = Array.from({ length: N_MONTHS }, (_, i) => {
+      const d = new Date(anchor.getFullYear(), anchor.getMonth() - (N_MONTHS - 1 - i), 1);
+      return `${d.toLocaleString("en-US", { month: "short" })} '${String(d.getFullYear()).slice(2)}`;
+    });
     const shapeSum = MONTH_SHAPE.reduce((a, b) => a + b, 0);
-    const baseTrades = Math.floor(closed.length / 6);
-    const remainder = closed.length - baseTrades * 6;
+    const baseTrades = Math.floor(closed.length / N_MONTHS);
+    const remainder = closed.length - baseTrades * N_MONTHS;
     const monthly = monthLabels.map((label, i) => ({
       period: label,
       pnl: Math.round(netPnl * (MONTH_SHAPE[i] / shapeSum)),
       trades: baseTrades + (i < remainder ? 1 : 0),
-      winRate: MONTH_SHAPE[i] < 0 ? 38 : Math.min(72, Math.round(48 + MONTH_SHAPE[i] * 14)),
+      winRate: MONTH_SHAPE[i] < 0 ? 36 + (i % 5) : Math.min(72, Math.round(48 + MONTH_SHAPE[i] * 14)),
     }));
 
     /* ── Outcome distribution: realized R-multiple per closed trade, bucketed.
@@ -755,43 +849,7 @@ const FundOverview = () => {
 
       {/* ── 5 · Monthly performance + Outcome distribution, side by side ── */}
       <div className="grid-2col-16">
-      <div style={cardStyle}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "13px", fontWeight: "600" }}>
-              <BarChart3 size={14} color={C.green} /> Monthly Performance
-            </div>
-            <div style={{ fontSize: "10px", color: C.textFaint }}>
-              Closed P&amp;L by month — consistency over time · simulated 6-month track
-            </div>
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data.monthly} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
-            <XAxis dataKey="period" stroke={C.textMuted} fontSize={10} />
-            <YAxis stroke={C.textMuted} fontSize={10} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              cursor={{ fill: `${C.border}40` }}
-              formatter={(v) => [usd(Number(v)), "P&L"]}
-            />
-            <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={30} isAnimationActive={false}>
-              {data.monthly.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        {/* stats row padded to match the chart's plot area (left margin 8 + Y-axis 44, right margin 8) so each column sits under its bar */}
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.max(1, data.monthly.length)}, 1fr)`, gap: "6px", marginTop: "8px", paddingLeft: "52px", paddingRight: "8px" }}>
-          {data.monthly.map((m) => (
-            <div key={m.period} style={{ textAlign: "center", fontSize: "9px", color: C.textFaint, lineHeight: 1.5 }}>
-              <div style={{ fontWeight: 700, fontSize: "10px", color: m.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(m.pnl)}</div>
-              <div>{m.trades} trades</div>
-              <div>{m.winRate}% WR</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <MonthlyPerformance monthly={data.monthly} />
 
       {/* ── 6 · Outcome distribution — realized R per closed trade (the shape of the edge) ── */}
       <div style={cardStyle}>
