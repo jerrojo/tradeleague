@@ -98,7 +98,7 @@ const deriveAudit = (s) => {
 const DIRS = ["All", "LONG", "SHORT"];
 const AUDIT_STATUSES = ["All", "Take Profit", "Stop Loss", "Active", "Pending"];
 const MATCHES = ["All", "Exact Match", "Outcome Mismatch"];
-const SORTS = ["Newest", "Oldest", "Net PNL"];
+const SORTS = ["Newest", "Oldest", "Net P&L"];
 
 /* ── compact dark select ── */
 const Select = ({ label, value, onChange, options }) => (
@@ -301,7 +301,7 @@ const ExecutionAudit = () => {
     });
     if (sort === "Newest") list = [...list].sort((a, b) => b.time - a.time);
     else if (sort === "Oldest") list = [...list].sort((a, b) => a.time - b.time);
-    else if (sort === "Net PNL") list = [...list].sort((a, b) => (b.pnl ?? -Infinity) - (a.pnl ?? -Infinity));
+    else if (sort === "Net P&L") list = [...list].sort((a, b) => (b.pnl ?? -Infinity) - (a.pnl ?? -Infinity));
     return list;
   }, [executed, asset, dir, auditStatus, match, sort]);
 
@@ -419,7 +419,7 @@ const ExecutionAudit = () => {
       </div>
 
       {/* ─────────── 5) BREAKDOWN BY ASSET ─────────── */}
-      <CollapsibleSection icon={Coins} title="Breakdown by Asset" summary={`${byAsset.length} assets · sorted by net PNL`} persistKey="audit-breakdown">
+      <CollapsibleSection icon={Coins} title="Breakdown by Asset" summary={`${byAsset.length} assets · sorted by net P&L`} persistKey="audit-breakdown">
         {/* one scroll container for BOTH axes so the sticky header actually sticks */}
         <div style={{ overflow: "auto", maxHeight: 480 }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -429,8 +429,8 @@ const ExecutionAudit = () => {
                 <th style={{ ...stickyTh, textAlign: "right" }}>Signals</th>
                 <th style={{ ...stickyTh, textAlign: "right" }}>W/L</th>
                 <th style={{ ...stickyTh, textAlign: "right" }}>Win Rate</th>
-                <th style={{ ...stickyTh, textAlign: "right" }}>Net PNL</th>
-                <th style={{ ...stickyTh, textAlign: "right" }}>Avg PNL</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Net P&amp;L</th>
+                <th style={{ ...stickyTh, textAlign: "right" }}>Avg P&amp;L</th>
                 <th style={{ ...stickyTh, textAlign: "right" }}>PF</th>
                 <th style={{ ...stickyTh, textAlign: "right" }}>Fees</th>
               </tr>
