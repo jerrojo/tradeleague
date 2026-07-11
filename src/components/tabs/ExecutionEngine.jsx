@@ -313,6 +313,13 @@ const ExecutionEngine = () => {
 
   const sim = useMemo(() => simulate(cfg), [cfg, tick]);
   const v = sim.validation; // the honesty layer: how many knobs, and does it survive held-back data?
+  /* Three verdicts, not two — "not overfit" and "works" are different claims. A config that
+     loses money in BOTH windows is consistent, just consistently bad; a green badge on it
+     would be a lie of omission. */
+  const verdictTone = !v ? "noEdge"
+    : v.overfitRisk ? "overfit"
+      : v.outSample.perTrade > 0 ? "good"
+        : "noEdge";
   const k = sim.kpi;
 
   // The fund's REAL executed book over the same date window — the reference point
@@ -430,11 +437,18 @@ const ExecutionEngine = () => {
       {v && (
         <div style={{ ...cardStyle, borderColor: v.overfitRisk ? `${C.amber}55` : C.border, backgroundColor: v.overfitRisk ? `${C.amber}0a` : "transparent" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-            {v.overfitRisk ? <AlertTriangle size={15} color={C.amber} /> : <ShieldCheck size={15} color={C.green} />}
+            {/* Three outcomes, not two. "Not overfit" and "works" are different claims:
+                a configuration that loses money in BOTH windows is perfectly consistent —
+                consistently bad. A green "Holds up" badge on it would be a lie of omission. */}
+            {verdictTone === "good" ? <ShieldCheck size={15} color={C.green} />
+              : verdictTone === "overfit" ? <AlertTriangle size={15} color={C.amber} />
+                : <TrendingDown size={15} color={C.textMuted} />}
             <span style={{ ...T.cardTitle, color: C.text }}>Is this configuration real, or just fitted?</span>
             <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
-              color: v.overfitRisk ? C.amber : C.green, backgroundColor: v.overfitRisk ? `${C.amber}1c` : `${C.green}1c`, border: `1px solid ${v.overfitRisk ? C.amber : C.green}40` }}>
-              {v.overfitRisk ? "Overfit risk" : "Holds up"}
+              color: verdictTone === "good" ? C.green : verdictTone === "overfit" ? C.amber : C.textMuted,
+              backgroundColor: verdictTone === "good" ? `${C.green}1c` : verdictTone === "overfit" ? `${C.amber}1c` : `${C.textMuted}1c`,
+              border: `1px solid ${verdictTone === "good" ? C.green : verdictTone === "overfit" ? C.amber : C.textMuted}40` }}>
+              {verdictTone === "good" ? "Holds up" : verdictTone === "overfit" ? "Overfit risk" : "No edge"}
             </span>
           </div>
 
@@ -453,13 +467,19 @@ const ExecutionEngine = () => {
 
           <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
             Only the <b style={{ color: C.text }}>out-of-sample</b> number has any claim on tomorrow — the in-sample one is the config
-            describing data it has already seen. {v.overfitRisk ? (
+            describing data it has already seen.{" "}
+            {verdictTone === "overfit" ? (
               <b style={{ color: C.amber }}>
                 {v.dof >= 6
                   ? `With ${v.dof} parameters tuned, this is a curve-fit, not a backtest.`
                   : "The edge does not survive the held-back window — this configuration learned this particular history."}
               </b>
-            ) : "This config was not heavily tuned and it survives data it never saw."}
+            ) : verdictTone === "noEdge" ? (
+              <b style={{ color: C.textMuted }}>
+                This configuration is not overfit — it simply doesn&apos;t work. It loses money on data it fitted
+                <i>and</i> on data it never saw, which is at least honest about itself.
+              </b>
+            ) : "This config was not heavily tuned and it still makes money on data it never saw."}
           </div>
         </div>
       )}
