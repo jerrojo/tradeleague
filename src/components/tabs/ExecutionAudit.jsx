@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import {
-  Activity, Award, ChevronDown, Coins, DollarSign, Percent, RefreshCw,
+  Activity, Award, ChevronDown, Coins, Cpu, DollarSign, Percent, RefreshCw,
   Scale, Shield, Target, TrendingDown, TrendingUp, Wallet,
 } from "lucide-react";
 import { StatCard, CollapsibleSection, SectionHeader, InfoTip } from "../common";
@@ -199,6 +199,24 @@ const ExecutionAudit = () => {
   );
 
   /* ── KPIs over executed trades (and their closed outcomes) ── */
+  /* Funding actually paid to hold the book, and WHICH MODELS produced this record.
+     A track record spanning two Robotín versions is two track records wearing one label —
+     the page has to say so, or a retrain quietly rewrites history. */
+  const totalFunding = useMemo(
+    () => executed.filter((s) => s.status === "closed").reduce((a, s) => a + (s.funding || 0), 0),
+    [executed],
+  );
+  const modelsInRecord = useMemo(() => {
+    const m = {};
+    executed.forEach((s) => {
+      const v = s.modelVersion || "unknown";
+      const e = (m[v] = m[v] || { v, n: 0, closed: 0, net: 0 });
+      e.n++;
+      if (s.status === "closed") { e.closed++; e.net += s.pnl; }
+    });
+    return Object.values(m).sort((a, b) => (a.v < b.v ? -1 : 1));
+  }, [executed]);
+
   const kpi = useMemo(() => {
     const closed = executed.filter((s) => s.status === "closed");
     const active = executed.filter((s) => s.status === "active");
@@ -347,6 +365,30 @@ const ExecutionAudit = () => {
         )}
       />
 
+      {/* ─────────── 1b) MODEL PROVENANCE ───────────
+          A track record produced by two different filters is TWO track records wearing one
+          label. Without this, a retrain silently rewrites history and nobody can answer the
+          first governance question an allocator asks: "which model produced these numbers?" */}
+      {modelsInRecord.length > 1 && (
+        <div style={{ ...cardStyle, borderColor: `${C.amber}45`, backgroundColor: `${C.amber}0a`, padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+            <Cpu size={15} color={C.amber} />
+            <span style={{ ...T.cardTitle, color: C.text }}>This record spans {modelsInRecord.length} Robotín versions</span>
+            <span style={{ ...T.caption }}>a blended track record is not one model&apos;s track record</span>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {modelsInRecord.map((m) => (
+              <span key={m.v} title={`${m.n} signals judged by Robotín ${m.v} · ${m.closed} closed · ${usd(m.net)} net`}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap", color: C.text, backgroundColor: C.cardElev, border: `1px solid ${C.border}`, ...mono }}>
+                <b style={{ color: C.purple }}>{m.v}</b>
+                <span style={{ color: C.textFaint, fontWeight: 600 }}>{m.n} signals</span>
+                <span style={{ color: m.net >= 0 ? C.green : C.red }}>{usd(m.net)}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ─────────── 2) FILTERS ─────────── */}
       <div style={{ ...cardStyle, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
         <Select label="Asset" value={asset} onChange={setAsset} options={assetOptions} />
@@ -380,6 +422,14 @@ const ExecutionAudit = () => {
           label="Total Fees" tip="totalFees" value={`−$${kpi.totalFees.toFixed(2)}`} icon={Percent} color={C.amber}
           sub="sum of per-trade fees"
           onClick={() => drill({ sort: "Net P&L" })}
+        />
+        {/* Perp funding was simply absent from the P&L: a levered long pays the exchange
+            every 8 hours it stays open, which made hold time look free and flattered every
+            long. It is now charged inside net P&L and disclosed here. */}
+        <StatCard
+          label="Funding" tip="funding" value={usd(-totalFunding)} icon={RefreshCw}
+          color={totalFunding > 0 ? C.amber : C.green}
+          sub={totalFunding > 0 ? "paid to hold perps (in net P&L)" : "collected from shorts"}
         />
         <StatCard
           label="Match Rate" tip="matchRate" value={`${kpi.matchRate.toFixed(1)}%`} icon={Scale}

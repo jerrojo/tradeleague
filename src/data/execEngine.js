@@ -202,7 +202,63 @@ export function simulate(userConfig = {}) {
     capital: cfg.capital,
   };
 
-  return { rows: out, all: rows, kpi, curve };
+  /* ═══════════ OVERFITTING GUARDRAIL ═══════════
+     This screen is a knob box: partials, sizing, leverage, fees, a capital mode, an
+     outcome filter. Turn them until the curve looks good and you will ALWAYS find a
+     configuration that looks good — on this data. That is not a strategy, it is a
+     memory of the past, and nothing on the page was warning anyone about it.
+
+     Two disclosures, both standard practice and both uncomfortable on purpose:
+
+     1) DEGREES OF FREEDOM — how many knobs you have moved off their defaults. Every
+        one is a chance to fit noise. A dozen tuned parameters on a few hundred trades
+        is not a backtest, it is a curve-fit.
+
+     2) OUT-OF-SAMPLE — split the signals in time: fit your intuition on the first 70%,
+        then look at the last 30% you never touched. If the out-of-sample result falls
+        apart, the configuration learned this particular history, not an edge. Only the
+        OOS number has any claim to predict tomorrow. */
+  const dof = (() => {
+    let n = 0;
+    const d = DEFAULT_CONFIG;
+    if (cfg.sizing !== d.sizing) n++;
+    if (cfg.riskPct !== d.riskPct) n++;
+    if (cfg.margin !== d.margin) n++;
+    if (cfg.leverage !== d.leverage) n++;
+    if (cfg.fee !== d.fee) n++;
+    if (cfg.capitalMode !== d.capitalMode) n++;
+    if (cfg.maxConcurrent !== d.maxConcurrent) n++;
+    if (cfg.tps !== d.tps) n++;
+    if (cfg.trailing !== d.trailing) n++;
+    if (JSON.stringify(cfg.partials) !== JSON.stringify(d.partials)) n++;
+    if (cfg.asset !== d.asset) n++;
+    if (cfg.direction !== d.direction) n++;
+    if (JSON.stringify([...(cfg.outcome || [])].sort()) !== JSON.stringify([...(d.outcome || [])].sort())) n++;
+    return n;
+  })();
+
+  const byTime = [...rows].sort((a, b) => a.time - b.time);
+  const cut = Math.floor(byTime.length * 0.7);
+  const summarise = (list) => {
+    const cl = list.filter((r) => !r.noEntry);
+    const wins = cl.filter((r) => r.netPnl > 0).length;
+    const net = cl.reduce((a, r) => a + r.netPnl, 0);
+    return {
+      n: cl.length,
+      netPnl: round(net),
+      winRate: round(cl.length ? (wins / cl.length) * 100 : 0),
+      perTrade: round(cl.length ? net / cl.length : 0),
+    };
+  };
+  const inSample = summarise(byTime.slice(0, cut));
+  const outSample = summarise(byTime.slice(cut));
+  // the tell: an edge that evaporates the moment it meets data it never saw
+  const decay = inSample.perTrade !== 0
+    ? round(((outSample.perTrade - inSample.perTrade) / Math.abs(inSample.perTrade)) * 100)
+    : 0;
+  const overfitRisk = dof >= 6 || (inSample.perTrade > 0 && outSample.perTrade <= 0);
+
+  return { rows: out, all: rows, kpi, curve, validation: { dof, inSample, outSample, decay, overfitRisk } };
 }
 
 export { DEFAULT_CONFIG };

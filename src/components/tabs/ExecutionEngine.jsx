@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
-  Activity, BarChart3, CheckCircle, ChevronDown, Clock, Cpu, DollarSign,
-  Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldX, Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
+  Activity, AlertTriangle, BarChart3, CheckCircle, ChevronDown, Clock, Cpu, DollarSign,
+  Download, Gauge, Layers, Percent, RefreshCw, Scale, ShieldCheck, ShieldX, SlidersHorizontal,
+  Sparkles, TrendingDown, TrendingUp, Wallet, Crosshair,
 } from "lucide-react";
 import { CandleChart } from "../CandleChart";
 import { EmptyState, IconChip, SectionHeader, InfoTip, Avatar, BotTag } from "../common";
@@ -311,6 +312,7 @@ const ExecutionEngine = () => {
   });
 
   const sim = useMemo(() => simulate(cfg), [cfg, tick]);
+  const v = sim.validation; // the honesty layer: how many knobs, and does it survive held-back data?
   const k = sim.kpi;
 
   // The fund's REAL executed book over the same date window — the reference point
@@ -421,6 +423,46 @@ const ExecutionEngine = () => {
           </div>
         </div>
       </div>
+
+      {/* ── OVERFITTING GUARDRAIL. This screen is a knob box: turn the knobs long enough
+             and you will ALWAYS find a config that looks good ON THIS DATA. That is a
+             memory of the past, not a strategy. Nothing here used to say so. ── */}
+      {v && (
+        <div style={{ ...cardStyle, borderColor: v.overfitRisk ? `${C.amber}55` : C.border, backgroundColor: v.overfitRisk ? `${C.amber}0a` : "transparent" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+            {v.overfitRisk ? <AlertTriangle size={15} color={C.amber} /> : <ShieldCheck size={15} color={C.green} />}
+            <span style={{ ...T.cardTitle, color: C.text }}>Is this configuration real, or just fitted?</span>
+            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", padding: "3px 9px", borderRadius: 999, whiteSpace: "nowrap",
+              color: v.overfitRisk ? C.amber : C.green, backgroundColor: v.overfitRisk ? `${C.amber}1c` : `${C.green}1c`, border: `1px solid ${v.overfitRisk ? C.amber : C.green}40` }}>
+              {v.overfitRisk ? "Overfit risk" : "Holds up"}
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 10 }}>
+            <K label="Degrees of freedom" tip="dof" icon={SlidersHorizontal} accent={v.dof >= 6 ? C.amber : C.textFaint}
+              value={v.dof} valueColor={v.dof >= 6 ? C.amber : C.text} sub="knobs moved off default" />
+            <K label="In-sample" tip="inSample" icon={BarChart3} value={usd(v.inSample.perTrade, { signed: true })}
+              valueColor={signColor(v.inSample.perTrade, C)} sub={`/trade · ${v.inSample.n} trades · first 70%`} />
+            <K label="Out-of-sample" tip="outSample" icon={ShieldCheck} accent={C.purple}
+              value={usd(v.outSample.perTrade, { signed: true })} valueColor={signColor(v.outSample.perTrade, C)}
+              sub={`/trade · ${v.outSample.n} trades · held back`} />
+            <K label="Decay" tip="decay" icon={TrendingDown} accent={v.decay < -50 ? C.red : C.textFaint}
+              value={`${v.decay >= 0 ? "+" : ""}${v.decay.toFixed(0)}%`}
+              valueColor={v.decay < -50 ? C.red : v.decay < 0 ? C.amber : C.green} sub="OOS vs in-sample" />
+          </div>
+
+          <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
+            Only the <b style={{ color: C.text }}>out-of-sample</b> number has any claim on tomorrow — the in-sample one is the config
+            describing data it has already seen. {v.overfitRisk ? (
+              <b style={{ color: C.amber }}>
+                {v.dof >= 6
+                  ? `With ${v.dof} parameters tuned, this is a curve-fit, not a backtest.`
+                  : "The edge does not survive the held-back window — this configuration learned this particular history."}
+              </b>
+            ) : "This config was not heavily tuned and it survives data it never saw."}
+          </div>
+        </div>
+      )}
 
       {/* Sandbox vs reality — without this anchor, a losing sandbox config reads
           as "the fund loses money", contradicting the Overview's +30%. */}

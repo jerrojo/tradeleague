@@ -36,6 +36,37 @@ const round = (x) => {
 const STEP = 3600; // 1h candles
 const N = 160;
 
+/* ── Perp funding, per 8h settlement. Positive = longs pay shorts (the usual state of a
+   market that is structurally long). Majors are cheap to hold; high-beta alts and memes
+   are expensive, which is exactly where a naive backtest overstates its returns. ── */
+const FUNDING_8H = {
+  BTC: 0.00005, ETH: 0.00006, BNB: 0.00006, XRP: 0.00008, SOL: 0.00010, ADA: 0.00008,
+  AVAX: 0.00010, LINK: 0.00009, DOT: 0.00009, MATIC: 0.00010, LTC: 0.00007, TON: 0.00009,
+  NEAR: 0.00011, ARB: 0.00012, OP: 0.00012, SUI: 0.00013, APT: 0.00012, INJ: 0.00013,
+  DOGE: 0.00014, SHIB: 0.00016, PEPE: 0.00018, WIF: 0.00019, BONK: 0.00019, FLOKI: 0.00018,
+  UNI: 0.00009, AAVE: 0.00009, LDO: 0.00011, RNDR: 0.00012, FET: 0.00013, WLD: 0.00014,
+  FTM: 0.00011, STX: 0.00011, IMX: 0.00011, GRT: 0.00011, SEI: 0.00013, TIA: 0.00013,
+};
+export const fundingRateOf = (coin) => FUNDING_8H[coin] ?? 0.0001;
+
+/* ── MODEL REGISTRY ─────────────────────────────────────────────────────────────
+   A track record produced by two different filters is two track records. Without a
+   version stamped on each decision, an allocator cannot answer the first governance
+   question they will ask — "which model produced these numbers?" — and a silent
+   retrain would quietly rewrite history. Every signal now carries the version of
+   Robotín that judged it. ── */
+export const MODEL_VERSIONS = [
+  { id: "R1.1", from: 0,   note: "Baseline: structure + R:R gate." },
+  { id: "R1.2", from: 120, note: "Added higher-timeframe bias conflict check." },
+  { id: "R1.3", from: 45,  note: "Current: liquidity-sweep confirmation required." },
+];
+/* Which model judged a signal, by how many days ago it was published. */
+export const modelVersionFor = (ageDays) => {
+  if (ageDays > 120) return "R1.1";
+  if (ageDays > 45) return "R1.2";
+  return "R1.3";
+};
+
 /* ── Single source of truth for per-trade execution costs (used by SignalTable +
    Execution Audit so the same trade never shows two different fee numbers) ──
    feeOf: deterministic taker fee per round-trip, $0.10–0.40 from the trade id.
@@ -152,21 +183,46 @@ export function coinSignals(coin, candles) {
     // compare the full signal book vs only what Robotín approved.
     const hres = resolve(candles, ei, dir, entry, tp1, sl);
     const hypoClosed = !!(hres && hres.status === "closed");
-    const hypoPnl = hypoClosed ? round(sign * ((hres.exit - entry) / entry) * lev * notional) : 0;
+    const hypoGross = hypoClosed ? round(sign * ((hres.exit - entry) / entry) * lev * notional) : 0;
     // Hypothetical lifecycle for EVERY signal (what the counterfactual is doing right
     // now) — mirror the approved pending rule so a fresh unfilled limit reads PENDING
     // not EXPIRED. Lets the rejected branch show live state, not just closed outcomes.
     let hypoStatus = hres ? hres.status : "expired";
     if (hypoStatus === "expired" && recent) hypoStatus = "pending";
 
+    /* ── FUNDING. These are PERPETUALS: there is no expiry, and the exchange keeps the
+       contract tethered to spot by charging a funding payment every 8 hours. In a market
+       that is structurally long (crypto usually is), longs PAY and shorts RECEIVE. A book
+       that holds a levered long for three days pays funding three days running.
+
+       This cost was simply missing from the P&L, which made every long look better than
+       it was and made hold time look free. It is charged on NOTIONAL (the levered size),
+       not on margin, because that is what the exchange charges on. ── */
+    const fundingCost = (r_, idxIn, idxOut) => {
+      if (idxIn == null || idxOut == null || idxOut <= idxIn) return 0;
+      const hours = idxOut - idxIn;                    // candles are 1h
+      const periods = hours / 8;                       // funding settles every 8h
+      const rate8h = FUNDING_8H[coin] ?? 0.0001;       // ~0.01% per 8h → ~0.03%/day
+      const payer = dir === "LONG" ? 1 : -1;           // longs pay, shorts collect
+      return round(notional * rate8h * periods * payer);
+    };
+
+    // the counterfactual must pay funding too, or the rejected book gets a free ride and
+    // the filter's edge is measured against an opponent who trades for free
+    const hypoFunding = hypoClosed ? fundingCost(r, hres.activeIdx, hres.exitIdx) : 0;
+    const hypoPnl = round(hypoGross - hypoFunding);
+
     // Actual execution path (only if approved)
     let res = approved ? hres : null;
     // a fresh, still-unfilled limit order is PENDING (order live); an old one EXPIRED
     if (res && res.status === "expired" && recent) res = { ...res, status: "pending", activeIdx: null };
-    let pnlPct = 0, pnl = 0;
+    let pnlPct = 0, pnl = 0, funding = 0;
     if (res && res.status === "closed") {
-      pnlPct = round(sign * ((res.exit - entry) / entry) * 100 * lev);
-      pnl = round(sign * ((res.exit - entry) / entry) * lev * notional);
+      funding = fundingCost(r, res.activeIdx, res.exitIdx);
+      const gross = round(sign * ((res.exit - entry) / entry) * lev * notional);
+      pnl = round(gross - funding);                    // net of funding
+      // identical to the old priceReturn% × leverage, but now net of the funding charge
+      pnlPct = round((pnl / notional) * 100);
     }
 
     // Provider source — most signals arrive via the Telegram channel; a minority
@@ -175,19 +231,24 @@ export function coinSignals(coin, candles) {
     const srcHash = (coin.charCodeAt(0) + coin.charCodeAt(coin.length - 1) + k * 7 + trader.name.length * 13) % 4;
     const source = srcHash === 0 ? "x" : "telegram";
 
+    // Which Robotín judged this signal. Stamped at decision time and never rewritten —
+    // that is the whole point: a retrain must not silently relabel history.
+    const ageDays = (Date.now() / 1000 - candles[ei].time) / 86400;
+    const modelVersion = modelVersionFor(ageDays);
+
     out.push({
       id: `${coin}-${k}`, coin, pair: `${coin}/USDT`, trader: trader.name, isBot: trader.isBot, source,
       time: candles[ei].time, entryIdx: ei,
       dir, entry, signalPx: px, sl, tp1, tp2, tp3, tf, setup, tag,
       lev, notional: round(notional), // position sizing (used by Positioning map / detail)
       // Robotín
-      approved, confidence: conf, reasoning, rejectReason,
+      approved, confidence: conf, reasoning, rejectReason, modelVersion,
       // execution (only if approved)
       status: approved ? res.status : "rejected",
       activeIdx: res?.activeIdx ?? null, exitIdx: res?.exitIdx ?? null, exit: res?.exit ?? null, hit: res?.hit ?? "NONE",
-      pnlPct, pnl,
+      pnlPct, pnl, funding, // pnl is NET of funding; `funding` is disclosed separately
       // hypothetical "if executed" outcome for EVERY signal (full-book vs executed comparison)
-      hypoClosed, hypoPnl, hypoExitIdx: hres?.exitIdx ?? null, hypoStatus, hypoActiveIdx: hres?.activeIdx ?? null,
+      hypoClosed, hypoPnl, hypoFunding, hypoExitIdx: hres?.exitIdx ?? null, hypoStatus, hypoActiveIdx: hres?.activeIdx ?? null,
       // audit: what the signal implied vs what happened
       signalOutcome: "TP", // a published signal always claims it will hit TP
       auditOutcome: res ? (res.status === "closed" ? (res.hit === "TP" ? "TP" : "SL") : res.status === "active" ? "OPEN" : res.status === "pending" ? "PENDING" : "NO ENTRY") : null,

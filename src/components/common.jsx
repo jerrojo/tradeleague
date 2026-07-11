@@ -88,6 +88,11 @@ const GLOSSARY = {
   topProviderShare: "Share of the fund's executed P&L attributable to the single best provider — high values flag concentration risk.",
   netBeta:        "The book's true directional exposure, in BTC-equivalents. Longs and shorts only offset to the extent their betas match — shorting BTC against a long in a high-beta alt still leaves you net long crypto. Above 1.0 the fund is effectively a levered long.",
   effectiveBets:  "How many INDEPENDENT positions the book is really worth, after correlation. In crypto almost everything is a levered expression of BTC, so a 44-name book is typically worth 2-3 real bets. A low number means 'diversified' is a story, not a fact.",
+  dof:        "How many parameters you have moved off their defaults. Every knob is another chance to fit noise rather than signal — a dozen tuned parameters over a few hundred trades is a curve-fit, not a backtest.",
+  inSample:   "Result over the FIRST 70% of signals in time — the data your configuration has effectively already seen. It is descriptive, not predictive.",
+  outSample:  "Result over the LAST 30% of signals, held back and never used to choose this configuration. This is the only number with any claim on tomorrow.",
+  decay:      "How much the per-trade edge falls when it meets data it never saw. A large negative decay means the configuration learned this particular history, not a repeatable edge.",
+  funding:    "Perpetual futures have no expiry, so the exchange charges a funding payment every 8 hours to keep the contract tethered to spot. In a structurally long market, longs PAY and shorts COLLECT. This cost was previously missing from the P&L entirely, which made holding a levered long look free.",
   // SMC Analysis
   bias:           "Market direction. BULLISH = price going up, BEARISH = price going down",
   confluence:     "Signal strength: how many indicators agree (more = more reliable)",

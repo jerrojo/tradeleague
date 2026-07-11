@@ -251,6 +251,13 @@ const TradeDetail = ({ trade, candles }) => {
           {isClosed ? (<>
             <Row label="Realized P&L" value={fmtUsd(realized)} color={(realized ?? 0) >= 0 ? C.green : C.red} />
             <Row label="Total Fees" value={`−$${fees.toFixed(2)}`} color={C.textMuted} />
+            {/* Perp funding: a levered long pays the exchange every 8 hours it stays open.
+                It used to be missing entirely, which made hold time look free. */}
+            {trade.funding != null && trade.funding !== 0 && (
+              <Row label={trade.funding > 0 ? "Funding paid" : "Funding earned"}
+                value={fmtUsd(-trade.funding)}
+                color={trade.funding > 0 ? C.red : C.green} />
+            )}
             <Row label="Net P&L" value={fmtUsd(trade.pnl)} color={pnlColor} bold />
             <Row label="ROI Notional" value={`${(trade.pnlPct ?? 0) >= 0 ? "+" : ""}${(trade.pnlPct ?? 0).toFixed(2)}%`} color={(trade.pnlPct ?? 0) >= 0 ? C.green : C.red} />
           </>) : isOpen ? (<>
@@ -291,7 +298,18 @@ const TradeDetail = ({ trade, candles }) => {
               <Bot size={17} color={C.purple} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800 }}>Robotín R1</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 800 }}>Robotín</span>
+                {/* Which model judged THIS signal. Stamped at decision time and never
+                    rewritten — a retrain must not silently relabel history, and an
+                    allocator's first governance question is "which model produced this?". */}
+                {trade.modelVersion && (
+                  <span title={`Judged by Robotín ${trade.modelVersion}. A track record produced by two different models is two track records.`}
+                    style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.3px", color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}40`, padding: "1px 6px", borderRadius: 4, ...mono }}>
+                    {trade.modelVersion}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 9, color: C.textFaint, ...mono }}>SN: {serial}</div>
             </div>
           </div>

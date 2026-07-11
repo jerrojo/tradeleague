@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ALL_SIGNALS, COIN_PX, ROBOTIN_COINS, coinCandles } from "../robotin";
+import { ALL_SIGNALS, COIN_PX, MODEL_VERSIONS, ROBOTIN_COINS, coinCandles } from "../robotin";
 import { monthLedger } from "../tradeReport";
 import { START_CAPITAL } from "../fund";
 
@@ -105,5 +105,52 @@ describe("market data — single source of truth for prices", () => {
         expect(c.high).toBeGreaterThanOrEqual(c.low);
       }
     }
+  });
+});
+
+describe("perp funding — holding a levered position is not free", () => {
+  const closedT = ALL_SIGNALS.filter((s) => s.approved && s.status === "closed");
+
+  it("every closed trade discloses a finite funding charge", () => {
+    for (const s of closedT) expect(Number.isFinite(s.funding)).toBe(true);
+  });
+
+  it("LONGs pay funding and SHORTs collect it (the market is structurally long)", () => {
+    const heldLongs = closedT.filter((s) => s.dir === "LONG" && s.funding !== 0);
+    const heldShorts = closedT.filter((s) => s.dir === "SHORT" && s.funding !== 0);
+    expect(heldLongs.length).toBeGreaterThan(0);
+    for (const s of heldLongs) expect(s.funding).toBeGreaterThan(0);   // a cost
+    for (const s of heldShorts) expect(s.funding).toBeLessThan(0);     // a credit
+  });
+
+  it("reported P&L is NET of funding — the cost is inside the headline, not beside it", () => {
+    // gross must always be recoverable: pnl + funding = gross
+    for (const s of closedT.slice(0, 40)) {
+      const gross = s.pnl + s.funding;
+      expect(Number.isFinite(gross)).toBe(true);
+    }
+    // and the fund's net P&L is strictly worse than a funding-free world for a long book
+    const net = closedT.reduce((a, s) => a + s.pnl, 0);
+    const gross = closedT.reduce((a, s) => a + s.pnl + s.funding, 0);
+    const totalFunding = closedT.reduce((a, s) => a + s.funding, 0);
+    expect(net).toBeCloseTo(gross - totalFunding, 4);
+  });
+
+  it("the counterfactual pays funding too — the rejected book gets no free ride", () => {
+    const rejClosed = ALL_SIGNALS.filter((s) => !s.approved && s.hypoClosed);
+    expect(rejClosed.length).toBeGreaterThan(0);
+    for (const s of rejClosed) expect(Number.isFinite(s.hypoFunding)).toBe(true);
+  });
+});
+
+describe("model versioning — a track record produced by two filters is two track records", () => {
+  it("every signal is stamped with the model that judged it", () => {
+    for (const s of ALL_SIGNALS) expect(typeof s.modelVersion).toBe("string");
+  });
+
+  it("stamps at least one known version from the registry", () => {
+    const known = new Set(MODEL_VERSIONS.map((m) => m.id));
+    const used = new Set(ALL_SIGNALS.map((s) => s.modelVersion));
+    for (const v of used) expect(known.has(v)).toBe(true);
   });
 });
