@@ -4,7 +4,7 @@ import { ArrowDown, BellRing, CheckCircle, ChevronDown, ChevronUp, Circle, Copy,
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile, useProMode } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
-import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../../lib/scoring";
+import { alphaColor, alphaLabel, alphaConfidence, calcAlphaScore, calcExpectancy, expectancyColor, MIN_SAMPLE } from "../../lib/scoring";
 import { C, cardStyle, mono, pillStyle, tdStyle, thStyle, tierColor } from "../../theme";
 import { Activity, AlertTriangle, Bot, Search, Star, TrendingDown, TrendingUp, Trophy, Users } from "lucide-react";
 import { ALL_SIGNALS } from "../../data/robotin";
@@ -142,6 +142,7 @@ const TradersTab = () => {
                 })().map((t, i) => {
                   const isTop1 = i === 0;
                   const alpha = calcAlphaScore(t);
+                  const conf = alphaConfidence(t);
                   const aClr = alphaColor(alpha);
                   const isHotStreak = t.streak >= 10;
                   // whole row opens the profile — before, only the small name link did
@@ -166,7 +167,16 @@ const TradersTab = () => {
                     <td style={{ ...tdStyle, textAlign: "center" }}>
                       <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                         <span style={{ fontSize: "16px", fontWeight: "800", color: aClr, ...mono }}>{alpha}</span>
-                        <span style={{ fontSize: "9px", fontWeight: "700", color: aClr, padding: "1px 5px", borderRadius: "3px", backgroundColor: `${aClr}18` }}>{alphaLabel(alpha)}</span>
+                        {/* A thin record is not evidence, however pretty it looks. Say so on the
+                            row itself so nobody allocates against a five-signal lucky streak. */}
+                        {conf.provisional ? (
+                          <span title={`Only ${conf.n} trades — below the ${MIN_SAMPLE}-trade minimum. This score is not yet evidence, and the provider is ineligible for allocation.`}
+                            style={{ fontSize: "8px", fontWeight: "800", letterSpacing: "0.3px", color: C.amber, padding: "1px 5px", borderRadius: "3px", backgroundColor: `${C.amber}1c`, border: `1px solid ${C.amber}40`, whiteSpace: "nowrap" }}>
+                            PROVISIONAL
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: "9px", fontWeight: "700", color: aClr, padding: "1px 5px", borderRadius: "3px", backgroundColor: `${aClr}18` }}>{alphaLabel(alpha)}</span>
+                        )}
                       </div>
                     </td>
                     {proMode && (

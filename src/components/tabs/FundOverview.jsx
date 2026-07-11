@@ -13,6 +13,7 @@ import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { fmtDayShort, axisK } from "../../lib/format";
+import { wilson, bootstrapSum, verdict } from "../../lib/stats";
 import { C, T, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -295,6 +296,10 @@ const Branch = ({ variant, icon: Icon, label, book, total, closed, open, pending
    reads both faces of the filter — losers it dodged AND opportunity still in play. ── */
 const ForkPipeline = ({ data, onNav, compact }) => {
   const a = data.approvedBranch, r = data.rejectedBranch, edge = data.filterEdge;
+  // The filter's edge is an ESTIMATE over a few dozen rejected signals, not a fact.
+  // If resampling can't even pin its sign, the strip must not assert "Filter added $X".
+  const ci = data.edgeCI;
+  const solid = ci && ci.significant;
   return (
     <div style={{ ...cardStyle, padding: compact ? 14 : 16 }}>
       <style>{`.fork-seg:hover { text-decoration: underline; }`}</style>
@@ -331,7 +336,21 @@ const ForkPipeline = ({ data, onNav, compact }) => {
           onClick={() => onNav("rejected", "losses")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("rejected", "losses"); } }}
           style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${edge >= 0 ? C.green : C.red}40`, backgroundColor: `${edge >= 0 ? C.green : C.red}0d` }}>
           <ShieldCheck size={16} color={edge >= 0 ? C.green : C.red} style={{ flexShrink: 0 }} />
-          <span className="fork-seg" style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.</span>
+          <span className="fork-seg" style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+            Filter {edge >= 0 ? "added" : "cost"} <b style={{ color: edge >= 0 ? C.green : C.red }}>{usd(edge)}</b> — dodged <b style={{ color: C.text }}>{r.losses}</b> closed losers it screened out.
+            {ci && (
+              <>
+                {" "}
+                <span title={`95% CI ${usd(ci.lo)} to ${usd(ci.hi)} · positive in ${(ci.pPositive * 100).toFixed(0)}% of ${ci.iters.toLocaleString()} bootstraps`}
+                  style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.3px", textTransform: "uppercase", padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap",
+                    color: solid ? (edge >= 0 ? C.green : C.red) : C.amber,
+                    backgroundColor: solid ? `${edge >= 0 ? C.green : C.red}1c` : `${C.amber}1c`,
+                    border: `1px solid ${solid ? (edge >= 0 ? C.green : C.red) : C.amber}40` }}>
+                  {solid ? "significant" : "not significant"}
+                </span>
+              </>
+            )}
+          </span>
         </div>
         <div role="button" tabIndex={0} title="See the rejected signals that are still running"
           onClick={() => onNav("rejected", "active")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNav("rejected", "active"); } }}
@@ -643,6 +662,10 @@ const FundOverview = () => {
     const rejActiveUnreal = rejActive.reduce((a, s) => a + markOf(s), 0);  // opportunity in progress
     const rejActiveWinning = rejActive.filter((s) => markOf(s) > 0).length;
     const filterEdge = -avoidedPnl; // realized edge: rejected book net was avoidedPnl; not taking it added the inverse
+    // ...and how sure are we? Resample the rejected book: if the interval straddles
+    // zero we cannot name the sign, and the strip says "not significant" rather than
+    // asserting the filter earned money it may simply have gotten lucky on.
+    const edgeCI = bootstrapSum(rejClosed.map((x) => -x.hypoPnl), { seed: "fork-edge" });
 
     const approvedBranch = {
       total: approvedCount, closed: closed.length, active: active.length, pending: pending.length,
@@ -679,7 +702,7 @@ const FundOverview = () => {
     return {
       allSignalsCount: allSignals.length, approvedCount, approvalRate,
       rejectedCount: rejected.length, avoidedPnl, avoidedLosers, avgConfApproved, avgConfRejected,
-      approvedBranch, rejectedBranch, filterEdge,
+      approvedBranch, rejectedBranch, filterEdge, edgeCI,
       providers, monitoredProviders, signaledProviders, avgSignalsPerProvider,
       humanSignals, botSignals, humanExecPnl, botExecPnl, topProvider, topProviderShare,
       trades, closed, active, wins, losses,
@@ -792,6 +815,12 @@ const FundOverview = () => {
     };
   })();
 
+  /* A win rate without its sample size is a rate without meaning: 51.1% over 141
+     closed trades carries a ±8-point interval, so it is not distinguishable from a
+     coin flip. Show the interval next to the number instead of letting the reader
+     assume precision we don't have. */
+  const wr = wilson(data.wins.length, data.wins.length + data.losses.length);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* ── 1 · The legible core: one calm, uniform metric grid + a persistent
@@ -877,7 +906,7 @@ const FundOverview = () => {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(184px, 1fr))", gap: 10 }}>
         <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} tip="netPnl" value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
         <Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
-        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`95% CI ${(wr.lo * 100).toFixed(1)}–${(wr.hi * 100).toFixed(1)}% · n=${wr.n}`} onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
         <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<Pair a={usd(dash.avgWin)} b={usd(-dash.avgLoss)} />} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "execution" })} />

@@ -1,11 +1,13 @@
 import { useMemo } from "react";
-import { GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, GitBranch, ChevronRight, ShieldCheck, ShieldX, TrendingUp, Users } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Avatar, BotTag, SectionHeader, EmptyState } from "../common";
 import { useTimeframe, useProfile, useNav } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS } from "../../data/robotin";
-import { usd, pct, signColor } from "../../lib/format";
-import { C, cardStyle, mono } from "../../theme";
+import { usd, pct, signColor, axisK } from "../../lib/format";
+import { bootstrapSum, verdict, VERDICT_COPY } from "../../lib/stats";
+import { C, T, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ FILTER EDGE — what Robotín's approve/reject is worth ═══════════════════════
    The differentiator no off-the-shelf tool has: we know the counterfactual. Every
@@ -78,16 +80,39 @@ const FilterEdge = () => {
       edge: -t.avoidedPnl,
     })).sort((a, b) => b.execPnl - a.execPnl);
 
+    /* ── How SURE are we? ───────────────────────────────────────────────────────
+       `edge` is a total over a few dozen rejected signals. A total that size can be
+       driven by one or two outliers, so the point estimate alone says nothing about
+       whether the filter has skill. Resample the rejected book with replacement and
+       look at the spread of the resulting edges: if the interval straddles zero, we
+       cannot even name the SIGN of the effect, and we say so instead of selling it. */
+    const edgeCI = bootstrapSum(rejClosed.map((s) => -s.hypoPnl), { seed: "filter-edge" });
+
+    /* Rolling edge: a point estimate hides whether the edge is stable or whether two
+       lucky months carry the whole record. Cumulative edge over the rejected book in
+       time order — a straight-ish rising line is skill; a single cliff is one outlier. */
+    const rollingEdge = [];
+    let cum = 0;
+    [...rejClosed].sort((a, b) => a.time - b.time).forEach((s, i) => {
+      cum += -s.hypoPnl;
+      rollingEdge.push({ i: i + 1, edge: Math.round(cum) });
+    });
+
     return {
       published: all.length, approvedN: approved.length, rejectedN: rejected.length,
       execClosedN: execClosed.length, approvalRate: all.length ? (approved.length / all.length) * 100 : 0,
       execPnl, avoidedPnl, allIfExec, edge, avoidedLosers, rejClosedN: rejClosed.length, traders,
+      edgeCI, rollingEdge,
     };
   }, [within]);
 
   if (!d.published) {
     return <EmptyState icon={GitBranch} title="No signals in this period" hint="Widen the global timeframe to see how Robotín's filter performed." />;
   }
+
+  // the honest read of the edge: can we even name its sign?
+  const v = verdict(d.edgeCI);
+  const sig = d.edgeCI.significant;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -109,6 +134,58 @@ const FilterEdge = () => {
         <HeroStat label="Executed P&L" value={usd(d.execPnl, { signed: true })} color={signColor(d.execPnl, C)} hint="What Robotín's approved book actually realized." />
         <HeroStat label="All signals, if executed" value={usd(d.allIfExec, { signed: true })} color={signColor(d.allIfExec, C)} hint="Counterfactual: taking every signal, approved + rejected." />
         <HeroStat label="Filter edge" value={usd(d.edge, { signed: true })} color={signColor(d.edge, C)} hint={`Value the filter ${d.edge >= 0 ? "added" : "cost"} by screening signals.`} />
+      </div>
+
+      {/* ── HOW SURE ARE WE? The single most important sentence in the product. ────
+          A bare "+$949 of edge" is unfalsifiable. Resampling the rejected book gives
+          the interval that number really lives in — and if that interval straddles
+          zero, we say so plainly rather than let a reader mistake noise for skill. */}
+      <div style={{ ...cardStyle, borderColor: sig ? `${signColor(d.edge, C)}40` : `${C.amber}50`, backgroundColor: sig ? `${signColor(d.edge, C)}0a` : `${C.amber}0a` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+          {sig ? <ShieldCheck size={17} color={signColor(d.edge, C)} /> : <AlertTriangle size={17} color={C.amber} />}
+          <span style={{ ...T.cardTitle, color: C.text }}>Is the edge real?</span>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", textTransform: "uppercase", padding: "3px 9px", borderRadius: 999, color: sig ? signColor(d.edge, C) : C.amber, backgroundColor: sig ? `${signColor(d.edge, C)}1c` : `${C.amber}1c`, border: `1px solid ${sig ? signColor(d.edge, C) : C.amber}40` }}>
+            {sig ? "Significant" : v === "suggestive" ? "Suggestive" : "Not significant"}
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.65 }}>
+          Measured on <b style={{ color: C.text, ...mono }}>{d.edgeCI.n}</b> rejected signals that resolved, the edge is{" "}
+          <b style={{ color: signColor(d.edge, C), ...mono }}>{usd(d.edge, { signed: true })}</b>, with a 95% confidence interval of{" "}
+          <b style={{ color: C.text, ...mono }}>{usd(d.edgeCI.lo, { signed: true })}</b> to{" "}
+          <b style={{ color: C.text, ...mono }}>{usd(d.edgeCI.hi, { signed: true })}</b> — {VERDICT_COPY[v]}.
+          {" "}The resampled edge came out positive in{" "}
+          <b style={{ color: C.text, ...mono }}>{(d.edgeCI.pPositive * 100).toFixed(0)}%</b> of {d.edgeCI.iters.toLocaleString()} bootstraps.
+          {!sig && (
+            <> <b style={{ color: C.amber }}>At this sample size we cannot rule out that the filter adds nothing.</b> Treat it as a hypothesis, not a track record.</>
+          )}
+        </div>
+      </div>
+
+      {/* ── Is the edge STABLE, or is it one lucky screen? ── */}
+      <div style={cardStyle}>
+        <div style={{ ...T.cardTitle, color: C.text, display: "flex", alignItems: "center", gap: 6 }}>
+          <TrendingUp size={14} color={C.purple} /> Edge accumulation
+        </div>
+        <div style={{ ...T.caption, marginBottom: 8 }}>
+          Cumulative edge across the rejected book, in time order. A steady climb is skill; a single cliff means one outlier is carrying the whole number.
+        </div>
+        <ResponsiveContainer width="100%" height={150}>
+          <AreaChart data={d.rollingEdge} margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id="edgeGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={signColor(d.edge, C)} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={signColor(d.edge, C)} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}80`} vertical={false} />
+            <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(x) => `#${x}`} />
+            <YAxis stroke={C.textMuted} fontSize={9} width={54} tickFormatter={(x) => axisK(x, 1)} />
+            <ReferenceLine y={0} stroke={C.textFaint} strokeDasharray="3 3" />
+            <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }}
+              labelFormatter={(x) => `Rejected signal #${x}`} formatter={(x) => [usd(Number(x), { signed: true }), "Cumulative edge"]} />
+            <Area type="monotone" dataKey="edge" stroke={signColor(d.edge, C)} strokeWidth={2} fill="url(#edgeGrad)" dot={false} isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
 
       {/* counterfactual callout */}
