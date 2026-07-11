@@ -93,7 +93,12 @@ const AccountBalanceCard = ({ balance, returnPct, equity, onClick }) => (
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textMuted, fontWeight: 600 }}><Wallet size={14} /> Account Balance</div>
-    <div style={{ fontSize: 30, fontWeight: 900, color: C.text, ...mono, lineHeight: 1.05 }}>{usdPlain(balance)} <span style={{ fontSize: 13, fontWeight: 700, color: returnPct >= 0 ? C.green : C.red }}>{returnPct >= 0 ? "+" : ""}{returnPct.toFixed(1)}%</span></div>
+    <div style={{ fontSize: 30, fontWeight: 900, color: C.text, whiteSpace: "nowrap", ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
+    {/* The gain in MONEY, then the rate — "how much did we make" is the first question,
+        and a lone "+30.2%" answers the second one only. Its own line, readable size. */}
+    <div style={{ fontSize: 13.5, fontWeight: 800, whiteSpace: "nowrap", color: balance - START_CAPITAL >= 0 ? C.green : C.red, ...mono }}>
+      {usd(balance - START_CAPITAL)} <span style={{ fontWeight: 700, opacity: 0.85 }}>({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</span>
+    </div>
     <div style={{ height: 88, marginTop: 4 }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={equity} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
@@ -107,17 +112,25 @@ const AccountBalanceCard = ({ balance, returnPct, equity, onClick }) => (
         </AreaChart>
       </ResponsiveContainer>
     </div>
-    <div style={{ fontSize: 11, color: C.textMuted }}>Starting balance <span style={{ color: C.text, ...mono }}>{usdPlain(START_CAPITAL)}</span></div>
+    {/* a proper footer row (divider + label left / value right) — same rhythm as every
+        other row in the rail, instead of a muted sentence trailing off the card */}
+    <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 9, display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11.5 }}>
+      <span style={{ color: C.textMuted }}>Starting balance</span>
+      <span style={{ fontWeight: 700, color: C.text, whiteSpace: "nowrap", ...mono }}>{usdPlain(START_CAPITAL)}</span>
+    </div>
   </div>
 );
 
 /* ── Today's performance card (right rail) ── */
 const TodayCard = ({ dash, onClick }) => {
   const wr = dash.todayW + dash.todayL ? Math.round((dash.todayW / (dash.todayW + dash.todayL)) * 100) : 0;
-  const Row = ({ label, value, color }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
-      <span style={{ color: C.textMuted }}>{label}</span>
-      <span style={{ fontWeight: 700, color: color || C.text, ...mono }}>{value}</span>
+  // every row leads with an icon — one consistent language down the whole rail
+  const Row = ({ icon: Icon, iconColor, label, value, color }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11.5 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}>
+        {Icon && <Icon size={12} color={iconColor || C.textFaint} />}{label}
+      </span>
+      <span style={{ fontWeight: 700, color: color || C.text, whiteSpace: "nowrap", ...mono }}>{value}</span>
     </div>
   );
   return (
@@ -143,13 +156,16 @@ const TodayCard = ({ dash, onClick }) => {
           </div>
         </>
       )}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11.5, paddingTop: 2 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}><Flame size={12} color={C.amber} /> Current streak</span>
-        <span style={{ fontWeight: 700, color: dash.curWin ? C.green : C.red, ...mono }}>{dash.curStreak} {dash.curWin ? "Wins" : "Losses"}</span>
+      <div style={{ paddingTop: 2 }}>
+        <Row icon={Flame} iconColor={C.amber} label="Current streak"
+          value={`${dash.curStreak} ${dash.curWin ? (dash.curStreak === 1 ? "Win" : "Wins") : (dash.curStreak === 1 ? "Loss" : "Losses")}`}
+          color={dash.curWin ? C.green : C.red} />
       </div>
-      <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-        {/* one period row only — "this month" already lives on the Total Net P&L card */}
-        <Row label="Last 7 days" value={usd(dash.weekPnl)} color={dash.weekPnl >= 0 ? C.green : C.red} />
+      {/* two periods, not one: today alone has no trajectory. Week + month say whether
+          today is a blip or a trend — and they're the two horizons a desk actually reads. */}
+      <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 7 }}>
+        <Row icon={Clock} label="This week" value={usd(dash.weekPnl)} color={dash.weekPnl >= 0 ? C.green : C.red} />
+        <Row icon={Calendar} label="This month" value={usd(dash.thisMonthPnl)} color={dash.thisMonthPnl >= 0 ? C.green : C.red} />
       </div>
     </div>
   );
@@ -163,10 +179,12 @@ const OpenRiskCard = ({ risk, onClick, onNav }) => {
   // we're most concentrated in. Stop-propagation so they don't fire the card's own link.
   const seg = (opts) => (e) => { e.stopPropagation(); onNav?.(opts); };
   const segStyle = { cursor: "pointer", borderBottom: `1px dashed ${C.purple}55` };
-  const Row = ({ label, value, color }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
-      <span style={{ color: C.textMuted }}>{label}</span>
-      <span style={{ fontWeight: 700, color: color || C.text, ...mono }}>{value}</span>
+  const Row = ({ icon: Icon, iconColor, label, value, color }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11.5 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}>
+        {Icon && <Icon size={12} color={iconColor || C.textFaint} />}{label}
+      </span>
+      <span style={{ fontWeight: 700, color: color || C.text, whiteSpace: "nowrap", ...mono }}>{value}</span>
     </div>
   );
   return (
@@ -184,11 +202,11 @@ const OpenRiskCard = ({ risk, onClick, onNav }) => {
         <span role="button" tabIndex={0} title={`See the ${risk.shorts} open shorts`} onClick={seg({ dir: "SHORT" })} onKeyDown={(e) => { if (e.key === "Enter") seg({ dir: "SHORT" })(e); }} style={{ color: C.red, ...segStyle }}>{risk.shorts}S</span>
       </div>
       <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-        <Row label="Unrealized (avg)" value={`${risk.avgUnrl >= 0 ? "+" : "−"}${Math.abs(risk.avgUnrl).toFixed(2)}%`} color={risk.avgUnrl >= 0 ? C.green : C.red} />
-        <Row label="Avg risk to stop" value={`${risk.avgToSl.toFixed(2)}%`} color={C.amber} />
+        <Row icon={Activity} label="Unrealized (avg)" value={`${risk.avgUnrl >= 0 ? "+" : "−"}${Math.abs(risk.avgUnrl).toFixed(2)}%`} color={risk.avgUnrl >= 0 ? C.green : C.red} />
+        <Row icon={ShieldCheck} iconColor={C.amber} label="Avg risk to stop" value={`${risk.avgToSl.toFixed(2)}%`} color={C.amber} />
         {/* the concentration warning names a coin — let the analyst open exactly it */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5 }}>
-          <span style={{ color: C.textMuted }}>Most exposed</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11.5 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: C.textMuted }}><Flame size={12} color={C.textFaint} />Most exposed</span>
           {risk.topCoin ? (
             <span role="button" tabIndex={0} title={`See ${risk.topCoin}'s ${risk.topCount} open positions`}
               onClick={seg({ coin: risk.topCoin })} onKeyDown={(e) => { if (e.key === "Enter") seg({ coin: risk.topCoin })(e); }}
