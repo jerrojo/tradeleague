@@ -46,7 +46,7 @@ const FilterEdge = () => {
   const openBook = (name, book) => {
     const t = mockTraders.find((x) => x.name === name);
     if (!t) return;
-    try { localStorage.setItem("tp:tab", "signal_log"); localStorage.setItem("tp:book", book); } catch { /* ignore */ }
+    try { localStorage.setItem("tp:tab", "signal_log"); localStorage.setItem("tp:book", book || "all"); } catch { /* ignore */ }
     openProfile(t);
   };
 

@@ -29,7 +29,8 @@ const TradersTab = () => {
   const openOn = (t, tab, book) => {
     try {
       localStorage.setItem("tp:tab", tab);
-      if (book) localStorage.setItem("tp:book", book);
+      // always write the book — a leftover one would silently filter the log
+      localStorage.setItem("tp:book", book || "all");
     } catch { /* ignore */ }
     openProfile(t);
   };

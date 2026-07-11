@@ -111,10 +111,18 @@ const App = () => {
     // mount. Activity: BOOK + STATUS + DIR + COIN. Markets: COIN.
     try {
       if (tab === "activity") {
-        if (opts.book) localStorage.setItem("af:book", opts.book);
-        if (opts.status) localStorage.setItem("af:status", opts.status);
-        if (opts.dir) localStorage.setItem("af:dir", opts.dir);
-        if (opts.coin) localStorage.setItem("af:coin", opts.coin);
+        // A deep-link must produce EXACTLY the rows the clicked number counted, so it
+        // writes every dimension — unspecified ones are reset to "all". Otherwise a
+        // filter left over from a previous visit (Activity persists them) silently
+        // narrows the result and the number you clicked no longer matches the row count.
+        // A bare go("activity") (plain nav) is left alone: it keeps the user's own view.
+        const deep = opts.book || opts.status || opts.dir || opts.coin;
+        if (deep) {
+          localStorage.setItem("af:book", opts.book || "all");
+          localStorage.setItem("af:status", opts.status || "all");
+          localStorage.setItem("af:dir", opts.dir || "all");
+          localStorage.setItem("af:coin", opts.coin || "all");
+        }
       }
       if (tab === "markets" && opts.coin) localStorage.setItem("mk:coin", opts.coin);
     } catch { /* ignore */ }
