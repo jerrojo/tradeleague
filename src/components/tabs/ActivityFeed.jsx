@@ -6,6 +6,7 @@ import { useProfile, useTimeframe } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle, mono } from "../../theme";
+import { patchUrl } from "../../lib/urlState";
 
 /* ═══════════════════════ ACTIVITY FEED ═══════════════════════
    The GLOBAL LIVE TAPE of Robotín's signal → trade lifecycle across ALL coins.
@@ -62,6 +63,10 @@ const ActivityFeed = () => {
   useEffect(() => { try { localStorage.setItem("af:status", status); } catch { /* ignore */ } }, [status]);
   useEffect(() => { try { localStorage.setItem("af:coin", coinFilter); } catch { /* ignore */ } }, [coinFilter]);
   useEffect(() => { try { localStorage.setItem("af:dir", dir); } catch { /* ignore */ } }, [dir]);
+  /* Mirror the filters into the address bar so THIS tape — filtered exactly as you left
+     it — is a link you can send. Replace, not push: refining a filter is not a
+     destination, and it must not bury the back button under a dozen entries. */
+  useEffect(() => { patchUrl({ book, status, dir, coin: coinFilter }); }, [book, status, dir, coinFilter]);
 
   const lastClose = (coin) => lastCloseByCoin[coin] ?? null;
 

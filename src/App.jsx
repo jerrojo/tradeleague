@@ -1,5 +1,5 @@
 import { TraderProfile } from "./components/TraderProfile";
-import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, DollarSign, Eye, FileText, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Award, BarChart3, Beaker, Bell, BellRing, Bookmark, Bot, Briefcase, Calendar, Check, CheckCircle2, ChevronDown, ChevronRight, Copy, Cpu, Link2, DollarSign, Eye, FileText, Flame, GitBranch, Globe, HelpCircle, Layers, LayoutDashboard, Lightbulb, MessageCircle, Radio, Scale, Search, Settings, Sparkles, Star, Target, ToggleLeft, ToggleRight, TrendingDown, TrendingUp, Trophy, Users, Wallet, X, Zap } from "lucide-react";
 import { Avatar, BotTag, ToastProvider } from "./components/common";
 import { PrintTearSheet } from "./components/PrintTearSheet";
 import { DateContext, FeedFilterContext, ProfileContext, ProContext, TimeframeProvider, NavContext, LivePriceProvider, useLivePrices } from "./contexts";
@@ -14,6 +14,7 @@ import { mockTraders } from "./data/mockData";
 import { ALL_SIGNALS } from "./data/robotin";
 import { START_CAPITAL } from "./data/fund";
 import { usd, fmtTime } from "./lib/format";
+import { readUrl, patchUrl, currentShareUrl } from "./lib/urlState";
 import { C, T, cardStyle, mono } from "./theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
@@ -90,13 +91,41 @@ const FeedStatus = () => {
 };
 
 /* ═══════════════════════ MAIN APP ═══════════════════════ */
+const TAB_IDS = ["overview", "activity", "report", "audit", "engine", "traders", "markets"];
+
+/* A view is a URL. On boot the query string WINS over localStorage — that's what makes
+   a link someone sent you actually open what they were looking at — and it seeds the
+   per-section filter inboxes before those sections mount and read them. */
+const bootFromUrl = () => {
+  const u = readUrl();
+  try {
+    if (u.book || u.status || u.dir || u.coin) {
+      localStorage.setItem("af:book", u.book || "all");
+      localStorage.setItem("af:status", u.status || "all");
+      localStorage.setItem("af:dir", u.dir || "all");
+      localStorage.setItem("af:coin", u.coin || "all");
+    }
+    if (u.tab === "markets" && u.coin) localStorage.setItem("mk:coin", u.coin);
+    if (u.trader && u.tp) {
+      localStorage.setItem("tp:tab", u.tp);
+      localStorage.setItem("tp:book", u.tpbook || "all");
+    }
+  } catch { /* ignore */ }
+  return u;
+};
+
 const App = () => {
-  // last visited section persists across refreshes; we always land at the top of the page
-  const [activeTab, setActiveTab] = useState(() => { try { const t = localStorage.getItem("tl_active_tab"); return ["overview", "activity", "report", "audit", "engine", "traders", "markets"].includes(t) ? t : "overview"; } catch { return "overview"; } });
+  const boot = useRef(bootFromUrl()).current;
+  // The URL is the source of truth for a shared view; localStorage only remembers where
+  // YOU were last, for a plain revisit.
+  const [activeTab, setActiveTab] = useState(() => {
+    if (TAB_IDS.includes(boot.tab)) return boot.tab;
+    try { const t = localStorage.getItem("tl_active_tab"); return TAB_IDS.includes(t) ? t : "overview"; } catch { return "overview"; }
+  });
   // Audit anchor (deep-linkable from KPI cards). Deliberately NOT persisted:
   // Audit is one page now, so a stored value would only make a fresh visit land
   // mid-scroll — every session starts at the top.
-  const [auditView, setAuditView] = useState("execution");
+  const [auditView, setAuditView] = useState(boot.audit || "execution");
   useEffect(() => { try { localStorage.setItem("tl_active_tab", activeTab); } catch { /* ignore */ } }, [activeTab]);
   // Scroll policy: EVERY view change lands at the top, no exceptions and no
   // per-callsite bookkeeping. The browser's own scroll restoration is disabled
@@ -126,6 +155,17 @@ const App = () => {
       }
       if (tab === "markets" && opts.coin) localStorage.setItem("mk:coin", opts.coin);
     } catch { /* ignore */ }
+    // ...and put the whole view in the address bar, so this exact screen can be sent
+    // to a colleague. Filters that don't belong to the destination are cleared.
+    patchUrl({
+      tab,
+      trader: null, tp: null, tpbook: null,
+      audit: tab === "audit" ? (opts.auditView || null) : null,
+      book: tab === "activity" ? (opts.book || null) : null,
+      status: tab === "activity" ? (opts.status || null) : null,
+      dir: tab === "activity" ? (opts.dir || null) : null,
+      coin: (tab === "activity" || tab === "markets") ? (opts.coin || null) : null,
+    }, { push: true });
     setActiveTab(tab); setProfileTrader(null);
     if (tab === "audit" && opts.auditView) setAuditView(opts.auditView);
     window.scrollTo({ top: 0 });
@@ -165,18 +205,32 @@ const App = () => {
   const historyPopRef = useRef(false);
   const historyMountRef = useRef(false);
   useEffect(() => {
-    const view = { tlNav: true, tab: activeTab, profile: profileTrader?.name ?? null, auditView };
-    if (!historyMountRef.current) { historyMountRef.current = true; window.history.replaceState(view, ""); return; }
+    // keep the address bar honest for entry points that bypass go() (sidebar, keyboard
+    // 1–7, search, welcome cards). Replace, not push — go()/openProfile already pushed.
+    if (!historyMountRef.current) {
+      historyMountRef.current = true;
+      patchUrl({ tab: activeTab, trader: profileTrader?.name || null });
+      return;
+    }
     if (historyPopRef.current) { historyPopRef.current = false; return; }
-    window.history.pushState(view, "");
+    patchUrl({ tab: activeTab, trader: profileTrader?.name || null }, { push: true });
   }, [activeTab, profileTrader, auditView]);
   useEffect(() => {
-    const onPop = (e) => {
-      const st = e.state && e.state.tlNav ? e.state : { tab: "overview", profile: null, auditView: "execution" };
+    const onPop = () => {
+      // Read the URL, NOT history.state: a link someone pasted in cold has no state
+      // object, and that's exactly the case we built this for.
+      const u = readUrl();
       historyPopRef.current = true;
-      setActiveTab(st.tab || "overview");
-      setAuditView(st.auditView || "execution");
-      setProfileTrader(st.profile ? (mockTraders.find((t) => t.name === st.profile) || null) : null);
+      setActiveTab(TAB_IDS.includes(u.tab) ? u.tab : "overview");
+      setAuditView(u.audit || "execution");
+      setProfileTrader(u.trader ? (mockTraders.find((t) => t.name === u.trader) || null) : null);
+      try {
+        localStorage.setItem("af:book", u.book || "all");
+        localStorage.setItem("af:status", u.status || "all");
+        localStorage.setItem("af:dir", u.dir || "all");
+        localStorage.setItem("af:coin", u.coin || "all");
+        if (u.tp) { localStorage.setItem("tp:tab", u.tp); localStorage.setItem("tp:book", u.tpbook || "all"); }
+      } catch { /* ignore */ }
       window.scrollTo({ top: 0 });
     };
     window.addEventListener("popstate", onPop);
@@ -189,6 +243,7 @@ const App = () => {
   const [alertFilter, setAlertFilter] = useState("all");
   const [notif, setNotif] = useState({});
   const [showTearSheet, setShowTearSheet] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const proMode = true; // Casual/Pro split removed — always show full Pro detail
   const searchRef = useRef(null);
@@ -320,8 +375,16 @@ const App = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDateDropdown]);
 
-  const openProfile = (trader) => setProfileTrader(trader);
-  const closeProfile = () => setProfileTrader(null);
+  const openProfile = (trader) => {
+    // a profile is a destination: its own history entry AND its own URL, including the
+    // sub-tab/book a deep-link asked for — so "Gonza's rejected book" becomes a link
+    // you can send, not just a click you can make.
+    let tp = null, tpbook = null;
+    try { tp = localStorage.getItem("tp:tab"); tpbook = localStorage.getItem("tp:book"); } catch { /* ignore */ }
+    patchUrl({ trader: trader?.name || null, tp, tpbook, book: null, status: null, dir: null, coin: null }, { push: true });
+    setProfileTrader(trader);
+  };
+  const closeProfile = () => { patchUrl({ trader: null, tp: null, tpbook: null }, { push: true }); setProfileTrader(null); };
 
   // v3 IA — six job-based sections. Each groups its destinations behind one nav item.
   // "Analyze" is the Pro workbench and only appears in Pro mode.
@@ -516,6 +579,13 @@ const App = () => {
                 ) : (
                   <TimeframeFilter />
                 )}
+                {/* Send this exact view — the whole point of putting the view in the URL */}
+                <button onClick={async () => {
+                  try { await navigator.clipboard.writeText(currentShareUrl()); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* clipboard blocked */ }
+                }} aria-label="Copy a link to this exact view" title="Copy a link to this exact view — filters included"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${copied ? C.green : C.border}`, color: copied ? C.green : C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  {copied ? <Check size={14} /> : <Link2 size={14} />} {copied ? "Copied" : "Share view"}
+                </button>
                 {/* Committee tear-sheet export */}
                 <button onClick={() => setShowTearSheet(true)} aria-label="Export committee tear sheet" title="Export committee tear sheet (PDF)" style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }}>
                   <FileText size={14} /> Tear sheet
