@@ -3,7 +3,7 @@ import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight, X, TrendingUp, T
 import { SectionHeader, InfoTip } from "../common";
 import { monthLedger, breakdownBy } from "../../data/tradeReport";
 import { usd as fUsd, usdCompact, fmtDateTime, price as fmtPx } from "../../lib/format";
-import { C, cardStyle, mono } from "../../theme";
+import { C, T, cardStyle, mono } from "../../theme";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -18,8 +18,8 @@ const fmtDur = (min) => { if (min == null) return "—"; const h = Math.floor(mi
 
 const Stat = ({ label, children, color = C.text, tip }) => (
   <div style={{ minWidth: 0 }}>
-    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</div>
-    <div style={{ fontSize: 14, fontWeight: 800, color, whiteSpace: "nowrap", ...mono }}>{children}</div>
+    <div style={{ ...T.label, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</div>
+    <div style={{ ...T.value, color, whiteSpace: "nowrap" }}>{children}</div>
   </div>
 );
 

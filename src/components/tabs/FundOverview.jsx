@@ -13,7 +13,7 @@ import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
 import { fmtDayShort, axisK } from "../../lib/format";
-import { C, cardStyle, mono } from "../../theme";
+import { C, T, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
    Everything an allocator checks in the first 30 seconds, on one scrollable page.
@@ -61,7 +61,7 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 5 }}>
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 11.5, color: C.textMuted, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4, minWidth: 0 }}>
+      <span style={{ ...T.label, display: "inline-flex", alignItems: "center", gap: 4, minWidth: 0 }}>
         {tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}
       </span>
       {Icon && <Icon size={14} color={accent} style={{ flexShrink: 0, opacity: 0.85 }} />}
@@ -69,8 +69,8 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
     {/* nowrap: a plain value ("+14.0 pts") never splits its unit onto a new line.
         A <Pair> value re-enables wrapping internally, but only BETWEEN its two
         halves — so a lone "−", "/" or "vs" can never orphan. */}
-    <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.15 }}>{value}</div>
-    {sub && <div style={{ fontSize: 10.5, color: C.textFaint, ...mono }}>{sub}</div>}
+    <div style={{ ...T.valueLg, color: valueColor, whiteSpace: "nowrap" }}>{value}</div>
+    {sub && <div style={{ ...T.caption, ...mono }}>{sub}</div>}
   </div>
 );
 
@@ -96,7 +96,7 @@ const AccountBalanceCard = ({ balance, returnPct, equity, onClick }) => (
     <div style={{ fontSize: 30, fontWeight: 900, color: C.text, whiteSpace: "nowrap", ...mono, lineHeight: 1.05 }}>{usdPlain(balance)}</div>
     {/* The gain in MONEY, then the rate — "how much did we make" is the first question,
         and a lone "+30.2%" answers the second one only. Its own line, readable size. */}
-    <div style={{ fontSize: 13.5, fontWeight: 800, whiteSpace: "nowrap", color: balance - START_CAPITAL >= 0 ? C.green : C.red, ...mono }}>
+    <div style={{ ...T.valueSm, whiteSpace: "nowrap", color: balance - START_CAPITAL >= 0 ? C.green : C.red }}>
       {usd(balance - START_CAPITAL)} <span style={{ fontWeight: 700, opacity: 0.85 }}>({returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%)</span>
     </div>
     <div style={{ height: 88, marginTop: 4 }}>
@@ -228,9 +228,9 @@ const Mini = ({ label, value, sub, valueColor = C.text, onClick }) => (
   <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-    <span style={{ fontSize: 11, color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-    <span style={{ fontSize: 15, fontWeight: 700, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.15 }}>{value}</span>
-    {sub && <span style={{ fontSize: 10.5, color: C.textFaint, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
+    <span style={{ ...T.label, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+    <span style={{ ...T.value, color: valueColor, whiteSpace: "nowrap" }}>{value}</span>
+    {sub && <span style={{ ...T.caption, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
   </div>
 );
 
@@ -891,8 +891,8 @@ const FundOverview = () => {
         <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
+        <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "execution" })} />
       </div>
 

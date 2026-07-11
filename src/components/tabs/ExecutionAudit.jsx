@@ -10,7 +10,7 @@ import { mockTraders } from "../../data/mockData";
 import { ALL_SIGNALS, CANDLES_BY_COIN, lastCloseByCoin as LAST_CLOSE, feeOf, arrivalSlipBps } from "../../data/robotin";
 import { bps, signColor } from "../../lib/format";
 import { START_CAPITAL } from "../../data/fund";
-import { C, cardStyle, mono, thStyle, tdStyle } from "../../theme";
+import { C, T, cardStyle, mono, thStyle, tdStyle } from "../../theme";
 
 /* ═══════════════════════ TAB: EXECUTION AUDIT ═══════════════════════
    Audit-grade view of every Robotín-executed (approved) signal: order fills,
@@ -126,17 +126,17 @@ const MiniStat = ({ label, value, color, sub, tip, onClick }) => (
     title={onClick ? "See the rows behind this number" : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4, ...(onClick ? { cursor: "pointer" } : {}) }}>
-    <span style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
-    <span style={{ fontSize: 18, fontWeight: 800, color: color || C.text, whiteSpace: "nowrap", ...mono, letterSpacing: "-0.3px" }}>{value}</span>
-    {sub && <span style={{ fontSize: 10.5, color: C.textMuted, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
+    <span style={{ ...T.label, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+    <span style={{ ...T.value, color: color || C.text, whiteSpace: "nowrap", letterSpacing: "-0.3px" }}>{value}</span>
+    {sub && <span style={{ ...T.caption, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
   </div>
 );
 
 /* ── right-side stacked stat in an operation row header ── */
 const RowStat = ({ label, value, color }) => (
   <div style={{ minWidth: 92, textAlign: "right" }}>
-    <div style={{ fontSize: 8, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>{label}</div>
-    <div style={{ fontSize: 12, fontWeight: 800, color: color || C.text, whiteSpace: "nowrap", ...mono }}>{value}</div>
+    <div style={{ ...T.eyebrow, whiteSpace: "nowrap" }}>{label}</div>
+    <div style={{ ...T.valueSm, color: color || C.text, whiteSpace: "nowrap" }}>{value}</div>
   </div>
 );
 
@@ -360,7 +360,7 @@ const ExecutionAudit = () => {
       {/* ─────────── 3) KPI GRID — audit-specific only (performance/PF/Net PnL live on Overview) ─────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         <StatCard
-          label="Total Signals" tip="totalSignalsAudit" value={executed.length.toLocaleString()} icon={Target} color={C.purple}
+          label="Total Signals" tip="totalSignalsAudit" value={executed.length.toLocaleString()} icon={Target} color={C.textMuted}
           sub={`${kpi.closed.length} closed · ${kpi.active.length} active · ${kpi.pending.length} pending`}
           onClick={() => drill()}
         />

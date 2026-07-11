@@ -4,7 +4,7 @@ import {
   ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { Activity, AlertTriangle, Download, Scale, Target, TrendingDown, TrendingUp } from "lucide-react";
-import { C, cardStyle, mono, tdStyle, thStyle } from "../../theme";
+import { C, T, cardStyle, mono, tdStyle, thStyle } from "../../theme";
 import { Avatar, InfoTip, StatCard, Tag } from "../common";
 import { btcBenchmark, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { exportTrades } from "../../lib/exportData";
@@ -148,7 +148,7 @@ const PortfolioTab = () => {
       {/* Title + global export */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
         <div>
-          <div style={{ fontSize: "15px", fontWeight: "800" }}>Signal-Provider Performance</div>
+          <div style={{ ...T.sectionTitle, color: C.text }}>Signal-Provider Performance</div>
           <div style={{ fontSize: "11px", color: C.textMuted }}>Raw edge of the {mockTraders.length} traders feeding Robotín — before the filter. Robotín's executed results live in Wallet &amp; Audit. · {allTrades.length} trades · {allTrades.filter(t => !t.setupTag).length} unlabeled</div>
         </div>
         <div style={{ display: "flex", gap: "6px" }}>
@@ -164,11 +164,11 @@ const PortfolioTab = () => {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: "12px" }}>
-        <StatCard label="Profit Factor" value={kpis.profitFactor === Infinity ? "∞" : kpis.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
+        <StatCard label="Profit Factor" value={kpis.profitFactor === Infinity ? "∞" : kpis.profitFactor.toFixed(2)} icon={Scale} color={C.purple} tip="profitFactor" />
         <StatCard label="Sharpe Ratio" value={kpis.sharpe.toFixed(2)} icon={Activity} color={C.blue} tip="sharpe" />
         <StatCard label="Max Drawdown" value={`${kpis.maxDD.toFixed(1)}%`} icon={TrendingDown} color={C.red} tip="maxDD" />
         <StatCard label="Expectancy" value={`${kpis.expectancyR >= 0 ? "+" : ""}${kpis.expectancyR.toFixed(2)}R`} icon={Target} color={kpis.expectancyR >= 0 ? C.green : C.red} tip="expectancyR" />
-        <StatCard label="Total Trades" value={kpis.totalTrades.toLocaleString()} icon={TrendingUp} color={C.purple} />
+        <StatCard label="Total Trades" value={kpis.totalTrades.toLocaleString()} icon={TrendingUp} color={C.textMuted} />
       </div>
 
       {/* ── Return metrics — ROI basis toggle (catalog: normal vs leveraged variants) ── */}

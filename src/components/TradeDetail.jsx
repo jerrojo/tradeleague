@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Clock, Cpu, Bot, Check } from "lucide-react";
 import { CandleChart } from "./CandleChart";
 import { coinCandles } from "../data/robotin";
-import { C, cardStyle, mono } from "../theme";
+import { C, T, cardStyle, mono } from "../theme";
 import { price, usd, fmtDateTime } from "../lib/format";
 
 /* ═══════════════════════ TRADE DETAIL ═══════════════════════
@@ -36,7 +36,7 @@ const auditStatus = (trade) => {
 const HeaderStat = ({ label, value, color }) => (
   <div style={{ minWidth: 96 }}>
     <div style={{ ...sectionLabel, marginBottom: 4, whiteSpace: "nowrap" }}>{label}</div>
-    <div style={{ fontSize: 13, fontWeight: 800, color: color || C.text, whiteSpace: "nowrap", ...mono }}>{value}</div>
+    <div style={{ ...T.valueSm, color: color || C.text, whiteSpace: "nowrap" }}>{value}</div>
   </div>
 );
 
@@ -52,7 +52,7 @@ const DetailColumn = ({ title, children }) => (
 const Row = ({ label, value, color, bold }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, fontSize: 11 }}>
     <span style={{ color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
-    <span style={{ color: color || C.text, fontWeight: bold ? 800 : 600, whiteSpace: "nowrap", ...mono, textAlign: "right" }}>{value}</span>
+    <span style={{ ...T.valueSm, color: color || C.text, fontWeight: bold ? 800 : 700, whiteSpace: "nowrap", textAlign: "right" }}>{value}</span>
   </div>
 );
 

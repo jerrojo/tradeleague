@@ -14,7 +14,7 @@ import { mockTraders } from "./data/mockData";
 import { ALL_SIGNALS } from "./data/robotin";
 import { START_CAPITAL } from "./data/fund";
 import { usd, fmtTime } from "./lib/format";
-import { C, cardStyle, mono } from "./theme";
+import { C, T, cardStyle, mono } from "./theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
   { id: "24h", label: "24h" },
@@ -491,7 +491,8 @@ const App = () => {
               {/* Left: Tab title + one-line orientation (LukeW: say what the screen is for) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1px", minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <span style={{ fontSize: "16px", fontWeight: "700" }}>
+                  {/* top of the ladder: page 18/800 > section 15/700 > card 13/600 */}
+                  <span style={{ ...T.pageTitle, color: C.text }}>
                     {profileTrader ? profileTrader.name : (tabs.find(t => t.id === activeTab)?.label || "Arena")}
                   </span>
                   {/* Data provenance — honest about simulated vs live (flips to LIVE when connectors are wired) */}

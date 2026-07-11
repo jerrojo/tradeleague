@@ -1,7 +1,7 @@
 import { Bot, ChevronDown, ThumbsDown, ThumbsUp, User, Users } from "lucide-react";
 import { createPortal } from "react-dom";
 import { srand } from "../lib/scoring";
-import { C, cardStyle, mono, pillStyle } from "../theme";
+import { C, T, cardStyle, mono, pillStyle } from "../theme";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 /* Renders the value as-is. (Previously counted up from 0, which briefly showed
    misleading numbers — e.g. an 81% win rate flashing "16%" or a $68K price flashing
@@ -39,14 +39,14 @@ const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip, onClick 
     style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: "6px", ...(onClick ? { cursor: "pointer" } : {}) }}>
     {/* chip on the label row → long money values get the full card width below */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ ...T.label, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
       <IconChip icon={Icon} color={color} size={32} />
     </div>
     {/* nowrap: a money value must never break so the sign orphans onto its own line */}
-    <div style={{ fontSize: "23px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, whiteSpace: "nowrap", ...mono }}><AnimatedValue value={value} /></div>
-    {sub && <div style={{ fontSize: "11px", color: signTone(sub), marginTop: "1px", whiteSpace: "nowrap", ...mono }}>{sub}</div>}
+    <div style={{ ...T.valueLg, color: C.text, letterSpacing: "-0.3px", whiteSpace: "nowrap" }}><AnimatedValue value={value} /></div>
+    {sub && <div style={{ ...T.caption, color: signTone(sub), marginTop: "1px", whiteSpace: "nowrap", ...mono }}>{sub}</div>}
   </div>
 );
 
@@ -58,7 +58,7 @@ const Tag = ({ text, color = C.purple }) => <span style={pillStyle(color)}>{text
 const SectionHeader = ({ icon: Icon, title, subtitle, right, color = C.purple }) => (
   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
     <div style={{ minWidth: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "14px", fontWeight: 800, letterSpacing: "-0.2px", color: C.text }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "7px", ...T.sectionTitle, color: C.text }}>
         {Icon ? <Icon size={15} color={color} /> : null}{title}
       </div>
       {subtitle && <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "2px" }}>{subtitle}</div>}
@@ -253,7 +253,7 @@ const InfoTip = ({ k, children, inline = false }) => {
 
 
 /* ── MiniSparkline: inline SVG sparkline for tables & cards ── */
-const MiniSparkline = ({ data, width = 60, height = 20, color = C.green, showDot = true }) => {
+const MiniSparkline = ({ data, width = 60, height = 20, color = C.blue, showDot = true }) => {
   if (!data || data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -278,7 +278,7 @@ const tagBase = { display: "inline-flex", alignItems: "center", gap: "3px", font
 const BotTag = ({ isBot, size = 15 }) => {
   if (isBot == null) return null;
   const Icon = isBot ? Bot : User;
-  const clr = isBot ? C.cyan : C.green;
+  const clr = isBot ? C.cyan : C.blue;
   return (
     <span title={isBot ? "Bot — automated strategy" : "Human trader"} aria-label={isBot ? "Bot" : "Human"} style={{
       display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -300,7 +300,7 @@ const ToastProvider = ({ children }) => {
     setToasts(prev => [...prev.slice(-4), { id, msg, type }]);
     timersRef.current.push(setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000));
   }, []);
-  const colors = { success: C.green, error: C.red, info: C.blue, warning: C.amber, achievement: C.purple };
+  const colors = { success: C.blue, error: C.red, info: C.blue, warning: C.amber, achievement: C.purple };
   const icons = { success: "+", error: "x", info: "i", warning: "!", achievement: "*" };
   return (
     <ToastContext.Provider value={{ addToast }}>

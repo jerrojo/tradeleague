@@ -12,7 +12,7 @@ import { useProfile, useNav } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
 import { usd, pct, ratio, signColor, price, fmtDateTime, axisUsd } from "../../lib/format";
-import { C, cardStyle, mono } from "../../theme";
+import { C, T, cardStyle, mono } from "../../theme";
 
 const ASSETS = ["All", "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "ARB", "OP", "SUI", "TON", "NEAR", "INJ"];
 const DIRECTIONS = ["All", "LONG", "SHORT"];
@@ -95,11 +95,11 @@ const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.text
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6, ...(onClick ? { cursor: "pointer" } : {}) }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+      <span style={{ ...T.label, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
       <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={28} />
     </div>
-    <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.08 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: C.textFaint, ...mono }}>{sub}</div>}
+    <div style={{ ...T.valueLg, color: valueColor, whiteSpace: "nowrap" }}>{value}</div>
+    {sub && <div style={{ ...T.caption, ...mono }}>{sub}</div>}
   </div>
 );
 
@@ -479,7 +479,7 @@ const ExecutionEngine = () => {
       <div ref={listRef} style={{ scrollMarginTop: 96 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 800 }}>Per-signal detail</span>
+            <span style={{ ...T.sectionTitle, color: C.text }}>Per-signal detail</span>
             <span style={{ fontSize: 11, color: C.textMuted, backgroundColor: C.card, border: `1px solid ${C.border}`, padding: "2px 8px", borderRadius: 999 }}>{sim.rows.length} signals</span>
           </div>
           <div style={{ display: "flex", gap: 8 }}>

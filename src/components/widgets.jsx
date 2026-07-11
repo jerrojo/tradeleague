@@ -1,4 +1,4 @@
-import { C, cardStyle, mono } from "../theme";
+import { C, T, cardStyle, mono } from "../theme";
 import { AlertTriangle, Award, Eye, Lightbulb, TrendingDown, TrendingUp, Users, Zap } from "lucide-react";
 import { useMemo } from "react";
 /* ═══════════════════════ ACTIVITY HEATMAP (GitHub-style) ═══════════════════════ */
@@ -90,14 +90,14 @@ const ActivityHeatmap = ({ traderData }) => {
           const totalTrades = tradeDays.reduce((a, d) => a + d.trades, 0);
           const currentStreak = (() => { let s = 0; for (let i = allDays.length - 1; i >= 0; i--) { if (allDays[i].pnl > 0) s++; else break; } return s; })();
           return [
-            ["Active Days", `${tradeDays.length}/182`, C.blue],
+            ["Active Days", `${tradeDays.length}/182`, C.text],
             ["Win Days", `${winDays.length}`, C.green],
-            ["Total Trades", totalTrades, C.purple],
-            ["Current Streak", `${currentStreak}d`, C.amber],
+            ["Total Trades", totalTrades, C.text],
+            ["Current Streak", `${currentStreak}d`, C.text],
           ].map(([l, v, clr]) => (
             <div key={l}>
-              <div style={{ fontSize: "9px", color: C.textFaint, fontWeight: "600", textTransform: "uppercase" }}>{l}</div>
-              <div style={{ fontSize: "14px", fontWeight: "800", color: clr, ...mono }}>{v}</div>
+              <div style={{ ...T.eyebrow }}>{l}</div>
+              <div style={{ ...T.valueSm, color: clr }}>{v}</div>
             </div>
           ));
         })()}

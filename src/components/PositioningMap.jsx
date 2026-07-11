@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
 import { coinCandles, coinSignals } from "../data/robotin";
 import { Avatar, SectionHeader } from "./common";
-import { C, cardStyle, mono } from "../theme";
+import { C, T, cardStyle, mono } from "../theme";
 import { price } from "../lib/format";
 
 /* ═══════════════════════ POSITIONING MAP ═══════════════════════
@@ -153,14 +153,14 @@ const PositioningMap = ({ coin, currentPrice }) => {
         {/* big numbers */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 12 }}>
           <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 36, fontWeight: 900, color: C.red, ...mono, lineHeight: 1, letterSpacing: "-1px" }}>{shortPct}%</div>
+            <div style={{ ...T.valueXl, color: C.red, letterSpacing: "-0.5px" }}>{shortPct}%</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, letterSpacing: "0.6px", marginTop: 4 }}>SHORT · {shorts} pos</div>
           </div>
           <div style={{ textAlign: "center", color: C.textFaint, fontSize: 9.5, ...mono, paddingBottom: 4, lineHeight: 1.5 }}>
             weighted target<br /><span style={{ color: leanColor, fontWeight: 800, fontSize: 13 }}>{netPct >= 0 ? "+" : ""}{netPct.toFixed(2)}% vs now</span>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 36, fontWeight: 900, color: C.green, ...mono, lineHeight: 1, letterSpacing: "-1px" }}>{longPct}%</div>
+            <div style={{ ...T.valueXl, color: C.green, letterSpacing: "-0.5px" }}>{longPct}%</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, letterSpacing: "0.6px", marginTop: 4 }}>LONG · {longs} pos</div>
           </div>
         </div>
