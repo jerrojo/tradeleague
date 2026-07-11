@@ -27,8 +27,18 @@ const RADAR_LABELS = {
 };
 
 /* ═══════════════════════ TRADER PROFILE (standalone) ═══════════════════════ */
+/* Deep-link inbox. The Traders directory writes a target tab (+ signal book) here
+   before opening a profile; the profile is remounted per trader, so it reads the
+   keys on mount and CONSUMES them — a later, ordinary profile open lands on
+   Overview as usual. Same mechanism as Overview's fork → filtered Activity. */
+const takeDeepLink = (key, fallback) => {
+  try { const v = localStorage.getItem(key); if (v) { localStorage.removeItem(key); return v; } } catch { /* ignore */ }
+  return fallback;
+};
+
 const TraderProfile = ({ trader, onClose }) => {
-  const [profileTab, setProfileTab] = useState("overview");
+  const [profileTab, setProfileTab] = useState(() => takeDeepLink("tp:tab", "overview"));
+  const [sigBook, setSigBook] = useState(() => takeDeepLink("tp:book", "all")); // all | approved | rejected
   const [openSig, setOpenSig] = useState(null); // expanded signal row in the Signal Log
   const [isFollowing, setIsFollowing] = useState(false);
   const [alertsOn, setAlertsOn] = useState(false);
@@ -51,6 +61,12 @@ const TraderProfile = ({ trader, onClose }) => {
   const traderSignals = useMemo(() => ALL_SIGNALS
     .filter((s) => s.trader === t.name)
     .sort((a, b) => b.time - a.time), [t.name]);
+  // Signal log split by Robotín's verdict (deep-linkable from the Traders directory)
+  const logSignals = useMemo(() => (
+    sigBook === "approved" ? traderSignals.filter((s) => s.approved)
+      : sigBook === "rejected" ? traderSignals.filter((s) => !s.approved)
+        : traderSignals
+  ), [traderSignals, sigBook]);
   const lastCloseByCoin = LAST_CLOSE;
 
   // ── Fund attribution: what VARIV actually executed from THIS provider (approved
@@ -598,19 +614,34 @@ const TraderProfile = ({ trader, onClose }) => {
             <StatCard label="Approval Rate" value={`${robotinStats.rate}%`} icon={Target} color={robotinStats.rate >= 70 ? C.green : robotinStats.rate >= 50 ? C.amber : C.red} />
             <StatCard label="Rejected" value={robotinStats.total - robotinStats.approved} icon={TrendingDown} color={C.textMuted} />
           </div>
-          <SectionHeader
-            icon={Activity}
-            title="Signal log"
-            subtitle="Every signal this trader emitted and its lifecycle after the Robotín filter — newest first"
-          />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <SectionHeader
+              icon={Activity}
+              title="Signal log"
+              subtitle="Every signal this trader emitted and its lifecycle after the Robotín filter — newest first"
+            />
+            {/* Robotín's two books for THIS trader — the directory deep-links straight to "Approved" */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint }}>Book</span>
+              {[["all", "All", C.purple], ["approved", "Approved", C.green], ["rejected", "Rejected", C.red]].map(([id, label, tone]) => {
+                const on = sigBook === id;
+                return (
+                  <button key={id} onClick={() => setSigBook(id)} style={{
+                    padding: "4px 11px", borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                    border: `1px solid ${on ? tone : C.border}`, backgroundColor: on ? `${tone}1c` : "transparent", color: on ? tone : C.textMuted,
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+          </div>
           <SignalTable
-            signals={traderSignals}
+            signals={logSignals}
             openId={openSig}
             onToggle={(id) => setOpenSig(openSig === id ? null : id)}
             lastCloseFor={(s) => lastCloseByCoin[s.coin] ?? null}
             showTrader={false}
             viewId="profile-log"
-            exportName={`${t.name}-signal-log`}
+            exportName={`${t.name}-signal-log-${sigBook}`}
           />
         </div>
       )}

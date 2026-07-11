@@ -21,6 +21,16 @@ const TradersTab = () => {
   const setSortKey = (key) => setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "desc" }));
   const [search, setSearch] = useState("");
   const { openProfile } = useProfile();
+  // Deep-link: clicking a provider's Robotín-approval cell opens their profile on the
+  // Signal log, pre-filtered to the APPROVED book — the same "click the number, see the
+  // rows behind it" contract as Overview's fork → filtered Activity.
+  const openApproved = (t) => {
+    try {
+      localStorage.setItem("tp:tab", "signal_log");
+      localStorage.setItem("tp:book", "approved");
+    } catch { /* ignore */ }
+    openProfile(t);
+  };
 
   // Robotín approval + executed-PnL attribution per trader (the allocator's key
   // question: which provider's APPROVED signals actually made the fund money)
@@ -86,6 +96,8 @@ const TradersTab = () => {
           ))}
         </div>
       </div>
+
+      <style>{`.robotin-approval:hover span { color: ${C.purple} !important; border-bottom-color: ${C.purple} !important; }`}</style>
 
       {view === "leaderboard" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -190,10 +202,18 @@ const TradersTab = () => {
                     )}
                     <td style={{ ...tdStyle }}>
                       {(() => { const r = robotinByTrader[t.name] || { rate: 0, approved: 0, total: 0 }; return (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "1px", ...mono }}>
+                        <span
+                          className="robotin-approval"
+                          role="button"
+                          tabIndex={0}
+                          title={`See ${t.name}'s ${r.approved} approved signals`}
+                          onClick={(e) => { e.stopPropagation(); openApproved(t); }}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); openApproved(t); } }}
+                          style={{ display: "inline-flex", flexDirection: "column", gap: "1px", cursor: "pointer", ...mono }}
+                        >
                           <span style={{ fontWeight: "800", fontSize: "12px", color: r.rate >= 70 ? C.green : r.rate >= 50 ? C.amber : C.red }}>{r.rate}%</span>
-                          <span style={{ fontSize: "9px", color: C.textFaint }}>{r.approved}/{r.total} signals</span>
-                        </div>
+                          <span style={{ fontSize: "9px", color: C.textFaint, whiteSpace: "nowrap", borderBottom: `1px dashed ${C.purple}55` }}>{r.approved}/{r.total} signals</span>
+                        </span>
                       ); })()}
                     </td>
                     {/* Fund P&L — the executed-PnL this provider's approved signals contributed to VARIV */}
