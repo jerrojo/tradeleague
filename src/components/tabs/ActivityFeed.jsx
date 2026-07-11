@@ -25,11 +25,19 @@ const BOOK = [
 ];
 const isWin = (s) => (s.approved ? (s.status === "closed" && s.hit === "TP") : (s.hypoClosed && s.hypoPnl > 0));
 const isLoss = (s) => (s.approved ? (s.status === "closed" && s.hit === "SL") : (s.hypoClosed && s.hypoPnl < 0));
+/* A REJECTED signal's `status` is literally "rejected" — it was never executed, so its
+   lifecycle only exists in the counterfactual (hypoStatus / hypoClosed). Reading the
+   realized status for the rejected book returned nothing, so "4 rejected still open"
+   deep-linked to an empty tape. Every lifecycle test therefore reads the realized state
+   for approved signals and the hypothetical one for rejected — same rule isWin/isLoss
+   already follow, which is what makes "Rejected · Active" a meaningful combination. */
 const isClosed = (s) => (s.approved ? s.status === "closed" : !!s.hypoClosed);
+const isActive = (s) => (s.approved ? s.status === "active" : s.hypoStatus === "active");
+const isPending = (s) => (s.approved ? s.status === "pending" : s.hypoStatus === "pending");
 const STATUS = [
   { id: "all", label: "All", test: () => true },
-  { id: "active", label: "Active", test: (s) => s.status === "active" },
-  { id: "pending", label: "Pending", test: (s) => s.status === "pending" },
+  { id: "active", label: "Active", test: isActive },
+  { id: "pending", label: "Pending", test: isPending },
   { id: "closed", label: "Closed", test: isClosed },
   { id: "wins", label: "Wins", test: isWin, tone: "green" },
   { id: "losses", label: "Losses", test: isLoss, tone: "red" },
