@@ -8,15 +8,9 @@ import { useProfile, useTimeframe } from "../../contexts";
 import { coinCandles, coinSignals, signalMarkers, ROBOTIN_COINS } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { C, cardStyle } from "../../theme";
+import { price } from "../../lib/format";
 
-const fmt = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (a >= 0.01) return p.toFixed(4);
-  if (a >= 0.0001) return p.toFixed(6);
-  return p.toPrecision(3);
-};
+const fmt = price; // single price ladder platform-wide
 
 const RobotinSignals = ({ coin: coinProp, embedded = false, onlyTrades = false, onSelectCoin, coins: coinsProp, coinMeta: metaProp, categories = [] } = {}) => {
   const { openProfile } = useProfile();

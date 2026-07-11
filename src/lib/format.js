@@ -34,7 +34,7 @@ export const pct = (x, { signed = false, decimals = 1 } = {}) => {
 export const bps = (x, { signed = true } = {}) => {
   if (!Number.isFinite(x)) return "—";
   const sign = x < 0 ? "−" : signed ? "+" : "";
-  return `${sign}${Math.round(Math.abs(x))} bps`;
+  return `${sign}${Math.round(Math.abs(x))} bps`; // nbsp: the unit never orphans
 };
 
 /* Plain number with thousands separators and chosen decimals. */
@@ -57,3 +57,25 @@ export const ratio = (x, d = 2) => (!Number.isFinite(x) || x >= 999 ? "∞" : x.
 
 /* Semantic color for a signed value (caller still adds a sign/arrow for a11y). */
 export const signColor = (x, C) => (x > 0 ? C.green : x < 0 ? C.red : C.textMuted);
+
+/* ═══════════════════════ DATES (single source of truth) ═══════════════════════
+   NEVER render a numeric month: "7/11/2026" is Jul-11 to a US reader and Nov-7 to
+   everyone else. Always spell the month. Accepts a Date, epoch ms, or epoch
+   seconds (signals carry seconds; the ledger carries ms — the heuristic below
+   tells them apart, since 1e12 ms is the year 2001). */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const p2 = (x) => String(x).padStart(2, "0");
+const toDate = (v) => (v instanceof Date ? v : new Date(typeof v === "number" && Math.abs(v) < 1e12 ? v * 1000 : v));
+const bad = (d) => !d || Number.isNaN(d.getTime());
+
+/* 07 Nov 2026 */
+export const fmtDate = (v) => { const d = toDate(v); return bad(d) ? "—" : `${p2(d.getDate())} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+
+/* 07 Nov — day bucket, no year */
+export const fmtDayShort = (v) => { const d = toDate(v); return bad(d) ? "—" : `${p2(d.getDate())} ${MONTHS[d.getMonth()]}`; };
+
+/* 02:30 PM — no seconds anywhere in the product */
+export const fmtTime = (v) => { const d = toDate(v); return bad(d) ? "—" : d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); };
+
+/* 07 Nov 2026, 02:30 PM */
+export const fmtDateTime = (v) => { const d = toDate(v); return bad(d) ? "—" : `${fmtDate(d)}, ${fmtTime(d)}`; };

@@ -3,6 +3,7 @@ import { Clock, Cpu, Bot, Check } from "lucide-react";
 import { CandleChart } from "./CandleChart";
 import { coinCandles } from "../data/robotin";
 import { C, cardStyle, mono } from "../theme";
+import { price, usd, fmtDateTime } from "../lib/format";
 
 /* ═══════════════════════ TRADE DETAIL ═══════════════════════
    Institutional, audit-grade view of a single Robotín-approved trade: the
@@ -10,19 +11,11 @@ import { C, cardStyle, mono } from "../theme";
    model's reasoning, and a resampleable execution chart with entry/SL/TP lines. */
 
 const round2 = (x) => (x == null ? null : x < 1 ? Math.round(x * 1e5) / 1e5 : Math.round(x * 100) / 100);
-const fmt = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (a >= 0.01) return p.toFixed(4);
-  if (a >= 0.0001) return p.toFixed(6);
-  return p.toPrecision(3);
-};
-const fmtUsd = (v) => (v == null ? "—" : `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
+const fmt = price; // one price ladder platform-wide
+const fmtUsd = (v) => (v == null ? "—" : usd(v, { signed: true }));
 
-/* unix seconds → "Jun 16, 14:32" */
-const fmtTime = (t) =>
-  t == null ? "—" : new Date(t * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+/* unix seconds → "07 Nov 2026, 02:30 PM" */
+const fmtTime = fmtDateTime;
 
 /* deterministic pseudo-random in [0,1) from a string seed (matches data/robotin srand) */
 const seedFrom = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1e9; const x = Math.sin(h) * 10000; return x - Math.floor(x); };
@@ -42,8 +35,8 @@ const auditStatus = (trade) => {
 /* ── small label/value column used in the header (right side) ── */
 const HeaderStat = ({ label, value, color }) => (
   <div style={{ minWidth: 96 }}>
-    <div style={{ ...sectionLabel, marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 13, fontWeight: 800, color: color || C.text, ...mono }}>{value}</div>
+    <div style={{ ...sectionLabel, marginBottom: 4, whiteSpace: "nowrap" }}>{label}</div>
+    <div style={{ fontSize: 13, fontWeight: 800, color: color || C.text, whiteSpace: "nowrap", ...mono }}>{value}</div>
   </div>
 );
 
@@ -58,8 +51,8 @@ const DetailColumn = ({ title, children }) => (
 /* ── a label → value row ── */
 const Row = ({ label, value, color, bold }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, fontSize: 11 }}>
-    <span style={{ color: C.textMuted }}>{label}</span>
-    <span style={{ color: color || C.text, fontWeight: bold ? 800 : 600, ...mono, textAlign: "right" }}>{value}</span>
+    <span style={{ color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+    <span style={{ color: color || C.text, fontWeight: bold ? 800 : 600, whiteSpace: "nowrap", ...mono, textAlign: "right" }}>{value}</span>
   </div>
 );
 
@@ -229,7 +222,7 @@ const TradeDetail = ({ trade, candles }) => {
           <HeaderStat label="Signal claim" value={trade.signalOutcome === "TP" ? "Take Profit" : (trade.signalOutcome || "—")} color={C.textMuted} />
           <HeaderStat label="Audit Status" value={audit.label} color={audit.color} />
           <HeaderStat label="Match" value={`${match.prefix}${match.label}`} color={match.color} />
-          <HeaderStat label="Net PNL" value={netPnlDisplay} color={netPnlColor} />
+          <HeaderStat label="Net P&L" value={netPnlDisplay} color={netPnlColor} />
         </div>
       </div>
 
@@ -256,13 +249,13 @@ const TradeDetail = ({ trade, candles }) => {
         {/* PERFORMANCE */}
         <DetailColumn title="Performance">
           {isClosed ? (<>
-            <Row label="Realized PNL" value={fmtUsd(realized)} color={(realized ?? 0) >= 0 ? C.green : C.red} />
+            <Row label="Realized P&L" value={fmtUsd(realized)} color={(realized ?? 0) >= 0 ? C.green : C.red} />
             <Row label="Total Fees" value={`−$${fees.toFixed(2)}`} color={C.textMuted} />
-            <Row label="Net PNL" value={fmtUsd(trade.pnl)} color={pnlColor} bold />
+            <Row label="Net P&L" value={fmtUsd(trade.pnl)} color={pnlColor} bold />
             <Row label="ROI Notional" value={`${(trade.pnlPct ?? 0) >= 0 ? "+" : ""}${(trade.pnlPct ?? 0).toFixed(2)}%`} color={(trade.pnlPct ?? 0) >= 0 ? C.green : C.red} />
           </>) : isOpen ? (<>
             <Row label="Status" value={trade.status === "pending" ? "Pending fill" : "Open position"} color={C.blue} bold />
-            <Row label="Unrealized PNL" value="—" color={C.textMuted} />
+            <Row label="Unrealized P&L" value="—" color={C.textMuted} />
             <Row label="Planned R:R" value={`${rr.toFixed(2)}R`} color={C.green} />
             <Row label="Risk to SL" value={`${(Math.abs((trade.entry - trade.sl) / trade.entry) * 100).toFixed(2)}%`} color={C.red} />
           </>) : (

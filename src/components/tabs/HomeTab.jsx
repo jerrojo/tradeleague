@@ -4,7 +4,7 @@ import { Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
-import { usdCompact } from "../../lib/format";
+import { usd, usdCompact } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 import { useMemo, useState } from "react";
 
@@ -20,7 +20,7 @@ const RaceTooltip = ({ active, payload, label }) => {
         <div key={idx} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", marginBottom: idx < entries.length - 1 ? "4px" : "0" }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: entry.color, flexShrink: 0 }} />
           <span style={{ color: C.text, fontWeight: "500" }}>{entry.name}</span>
-          <span style={{ color: C.textMuted, marginLeft: "auto", ...mono }}>${Number(entry.value).toLocaleString()}</span>
+          <span style={{ color: C.textMuted, marginLeft: "auto", whiteSpace: "nowrap", ...mono }}>{usd(Number(entry.value))}</span>
         </div>
       ))}
     </div>

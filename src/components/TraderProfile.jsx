@@ -9,6 +9,7 @@ import { traderDeepData } from "../data/mockData";
 import { ALL_SIGNALS, lastCloseByCoin as LAST_CLOSE } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
+import { usd, price, usdCompact } from "../lib/format";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../theme";
 import { ToastContext } from "./common";
@@ -197,7 +198,7 @@ const TraderProfile = ({ trader, onClose }) => {
           {/* ── RIGHT: KPI Stats column with colored accents ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "180px" }}>
             {[
-              ["Total PnL", `+$${(t.pnl / 1000).toFixed(1)}K`, C.green, null, DollarSign],
+              ["Total P&L", usdCompact(t.pnl, { signed: true }), C.green, null, DollarSign],
               ["Win Rate", `${t.winRate}%`, C.green, "winRate", Target],
               ["Sharpe", t.sharpe.toFixed(1), C.blue, "sharpe", Activity],
               ["Max Drawdown", `${t.maxDD}%`, C.red, "maxDD", TrendingDown],
@@ -205,7 +206,7 @@ const TraderProfile = ({ trader, onClose }) => {
               ["Calmar", histMetrics.calmar === Infinity ? "∞" : histMetrics.calmar.toFixed(2), histMetrics.calmar >= 3 ? C.green : histMetrics.calmar >= 1 ? C.amber : C.red, "calmarRatio", Scale],
               ["Expectancy", `$${calcExpectancy(t)}`, expectancyColor(calcExpectancy(t)), "expectancy", Lightbulb],
               ["Streak", `${t.streak}W`, C.purple, "streak", Flame],
-            ].filter(row => proMode || ["Total PnL", "Win Rate", "Profit Factor", "Max Drawdown"].includes(row[0])).map(([l, v, clr, tip, Icon]) => (
+            ].filter(row => proMode || ["Total P&L", "Win Rate", "Profit Factor", "Max Drawdown"].includes(row[0])).map(([l, v, clr, tip, Icon]) => (
               <div key={l} style={{
                 display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px",
                 borderRadius: "6px", backgroundColor: `${clr}06`, borderLeft: `2px solid ${clr}50`
@@ -232,13 +233,13 @@ const TraderProfile = ({ trader, onClose }) => {
             </span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-            <StatCard label="Net P&L" value={`${journal.totalNetPnl >= 0 ? "+" : "-"}$${Math.abs(journal.totalNetPnl).toLocaleString()}`} icon={DollarSign} color={journal.totalNetPnl >= 0 ? C.green : C.red} />
+            <StatCard label="Net P&L" value={usd(journal.totalNetPnl, { signed: true })} icon={DollarSign} color={journal.totalNetPnl >= 0 ? C.green : C.red} />
             <StatCard label="Win Rate" value={`${journal.winRate}%`} sub={`${journal.wins}W / ${journal.losses}L`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Profit Factor" value={journal.profitFactor === Infinity ? "∞" : journal.profitFactor.toFixed(2)} icon={Scale} color={C.amber} tip="profitFactor" />
             <StatCard label="Expectancy" value={`${journal.expectancyR >= 0 ? "+" : ""}${journal.expectancyR.toFixed(2)}R`} icon={Lightbulb} color={journal.expectancyR >= 0 ? C.green : C.red} tip="expectancyR" />
             <StatCard label="Max Drawdown" value={`${journal.maxDrawdownPct}%`} icon={TrendingDown} color={C.red} tip="maxDD" />
-            <StatCard label="Avg Win / Loss" value={`+$${Math.round(journal.avgWin).toLocaleString()}`} sub={`-$${Math.abs(Math.round(journal.avgLoss)).toLocaleString()}`} icon={TrendingUp} color={C.green} />
-            <StatCard label="Best / Worst" value={`+$${journal.bestTrade.toLocaleString()}`} sub={`-$${Math.abs(journal.worstTrade).toLocaleString()}`} icon={Trophy} color={C.blue} />
+            <StatCard label="Avg Win / Loss" value={usd(Math.round(journal.avgWin), { signed: true })} sub={usd(-Math.abs(Math.round(journal.avgLoss)))} icon={TrendingUp} color={C.green} />
+            <StatCard label="Best / Worst" value={usd(journal.bestTrade, { signed: true })} sub={usd(-Math.abs(journal.worstTrade))} icon={Trophy} color={C.blue} />
             <StatCard label="Best Streak" value={`${journal.bestStreak}W`} icon={Flame} color={C.purple} tip="streak" />
           </div>
         </div>
@@ -304,7 +305,7 @@ const TraderProfile = ({ trader, onClose }) => {
                 <YAxis yAxisId="pct" stroke={C.textMuted} fontSize={10} tickFormatter={v => `${v}%`} />
                 <YAxis yAxisId="usd" orientation="right" stroke={C.textFaint} fontSize={9} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }}
-                  formatter={(v, name) => name === "gross" ? [`$${Number(v).toLocaleString()}`, "Account balance"] : name === "ddPct" ? [`${v}%`, "Drawdown"] : [`${v >= 0 ? "+" : ""}${v}%`, "Cumulative return"]} />
+                  formatter={(v, name) => name === "gross" ? [usd(Number(v)), "Account balance"] : name === "ddPct" ? [`${v}%`, "Drawdown"] : [`${v >= 0 ? "+" : ""}${v}%`, "Cumulative return"]} />
                 <Area isAnimationActive={false} yAxisId="pct" type="monotone" dataKey="retPct" stroke={C.green} fill="url(#profEq)" strokeWidth={2} dot={false} name="retPct" />
                 <Area isAnimationActive={false} yAxisId="pct" type="monotone" dataKey="ddPct" stroke={C.red} fill="url(#ddFill)" strokeWidth={1} dot={false} connectNulls={false} name="ddPct" />
                 <Line isAnimationActive={false} yAxisId="usd" type="monotone" dataKey="gross" stroke={C.blue} strokeWidth={1.5} strokeDasharray="5 3" dot={false} name="gross" />
@@ -330,7 +331,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Monthly P&L</div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={deep.monthlyPnl}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="month" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
-                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "PnL"]} />
+                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [usd(Number(v), { signed: true }), "P&L"]} />
                 <Bar isAnimationActive={false} dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
               </ResponsiveContainer>
             </div>
@@ -346,7 +347,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={cardStyle}>
               <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 }}>
                 {[
-                  ["Executed P&L", `${fundAttr.execPnl >= 0 ? "+" : "−"}$${Math.abs(fundAttr.execPnl).toLocaleString()}`, fundAttr.execPnl >= 0 ? C.green : C.red],
+                  ["Executed P&L", usd(fundAttr.execPnl, { signed: true }), fundAttr.execPnl >= 0 ? C.green : C.red],
                   ["Approved & closed", `${fundAttr.closedN}`, C.text],
                   ["Win rate", `${fundAttr.winRate}%`, fundAttr.winRate >= 50 ? C.green : C.amber],
                   ["Active now", `${fundAttr.activeN}`, C.blue],
@@ -368,7 +369,7 @@ const TraderProfile = ({ trader, onClose }) => {
                   <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
                   <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
                   <YAxis stroke={C.textMuted} fontSize={9} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
-                  <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [`$${Number(v).toLocaleString()}`, "Cumulative executed P&L"]} />
+                  <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [usd(Number(v), { signed: true }), "Cumulative executed P&L"]} />
                   <Area isAnimationActive={false} type="monotone" dataKey="pnl" stroke={fundAttr.execPnl >= 0 ? C.green : C.red} strokeWidth={2} fill={`url(#fa-${t.name.replace(/\s/g, "")})`} dot={false} isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -381,14 +382,14 @@ const TraderProfile = ({ trader, onClose }) => {
               ) : fundAttr.setupRows.map((r) => (
                 <div key={r.k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 11.5 }}>
                   <span style={{ color: C.text, fontWeight: 600 }}>{r.k} <span style={{ color: C.textFaint, fontWeight: 400 }}>· {r.n} · {r.wr}% WR</span></span>
-                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{r.pnl >= 0 ? "+" : "−"}${Math.abs(Math.round(r.pnl)).toLocaleString()}</span>
+                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{usd(Math.round(r.pnl), { signed: true })}</span>
                 </div>
               ))}
               <div style={{ fontSize: 12, fontWeight: 700, margin: "12px 0 8px" }}>Top coins</div>
               {fundAttr.coinRows.map((r) => (
                 <div key={r.k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 11.5 }}>
                   <span style={{ color: C.text, fontWeight: 600 }}>{r.k} <span style={{ color: C.textFaint, fontWeight: 400 }}>· {r.n} · {r.wr}% WR</span></span>
-                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{r.pnl >= 0 ? "+" : "−"}${Math.abs(Math.round(r.pnl)).toLocaleString()}</span>
+                  <span style={{ ...mono, fontWeight: 800, color: r.pnl >= 0 ? C.green : C.red }}>{usd(Math.round(r.pnl), { signed: true })}</span>
                 </div>
               ))}
             </div>
@@ -425,8 +426,8 @@ const TraderProfile = ({ trader, onClose }) => {
             <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-            <StatCard label="Avg Profit / Signal" value={`$${deep.signalStats.avgPnlPerSignal.toLocaleString()}`} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
-            <StatCard label="Best Signal" value={`+$${deep.signalStats.bestSignal.toLocaleString()}`} icon={Trophy} color={C.green} />
+            <StatCard label="Avg Profit / Signal" value={usd(deep.signalStats.avgPnlPerSignal, { signed: true })} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
+            <StatCard label="Best Signal" value={usd(deep.signalStats.bestSignal, { signed: true })} icon={Trophy} color={C.green} />
             <StatCard label="Actionability" value={`${deep.signalStats.actionability}%`} icon={Crosshair} color={C.blue} tip="actionability" />
             <StatCard label="Avg TP Time" value={deep.signalStats.avgTpTime} icon={Clock} color={C.purple} tip="avgTpTime" />
           </div>
@@ -446,9 +447,9 @@ const TraderProfile = ({ trader, onClose }) => {
                       <span style={{ fontSize: "10px", color: C.textMuted }}>{s.group}</span>
                     </div>
                     <div style={{ display: "flex", gap: "16px", fontSize: "11px", color: C.textMuted }}>
-                      <span><InfoTip k="entryZone" inline><span>Entry:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${s.entry.toLocaleString()}</span></span>
-                      <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${s.tp.toLocaleString()}</span></span>
-                      <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${s.sl.toLocaleString()}</span></span>
+                      <span><InfoTip k="entryZone" inline><span>Entry:</span></InfoTip> <span style={{ color: C.text, ...mono }}>${price(s.entry)}</span></span>
+                      <span><InfoTip k="tp" inline><span>TP:</span></InfoTip> <span style={{ color: C.green, ...mono }}>${price(s.tp)}</span></span>
+                      <span><InfoTip k="sl" inline><span>SL:</span></InfoTip> <span style={{ color: C.red, ...mono }}>${price(s.sl)}</span></span>
                       <span><InfoTip k="rr" inline><span>R:R</span></InfoTip> <span style={{ color: C.blue, ...mono }}>{s.rr}</span></span>
                     </div>
                     <div style={{ fontSize: "11px", color: C.textMuted, marginTop: "4px", fontStyle: "italic" }}>{s.analysis}</div>
@@ -456,7 +457,7 @@ const TraderProfile = ({ trader, onClose }) => {
                     <TradeStructureDiagram entry={s.entry} sl={s.sl} tp={s.tp} type={s.type} />
                   </div>
                   <div style={{ textAlign: "right", minWidth: "100px", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</div>
+                    <div style={{ fontSize: "14px", fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red, ...mono }}>{usd(s.pnl, { signed: true })}</div>
                     <div style={{ fontSize: "10px", color: C.textMuted }}>{s.subscribers} subs</div>
                     <TelegramButton signal={{ trader: t.name, coin: (s.pair || "").split("/")[0], dir: s.type, entry: s.entry, sl: s.sl, tp1: s.tp, approved: true, reasoning: s.analysis }} size={20} />
                   </div>
@@ -469,19 +470,19 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Signal History — Last 12</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","PnL","Status","Subscribers","Date","Signal"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","P&L","Status","Subscribers","Date","Signal"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.signals.map(s => (
                     <tr key={s.id} style={{ borderLeft: `3px solid ${s.type === "LONG" ? C.green : C.red}` }}>
                       <td style={{ ...tdStyle, fontWeight: "600" }}>{s.pair}</td>
                       <td style={tdStyle}><Tag text={s.type} color={s.type === "LONG" ? C.green : C.red} /></td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${s.entry.toLocaleString()}</td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.green }}>${s.tp.toLocaleString()}</td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.red }}>${s.sl.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${price(s.entry)}</td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.green }}>${price(s.tp)}</td>
+                      <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.red }}>${price(s.sl)}</td>
                       <td style={{ ...tdStyle, ...mono, color: C.amber }}>{s.leverage}</td>
                       <td style={{ ...tdStyle, ...mono }}>{s.rr}</td>
                       <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.group}</td>
-                      <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red }}>{s.pnl >= 0 ? "+" : ""}${s.pnl.toLocaleString()}</td>
+                      <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red }}>{usd(s.pnl, { signed: true })}</td>
                       <td style={tdStyle}><Tag text={s.status === "active" ? "Active" : s.status === "tp_hit" ? "TP Hit" : "SL Hit"} color={s.status === "active" ? C.blue : s.status === "tp_hit" ? C.green : C.red} /></td>
                       <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>{s.subscribers}</td>
                       <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.date}</td>
@@ -513,7 +514,7 @@ const TraderProfile = ({ trader, onClose }) => {
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Pair","Type","Style","Entry","Exit","PnL","R","Duration","Outcome","Setup","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <thead><tr>{["Pair","Type","Style","Entry","Exit","P&L","R","Duration","Outcome","Setup","Date"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.history.map(tr => {
                     const isOpen = expandedTrade === tr.id;
@@ -524,10 +525,10 @@ const TraderProfile = ({ trader, onClose }) => {
                           <td style={{ ...tdStyle, fontWeight: "600" }}>{tr.pair}</td>
                           <td style={tdStyle}><Tag text={tr.type} color={tr.type === "LONG" ? C.green : C.red} /></td>
                           <td style={tdStyle}><span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 7px", borderRadius: "3px", backgroundColor: `${C.blue}15`, color: C.blue, border: `1px solid ${C.blue}30`, ...mono }}>{tr.style}</span></td>
-                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.entry.toLocaleString()}</td>
-                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${tr.exit.toLocaleString()}</td>
+                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${price(tr.entry)}</td>
+                          <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>${price(tr.exit)}</td>
                           <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: tr.pnl >= 0 ? C.green : C.red }}>
-                            {tr.pnl >= 0 ? "+" : ""}${tr.pnl.toLocaleString()}
+                            {usd(tr.pnl, { signed: true })}
                             <div style={{ fontSize: "9px", fontWeight: "600", color: tr.pnlPct >= 0 ? `${C.green}cc` : `${C.red}cc` }}>{tr.pnlPct >= 0 ? "+" : ""}{tr.pnlPct}% · {tr.leverage}</div>
                           </td>
                           <td style={{ ...tdStyle, ...mono, color: tr.rMultiple >= 0 ? C.green : C.red, fontWeight: "600" }}>{tr.rMultiple >= 0 ? "+" : ""}{tr.rMultiple}R</td>
@@ -561,7 +562,7 @@ const TraderProfile = ({ trader, onClose }) => {
                                     ["Source", tr.source || "—", C.blue, "source"],
                                     ["Setup tag", tr.setupTag || "— pending —", tr.setupTag ? C.purple : C.amber, "setupTag"],
                                     ["Style conf.", tr.styleConfidence != null ? `${Math.round(tr.styleConfidence * 100)}%` : "—", tr.styleConfidence >= 0.75 ? C.green : C.amber, "styleConfidence"],
-                                    ["Position size", `$${tr.sizeUsd.toLocaleString()}${tr.positionSizePct != null ? ` · ${tr.positionSizePct}%` : ""}`, C.text, "positionSizePct"],
+                                    ["Position size", `${usd(tr.sizeUsd)}${tr.positionSizePct != null ? ` · ${tr.positionSizePct}%` : ""}`, C.text, "positionSizePct"],
                                     ["R:R gross / net", `${tr.rrGross ?? "—"} / ${tr.rrNet ?? "—"}`, C.blue, "rrNet"],
                                     ["Fees paid", `$${tr.fees}`, C.textMuted, null],
                                     ["Exit reason", tr.exitReason.replace("_", " "), tr.exitReason === "TP_HIT" ? C.green : tr.exitReason === "SL_HIT" ? C.red : C.amber, null],
@@ -618,7 +619,7 @@ const TraderProfile = ({ trader, onClose }) => {
       {profileTab === "pnl" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
-            <StatCard label="Total PnL" value={`+$${(t.pnl / 1000).toFixed(1)}K`} icon={TrendingUp} color={C.green} />
+            <StatCard label="Total P&L" value={usdCompact(t.pnl, { signed: true })} icon={TrendingUp} color={C.green} />
             <StatCard label="Best Month" value={t.bestMonth} icon={Trophy} color={C.green} />
             <StatCard label="Worst Month" value={t.worstMonth} icon={TrendingDown} color={C.red} />
             <StatCard label="Profit Factor" value={t.profitFactor?.toFixed(1) || "—"} icon={Target} color={C.amber} />
@@ -627,16 +628,16 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "12px" }}>Monthly P&L Breakdown</div>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={deep.monthlyPnl}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="month" stroke={C.textMuted} fontSize={11} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "PnL"]} />
+              <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [usd(Number(v), { signed: true }), "P&L"]} />
               <Bar isAnimationActive={false} dataKey="pnl" radius={[4, 4, 0, 0]}>{deep.monthlyPnl.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
             </ResponsiveContainer>
           </div>
           <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>{["Month","PnL","Trades","Win Rate","Result"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+              <thead><tr>{["Month","P&L","Trades","Win Rate","Result"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
               <tbody>{deep.monthlyPnl.map(m => (
                 <tr key={m.month}><td style={{ ...tdStyle, fontWeight: "600" }}>{m.month} 2026</td>
-                <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: m.pnl >= 0 ? C.green : C.red }}>{m.pnl >= 0 ? "+" : ""}${m.pnl.toLocaleString()}</td>
+                <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: m.pnl >= 0 ? C.green : C.red }}>{usd(m.pnl, { signed: true })}</td>
                 <td style={{ ...tdStyle, ...mono }}>{m.trades}</td><td style={{ ...tdStyle, ...mono }}>{m.winRate}%</td>
                 <td style={tdStyle}><Tag text={m.pnl >= 0 ? "Profitable" : "Loss"} color={m.pnl >= 0 ? C.green : C.red} /></td></tr>
               ))}</tbody>
@@ -648,7 +649,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <AreaChart data={deep.dailyEquity}>
                 <defs><linearGradient id="pnlEq" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={C.blue} stopOpacity={0.3} /><stop offset="95%" stopColor={C.blue} stopOpacity={0} /></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="day" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
-                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [`$${Number(v).toLocaleString()}`, "Equity"]} />
+                <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} formatter={v => [usd(Number(v)), "Equity"]} />
                 <Area isAnimationActive={false} type="monotone" dataKey="equity" stroke={C.blue} fill="url(#pnlEq)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
@@ -687,7 +688,7 @@ const TraderProfile = ({ trader, onClose }) => {
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={deep.riskDna.dayOfWeek}><CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} /><XAxis dataKey="day" stroke={C.textMuted} fontSize={10} /><YAxis stroke={C.textMuted} fontSize={10} tickFormatter={v => `$${(v/1000).toFixed(0)}K`} />
                 <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: "6px", fontSize: "12px" }} />
-                <Bar isAnimationActive={false} dataKey="pnl" name="PnL" radius={[3, 3, 0, 0]}>{deep.riskDna.dayOfWeek.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
+                <Bar isAnimationActive={false} dataKey="pnl" name="P&L" radius={[3, 3, 0, 0]}>{deep.riskDna.dayOfWeek.map((e, i) => <Cell key={i} fill={e.pnl >= 0 ? C.green : C.red} />)}</Bar></BarChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -755,7 +756,7 @@ const TraderProfile = ({ trader, onClose }) => {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Journal Entries" value={deep.journal.length} icon={Activity} color={C.blue} />
-            <StatCard label="Net PnL (Journaled)" value={`$${deep.journal.reduce((a, j) => a + j.pnl, 0).toLocaleString()}`} icon={TrendingUp} color={C.green} />
+            <StatCard label="Net P&L (journaled)" value={usd(deep.journal.reduce((a, j) => a + j.pnl, 0), { signed: true })} icon={TrendingUp} color={C.green} />
             <StatCard label="Most Common Mood" value="Focused" icon={Target} color={C.blue} />
             <StatCard label="Avg Tags/Entry" value={(deep.journal.reduce((a, j) => a + j.tags.length, 0) / deep.journal.length).toFixed(1)} icon={Star} color={C.purple} />
           </div>
@@ -770,7 +771,7 @@ const TraderProfile = ({ trader, onClose }) => {
                   </div>
                 </div>
                 <div style={{ fontSize: "16px", fontWeight: "800", color: entry.pnl >= 0 ? C.green : entry.pnl < 0 ? C.red : C.textMuted, ...mono }}>
-                  {entry.pnl > 0 ? "+" : ""}{entry.pnl === 0 ? "No trades" : `$${entry.pnl.toLocaleString()}`}
+                  {entry.pnl === 0 ? "No trades" : usd(entry.pnl, { signed: true })}
                 </div>
               </div>
               <div style={{ fontSize: "13px", color: C.text, lineHeight: "1.7", marginBottom: "10px" }}>{entry.text}</div>

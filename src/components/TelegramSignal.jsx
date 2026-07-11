@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { mockTraders } from "../data/mockData";
 import { C, mono } from "../theme";
+import { price } from "../lib/format";
 
 /* ═══════════════════════ TELEGRAM SIGNAL ═══════════════════════
    Every signal/trade can show its ORIGINAL post as it arrived on Telegram — the
@@ -20,13 +21,7 @@ const XGlyph = ({ size = 15 }) => (
 );
 
 
-const fmtPx = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1) return `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-  if (a >= 0.01) return `$${p.toFixed(4)}`;
-  return `$${p.toPrecision(3)}`;
-};
+const fmtPx = (p) => (p == null ? "—" : `$${price(p)}`);
 const srand = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
 const seedOf = (str) => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 1e9; return h + 7; };
 

@@ -3,6 +3,7 @@ import { Activity, ChevronDown, ChevronUp, Clock, Cpu, Download, SlidersHorizont
 import { Avatar, BotTag, EmptyState } from "./common";
 import { TradeDetail } from "./TradeDetail";
 import { SourceButton } from "./TelegramSignal";
+import { fmtDateTime, usd as fUsd, price } from "../lib/format";
 import { feeOf } from "../data/robotin";
 import { C, cardStyle, mono, thStyle, tdStyle } from "../theme";
 
@@ -21,15 +22,8 @@ const STATUS = {
 };
 const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 
-const usd = (v) => `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const fmtPrice = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (a >= 0.01) return p.toFixed(4);
-  if (a >= 0.0001) return p.toFixed(6);
-  return p.toPrecision(3);
-};
+const usd = (v) => fUsd(v, { signed: true });
+const fmtPrice = price; // single ladder — the local one lacked the ≥1000 rule
 const relTime = (sec) => {
   const diff = Math.max(0, Math.floor(Date.now() / 1000) - sec);
   if (diff < 60) return `${diff}s`;
@@ -163,7 +157,7 @@ const SignalTable = ({
     { id: "robotin", label: "Robotín" },
     { id: "entry", label: "Entry" },
     { id: "exit", label: "Exit" },
-    { id: "pnl", label: "PnL" },
+    { id: "pnl", label: "P&L" },
     { id: "r", label: "R" },
     { id: "duration", label: "Duration" },
     { id: "status", label: "Status" },
@@ -290,7 +284,7 @@ const SignalTable = ({
                         {tag ? <span title={explainTag(s.tag)} style={{ fontSize: 9, fontWeight: 700, color: C.purple, backgroundColor: C.purpleBg, border: `1px solid ${C.purple}30`, padding: "1px 6px", borderRadius: 4, cursor: "help", ...num }}>{tag}</span> : <span style={{ color: C.textFaint }}>—</span>}
                       </td>
                     )}
-                    {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={new Date(s.time * 1000).toLocaleString()}>{relTime(s.time)}</td>}
+                    {show("time") && <td style={{ ...cell, ...num, color: C.textFaint }} title={fmtDateTime(s.time)}>{relTime(s.time)}</td>}
                     {audit && show("fees") && <td style={{ ...cell, ...num, color: C.textMuted }}>{isClosed ? `−$${fee.toFixed(2)}` : "—"}</td>}
                     {audit && show("match") && <td style={cell} title="Gross outcome (TP/SL) agrees with net P&L sign">{isClosed ? (() => { const m = (s.hit === "TP") === (s.pnl > 0); return <span style={{ fontWeight: 700, color: m ? C.green : C.amber }}>{m ? "✓" : "✗"}</span>; })() : <span style={{ color: C.textFaint }}>—</span>}</td>}
                     {show("source") && (

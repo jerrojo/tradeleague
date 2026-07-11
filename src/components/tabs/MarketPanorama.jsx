@@ -5,6 +5,7 @@ import { smcCoins } from "../../data/mockData";
 import { CollapsibleSection } from "../common";
 import { useTimeframe, useLivePrices } from "../../contexts";
 import { C, mono } from "../../theme";
+import { fmtTime } from "../../lib/format";
 
 const a2 = (a) => Math.max(0, Math.min(255, Math.round(a * 255))).toString(16).padStart(2, "0");
 
@@ -128,7 +129,7 @@ const MarketPanorama = ({ selected, onSelect }) => {
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       {live && (
         <span
-          title={`Price and Δ (24h) are real ${tape.source} spot quotes, as of ${new Date(tape.asOf).toLocaleTimeString()} (30s refresh). Bubble size (market cap), sentiment and signals remain the deterministic SIM book.`}
+          title={`Price and Δ (24h) are real ${tape.source} spot quotes, as of ${fmtTime(tape.asOf)} (30s refresh). Bubble size (market cap), sentiment and signals remain the deterministic SIM book.`}
           style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 9px", borderRadius: 6, backgroundColor: C.greenBg, border: `1px solid ${C.green}40`, fontSize: 10, fontWeight: 800, letterSpacing: "0.4px", color: C.green, ...mono }}
         >
           <span style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />

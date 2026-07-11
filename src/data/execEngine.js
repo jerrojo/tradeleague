@@ -134,8 +134,8 @@ export function simulate(userConfig = {}) {
   if (sel) out = rows.filter((r) => sel.includes(OUTCOME_LABEL[r.outcome] ?? r.outcome));
   if (cfg.sort === "Newest First") out = [...out].sort((a, b) => b.time - a.time);
   else if (cfg.sort === "Oldest First") out = [...out].sort((a, b) => a.time - b.time);
-  else if (cfg.sort === "Best PnL") out = [...out].sort((a, b) => b.netPnl - a.netPnl);
-  else if (cfg.sort === "Worst PnL") out = [...out].sort((a, b) => a.netPnl - b.netPnl);
+  else if (cfg.sort === "Best P&L") out = [...out].sort((a, b) => b.netPnl - a.netPnl);
+  else if (cfg.sort === "Worst P&L") out = [...out].sort((a, b) => a.netPnl - b.netPnl);
 
   // ── aggregates (over filled+closed signals) ──
   const closed = rows.filter((r) => !r.noEntry);

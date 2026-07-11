@@ -11,15 +11,14 @@ import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
 import { useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
-import { usd, pct, ratio, signColor } from "../../lib/format";
+import { usd, pct, ratio, signColor, price, fmtDateTime } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 const ASSETS = ["All", "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "ARB", "OP", "SUI", "TON", "NEAR", "INJ"];
 const DIRECTIONS = ["All", "LONG", "SHORT"];
 const OUTCOME_OPTS = ["Win", "Loss", "Breakeven", "No entry", "Invalid", "Open"];
-const SORTS = ["Newest First", "Oldest First", "Best PnL", "Worst PnL"];
-const px = (p) => (p == null ? "—" : p >= 1 ? p.toLocaleString(undefined, { maximumFractionDigits: 2 }) : p >= 0.01 ? p.toFixed(4) : p.toFixed(6));
-const fmtDT = (t) => (t == null ? "—" : new Date(t * 1000).toLocaleString(undefined, { month: "numeric", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }));
+const SORTS = ["Newest First", "Oldest First", "Best P&L", "Worst P&L"];
+const px = price; // was a local ladder missing the ≥1000 rule → "$67,850.00" here, "$67,850" everywhere else
 const fmtDur = (h) => (h == null ? "—" : h < 1 ? `${Math.round(h * 60)}m` : `${h.toFixed(1)}h`);
 
 /* compact dark field */
@@ -92,11 +91,11 @@ const MultiSel = ({ selected, options, onToggle, onAll }) => {
 const K = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.textFaint, tip }) => (
   <div className="tl-card" style={{ ...cardStyle, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, minWidth: 0 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
+      <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 600, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</span>
       <IconChip icon={Icon} color={accent === C.textFaint ? C.textMuted : accent} size={28} />
     </div>
-    <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.08 }}>{value}</div>
-    {sub && <div style={{ fontSize: 11, color: C.textFaint }}>{sub}</div>}
+    <div style={{ fontSize: 21, fontWeight: 800, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.08 }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: C.textFaint, ...mono }}>{sub}</div>}
   </div>
 );
 
@@ -140,24 +139,25 @@ const SignalCard = ({ r, open, onToggle }) => {
       <div onClick={onToggle} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
         style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", cursor: "pointer" }}>
         <ChevronDown size={16} color={C.textMuted} style={{ transform: open ? "none" : "rotate(-90deg)", transition: "transform .15s", flexShrink: 0 }} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 800, ...mono }}>{r.coin} <span style={{ color: C.textMuted, fontSize: 11 }}>/USDT</span></span>
-            <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: dirColor, backgroundColor: `${dirColor}1c`, border: `1px solid ${dirColor}30`, padding: "1px 7px", borderRadius: 4 }}>{r.dir}</span>
-            {/* trader name → profile (stopPropagation so it doesn't toggle the card) */}
-            <span onClick={(e) => { e.stopPropagation(); openTrader(r.trader); }} title={`Open ${r.trader}'s profile`}
-              style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40` }}>
-              <Avatar name={r.trader} size={16} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{r.trader}</span>
-              <BotTag isBot={r.isBot} />
-            </span>
-            {/* the original post as it arrived (Telegram / X) — sits beside the trader */}
-            <SourceButton signal={r} size={18} />
-          </div>
-          <span style={{ fontSize: 10.5, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={10} /> {fmtDT(r.time)}</span>
+        {/* ONE line: instrument · direction · trader · source · timestamp. The date used
+            to sit on a second row, doubling the row height for a single short string. */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 14, fontWeight: 800, whiteSpace: "nowrap", ...mono }}>{r.coin}<span style={{ color: C.textMuted, fontSize: 11 }}>/USDT</span></span>
+          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.4px", color: dirColor, backgroundColor: `${dirColor}1c`, border: `1px solid ${dirColor}30`, padding: "1px 7px", borderRadius: 4 }}>{r.dir}</span>
+          {/* trader name → profile (stopPropagation so it doesn't toggle the card) */}
+          <span onClick={(e) => { e.stopPropagation(); openTrader(r.trader); }} title={`Open ${r.trader}'s profile`}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "pointer", borderBottom: `1px dashed ${C.purple}40`, minWidth: 0 }}>
+            <Avatar name={r.trader} size={16} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.trader}</span>
+            <BotTag isBot={r.isBot} />
+          </span>
+          {/* the original post as it arrived (Telegram / X) — sits beside the trader */}
+          <SourceButton signal={r} size={18} />
+          {/* timestamp pushed to the far right of the line, not onto a new one */}
+          <span style={{ marginLeft: "auto", fontSize: 10.5, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", ...mono }}><Clock size={10} /> {fmtDateTime(r.time)}</span>
         </div>
         <div style={{ textAlign: "right", marginRight: 10 }}>
-          <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Net PnL</div>
+          <div style={{ fontSize: 9, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px" }}>Net P&amp;L</div>
           <div style={{ fontSize: 15, fontWeight: 800, color: r.noEntry ? C.textMuted : signColor(r.netPnl, C), ...mono }}>{r.noEntry ? "—" : usd(r.netPnl, { signed: true })}</div>
           {!r.noEntry && <div style={{ fontSize: 10, color: signColor(r.netPnl, C), ...mono }}>{pct(r.grossPct, { signed: true })}</div>}
         </div>
@@ -216,7 +216,7 @@ const SignalCard = ({ r, open, onToggle }) => {
           <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 0.9fr) minmax(0, 2.2fr)", gap: 16 }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>Setup</div>
-              {[["Best entry", px(r.entry)], ["Entry time", fmtDT(r.time)], ["Initial SL", px(r.sl)], ["Final TP (RUN)", px(r.tpFinal)], ["TPs reached", `${reached} / ${r.reachedL.length}`], ["Duration", fmtDur(r.durationH)]].map(([l, v]) => (
+              {[["Best entry", px(r.entry)], ["Entry time", fmtDateTime(r.time)], ["Initial SL", px(r.sl)], ["Final TP (RUN)", px(r.tpFinal)], ["TPs reached", `${reached} / ${r.reachedL.length}`], ["Duration", fmtDur(r.durationH)]].map(([l, v]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${C.border}`, fontSize: 12 }}>
                   <span style={{ color: C.textMuted }}>{l}</span><span style={{ color: C.text, fontWeight: 600, ...mono }}>{v}</span>
                 </div>
@@ -227,7 +227,7 @@ const SignalCard = ({ r, open, onToggle }) => {
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                    {[["Leg", "left"], ["Target", "right"], ["Exit", "right"], ["Reason", "right"], ["PnL %", "right"], ["PnL $", "right"]].map(([h, al]) => <th key={h} style={{ textAlign: al, padding: "6px 8px", fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px" }}>{h}</th>)}
+                    {[["Leg", "left"], ["Target", "right"], ["Exit", "right"], ["Reason", "right"], ["P&L %", "right"], ["P&L $", "right"]].map(([h, al]) => <th key={h} style={{ textAlign: al, padding: "6px 8px", fontSize: 9, fontWeight: 700, color: C.textFaint, textTransform: "uppercase", letterSpacing: "0.4px" }}>{h}</th>)}
                   </tr></thead>
                   <tbody>
                     {r.legs.map((l) => {
@@ -420,7 +420,7 @@ const ExecutionEngine = () => {
       {/* KPI grid — tiered like the Overview */}
       <TLabel>Headline</TLabel>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
-        <K label="Net PnL" tip="engNetPnl" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
+        <K label="Net P&L" tip="engNetPnl" icon={DollarSign} accent={C.green} value={usd(k.netPnl, { signed: true })} valueColor={signColor(k.netPnl, C)} sub={`${pct(k.totalReturnPct, { signed: true })} · ${usd(k.perTrade, { signed: true })}/trade`} />
         <K label="Win Rate" tip="winRate" icon={Percent} accent={C.blue} value={`${k.winRate.toFixed(1)}%`} valueColor={k.winRate >= 50 ? C.green : C.red} sub={`${k.wins}W / ${k.losses}L / ${k.be}BE`} />
         <K label="Profit Factor" tip="profitFactor" icon={Scale} accent={C.purple} value={ratio(k.profitFactor)} valueColor={k.profitFactor >= 1 ? C.green : C.red} sub={`avg W ${pct(k.avgWinPct, { signed: true })} · L ${pct(k.avgLossPct, { signed: true })}`} />
         <K label="Signals" tip="engSignals" icon={Activity} value={k.signals} sub={`${k.entries} entries · ${k.noEntry} no entry`} />
@@ -494,7 +494,7 @@ const ResponsiveCurve = ({ curve }) => {
         <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
         <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
         <YAxis stroke={C.textMuted} fontSize={10} domain={[lo - pad, hi + pad]} width={64} tickFormatter={(v) => `$${Math.round(v).toLocaleString()}`} />
-        <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [`$${Number(v).toLocaleString()}`, "Balance"]} />
+        <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [usd(Number(v)), "Balance"]} />
         <Area type="monotone" dataKey="balance" stroke={C.green} strokeWidth={2} fill="url(#capGrad)" dot={false} isAnimationActive={false} />
       </AreaChart>
     </ResponsiveContainer>

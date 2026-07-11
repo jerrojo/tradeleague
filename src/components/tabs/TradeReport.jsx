@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { CalendarClock, ChevronDown, ChevronLeft, ChevronRight, X, TrendingUp, TrendingDown, Coins, Wallet } from "lucide-react";
 import { SectionHeader, InfoTip } from "../common";
 import { monthLedger, breakdownBy } from "../../data/tradeReport";
-import { usd as fUsd, usdCompact } from "../../lib/format";
+import { usd as fUsd, usdCompact, fmtDateTime, price as fmtPx } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -13,13 +13,13 @@ const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const usd = (n, sign = true) => fUsd(n, { signed: sign });
 const compact = (n) => usdCompact(n, { signed: true });
 const k = (n) => usdCompact(n);
-const fmtDT = (ms) => { const d = new Date(ms); const p = (x) => String(x).padStart(2, "0"); return `${p(d.getMonth() + 1)}/${p(d.getDate())}/${String(d.getFullYear()).slice(2)}, ${p(d.getHours())}:${p(d.getMinutes())}`; };
+const fmtDT = fmtDateTime; // was a manual MM/DD/YY — ambiguous outside the US
 const fmtDur = (min) => { if (min == null) return "—"; const h = Math.floor(min / 60), m = min % 60; return h ? `${h}h ${m}m` : `${m}m`; };
 
 const Stat = ({ label, children, color = C.text, tip }) => (
-  <div>
-    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 4 }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</div>
-    <div style={{ fontSize: 14, fontWeight: 800, color, ...mono }}>{children}</div>
+  <div style={{ minWidth: 0 }}>
+    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", color: C.textFaint, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tip ? <InfoTip k={tip} inline><span>{label}</span></InfoTip> : label}</div>
+    <div style={{ fontSize: 14, fontWeight: 800, color, whiteSpace: "nowrap", ...mono }}>{children}</div>
   </div>
 );
 
@@ -218,7 +218,7 @@ const DField = ({ label, children, color = C.text }) => (
 
 /* ── Expanded per-position detail — the full broker record behind a ledger row ── */
 const PositionDetail = ({ p }) => {
-  const px = (v) => (v == null ? "—" : Number(v).toLocaleString(undefined, { maximumFractionDigits: 6 }));
+  const px = fmtPx; // one price ladder platform-wide
   return (
     <div style={{ backgroundColor: C.bg, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, borderLeft: `2px solid ${p.side === "LONG" ? C.green : C.red}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -259,7 +259,7 @@ const DayDetail = ({ date, rec, onClose }) => {
         <button onClick={onClose} style={{ ...navBtn, width: 28, height: 28 }} title="Close"><X size={15} /></button>
       </div>
       <div style={{ display: "flex", gap: 40, flexWrap: "wrap", marginBottom: 16 }}>
-        <Stat label="Net PnL" tip="netPnlReport" color={rec.pnl >= 0 ? C.green : C.red}>{usd(rec.pnl)}</Stat>
+        <Stat label="Net P&L" tip="netPnlReport" color={rec.pnl >= 0 ? C.green : C.red}>{usd(rec.pnl)}</Stat>
         <Stat label="Commission" tip="commissionReport" color={C.red}>{usd(-rec.commission)}</Stat>
         <Stat label="Positions" tip="positionsClosed">{rec.count} opened</Stat>
       </div>
@@ -269,7 +269,7 @@ const DayDetail = ({ date, rec, onClose }) => {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {["Symbol", "Side", "Entry", "Exit", "Net PnL", "Lev. ROI", "Leverage", "Margin", "Duration"].map((h, i) => (
+              {["Symbol", "Side", "Entry", "Exit", "Net P&L", "Lev. ROI", "Leverage", "Margin", "Duration"].map((h, i) => (
                 <th key={h} style={{ textAlign: i > 3 ? "right" : "left", padding: "8px 10px", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.4px", textTransform: "uppercase", color: C.textFaint, whiteSpace: "nowrap" }}>{h}</th>
               ))}
               <th style={{ width: 30 }} />

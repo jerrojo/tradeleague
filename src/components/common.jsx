@@ -16,6 +16,16 @@ const IconChip = ({ icon: Icon, color = C.blue, size = 40 }) => (
   </span>
 );
 
+/* Tone a signed string. Must accept BOTH the ASCII hyphen and the typographic
+   minus (U+2212) that lib/format.js emits — testing only "-" silently rendered
+   every formatted negative in muted grey instead of red. */
+const signTone = (s) => {
+  if (typeof s !== "string") return C.textMuted;
+  if (s.startsWith("+")) return C.green;
+  if (s.startsWith("-") || s.startsWith("−")) return C.red;
+  return C.textMuted;
+};
+
 /* StatCard v3 — sentence-case label, big value, IconChip on the right.
    (v2's left accent bar + tiny uppercase label retired in favor of the calmer,
    more legible card language used across the platform.) */
@@ -23,13 +33,14 @@ const StatCard = ({ label, value, sub, icon: Icon, color = C.blue, tip }) => (
   <div className="card-hover" style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: "6px" }}>
     {/* chip on the label row → long money values get the full card width below */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", minWidth: 0 }}>
+      <div style={{ fontSize: "12.5px", color: C.textMuted, fontWeight: "600", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
         {tip ? <InfoTip k={tip}><span>{label}</span></InfoTip> : label}
       </div>
       <IconChip icon={Icon} color={color} size={32} />
     </div>
-    <div style={{ fontSize: "23px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, ...mono }}><AnimatedValue value={value} /></div>
-    {sub && <div style={{ fontSize: "11px", color: typeof sub === "string" && sub.startsWith("+") ? C.green : typeof sub === "string" && sub.startsWith("-") ? C.red : C.textMuted, marginTop: "1px" }}>{sub}</div>}
+    {/* nowrap: a money value must never break so the sign orphans onto its own line */}
+    <div style={{ fontSize: "23px", fontWeight: "800", letterSpacing: "-0.3px", lineHeight: 1.05, whiteSpace: "nowrap", ...mono }}><AnimatedValue value={value} /></div>
+    {sub && <div style={{ fontSize: "11px", color: signTone(sub), marginTop: "1px", whiteSpace: "nowrap", ...mono }}>{sub}</div>}
   </div>
 );
 
@@ -71,7 +82,6 @@ const GLOSSARY = {
   topProviderShare: "Share of the fund's executed P&L attributable to the single best provider — high values flag concentration risk.",
   // SMC Analysis
   bias:           "Market direction. BULLISH = price going up, BEARISH = price going down",
-  confluence:     "Signal strength: how many indicators agree (more = more reliable)",
   confluence:     "Signal strength: how many indicators agree (more = more reliable)",
   riskLevel:      "How risky it is to trade right now. LOW = safe, HIGH = dangerous",
   stopDistance:   "Average distance from entry to stop-loss across this asset's approved signals, in %. Tighter = less capital at risk per trade",

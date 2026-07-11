@@ -13,7 +13,7 @@ import { MarketsSection, ActivitySection, TradersSection, AuditSection } from ".
 import { mockTraders } from "./data/mockData";
 import { ALL_SIGNALS } from "./data/robotin";
 import { START_CAPITAL } from "./data/fund";
-import { usd } from "./lib/format";
+import { usd, fmtTime } from "./lib/format";
 import { C, cardStyle, mono } from "./theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
@@ -68,7 +68,7 @@ const FeedStatus = () => {
   if (status === "live") {
     return (
       <>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title={`Real spot prices from the ${source} public API — as of ${new Date(asOf).toLocaleTimeString()}, refreshed every 30s.`}>
+        <div style={{ display: "flex", alignItems: "center", gap: "5px" }} title={`Real spot prices from the ${source} public API — as of ${fmtTime(asOf)}, refreshed every 30s.`}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: C.green, display: "inline-block", animation: "livePulse 2s ease-in-out infinite" }} />
           <span style={{ color: C.green }}>LIVE TAPE</span>
           <span style={{ color: C.textFaint }}>{source}</span>

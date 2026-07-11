@@ -2,6 +2,7 @@ import { Activity, Check, ChevronDown, Clock, Cpu, X } from "lucide-react";
 import { Avatar, BotTag } from "./common";
 import { TradeDetail } from "./TradeDetail";
 import { SourceButton } from "./TelegramSignal";
+import { fmtDateTime, usd as fUsd, price } from "../lib/format";
 import { C, cardStyle, mono } from "../theme";
 
 /* ═══════════════════════ SignalRow — THE canonical trade/signal row ═══════════════════════
@@ -24,19 +25,9 @@ const STATUS = {
 };
 const statusKey = (s) => (s.status === "closed" ? `closed_${s.hit}` : s.status);
 
-/* ── money: always sign + 2 decimals + typographic minus (platform-wide convention) ── */
-const usd = (v) =>
-  `${v >= 0 ? "+" : "−"}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-/* ── price: adaptive precision so meme/sub-cent coins don't collapse to "$0.00" ── */
-const fmtPrice = (p) => {
-  if (p == null) return "—";
-  const a = Math.abs(p);
-  if (a >= 1) return p.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  if (a >= 0.01) return p.toFixed(4);
-  if (a >= 0.0001) return p.toFixed(6);
-  return p.toPrecision(3);
-};
+/* money + price come from lib/format — one convention platform-wide */
+const usd = (v) => fUsd(v, { signed: true });
+const fmtPrice = price;
 
 /* ── relative timestamp from unix seconds (deterministic) ── */
 const relTime = (sec) => {
@@ -192,7 +183,7 @@ const SignalRow = ({ signal: s, isOpen, onToggle, onTrader, showTime = false, la
 
         {/* Relative time (optional) */}
         {showTime && (
-          <span title={new Date(s.time * 1000).toLocaleString()} style={{ ...COL.time, fontSize: 11, color: C.textFaint, ...mono }}>{relTime(s.time)}</span>
+          <span title={fmtDateTime(s.time)} style={{ ...COL.time, fontSize: 11, color: C.textFaint, whiteSpace: "nowrap", ...mono }}>{relTime(s.time)}</span>
         )}
 
         {/* Chevron */}

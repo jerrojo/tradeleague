@@ -9,6 +9,7 @@ import { Avatar, InfoTip, StatCard, Tag } from "../common";
 import { btcBenchmark, mockTraders, traderColors, traderDeepData, traderEquity } from "../../data/mockData";
 import { exportTrades } from "../../lib/exportData";
 import { computeMetrics, delever } from "../../lib/tradeSim";
+import { usd } from "../../lib/format";
 
 /* ═══════════════════════ TAB: PORTFOLIO / SYSTEM (VARIV Vista C) ═══════════════════════
    Level-1 institutional view: aggregated fund performance.
@@ -310,7 +311,7 @@ const PortfolioTab = () => {
       <div style={{ ...cardStyle, padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Expectancy by Pair — Top {byPair.length}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead><tr>{["Pair", "Trades", "Win Rate", "Expectancy (R)", "Total PnL"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+          <thead><tr>{["Pair", "Trades", "Win Rate", "Expectancy (R)", "Total P&L"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
           <tbody>
             {byPair.map(r => (
               <tr key={r.pair} className="hoverable">
@@ -318,7 +319,7 @@ const PortfolioTab = () => {
                 <td style={{ ...tdStyle, ...mono }}>{r.trades}</td>
                 <td style={{ ...tdStyle }}><Tag text={`${r.winRate}%`} color={r.winRate >= 50 ? C.green : C.red} /></td>
                 <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: r.expR >= 0 ? C.green : C.red }}>{r.expR >= 0 ? "+" : ""}{r.expR}R</td>
-                <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: r.pnl >= 0 ? C.green : C.red }}>{r.pnl >= 0 ? "+" : ""}${r.pnl.toLocaleString()}</td>
+                <td style={{ ...tdStyle, ...mono, fontWeight: "700", whiteSpace: "nowrap", color: r.pnl >= 0 ? C.green : C.red }}>{usd(r.pnl, { signed: true })}</td>
               </tr>
             ))}
           </tbody>

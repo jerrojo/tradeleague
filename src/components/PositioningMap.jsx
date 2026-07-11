@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus, Crosshair } from "lucide-react";
 import { coinCandles, coinSignals } from "../data/robotin";
 import { Avatar, SectionHeader } from "./common";
 import { C, cardStyle, mono } from "../theme";
+import { price } from "../lib/format";
 
 /* ═══════════════════════ POSITIONING MAP ═══════════════════════
    The old "football field" idea, done right. One horizontal price axis with the
@@ -46,7 +47,7 @@ const PositioningMap = ({ coin, currentPrice }) => {
   const verdict = longPct >= 65 ? "Strongly long" : longPct >= 55 ? "Leaning long" : longPct > 45 ? "Balanced" : longPct > 35 ? "Leaning short" : "Strongly short";
   const vColor = longPct > 55 ? C.green : longPct < 45 ? C.red : C.textMuted;
   const VIcon = longPct > 55 ? TrendingUp : longPct < 45 ? TrendingDown : Minus;
-  const fmtPrice = (p) => (p < 1 ? `$${p.toFixed(4)}` : `$${Math.round(p).toLocaleString()}`);
+  const fmtPrice = (p) => `$${price(p)}`;
 
   return (
     <div style={cardStyle}>

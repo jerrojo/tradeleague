@@ -12,6 +12,7 @@ import { useTimeframe, useNav } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
+import { fmtDayShort } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -65,9 +66,22 @@ const Kpi = ({ label, icon: Icon, value, valueColor = C.text, sub, accent = C.te
       </span>
       {Icon && <Icon size={14} color={accent} style={{ flexShrink: 0, opacity: 0.85 }} />}
     </div>
-    <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, ...mono, lineHeight: 1.1 }}>{value}</div>
-    {sub && <div style={{ fontSize: 10.5, color: C.textFaint }}>{sub}</div>}
+    {/* nowrap: a plain value ("+14.0 pts") never splits its unit onto a new line.
+        A <Pair> value re-enables wrapping internally, but only BETWEEN its two
+        halves — so a lone "−", "/" or "vs" can never orphan. */}
+    <div style={{ fontSize: 20, fontWeight: 800, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.15 }}>{value}</div>
+    {sub && <div style={{ fontSize: 10.5, color: C.textFaint, ...mono }}>{sub}</div>}
   </div>
+);
+
+/* A two-part KPI value ("+$1,031.57 / −$470.35"). Each half — and the separator
+   glued to the half before it — is nowrap, so the pair breaks cleanly between the
+   two values and never strands a lone "−", "/" or "vs". */
+const Pair = ({ a, b, sep = "/", aColor = C.green, bColor = C.red }) => (
+  <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", columnGap: 6, whiteSpace: "normal" }}>
+    <span style={{ whiteSpace: "nowrap", color: aColor }}>{a} <span style={{ color: C.textFaint, fontWeight: 600 }}>{sep}</span></span>
+    <span style={{ whiteSpace: "nowrap", color: bColor }}>{b}</span>
+  </span>
 );
 
 /* ── Account balance card with an equity sparkline (the friendly hero, right rail).
@@ -184,9 +198,9 @@ const Mini = ({ label, value, sub, valueColor = C.text, onClick }) => (
   <div className={`tl-card${onClick ? " tl-card-int" : ""}`} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}
     onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}
     style={{ ...cardStyle, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-    <span style={{ fontSize: 11, color: C.textMuted }}>{label}</span>
-    <span style={{ fontSize: 15, fontWeight: 700, color: valueColor, ...mono, lineHeight: 1.15 }}>{value}</span>
-    {sub && <span style={{ fontSize: 10.5, color: C.textFaint }}>{sub}</span>}
+    <span style={{ fontSize: 11, color: C.textMuted, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+    <span style={{ fontSize: 15, fontWeight: 700, color: valueColor, whiteSpace: "nowrap", ...mono, lineHeight: 1.15 }}>{value}</span>
+    {sub && <span style={{ fontSize: 10.5, color: C.textFaint, whiteSpace: "nowrap", ...mono }}>{sub}</span>}
   </div>
 );
 
@@ -685,7 +699,9 @@ const FundOverview = () => {
     const holds = closed.filter((s) => s.exitIdx != null).map((s) => s.exitIdx - (s.activeIdx ?? s.entryIdx));
     const avgHold = holds.length ? holds.reduce((a, h) => a + h, 0) / holds.length : 0;
     const dayMap = {};
-    closed.forEach((s) => { const d = new Date(s.time * 1000); const k = `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`; dayMap[k] = (dayMap[k] || 0) + s.pnl; });
+    // key on the real day (spelled month, plus year) — "07/11" was both ambiguous
+    // and collided across years, silently merging two different Julys into one bucket
+    closed.forEach((s) => { const k = fmtDayShort(s.time); dayMap[k] = (dayMap[k] || 0) + s.pnl; });
     const de = Object.entries(dayMap);
     const bestDay = de.length ? de.reduce((a, b) => (b[1] > a[1] ? b : a)) : ["—", 0];
     const worstDay = de.length ? de.reduce((a, b) => (b[1] < a[1] ? b : a)) : ["—", 0];
@@ -824,22 +840,22 @@ const FundOverview = () => {
         <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} tip="netPnl" value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
         <Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity")} />
         <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`this mo ${dash.lastM.winRate}%`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<><span style={{ color: C.green }}>{data.wins.length}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{data.losses.length}</span></>} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<><span style={{ color: C.green }}>{usd(dash.avgWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(-dash.avgLoss)}</span></>} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<><span style={{ color: C.green }}>{dash.bestWinStreak}W</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{dash.bestLossStreak}L</span></>} sub="best winning / losing streaks" onClick={() => go("activity")} />
-        <Kpi label="Largest Win / Loss" icon={TrendingUp} tip="largestWinLoss" value={<><span style={{ color: C.green }}>{usd(dash.largestWin)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.red }}>{usd(dash.largestLoss)}</span></>} sub="best and worst single trades" onClick={() => go("audit")} />
-        <Kpi label="Last Month W/L" icon={Target} tip="lastMonthWL" value={<><span style={{ color: C.green }}>{dash.prevMWins}</span> <span style={{ color: C.textFaint }}>vs</span> <span style={{ color: C.red }}>{dash.prevMLosses}</span></>} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
-        <Kpi label="Avg Hold Time" icon={Clock} tip="avgHold" value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
+        <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<Pair a={usd(dash.avgWin)} b={usd(-dash.avgLoss)} />} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "analytics" })} />
+        <Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<Pair a={`${dash.bestWinStreak}W`} b={`${dash.bestLossStreak}L`} />} sub="best winning / losing streaks" onClick={() => go("activity")} />
+        <Kpi label="Largest Win / Loss" icon={TrendingUp} tip="largestWinLoss" value={<Pair a={usd(dash.largestWin)} b={usd(dash.largestLoss)} />} sub="best and worst single trades" onClick={() => go("audit")} />
+        <Kpi label="Last Month W/L" icon={Target} tip="lastMonthWL" value={<Pair a={dash.prevMWins} b={dash.prevMLosses} sep="vs" />} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
+        <Kpi label="Avg Hold Time" icon={Clock} tip="avgHold" value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("audit")} />
         <Kpi label="Trades / Month" icon={BarChart3} tip="tradesPerMonth" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
         <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Best / Worst Day" icon={Calendar} tip="bestWorstDay" value={<><span style={{ color: dash.bestDay[1] >= 0 ? C.green : C.red }}>{usd(dash.bestDay[1])}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: dash.worstDay[1] >= 0 ? C.green : C.red }}>{usd(dash.worstDay[1])}</span></>} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day" : ""}`} onClick={() => go("report")} />
+        <Kpi label="Best / Worst Day" icon={Calendar} tip="bestWorstDay" value={<Pair a={usd(dash.bestDay[1])} b={usd(dash.worstDay[1])} aColor={dash.bestDay[1] >= 0 ? C.green : C.red} bColor={dash.worstDay[1] >= 0 ? C.green : C.red} />} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day" : ""}`} onClick={() => go("report")} />
         <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("engine")} />
         <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "analytics" })} />
         <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "analytics" })} />
         <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} valueColor={C.blue} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
         <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} valueColor={C.cyan} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "analytics" })} />
-        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<><span style={{ color: C.green }}>{Math.round(data.avgConfApproved)}</span> <span style={{ color: C.textFaint }}>/</span> <span style={{ color: C.textMuted }}>{Math.round(data.avgConfRejected)}</span></>} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
+        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "edge" })} />
       </div>
 
       {/* ── 3 · Robotín's read — slim executive summary of the period ── */}
