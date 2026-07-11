@@ -12,7 +12,7 @@ import { useTimeframe, useNav } from "../../contexts";
 import { ALL_SIGNALS, lastCloseByCoin } from "../../data/robotin";
 import { mockTraders } from "../../data/mockData";
 import { START_CAPITAL } from "../../data/fund";
-import { fmtDayShort } from "../../lib/format";
+import { fmtDayShort, axisK } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -369,7 +369,7 @@ const MonthlyPerformance = ({ monthly = [] }) => {
         <BarChart data={shown} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
           <XAxis dataKey="period" stroke={C.textMuted} fontSize={10} tickFormatter={shortLabel} interval={shown.length > 12 ? 1 : 0} />
-          <YAxis stroke={C.textMuted} fontSize={10} width={44} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+          <YAxis stroke={C.textMuted} fontSize={10} width={44} tickFormatter={(v) => axisK(v)} />
           <Tooltip content={<MonthTip />} cursor={{ fill: `${C.border}40` }} />
           <Bar dataKey="pnl" radius={[4, 4, 0, 0]} barSize={barSize} isAnimationActive={false}>
             {shown.map((m, i) => <Cell key={i} fill={m.pnl >= 0 ? C.green : C.red} />)}
@@ -794,7 +794,7 @@ const FundOverview = () => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} />
                 <XAxis dataKey="i" stroke={C.textMuted} fontSize={10} ticks={xTicks} interval={0} tickFormatter={(v) => `#${v}`} />
-                <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => `$${(v / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k`} />
+                <YAxis stroke={C.textMuted} fontSize={10} width={AXIS_W} domain={[yTicks[0], yTicks[yTicks.length - 1]]} ticks={yTicks} tickFormatter={(v) => axisK(v, 1)} />
                 <Tooltip contentStyle={tooltipStyle} labelFormatter={(v) => (v === 0 ? "Start" : `Signal #${v}`)} formatter={(v, name) => [usdPlain(Number(v)), name === "exec" ? "Executed (Robotín)" : name === "all" ? "All signals (if executed)" : "BTC buy & hold"]} />
                 <ReferenceLine y={STARTING_BALANCE} stroke={C.textFaint} strokeDasharray="4 4" strokeOpacity={0.7} label={{ value: "breakeven", position: "insideTopLeft", fill: C.textFaint, fontSize: 9 }} />
                 <Area type="monotone" dataKey="exec" stroke={C.purple} strokeWidth={2.5} fill="url(#fundEq)" dot={false} name="exec" isAnimationActive={false} />

@@ -4,7 +4,7 @@ import { Trophy } from "lucide-react";
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useProfile } from "../../contexts";
 import { mockTraders, traderColors, traderEquity } from "../../data/mockData";
-import { usd, usdCompact } from "../../lib/format";
+import { usd, usdCompact, axisK, axisUsd } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 import { useMemo, useState } from "react";
 
@@ -86,7 +86,7 @@ const HomeTab = () => {
             <XAxis dataKey="day" stroke={C.textMuted} fontSize={9} tickFormatter={v => `D${v}`} />
             {/* sqrt scale: the exponential 30-day curves otherwise flatten into the
                 floor for two thirds of the chart and the race is unreadable */}
-            <YAxis scale="sqrt" domain={[0, "dataMax"]} stroke={C.textMuted} fontSize={9} tickFormatter={v => v >= 1000 ? `$${(v / 1000).toFixed(0)}K` : `$${Math.round(v)}`} />
+            <YAxis scale="sqrt" domain={[0, "dataMax"]} stroke={C.textMuted} fontSize={9} tickFormatter={v => (Math.abs(v) >= 1000 ? axisK(v) : axisUsd(v))} />
             <Tooltip content={<RaceTooltip />} />
             {mockTraders.map((t, i) => watching[t.name] && (
               <Area key={`area-${t.name}`} type="monotone" dataKey={t.name} fill={`url(#grad-${i})`} stroke="none" fillOpacity={0.3} isAnimationActive={false} />

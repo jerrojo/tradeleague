@@ -58,6 +58,11 @@ export const ratio = (x, d = 2) => (!Number.isFinite(x) || x >= 999 ? "∞" : x.
 /* Semantic color for a signed value (caller still adds a sign/arrow for a11y). */
 export const signColor = (x, C) => (x > 0 ? C.green : x < 0 ? C.red : C.textMuted);
 
+/* ── Chart axis ticks. The sign ALWAYS goes before the $, never "$-1k". Hand-rolled
+   template literals across the charts were emitting the minus on the wrong side. ── */
+export const axisK = (x, d = 0) => (!Number.isFinite(x) ? "" : `${x < 0 ? "−" : ""}$${(Math.abs(x) / 1000).toFixed(d)}k`);
+export const axisUsd = (x) => (!Number.isFinite(x) ? "" : `${x < 0 ? "−" : ""}$${Math.round(Math.abs(x)).toLocaleString()}`);
+
 /* ═══════════════════════ DATES (single source of truth) ═══════════════════════
    NEVER render a numeric month: "7/11/2026" is Jul-11 to a US reader and Nov-7 to
    everyone else. Always spell the month. Accepts a Date, epoch ms, or epoch

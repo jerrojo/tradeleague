@@ -11,7 +11,7 @@ import { ALL_SIGNALS, coinCandles } from "../../data/robotin";
 import { useProfile } from "../../contexts";
 import { mockTraders } from "../../data/mockData";
 import { simulate, DEFAULT_CONFIG, legKeysFor } from "../../data/execEngine";
-import { usd, pct, ratio, signColor, price, fmtDateTime } from "../../lib/format";
+import { usd, pct, ratio, signColor, price, fmtDateTime, axisUsd } from "../../lib/format";
 import { C, cardStyle, mono } from "../../theme";
 
 const ASSETS = ["All", "BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "AVAX", "LINK", "ADA", "ARB", "OP", "SUI", "TON", "NEAR", "INJ"];
@@ -493,7 +493,7 @@ const ResponsiveCurve = ({ curve }) => {
         <defs><linearGradient id="capGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.green} stopOpacity={0.32} /><stop offset="100%" stopColor={C.green} stopOpacity={0} /></linearGradient></defs>
         <CartesianGrid strokeDasharray="3 3" stroke={`${C.border}60`} vertical={false} />
         <XAxis dataKey="i" stroke={C.textMuted} fontSize={9} tickFormatter={(v) => `#${v}`} />
-        <YAxis stroke={C.textMuted} fontSize={10} domain={[lo - pad, hi + pad]} width={64} tickFormatter={(v) => `$${Math.round(v).toLocaleString()}`} />
+        <YAxis stroke={C.textMuted} fontSize={10} domain={[lo - pad, hi + pad]} width={64} tickFormatter={(v) => axisUsd(v)} />
         <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 12 }} labelFormatter={(v) => `Trade #${v}`} formatter={(v) => [usd(Number(v)), "Balance"]} />
         <Area type="monotone" dataKey="balance" stroke={C.green} strokeWidth={2} fill="url(#capGrad)" dot={false} isAnimationActive={false} />
       </AreaChart>
