@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, GitBranch, ShieldCheck } from "lucide-react";
 import { C } from "../theme";
 import { FearGreedGauge } from "./FearGreedGauge";
+import { IS_FULL } from "../lite";
 import { SMCAnalysis } from "./tabs/SMCAnalysis";
 import { RobotinSignals } from "./tabs/RobotinSignals";
 import { CoinPositioning } from "./tabs/CoinPositioning";
@@ -71,7 +72,7 @@ const MarketsSection = () => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       {/* Cross-coin lead: the whole board at a glance */}
-      <MarketPanorama selected={coin} onSelect={pick} />
+      {IS_FULL && <MarketPanorama selected={coin} onSelect={pick} />}
       {/* ── Detail for the selected coin ── */}
       <div ref={detailRef} style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 4 }}>
         <div style={{ height: 1, flex: 1, backgroundColor: C.border }} />

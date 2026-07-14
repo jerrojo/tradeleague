@@ -10,7 +10,7 @@ import { ALL_SIGNALS, lastCloseByCoin as LAST_CLOSE } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
 import { usd, price, usdCompact, axisK } from "../lib/format";
-import { IS_LITE, LITE_PROFILE_TABS } from "../lite";
+import { IS_LITE, IS_FULL, LITE_PROFILE_TABS } from "../lite";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../theme";
 import { ToastContext } from "./common";
@@ -346,12 +346,14 @@ const TraderProfile = ({ trader, onClose }) => {
           <ActivityHeatmap traderData={deep} />
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+            {IS_FULL && (
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Skill Radar</div>
               <ResponsiveContainer width="100%" height={220}>
                 <RadarChart data={t.radarData.map(r => ({ subject: RADAR_LABELS[r.s] || r.s, value: r.v }))}><PolarGrid stroke={C.border} /><PolarAngleAxis dataKey="subject" stroke={C.textMuted} fontSize={10} /><PolarRadiusAxis stroke={C.border} fontSize={9} domain={[0, 100]} /><Radar isAnimationActive={false} dataKey="value" stroke={C.purple} fill={C.purpleBg} fillOpacity={0.6} /></RadarChart>
               </ResponsiveContainer>
             </div>
+            )}
             <div style={cardStyle}>
               <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "8px" }}>Monthly P&L</div>
               <ResponsiveContainer width="100%" height={220}>
@@ -448,7 +450,7 @@ const TraderProfile = ({ trader, onClose }) => {
             <StatCard label="Total Signals" value={deep.signalStats.total} icon={Zap} color={C.purple} />
             <StatCard label="Accuracy" value={`${deep.signalStats.accuracy}%`} icon={Target} color={C.green} tip="winRate" />
             <StatCard label="Active Now" value={deep.signalStats.active} icon={Activity} color={C.amber} tip="signalActive" />
-            <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />
+            {IS_FULL && <StatCard label="Subscribers" value={deep.signalStats.subscribers} icon={Users} color={C.blue} />}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Avg Profit / Signal" value={usd(deep.signalStats.avgPnlPerSignal, { signed: true })} icon={TrendingUp} color={deep.signalStats.avgPnlPerSignal >= 0 ? C.green : C.red} />
@@ -495,7 +497,9 @@ const TraderProfile = ({ trader, onClose }) => {
             <div style={{ padding: "14px 16px 10px", fontSize: "13px", fontWeight: "600" }}>Signal History — Last 12</div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1000px" }}>
-                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R","Group","P&L","Status","Subscribers","Date","Signal"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                {/* Group + Subscribers are copy-trading vanity, not fund data — the MVP drops
+                    the columns entirely so the header and the cells stay in lockstep. */}
+                <thead><tr>{["Pair","Type","Entry","Target","Stop Loss","Leverage","R:R",...(IS_FULL ? ["Group"] : []),"P&L","Status",...(IS_FULL ? ["Subscribers"] : []),"Date","Signal"].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
                 <tbody>
                   {deep.signals.map(s => (
                     <tr key={s.id} style={{ borderLeft: `3px solid ${s.type === "LONG" ? C.green : C.red}` }}>
@@ -506,10 +510,10 @@ const TraderProfile = ({ trader, onClose }) => {
                       <td style={{ ...tdStyle, ...mono, fontSize: "11px", color: C.red }}>${price(s.sl)}</td>
                       <td style={{ ...tdStyle, ...mono, color: C.amber }}>{s.leverage}</td>
                       <td style={{ ...tdStyle, ...mono }}>{s.rr}</td>
-                      <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.group}</td>
+                      {IS_FULL && <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.group}</td>}
                       <td style={{ ...tdStyle, ...mono, fontWeight: "700", color: s.pnl >= 0 ? C.green : C.red }}>{usd(s.pnl, { signed: true })}</td>
                       <td style={tdStyle}><Tag text={s.status === "active" ? "Active" : s.status === "tp_hit" ? "TP Hit" : "SL Hit"} color={s.status === "active" ? C.blue : s.status === "tp_hit" ? C.green : C.red} /></td>
-                      <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>{s.subscribers}</td>
+                      {IS_FULL && <td style={{ ...tdStyle, ...mono, fontSize: "11px" }}>{s.subscribers}</td>}
                       <td style={{ ...tdStyle, fontSize: "11px", color: C.textMuted }}>{s.date}</td>
                       <td style={tdStyle}><TelegramButton signal={{ trader: t.name, coin: (s.pair || "").split("/")[0], dir: s.type, entry: s.entry, sl: s.sl, tp1: s.tp, approved: true, time: (Date.parse(`${s.date} 2026`) || Date.now()) / 1000 }} size={18} /></td>
                     </tr>
@@ -797,8 +801,8 @@ const TraderProfile = ({ trader, onClose }) => {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "12px" }}>
             <StatCard label="Journal Entries" value={deep.journal.length} icon={Activity} color={C.blue} />
             <StatCard label="Net P&L (journaled)" value={usd(deep.journal.reduce((a, j) => a + j.pnl, 0), { signed: true })} icon={TrendingUp} color={C.green} />
-            <StatCard label="Most Common Mood" value="Focused" icon={Target} color={C.blue} />
-            <StatCard label="Avg Tags/Entry" value={(deep.journal.reduce((a, j) => a + j.tags.length, 0) / deep.journal.length).toFixed(1)} icon={Star} color={C.purple} />
+            {IS_FULL && <StatCard label="Most Common Mood" value="Focused" icon={Target} color={C.blue} />}
+            {IS_FULL && <StatCard label="Avg Tags/Entry" value={(deep.journal.reduce((a, j) => a + j.tags.length, 0) / deep.journal.length).toFixed(1)} icon={Star} color={C.purple} />}
           </div>
           {deep.journal.map(entry => (
             <div key={entry.id} style={{ ...cardStyle, borderLeft: `3px solid ${moodColors[entry.mood] || C.textMuted}` }}>
