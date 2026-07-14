@@ -10,6 +10,7 @@ import { ALL_SIGNALS, lastCloseByCoin as LAST_CLOSE } from "../data/robotin";
 import { useProMode } from "../contexts";
 import { computeMetrics } from "../lib/tradeSim";
 import { usd, price, usdCompact, axisK } from "../lib/format";
+import { IS_LITE, LITE_PROFILE_TABS } from "../lite";
 import { alphaColor, alphaLabel, calcAlphaScore, calcExpectancy, expectancyColor } from "../lib/scoring";
 import { C, cardStyle, mono, tdStyle, thStyle } from "../theme";
 import { ToastContext } from "./common";
@@ -122,7 +123,12 @@ const TraderProfile = ({ trader, onClose }) => {
   }, [deep.history, histMetrics]);
 
   // Simple hides the Pro-only sub-tabs (Trade Lab, Risk DNA, Journal)
-  const allProfileTabs = ["overview","trade_lab","signals","trades","signal_log","pnl","risk_dna","journal"];
+  /* The MVP exposes five surfaces; the full product exposes eight. Trade Lab, Signal Log
+     and Risk DNA are quant depth an early user has no use for yet — they are hidden, not
+     deleted, so the same code serves both builds. */
+  const allProfileTabs = IS_LITE
+    ? LITE_PROFILE_TABS
+    : ["overview","trade_lab","signals","trades","signal_log","pnl","risk_dna","journal"];
   const proOnlyTabs = ["trade_lab", "risk_dna", "journal"];
   const profileTabs = proMode ? allProfileTabs : allProfileTabs.filter(pt => !proOnlyTabs.includes(pt));
   const tabLabels = { overview: "Overview", trade_lab: "Trade Lab", signals: "Signals", trades: "Trades", signal_log: "Signal Log", pnl: "P&L", risk_dna: "Risk DNA", journal: "Journal" };

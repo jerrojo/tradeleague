@@ -15,6 +15,7 @@ import { START_CAPITAL } from "../../data/fund";
 import { fmtDayShort, axisK } from "../../lib/format";
 import { wilson, bootstrapSum, verdict } from "../../lib/stats";
 import { assessRisk } from "../../lib/risk";
+import { IS_FULL } from "../../lite";
 import { C, T, cardStyle, mono } from "../../theme";
 
 /* ═══════════════════════ TAB: FUND OVERVIEW (executive tear-sheet, simulated) ═══════════════════════
@@ -953,29 +954,35 @@ const FundOverview = () => {
 
       {/* ── 2 · KPIs — full-width compact band, one metric per card, "?" on every card ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(184px, 1fr))", gap: 10 }}>
-        <Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} tip="netPnl" value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />
-        <Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
-        <Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`95% CI ${(wr.lo * 100).toFixed(1)}–${(wr.hi * 100).toFixed(1)}% · n=${wr.n}`} onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />
-        <Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "execution" })} />
+        {IS_FULL && (<Kpi label="Total Net P&L" icon={TrendingUp} accent={C.green} tip="netPnl" value={usd(data.netPnl)} valueColor={data.netPnl >= 0 ? C.green : C.red} sub={`This month ${usd(dash.thisMonthPnl)} · last ${usd(dash.lastMonthPnl)}`} onClick={() => go("report")} />)}
+        {IS_FULL && (<Kpi label="Total Trades" icon={BarChart3} tip="totalTrades" value={data.closed.length} sub={`closed · this mo ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />)}
+        {IS_FULL && (<Kpi label="Win Rate" icon={Percent} tip="winRate" value={`${data.winRate.toFixed(1)}%`} valueColor={data.winRate >= 50 ? C.green : C.red} sub={`95% CI ${(wr.lo * 100).toFixed(1)}–${(wr.hi * 100).toFixed(1)}% · n=${wr.n}`} onClick={() => go("audit", { auditView: "execution" })} />)}
+        {IS_FULL && (<Kpi label="Wins vs Losses" icon={Target} accent={C.cyan} tip="winsVsLosses" value={<Pair a={data.wins.length} b={data.losses.length} sep="vs" />} sub={`this month ${dash.lastMWins} vs ${dash.lastMLosses}`} onClick={() => go("activity", { book: "approved", status: "closed" })} />)}
+        {IS_FULL && (<Kpi label="Return vs BTC" icon={TrendingUp} accent={C.green} tip="returnVsBtc" value={`${data.returnPct - data.btcReturnPct >= 0 ? "+" : ""}${(data.returnPct - data.btcReturnPct).toFixed(1)} pts`} valueColor={data.returnPct - data.btcReturnPct >= 0 ? C.green : C.red} sub={`${data.returnPct >= 0 ? "+" : ""}${data.returnPct.toFixed(1)}% vs ${data.btcReturnPct >= 0 ? "+" : ""}${data.btcReturnPct.toFixed(1)}% BTC`} onClick={() => go("audit", { auditView: "execution" })} />)}
         <Kpi label="Avg Win / Loss" icon={BarChart3} tip="avgWinLoss" value={<Pair a={usd(dash.avgWin)} b={usd(-dash.avgLoss)} />} sub="average winning vs losing trade" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<Pair a={`${dash.bestWinStreak}W`} b={`${dash.bestLossStreak}L`} />} sub="best winning / losing streaks" onClick={() => go("activity", { book: "approved", status: "closed" })} />
+        {IS_FULL && (<Kpi label="Best Streaks" icon={TrendingUp} tip="bestStreaks" value={<Pair a={`${dash.bestWinStreak}W`} b={`${dash.bestLossStreak}L`} />} sub="best winning / losing streaks" onClick={() => go("activity", { book: "approved", status: "closed" })} />)}
         <Kpi label="Largest Win / Loss" icon={TrendingUp} tip="largestWinLoss" value={<Pair a={usd(dash.largestWin)} b={usd(dash.largestLoss)} />} sub="best and worst single trades" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Last Month W/L" icon={Target} tip="lastMonthWL" value={<Pair a={dash.prevMWins} b={dash.prevMLosses} sep="vs" />} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />
+        {IS_FULL && (<Kpi label="Last Month W/L" icon={Target} tip="lastMonthWL" value={<Pair a={dash.prevMWins} b={dash.prevMLosses} sep="vs" />} sub={`win rate ${dash.prevM.winRate}%`} onClick={() => go("report")} />)}
         <Kpi label="Avg Hold Time" icon={Clock} tip="avgHold" value={`${dash.avgHold.toFixed(1)} hrs`} sub="average holding time" onClick={() => go("engine")} />
-        <Kpi label="Trades / Month" icon={BarChart3} tip="tradesPerMonth" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />
+        {IS_FULL && (<Kpi label="Trades / Month" icon={BarChart3} tip="tradesPerMonth" value={dash.perMonth} sub={`this ${dash.lastM.trades} · last ${dash.prevM.trades}`} onClick={() => go("report")} />)}
         <Kpi label="Max Drawdown" icon={TrendingDown} accent={C.red} tip="maxDD" value={`${data.maxDrawdownPct.toFixed(1)}%`} valueColor={C.red} sub={`${usd(data.maxDrawdown)} peak-to-trough`} onClick={() => go("audit", { auditView: "execution" })} />
         <Kpi label="Best / Worst Day" icon={Calendar} tip="bestWorstDay" value={<Pair a={usd(dash.bestDay[1])} b={usd(dash.worstDay[1])} aColor={dash.bestDay[1] >= 0 ? C.green : C.red} bColor={dash.worstDay[1] >= 0 ? C.green : C.red} />} sub={`${dash.bestDay[0]} / ${dash.worstDay[0]}${dash.worstDay[1] >= 0 ? " · no losing day" : ""}`} onClick={() => go("report")} />
         <Kpi label="Average R" icon={Activity} tip="rr" value={`${dash.avgR >= 0 ? "+" : ""}${dash.avgR.toFixed(2)}R`} valueColor={dash.avgR >= 0 ? C.green : C.red} sub="avg risk/reward ratio" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "execution" })} />
+        {IS_FULL && (<Kpi label="Expectancy" icon={Target} tip="expectancy" value={usd(dash.expectancy)} valueColor={dash.expectancy >= 0 ? C.green : C.red} sub="expected profit per trade" onClick={() => go("audit", { auditView: "execution" })} />)}
+        {IS_FULL && (<Kpi label="Profit Factor" icon={Scale} tip="profitFactor" value={pfFmt(data.profitFactor)} valueColor={data.profitFactor >= 1 ? C.green : C.red} sub="gross profit / gross loss" onClick={() => go("audit", { auditView: "execution" })} />)}
         <Kpi label="Sharpe Ratio" icon={Gauge} tip="sharpe" value={data.sharpe.toFixed(2)} sub="risk-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />
-        <Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "execution" })} />
+        {IS_FULL && (<Kpi label="Sortino Ratio" icon={Gauge} tip="sortino" value={data.sortino.toFixed(2)} sub="downside-adjusted return (proxy)" onClick={() => go("audit", { auditView: "execution" })} />)}
+        {IS_FULL && (<Kpi label="Avg Confidence" icon={Cpu} accent={C.purple} tip="avgConfidence" value={<Pair a={Math.round(data.avgConfApproved)} b={Math.round(data.avgConfRejected)} bColor={C.textMuted} />} sub="approved vs rejected" onClick={() => go("audit", { auditView: "execution" })} />)}
       </div>
 
       {/* ── 3 · Robotín's read — slim executive summary of the period ── */}
-      <AICommentary data={data} />
+      {IS_FULL && <AICommentary data={data} />}
+
+      {/* ════════ Everything below is DEPTH, and depth is what the MVP trades away.
+             The lite build stops here: the fork, the equity curve, the rail and seven
+             KPIs. What it must never trade away is honesty — the "not significant"
+             verdict and the risk-limit breaches above stay in both builds. ════════ */}
+      {IS_FULL && (<>
 
       {/* ════════ Monthly, distribution and risk charts follow ════════ */}
 
@@ -1071,6 +1078,7 @@ const FundOverview = () => {
           )}
         </div>
       </div>
+      </>)}
 
     </div>
   );
