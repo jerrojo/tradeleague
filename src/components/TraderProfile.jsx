@@ -145,22 +145,32 @@ const TraderProfile = ({ trader, onClose }) => {
 
         <div style={{ flex: 1 }} />
 
-        {/* Institutional actions — under-review queue + allocation flag (no retail copy/follow) */}
-        <button onClick={() => { setIsFollowing(!isFollowing); addToast(isFollowing ? `Removed ${t.name} from review` : `Added ${t.name} to review`, isFollowing ? "info" : "success"); }} style={{
-          display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
-          border: `1px solid ${isFollowing ? C.cyan : C.border}`,
-          backgroundColor: isFollowing ? `${C.cyan}14` : "transparent",
-          color: isFollowing ? C.cyan : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
-        }}>
-          <Eye size={13} /> {isFollowing ? "Under Review" : "Add to Review"}
-        </button>
+        {/* Institutional actions — under-review queue + allocation flag (no retail copy/follow).
+            Full product only. Both are promises: "Add to Review" implies a review queue you
+            can come back to, "Flag for Allocation" implies capital actually moves. Today
+            each one fires a toast and nothing else. In the full product that's a stub with a
+            roadmap behind it; in an MVP shown to someone deciding whether this is real, a
+            green button that pretends to allocate money and doesn't is the single most
+            expensive thing on the page. Ship it when it does something. */}
+        {IS_FULL && (
+          <>
+            <button onClick={() => { setIsFollowing(!isFollowing); addToast(isFollowing ? `Removed ${t.name} from review` : `Added ${t.name} to review`, isFollowing ? "info" : "success"); }} style={{
+              display: "flex", alignItems: "center", gap: "5px", padding: "6px 14px", borderRadius: "6px",
+              border: `1px solid ${isFollowing ? C.cyan : C.border}`,
+              backgroundColor: isFollowing ? `${C.cyan}14` : "transparent",
+              color: isFollowing ? C.cyan : C.textMuted, fontSize: "11px", fontWeight: "700", cursor: "pointer", transition: "all 0.2s"
+            }}>
+              <Eye size={13} /> {isFollowing ? "Under Review" : "Add to Review"}
+            </button>
 
-        <button onClick={() => addToast(`Flagged ${t.name} for allocation`, "success")} style={{
-          display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "6px",
-          border: "none", backgroundColor: C.green, color: C.bg, fontSize: "12px", fontWeight: "800", cursor: "pointer"
-        }}>
-          <Crosshair size={14} /> Flag for Allocation
-        </button>
+            <button onClick={() => addToast(`Flagged ${t.name} for allocation`, "success")} style={{
+              display: "flex", alignItems: "center", gap: "6px", padding: "7px 16px", borderRadius: "6px",
+              border: "none", backgroundColor: C.green, color: C.bg, fontSize: "12px", fontWeight: "800", cursor: "pointer"
+            }}>
+              <Crosshair size={14} /> Flag for Allocation
+            </button>
+          </>
+        )}
       </div>
 
       {/* Profile Header Card — redesigned */}

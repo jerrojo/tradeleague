@@ -851,8 +851,16 @@ const FundOverview = () => {
       {/* ── 0 · RISK LIMITS. A fund runs on limits, not on observations. A breach is an
              EVENT — it belongs at the top of the page, above the performance story, and
              it names the rule that broke rather than leaving the reader to do the
-             arithmetic against a policy they can't see. ── */}
-      {breaches.length > 0 && (
+             arithmetic against a policy they can't see.
+
+             MVP hides it, by explicit product decision. Note what that costs: the MVP now
+             shows the return without saying the book is levered past its own policy, and
+             showing the upside while suppressing the risk flag is exactly the asymmetry
+             that costs a fund its credibility. The right fix is not to hide the alarm — it
+             is to fix the book (bring gross leverage under 3.00×), at which point nothing
+             fires and nothing needs hiding. Revisit before this is put in front of anyone
+             making an allocation decision. ── */}
+      {IS_FULL && breaches.length > 0 && (
         <div style={{ ...cardStyle, borderColor: `${C.red}55`, backgroundColor: `${C.red}0d`, padding: "12px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
             <AlertTriangle size={16} color={C.red} />

@@ -9,9 +9,18 @@
    not a copy of it.
 
    Rule for anything gated below: LITE MAY HIDE, IT MAY NEVER LIE. We remove depth
-   (secondary metrics, quant surfaces), never the honesty layer — the "not significant"
-   verdict on the filter's edge and the risk-limit breaches stay, because a smaller
-   product is allowed to say less, not to claim more. */
+   (secondary metrics, quant surfaces), never the honesty layer — a smaller product is
+   allowed to say less, not to claim more. Concretely, both builds keep the NOT
+   SIGNIFICANT verdict on the filter's edge, and both keep the amber SIMULATED
+   provenance chip in the header.
+
+   ONE OPEN EXCEPTION, recorded so nobody discovers it by accident: the MVP hides the
+   RISK-LIMIT BREACH BANNER (FundOverview), by product decision. That is the closest
+   thing here to a violation of the rule above — the MVP shows the return while staying
+   quiet about the book being levered past its own stated policy. It is defensible only
+   while the MVP is a demo. The real fix is to bring gross leverage under the 3.00×
+   limit so the banner never fires; then hiding it costs nothing because there is
+   nothing to hide. Until then, do not put the MVP in front of an allocator. */
 
 /* HOW THE BUILD KNOWS IT IS THE MVP — two ways, on purpose.
 

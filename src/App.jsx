@@ -16,6 +16,7 @@ import { START_CAPITAL } from "./data/fund";
 import { usd, fmtTime } from "./lib/format";
 import { readUrl, patchUrl, currentShareUrl } from "./lib/urlState";
 import { C, T, cardStyle, mono } from "./theme";
+import { IS_FULL } from "./lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 const dateRanges = [
   { id: "24h", label: "24h" },
@@ -249,8 +250,12 @@ const App = () => {
   const searchRef = useRef(null);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // First-run onboarding: show the welcome guide once (remembered across visits)
+  // First-run onboarding: show the welcome guide once (remembered across visits).
+  // The MVP skips it entirely — a modal that opens with "Seven areas" in front of a
+  // product that no longer has seven areas is worse than no tour at all, and a smaller
+  // product should be self-evident rather than narrated.
   useEffect(() => {
+    if (!IS_FULL) return;
     try {
       if (!localStorage.getItem("tl_onboarded")) setShowWelcome(true);
     } catch { /* storage unavailable — skip */ }
@@ -579,17 +584,23 @@ const App = () => {
                 ) : (
                   <TimeframeFilter />
                 )}
-                {/* Send this exact view — the whole point of putting the view in the URL */}
-                <button onClick={async () => {
-                  try { await navigator.clipboard.writeText(currentShareUrl()); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* clipboard blocked */ }
-                }} aria-label="Copy a link to this exact view" title="Copy a link to this exact view — filters included"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${copied ? C.green : C.border}`, color: copied ? C.green : C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" }}>
-                  {copied ? <Check size={14} /> : <Link2 size={14} />} {copied ? "Copied" : "Share view"}
-                </button>
-                {/* Committee tear-sheet export */}
-                <button onClick={() => setShowTearSheet(true)} aria-label="Export committee tear sheet" title="Export committee tear sheet (PDF)" style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }}>
-                  <FileText size={14} /> Tear sheet
-                </button>
+                {/* Share view + tear sheet: the allocator's outbound tools — sending a
+                    view to a colleague, exporting to a committee. Both presume a fund
+                    workflow the MVP doesn't have yet, so the MVP ships neither. The URL
+                    still carries the view; only the button is gone. */}
+                {IS_FULL && (
+                  <>
+                    <button onClick={async () => {
+                      try { await navigator.clipboard.writeText(currentShareUrl()); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* clipboard blocked */ }
+                    }} aria-label="Copy a link to this exact view" title="Copy a link to this exact view — filters included"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${copied ? C.green : C.border}`, color: copied ? C.green : C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                      {copied ? <Check size={14} /> : <Link2 size={14} />} {copied ? "Copied" : "Share view"}
+                    </button>
+                    <button onClick={() => setShowTearSheet(true)} aria-label="Export committee tear sheet" title="Export committee tear sheet (PDF)" style={{ display: "inline-flex", alignItems: "center", gap: 6, backgroundColor: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "6px 10px", borderRadius: "6px", fontSize: 11, fontWeight: 700, fontFamily: "inherit" }}>
+                      <FileText size={14} /> Tear sheet
+                    </button>
+                  </>
+                )}
                 {/* Notifications bell with count */}
                 <div style={{ position: "relative" }}>
                   <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
@@ -607,15 +618,19 @@ const App = () => {
                   <Search size={17} />
                   <span style={{ fontSize: "10px", color: C.textFaint, ...mono }}>⌘K</span>
                 </button>
-                {/* Help — reopen the welcome guide */}
-                <button onClick={() => setShowWelcome(true)} title="What is this? — platform guide" aria-label="Open platform guide" style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
-                  <HelpCircle size={17} />
-                </button>
+                {/* Help — reopen the welcome guide. Gone in the MVP alongside the guide
+                    itself: a button whose only job is to open a modal that no longer
+                    exists is a dead control, and dead controls erode trust in live ones. */}
+                {IS_FULL && (
+                  <button onClick={() => setShowWelcome(true)} title="What is this? — platform guide" aria-label="Open platform guide" style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
+                    <HelpCircle size={17} />
+                  </button>
+                )}
               </div>
             </header>
 
-            {/* ── Welcome / Onboarding Guide ── */}
-            {showWelcome && (
+            {/* ── Welcome / Onboarding Guide (full product only) ── */}
+            {IS_FULL && showWelcome && (
               <div onClick={dismissWelcome} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 600, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
                 <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "640px", maxHeight: "85vh", overflowY: "auto", backgroundColor: C.card, border: `1px solid ${C.borderLight}`, borderRadius: "16px", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
                   <div style={{ padding: "24px 28px 16px", borderBottom: `1px solid ${C.border}` }}>
@@ -891,22 +906,30 @@ const App = () => {
 
             {/* Footer — status bar. HONEST: a fake "LIVE · updated 3s ago" ticker on
                 simulated data is theater a professional spots instantly, and it costs
-                credibility everywhere else. Amber SIM state until real connectors ship. */}
-            <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
-              <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
-                <FeedStatus />
-                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} providers</span>
-                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><BarChart3 size={11} /> {fundStats.total} signals</span>
-              </div>
-              <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Activity size={11} color={C.cyan} /> {fundStats.active} open positions</span>
-                <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
-                <LiveFooterQuote />
-                <span style={{ color: C.textFaint }}>sim ledger · deterministic</span>
-              </div>
-            </footer>
+                credibility everywhere else. Amber SIM state until real connectors ship.
+
+                MVP drops the whole bar. Safe to drop because the SIMULATED provenance
+                chip lives in the HEADER, not here — the MVP still never claims the
+                ledger is real. What goes is the desk furniture: provider counts, signal
+                counts, a BTC quote. Ambient telemetry for someone watching a book all
+                day; noise for someone meeting the product for the first time. */}
+            {IS_FULL && (
+              <footer style={{ height: 36, backgroundColor: C.card, borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 24px", color: C.text, fontSize: "11px", fontWeight: "600", ...mono, justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                  <FeedStatus />
+                  <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><Users size={11} /> {mockTraders.length} providers</span>
+                  <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: C.textMuted }}><BarChart3 size={11} /> {fundStats.total} signals</span>
+                </div>
+                <div style={{ display: "flex", gap: "14px", alignItems: "center", color: C.textMuted }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><Activity size={11} color={C.cyan} /> {fundStats.active} open positions</span>
+                  <div style={{ width: "1px", height: 16, backgroundColor: C.border }} />
+                  <LiveFooterQuote />
+                  <span style={{ color: C.textFaint }}>sim ledger · deterministic</span>
+                </div>
+              </footer>
+            )}
 
             {/* one-click refresh when a newer build is live */}
             <UpdateNotifier />
