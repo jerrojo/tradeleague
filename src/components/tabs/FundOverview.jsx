@@ -953,9 +953,16 @@ const FundOverview = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* the fund's real balance belongs to the executed ledger, not the what-if sandbox */}
           <AccountBalanceCard balance={data.balance} returnPct={data.returnPct} equity={data.equity} onClick={() => go("audit", { auditView: "execution" })} />
-          <OpenRiskCard risk={dash.openRisk}
-            onClick={() => go("activity", { book: "approved", status: "active" })}
-            onNav={(opts) => go("activity", { book: "approved", status: "active", ...opts })} />
+          {/* Open Risk — the live exposure panel (concentration, leverage, net beta). It
+              is the rail's window onto the same policy the breach banner enforces, so it
+              leaves the MVP with that banner: the MVP shows the return without narrating
+              the book's risk posture, by product decision. Same caveat, same fix — bring
+              leverage under limit and this becomes an all-green panel worth showing. */}
+          {IS_FULL && (
+            <OpenRiskCard risk={dash.openRisk}
+              onClick={() => go("activity", { book: "approved", status: "active" })}
+              onNav={(opts) => go("activity", { book: "approved", status: "active", ...opts })} />
+          )}
           <TodayCard dash={dash} onClick={() => go("report")} />
         </div>
       </div>

@@ -533,9 +533,11 @@ const App = () => {
               })}
             </nav>
 
-            {/* Bottom section */}
+            {/* Bottom section. Alerts is dropped in the MVP (see the header bell) — a
+                simulated book can't raise a real alert, so the panel only ever holds
+                seed notifications. Settings stays. */}
             <div style={{ padding: "8px", borderTop: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: "2px" }}>
-              {[{ icon: Settings, label: "Settings", action: () => setShowSettings(true) }, { icon: Bell, label: "Alerts", action: () => setShowAlerts(true) }].map(item => (
+              {[{ icon: Settings, label: "Settings", action: () => setShowSettings(true) }, ...(IS_FULL ? [{ icon: Bell, label: "Alerts", action: () => setShowAlerts(true) }] : [])].map(item => (
                 <button key={item.label} onClick={item.action} title={sidebarCollapsed ? item.label : undefined} style={{
                   display: "flex", alignItems: "center", gap: "10px",
                   padding: sidebarCollapsed ? "10px 0" : "10px 12px",
@@ -601,18 +603,23 @@ const App = () => {
                     </button>
                   </>
                 )}
-                {/* Notifications bell with count */}
-                <div style={{ position: "relative" }}>
-                  <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
-                    <Bell size={17} />
-                  </button>
-                  {unreadCount > 0 && <div style={{
-                    position: "absolute", top: "2px", right: "2px", width: "14px", height: "14px",
-                    borderRadius: "50%", backgroundColor: C.purple, color: "#fff",
-                    fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center",
-                    pointerEvents: "none"
-                  }}>{unreadCount}</div>}
-                </div>
+                {/* Notifications bell with count. Gone in the MVP: on a deterministic
+                    simulated book nothing new ever fires, so the bell only carries seed
+                    notifications — and a notification bell that never rings on live events
+                    teaches people to ignore it. Ship it when there's a real event stream. */}
+                {IS_FULL && (
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => setShowAlerts(!showAlerts)} style={{ backgroundColor: showAlerts ? C.purpleBg : "transparent", border: "none", color: showAlerts ? C.purple : C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px" }}>
+                      <Bell size={17} />
+                    </button>
+                    {unreadCount > 0 && <div style={{
+                      position: "absolute", top: "2px", right: "2px", width: "14px", height: "14px",
+                      borderRadius: "50%", backgroundColor: C.purple, color: "#fff",
+                      fontSize: "8px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center",
+                      pointerEvents: "none"
+                    }}>{unreadCount}</div>}
+                  </div>
+                )}
                 {/* Search */}
                 <button onClick={() => setShowSearch(true)} aria-label="Search (Command-K)" style={{ backgroundColor: "transparent", border: "none", color: C.textMuted, cursor: "pointer", padding: "6px", display: "flex", alignItems: "center", borderRadius: "6px", gap: "6px" }}>
                   <Search size={17} />
@@ -761,8 +768,8 @@ const App = () => {
               </div>
             )}
 
-            {/* ── Alerts Drawer ── */}
-            {showAlerts && (
+            {/* ── Alerts Drawer (full product only) ── */}
+            {IS_FULL && showAlerts && (
               <div onClick={() => setShowAlerts(false)} style={{ position: "fixed", inset: 0, zIndex: 400, backgroundColor: "rgba(0,0,0,0.3)" }}>
                 <div onClick={e => e.stopPropagation()} style={{
                   position: "fixed", top: 0, right: 0, width: "360px", height: "100vh",

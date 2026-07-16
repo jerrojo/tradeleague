@@ -15,12 +15,14 @@
    provenance chip in the header.
 
    ONE OPEN EXCEPTION, recorded so nobody discovers it by accident: the MVP hides the
-   RISK-LIMIT BREACH BANNER (FundOverview), by product decision. That is the closest
-   thing here to a violation of the rule above — the MVP shows the return while staying
-   quiet about the book being levered past its own stated policy. It is defensible only
-   while the MVP is a demo. The real fix is to bring gross leverage under the 3.00×
-   limit so the banner never fires; then hiding it costs nothing because there is
-   nothing to hide. Until then, do not put the MVP in front of an allocator. */
+   fund's entire RISK POSTURE from Overview — both the RISK-LIMIT BREACH BANNER and the
+   OPEN RISK rail card (concentration, leverage, net beta) — by product decision. That
+   is the closest thing here to a violation of the rule above: the MVP shows the return
+   while staying quiet about the book being levered past its own stated policy. It is
+   defensible only while the MVP is a demo. The real fix is to bring gross leverage
+   under the 3.00× limit — then the banner never fires and the Open Risk panel goes
+   all-green, so both are worth showing and nothing needs hiding. Until then, do not put
+   the MVP in front of an allocator. */
 
 /* HOW THE BUILD KNOWS IT IS THE MVP — two ways, on purpose.
 
